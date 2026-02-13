@@ -32,8 +32,8 @@ echo "🔗 Remote eklendi: origin -> $REPO_URL"
 echo "📦 Dosyalar ekleniyor..."
 git add .
 
-read -p "Commit mesajınız (Varsayılan: Cloudflare güncellemesi): " COMMIT_MSG
-COMMIT_MSG=${COMMIT_MSG:-"Cloudflare güncellemesi"}
+read -p "Commit mesajınız (Varsayılan: Vercel entegrasyonu ve düzeltmeler): " COMMIT_MSG
+COMMIT_MSG=${COMMIT_MSG:-"Vercel entegrasyonu ve düzeltmeler"}
 git commit -m "$COMMIT_MSG" || echo "⚠️ Commit edilecek yeni değişiklik yok."
 
 # 4. Push
@@ -43,4 +43,4 @@ echo "👉 Şifre: (Token'ınızı yapıştırın)"
 git push -u origin main
 
 echo "----------------------------------------------------------------"
-echo "✅ İşlem tamamlandı."
+echo "✅ İşlem tamamlandı. Şimdi Vercel üzerinden projenizi import edebilirsiniz."

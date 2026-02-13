@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getKVData } from '../../lib/kv';
-
-export const runtime = 'edge';
+import { getKVData } from '../../lib/db';
 
 export default async function handler(req) {
     if (req.method !== 'POST') return NextResponse.json({ error: 'Method not allowed' }, { status: 405 });
