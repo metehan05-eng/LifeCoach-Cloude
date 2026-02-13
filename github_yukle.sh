@@ -31,7 +31,10 @@ echo "🔗 Remote eklendi: origin -> $REPO_URL"
 # 3. Dosyaları Ekleme ve Commit
 echo "📦 Dosyalar ekleniyor..."
 git add .
-git commit -m "Proje GitHub'a taşındı" || echo "⚠️ Commit edilecek yeni değişiklik yok."
+
+read -p "Commit mesajınız (Varsayılan: Cloudflare güncellemesi): " COMMIT_MSG
+COMMIT_MSG=${COMMIT_MSG:-"Cloudflare güncellemesi"}
+git commit -m "$COMMIT_MSG" || echo "⚠️ Commit edilecek yeni değişiklik yok."
 
 # 4. Push
 echo "🚀 GitHub'a gönderiliyor..."
