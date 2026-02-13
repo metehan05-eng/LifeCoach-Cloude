@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getKVData, setKVData } from '../../lib/kv';
-
-export const runtime = 'edge';
+import { getKVData, setKVData } from '../../lib/db';
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const OPENROUTER_MODELS = [
@@ -17,15 +15,12 @@ const OPENROUTER_MODELS = [
 async function checkRateLimit(req, ip, fingerprint) {
     const ua = req.headers.get('user-agent') || 'unknown';
     
-    // Web Crypto API (Edge uyumlu)
-    const msgBuffer = new TextEncoder().encode(`${ip}-${ua}-${fingerprint}`);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const identity = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    // Node.js Crypto (Vercel/Local uyumlu)
+    const crypto = require('crypto');
+    const identity = crypto.createHash('sha256').update(`${ip}-${ua}-${fingerprint}`).digest('hex');
     
-    // Directly use the LIMITS_KV namespace for rate limiting
-    const limitsJSON = await process.env.LIMITS_KV.get('user_limits');
-    const limits = limitsJSON ? JSON.parse(limitsJSON) : {};
+    // Dosya tabanlı okuma
+    const limits = await getKVData('user_limits');
     const now = Date.now();
 
     if (!limits[identity]) {
@@ -59,8 +54,8 @@ async function checkRateLimit(req, ip, fingerprint) {
 
     user.messageCount++;
     
-    // Write back to the LIMITS_KV namespace
-    await process.env.LIMITS_KV.put('user_limits', JSON.stringify(limits));
+    // Dosyaya kaydet
+    await setKVData('user_limits', limits);
 
     return { allowed: true };
 }
