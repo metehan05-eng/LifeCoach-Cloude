@@ -22,13 +22,18 @@ async function checkRateLimit(req, ip, fingerprint) {
     const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const identity = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-
-    const limits = await getKVData('user_limits');
+    
+    // Directly use the LIMITS_KV namespace for rate limiting
+    const limitsJSON = await process.env.LIMITS_KV.get('user_limits');
+    const limits = limitsJSON ? JSON.parse(limitsJSON) : {};
     const now = Date.now();
 
     if (!limits[identity]) {
         limits[identity] = { messageCount: 0, lastReset: now, isBlocked: false, lastActivity: now };
     }
+
+    // Not: server.js'deki periyodik temizlik (setInterval) serverless ortamda çalışmaz.
+    // Bu işlev için Cloudflare Cron Triggers kullanılmalıdır.
 
     const user = limits[identity];
     user.lastActivity = now;
@@ -54,8 +59,8 @@ async function checkRateLimit(req, ip, fingerprint) {
 
     user.messageCount++;
     
-    // KV'ye asenkron yaz (await etmeyerek hızı artırabiliriz ama tutarlılık için await önerilir)
-    await setKVData('user_limits', limits);
+    // Write back to the LIMITS_KV namespace
+    await process.env.LIMITS_KV.put('user_limits', JSON.stringify(limits));
 
     return { allowed: true };
 }
