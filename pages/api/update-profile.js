@@ -1,31 +1,28 @@
-import { NextResponse } from 'next/server';
 import { getKVData, setKVData } from '../../lib/kv';
 
-export const runtime = 'edge';
-
-export default async function handler(req) {
-    if (req.method !== 'POST') return NextResponse.json({ error: 'Method not allowed' }, { status: 405 });
+export default async function handler(req, res) {
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
     try {
-        const { email, newName } = await req.json();
-        if (!email || !newName) return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+        const { email, newName } = req.body;
+        if (!email || !newName) return res.status(400).json({ error: "Invalid request." });
 
         const users = await getKVData('users');
         const userIndex = users.findIndex(u => u.email === email);
 
         if (userIndex === -1) {
-            return NextResponse.json({ error: "User not found." }, { status: 404 });
+            return res.status(404).json({ error: "User not found." });
         }
 
         if (users.some(u => u.name === newName && u.email !== email)) {
-            return NextResponse.json({ error: "This username is already taken." }, { status: 400 });
+            return res.status(400).json({ error: "This username is already taken." });
         }
 
         users[userIndex].name = newName;
         await setKVData('users', users);
 
-        return NextResponse.json({ success: true, user: { name: newName, email: email } });
+        return res.status(200).json({ success: true, user: { name: newName, email: email } });
     } catch (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return res.status(500).json({ error: error.message });
     }
 }
