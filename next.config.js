@@ -7,6 +7,7 @@ if (process.env.NODE_ENV === 'development') {
 const nextConfig = {
   experimental: {
     appDir: true,
+    runtime: 'edge', // Tüm API Rotalarını varsayılan olarak Edge Runtime'da çalıştırır
   },
   webpack(config) {
     config.experiments = {
