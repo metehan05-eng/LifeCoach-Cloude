@@ -1,0 +1,5 @@
+node_modules/
+.env
+users.json
+user_limits.json
+.DS_Store

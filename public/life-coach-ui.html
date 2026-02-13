@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LifeCoach AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#0F766E', // Teal-700
+                        secondary: '#CCFBF1', // Teal-100
+                        accent: '#F0FDFA', // Teal-50
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 20px;
+        }
+        .typing-dot {
+            animation: typing 1.4s infinite ease-in-out both;
+        }
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        
+        @keyframes typing {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 h-screen flex overflow-hidden font-sans text-slate-800 dark:text-gray-100 transition-colors duration-200">
+
+    <!-- Sidebar -->
+    <aside id="main-sidebar" class="w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex-col hidden md:flex shadow-sm z-10 transition-colors duration-200">
+        <div class="p-6 border-b border-gray-100 dark:border-gray-700 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white">
+                <i class="fa-solid fa-leaf text-lg"></i>
+            </div>
+            <h1 class="text-xl font-bold text-gray-800 dark:text-white tracking-tight">LifeCoach AI</h1>
+        </div>
+
+        <div class="p-4">
+            <button onclick="startNewChat()" class="w-full bg-primary hover:bg-teal-800 text-white py-3 px-4 rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 font-medium">
+                <i class="fa-solid fa-plus"></i>
+                Yeni Seans
+            </button>
+            <button onclick="exportChat()" class="w-full mt-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 py-3 px-4 rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 font-medium text-sm">
+                <i class="fa-solid fa-download"></i>
+                Sohbeti İndir (.txt)
+            </button>
+        </div>
+
+        <div class="px-4 pb-2">
+            <div class="relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs"></i>
+                <input type="text" id="history-search" onkeyup="filterHistory()" placeholder="Geçmişte ara..." class="w-full bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg pl-8 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all">
+            </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto px-4 space-y-2" id="history-list">
+            <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 mt-2">Geçmiş Seanslar</div>
+            <!-- History items will be injected here -->
+        </div>
+
+        <div class="p-4 border-t border-gray-100 dark:border-gray-700" id="auth-container">
+            <!-- JS ile doldurulacak -->
+        </div>
+    </aside>
+
+    <!-- Main Chat Area -->
+    <main class="flex-1 flex flex-col relative bg-white md:bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+        <!-- Mobile Header -->
+        <header class="md:hidden bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between sticky top-0 z-20">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white">
+                    <i class="fa-solid fa-leaf text-sm"></i>
+                </div>
+                <span class="font-bold text-gray-800">LifeCoach AI</span>
+            </div>
+            <button onclick="toggleSidebar()" class="text-gray-500 hover:text-gray-700">
+                <i class="fa-solid fa-bars text-xl"></i>
+            </button>
+        </header>
+
+        <!-- Chat Container -->
+        <div id="chat-container" class="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 scroll-smooth">
+            <!-- Welcome Message -->
+            <div class="flex flex-col items-center justify-center h-full text-center space-y-4" id="welcome-screen">
+                <div class="w-16 h-16 bg-secondary rounded-2xl flex items-center justify-center mb-2">
+                    <i class="fa-solid fa-hands-holding-circle text-3xl text-primary"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Merhaba, bugün nasıl hissediyorsun?</h2>
+                <p class="text-gray-500 dark:text-gray-400 max-w-md">Senin kişisel yaşam koçun olarak buradayım. Hedeflerin, endişelerin veya sadece sohbet etmek için bana yazabilirsin.</p>
+                
+                <!-- Prompt Templates (Referencing the context of prompt-templates) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-2xl mt-8">
+                    <button onclick="useTemplate('Sabah rutinimi nasıl daha verimli hale getirebilirim?')" class="p-4 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-primary hover:bg-accent dark:hover:bg-gray-800 text-left transition-all group">
+                        <span class="block font-medium text-gray-700 dark:text-gray-200 group-hover:text-primary mb-1">🌅 Sabah Rutini</span>
+                        <span class="text-sm text-gray-500">Güne daha enerjik başlamak için öneriler.</span>
+                    </button>
+                    <button onclick="useTemplate('Erteleme alışkanlığıyla nasıl başa çıkabilirim?')" class="p-4 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-primary hover:bg-accent dark:hover:bg-gray-800 text-left transition-all group">
+                        <span class="block font-medium text-gray-700 dark:text-gray-200 group-hover:text-primary mb-1">⏳ Erteleme</span>
+                        <span class="text-sm text-gray-500">Odaklanma ve üretkenlik stratejileri.</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Messages will be appended here -->
+        </div>
+
+        <!-- Input Area -->
+        <div class="p-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 md:m-4 md:rounded-2xl md:shadow-lg md:border-none transition-colors duration-200">
+            <form id="chat-form" class="relative flex items-end gap-2">
+                <div class="relative flex-1">
+                    <textarea 
+                        id="user-input" 
+                        rows="1" 
+                        placeholder="Buraya yazın..." 
+                        class="w-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white dark:placeholder-gray-400 rounded-xl px-4 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-white dark:focus:bg-gray-600 transition-all resize-none max-h-32"
+                        oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"
+                    ></textarea>
+                    <button type="button" id="mic-btn" onclick="toggleDictation()" class="absolute right-3 bottom-3 text-gray-400 hover:text-gray-600 transition-colors" title="Sesli Yaz">
+                        <i class="fa-solid fa-microphone"></i>
+                    </button>
+                </div>
+                <button type="submit" class="bg-primary hover:bg-teal-800 text-white rounded-xl w-12 h-12 flex items-center justify-center shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed" id="send-btn">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </form>
+            <div class="text-center mt-2">
+                <p class="text-xs text-gray-400">LifeCoach AI kişisel gelişim amaçlıdır, tıbbi tavsiye vermez.</p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function escapeJS(str) {
+            if (str === null || str === undefined) return '';
+            // onclick içerisindeki string'i bozacak karakterlerden kaçış
+            return String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '');
+        }
+
+        let chatContainer;
+        let chatForm;
+        let userInput;
+        let welcomeScreen;
+        let messageHistory = [];
+        let currentSessionId = null;
+        
+        // Güvenli LocalStorage Erişimi
+        const storage = {
+            get: (key) => { try { return localStorage.getItem(key); } catch(e) { return null; } },
+            set: (key, val) => { try { localStorage.setItem(key, val); } catch(e) {} },
+            remove: (key) => { try { localStorage.removeItem(key); } catch(e) {} },
+            has: (key) => { try { return key in localStorage; } catch(e) { return false; } }
+        };
+
+        // Tema Yönetimi
+        function initTheme() {
+            const theme = storage.get('theme');
+            if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        }
+        initTheme();
+
+        let welcomeShown = false;
+
+        function showToast(message) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            toast.className = 'bg-white dark:bg-gray-800 text-gray-800 dark:text-white px-4 py-3 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 flex items-center gap-3 transform transition-all duration-500 translate-x-full opacity-0 pointer-events-auto min-w-[200px]';
+            toast.innerHTML = `<p class="font-medium text-sm flex items-center gap-2">${message}</p>`;
+            
+            container.appendChild(toast);
+            
+            // Animate in
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-x-full', 'opacity-0');
+            });
+            
+            // Remove after 3s
+            setTimeout(() => {
+                toast.classList.add('translate-x-full', 'opacity-0');
+                setTimeout(() => { toast.remove(); }, 500);
+            }, 3000);
+        }
+
+        // Helper: Güvenli JSON parse
+        function getSafeUser() {
+            try {
+                return JSON.parse(storage.get('user'));
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // Auth Kontrolü
+        function checkAuth() {
+            const user = getSafeUser();
+            const authContainer = document.getElementById('auth-container');
+            
+            if (user) {
+                const avatarHtml = user.avatar 
+                    ? `<img src="${user.avatar}" alt="${user.name}" class="w-9 h-9 rounded-full object-cover border border-gray-200 dark:border-gray-600">`
+                    : `<div class="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-bold">${user.name.charAt(0).toUpperCase()}</div>`;
+
+                authContainer.innerHTML = `
+                    <div class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 group relative transition-colors">
+                        ${avatarHtml}
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-900 dark:text-white truncate">${user.name}</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 truncate">@${user.name}</p>
+                            <p class="text-xs text-gray-500 truncate">${user.email}</p>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <button onclick="toggleDarkMode()" class="p-1.5 text-gray-400 hover:text-yellow-500 rounded-md hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors" title="Karanlık Mod">
+                                <i class="fa-solid ${document.documentElement.classList.contains('dark') ? 'fa-sun' : 'fa-moon'}"></i>
+                            </button>
+                            <button onclick="openSettings()" class="p-1.5 text-gray-400 hover:text-primary rounded-md hover:bg-gray-100 transition-colors" title="Ayarlar">
+                                <i class="fa-solid fa-gear"></i>
+                            </button>
+                            <button onclick="logout()" class="p-1.5 text-gray-400 hover:text-red-500 rounded-md hover:bg-gray-100 transition-colors" title="Çıkış">
+                                <i class="fa-solid fa-right-from-bracket"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                if (!welcomeShown) {
+                    showToast(`Hoşgeldin, ${user.name}! 👋✨`);
+                    welcomeShown = true;
+                }
+                loadHistory(); // Kullanıcı giriş yaptıysa geçmişi yükle
+            } else {
+                authContainer.innerHTML = `
+                    <button onclick="window.location.href='/login'" class="w-full mb-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 py-2.5 px-4 rounded-xl transition-all text-sm font-medium">Giriş Yap</button>
+                    <button onclick="window.location.href='/signup'" class="w-full bg-primary hover:bg-teal-800 text-white py-2.5 px-4 rounded-xl shadow-sm transition-all text-sm font-medium">Kayıt Ol</button>
+                `;
+            }
+        }
+
+        function logout() {
+            storage.remove('user');
+            window.location.reload();
+        }
+
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+            const isDark = document.documentElement.classList.contains('dark');
+            storage.set('theme', isDark ? 'dark' : 'light');
+            checkAuth(); // İkonu güncellemek için
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('main-sidebar');
+            sidebar.classList.toggle('hidden');
+            if (!sidebar.classList.contains('hidden')) {
+                sidebar.classList.add('fixed', 'inset-y-0', 'left-0', 'z-50', 'w-80', 'shadow-2xl', 'flex');
+            } else {
+                sidebar.classList.remove('fixed', 'inset-y-0', 'left-0', 'z-50', 'w-80', 'shadow-2xl', 'flex');
+            }
+        }
+
+        // Ayarlar Modalı İşlemleri
+        function openSettings() {
+            const user = getSafeUser();
+            if (user) {
+                document.getElementById('settings-name').value = user.name;
+                document.getElementById('settings-avatar').value = user.avatar || '';
+            }
+            const modal = document.getElementById('settings-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeSettings() {
+            const modal = document.getElementById('settings-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.getElementById('settings-error').classList.add('hidden');
+        }
+
+        async function loadHistory() {
+            const user = getSafeUser();
+            if (!user) return;
+
+            try {
+                const res = await fetch('/api/history', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: user.email })
+                });
+                const sessions = await res.json();
+                
+                const historyList = document.getElementById('history-list');
+                historyList.innerHTML = ''; // Listeyi temizle
+                
+                // Gruplama Mantığı
+                const groups = {
+                    'Bugün': [],
+                    'Dün': [],
+                    'Bu Hafta': [],
+                    'Geçmiş': []
+                };
+
+                const now = new Date();
+                const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+                const yesterdayStart = todayStart - 86400000;
+                const weekStart = todayStart - 6 * 86400000;
+
+                // Yeniden eskiye sırala
+                sessions.sort((a, b) => b.id - a.id);
+
+                sessions.forEach(session => {
+                    if (session.id >= todayStart) {
+                        groups['Bugün'].push(session);
+                    } else if (session.id >= yesterdayStart) {
+                        groups['Dün'].push(session);
+                    } else if (session.id >= weekStart) {
+                        groups['Bu Hafta'].push(session);
+                    } else {
+                        groups['Geçmiş'].push(session);
+                    }
+                });
+
+                Object.entries(groups).forEach(([label, groupSessions]) => {
+                    if (groupSessions.length === 0) return;
+
+                    const header = document.createElement('div');
+                    header.className = 'text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 mt-4 sticky top-0 bg-white dark:bg-gray-800 py-1 z-10';
+                    header.textContent = label;
+                    historyList.appendChild(header);
+
+                    groupSessions.forEach(session => {
+                        const div = document.createElement('div');
+                        div.className = 'flex items-center group rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors pr-2';
+                        div.innerHTML = `
+                            <button onclick="loadSession(${session.id})" class="flex-1 text-left p-3 flex items-center gap-3 min-w-0">
+                                <i class="fa-regular fa-message text-gray-400 group-hover:text-primary flex-shrink-0"></i>
+                                <div class="truncate text-sm text-gray-600 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white">${session.title}</div>
+                            </button>
+                            <button onclick="deleteSession(${session.id})" class="p-2 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity" title="Sil"><i class="fa-solid fa-trash"></i></button>
+                        `;
+                        historyList.appendChild(div);
+                    });
+                });
+
+            } catch (err) {
+                console.error("Geçmiş yüklenirken hata:", err);
+            }
+        }
+
+        function filterHistory() {
+            const input = document.getElementById('history-search');
+            const filter = input.value.toLowerCase();
+            const historyList = document.getElementById('history-list');
+            const children = Array.from(historyList.children);
+
+            // 1. Önce öğeleri filtrele
+            children.forEach(child => {
+                if (!child.classList.contains('text-xs')) {
+                    const text = child.textContent || child.innerText;
+                    child.style.display = text.toLowerCase().indexOf(filter) > -1 ? "" : "none";
+                }
+            });
+
+            // 2. Sonra boş kalan başlıkları gizle
+            for (let i = 0; i < children.length; i++) {
+                if (children[i].classList.contains('text-xs')) {
+                    let visibleCount = 0;
+                    // Bir sonraki başlığa kadar olan öğeleri kontrol et
+                    for (let j = i + 1; j < children.length; j++) {
+                        if (children[j].classList.contains('text-xs')) break;
+                        if (children[j].style.display !== 'none') visibleCount++;
+                    }
+                    children[i].style.display = visibleCount > 0 ? "" : "none";
+                }
+            }
+        }
+
+        async function loadSession(sessionId) {
+            const user = getSafeUser();
+            if (!user) return;
+
+            try {
+                const res = await fetch('/api/get-session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: user.email, sessionId })
+                });
+                const session = await res.json();
+                
+                currentSessionId = session.id;
+                messageHistory = []; // Geçmişi sıfırla ve yeniden doldur
+                chatContainer.innerHTML = ''; // Ekranı temizle
+                
+                session.messages.forEach(msg => {
+                    appendMessage(msg.content, msg.role === 'user' ? 'user' : 'ai');
+                    messageHistory.push(msg);
+                });
+            } catch (err) {
+                console.error("Seans yüklenirken hata:", err);
+            }
+        }
+
+        async function deleteSession(sessionId) {
+            const user = getSafeUser();
+            if (!confirm("Bu seansı silmek istediğinize emin misiniz?")) return;
+
+            try {
+                const res = await fetch('/api/delete-session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: user.email, sessionId })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    if (currentSessionId == sessionId) startNewChat();
+                    loadHistory();
+                }
+            } catch (err) {
+                console.error("Silme hatası:", err);
+            }
+        }
+
+        function startNewChat() {
+            currentSessionId = null;
+            messageHistory = [];
+            chatContainer.innerHTML = '';
+            chatContainer.appendChild(welcomeScreen);
+            welcomeScreen.classList.remove('hidden');
+        }
+
+        function useTemplate(text) {
+            userInput.value = text;
+            userInput.style.height = 'auto';
+            userInput.style.height = userInput.scrollHeight + 'px';
+            userInput.focus();
+        }
+
+        function copyToClipboard(btn, text) {
+            navigator.clipboard.writeText(text).then(() => {
+                const originalIcon = btn.innerHTML;
+                btn.innerHTML = '<i class="fa-solid fa-check text-green-500"></i>';
+                setTimeout(() => {
+                    btn.innerHTML = originalIcon;
+                }, 2000);
+            });
+        }
+
+        function speakText(text) {
+            if ('speechSynthesis' in window) {
+                if (window.speechSynthesis.speaking) {
+                    window.speechSynthesis.cancel();
+                }
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'tr-TR';
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function toggleDictation() {
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                alert("Tarayıcınız sesli yazdırmayı desteklemiyor.");
+                return;
+            }
+
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const recognition = new SpeechRecognition();
+            const micBtn = document.getElementById('mic-btn');
+            
+            recognition.lang = 'tr-TR';
+            recognition.interimResults = false;
+
+            recognition.onstart = function() {
+                micBtn.classList.remove('text-gray-400');
+                micBtn.classList.add('text-red-500', 'animate-pulse');
+            };
+
+            recognition.onend = function() {
+                micBtn.classList.add('text-gray-400');
+                micBtn.classList.remove('text-red-500', 'animate-pulse');
+            };
+
+            recognition.onresult = function(event) {
+                const transcript = event.results[0][0].transcript;
+                userInput.value += (userInput.value ? ' ' : '') + transcript;
+                userInput.style.height = 'auto';
+                userInput.style.height = userInput.scrollHeight + 'px';
+                userInput.focus();
+            };
+
+            recognition.start();
+        }
+
+        function exportChat() {
+            if (messageHistory.length === 0) {
+                alert("Dışa aktarılacak bir sohbet geçmişi yok.");
+                return;
+            }
+
+            let textContent = "LifeCoach AI - Sohbet Geçmişi\n";
+            textContent += "Tarih: " + new Date().toLocaleString() + "\n";
+            textContent += "----------------------------------------\n\n";
+
+            messageHistory.forEach(msg => {
+                const role = msg.role === 'user' ? 'Siz' : 'LifeCoach AI';
+                textContent += `[${role}]:\n${msg.content}\n\n`;
+            });
+
+            const blob = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `sohbet-gecmisi-${new Date().toISOString().slice(0,10)}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        async function sendFeedback(btn, type, messageContent) {
+            const user = getSafeUser();
+            if (!user || !currentSessionId) return;
+
+            // Görsel geri bildirim
+            const parent = btn.parentElement;
+            const buttons = parent.querySelectorAll('button');
+            buttons.forEach(b => b.classList.remove('text-green-500', 'text-red-500', 'opacity-100')); // Reset
+            
+            btn.classList.add(type === 'like' ? 'text-green-500' : 'text-red-500', 'opacity-100');
+
+            try {
+                await fetch('/api/feedback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: user.email,
+                        sessionId: currentSessionId,
+                        messageContent: messageContent,
+                        feedback: type
+                    })
+                });
+            } catch (err) {
+                console.error("Feedback error:", err);
+            }
+        }
+
+        function appendMessage(text, sender, animate = false) {
+            if (!welcomeScreen.classList.contains('hidden')) {
+                welcomeScreen.classList.add('hidden');
+            }
+
+            const isUser = sender === 'user';
+            const div = document.createElement('div');
+            div.className = `flex w-full ${isUser ? 'justify-end' : 'justify-start'} animate-fade-in-up`;
+            
+            const user = getSafeUser();
+            const userAvatar = (user && user.avatar) 
+                ? `<img src="${user.avatar}" class="w-8 h-8 rounded-full object-cover order-2 ml-2">`
+                : `<div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center order-2 ml-2"><i class="fa-solid fa-user text-gray-500 text-xs"></i></div>`;
+
+            const avatar = isUser 
+                ? userAvatar
+                : `<div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center order-1 mr-2"><i class="fa-solid fa-leaf text-white text-xs"></i></div>`;
+
+            const actionBtns = !isUser ? `
+                <div class="absolute -right-24 top-0 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-gray-800 p-1 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
+                    <button onclick="speakText('${escapeJS(text)}')" class="text-gray-400 hover:text-primary p-1" title="Sesli Oku">
+                        <i class="fa-solid fa-volume-high text-xs"></i>
+                    </button>
+                    <button onclick="copyToClipboard(this, '${escapeJS(text)}')" class="text-gray-400 hover:text-primary p-1" title="Kopyala">
+                        <i class="fa-regular fa-copy text-xs"></i>
+                    </button>
+                    <button onclick="sendFeedback(this, 'like', '${escapeJS(text)}')" class="text-gray-400 hover:text-green-500 p-1" title="Beğen">
+                        <i class="fa-regular fa-thumbs-up text-xs"></i>
+                    </button>
+                    <button onclick="sendFeedback(this, 'dislike', '${escapeJS(text)}')" class="text-gray-400 hover:text-red-500 p-1" title="Beğenme">
+                        <i class="fa-regular fa-thumbs-down text-xs"></i>
+                    </button>
+                </div>
+            ` : '';
+
+            const msgId = 'msg-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+
+            const bubble = `
+                <div class="max-w-[80%] md:max-w-[70%] ${isUser ? 'order-1' : 'order-2'} group relative">
+                    ${actionBtns}
+                    <div id="${msgId}" class="${isUser ? 'bg-primary text-white rounded-2xl rounded-tr-sm' : 'bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-gray-800 dark:text-gray-100 rounded-2xl rounded-tl-sm shadow-sm'} px-5 py-3.5 text-sm leading-relaxed whitespace-pre-wrap">
+                        ${animate ? '' : text}
+                    </div>
+                    <div class="text-[10px] text-gray-400 mt-1 ${isUser ? 'text-right' : 'text-left'}">
+                        ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                    </div>
+                </div>
+            `;
+
+            div.innerHTML = avatar + bubble;
+            chatContainer.appendChild(div);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+
+            if (animate) {
+                typeWriter(text, msgId);
+            }
+        }
+
+        function typeWriter(text, elementId) {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+            
+            // Metni kelimelere ve boşluklara ayır (satır sonlarını koru)
+            const parts = text.split(/(\s+)/);
+            let i = 0;
+            
+            function type() {
+                const el = document.getElementById(elementId);
+                if (!el) return; // Element silindiyse dur
+                
+                if (i < parts.length) {
+                    el.appendChild(document.createTextNode(parts[i]));
+                    i++;
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                    // Gerçekçi olması için rastgele gecikme (30ms - 70ms arası)
+                    setTimeout(type, 30 + Math.random() * 40);
+                }
+            }
+            type();
+        }
+
+        function showTyping() {
+            const div = document.createElement('div');
+            div.id = 'typing-indicator';
+            div.className = 'flex w-full justify-start';
+            div.innerHTML = `
+                <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center mr-2">
+                    <i class="fa-solid fa-leaf text-white text-xs"></i>
+                </div>
+                <div class="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl rounded-tl-sm shadow-sm px-4 py-4 flex items-center gap-1">
+                    <div class="w-2 h-2 bg-gray-400 rounded-full typing-dot"></div>
+                    <div class="w-2 h-2 bg-gray-400 rounded-full typing-dot"></div>
+                    <div class="w-2 h-2 bg-gray-400 rounded-full typing-dot"></div>
+                </div>
+            `;
+            chatContainer.appendChild(div);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function removeTyping() {
+            const typing = document.getElementById('typing-indicator');
+            if (typing) typing.remove();
+        }
+
+        // Sayfa Yüklendiğinde Başlat
+        document.addEventListener('DOMContentLoaded', () => {
+            // Elementleri Seç
+            chatContainer = document.getElementById('chat-container');
+            chatForm = document.getElementById('chat-form');
+            userInput = document.getElementById('user-input');
+            welcomeScreen = document.getElementById('welcome-screen');
+
+            // Enter Tuşu Dinleyicisi
+            if (userInput) {
+                userInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        if (chatForm) chatForm.requestSubmit();
+                    }
+                });
+            }
+
+            // Form Gönderim Dinleyicisi
+            if (chatForm) {
+                chatForm.addEventListener('submit', async (e) => {
+                    e.preventDefault(); // Sayfa yenilenmesini engelle
+                    
+                    const text = userInput.value.trim();
+                    if (!text) return;
+
+                    // User Message
+                    appendMessage(text, 'user');
+                    userInput.value = '';
+                    userInput.style.height = 'auto';
+
+                    // Simulate AI Response
+                    showTyping();
+                    
+                    const user = getSafeUser();
+
+                    try {
+                        const response = await fetch('/api/chat', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                message: text,
+                                history: messageHistory,
+                                email: user ? user.email : null,
+                                sessionId: currentSessionId
+                            })
+                        });
+
+                        const data = await response.json();
+                        removeTyping();
+                        
+                        if (data.response) {
+                            appendMessage(data.response, 'ai', true);
+                            messageHistory.push({ role: 'user', content: text });
+                            messageHistory.push({ role: 'assistant', content: data.response });
+                            
+                            // Eğer yeni bir seans başladıysa ID'yi güncelle ve listeyi yenile
+                            if (!currentSessionId && data.sessionId) {
+                                currentSessionId = data.sessionId;
+                                loadHistory();
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        removeTyping();
+                        appendMessage("Üzgünüm, bir bağlantı hatası oluştu.", 'ai');
+                    }
+                });
+            }
+
+            // Ayarlar Formu Dinleyicisi
+            const settingsForm = document.getElementById('settings-form');
+            if (settingsForm) {
+                settingsForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const newName = document.getElementById('settings-name').value.trim();
+                    const newAvatar = document.getElementById('settings-avatar').value.trim();
+                    const errorMsg = document.getElementById('settings-error');
+                    const user = getSafeUser();
+
+                    if (!/^[a-zA-Z0-9_.]+$/.test(newName)) {
+                        errorMsg.textContent = "Kullanıcı adı sadece harf, rakam, nokta ve alt çizgi içerebilir.";
+                        errorMsg.classList.remove('hidden');
+                        return;
+                    }
+
+                    try {
+                        const res = await fetch('/api/update-profile', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email: user.email, newName, newAvatar })
+                        });
+                        
+                        const data = await res.json();
+
+                        if (data.success) {
+                            storage.set('user', JSON.stringify(data.user));
+                            checkAuth();
+                            closeSettings();
+                        } else {
+                            errorMsg.textContent = data.error;
+                            errorMsg.classList.remove('hidden');
+                        }
+                    } catch (err) {
+                        errorMsg.textContent = "Bir hata oluştu.";
+                        errorMsg.classList.remove('hidden');
+                    }
+                });
+            }
+
+            // Başlangıç Kontrolleri
+            checkAuth();
+        });
+    </script>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden items-center justify-center z-50 backdrop-blur-sm">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-sm mx-4 shadow-2xl border border-gray-100 dark:border-gray-700">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white">Profili Düzenle</h3>
+                <button onclick="closeSettings()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form id="settings-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Kullanıcı Adı</label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-2.5 text-gray-400">@</span>
+                        <input type="text" id="settings-name" class="pl-8 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm" placeholder="kullanici_adi">
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">Sadece harf, rakam, nokta ve alt çizgi kullanabilirsiniz.</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Profil Resmi URL</label>
+                    <input type="url" id="settings-avatar" class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm" placeholder="https://example.com/avatar.jpg">
+                    <p class="text-xs text-gray-500 mt-1">İsteğe bağlı: Bir resim bağlantısı yapıştırın.</p>
+                </div>
+                <div id="settings-error" class="text-red-500 text-sm hidden"></div>
+                <div class="flex gap-3 pt-2">
+                    <button type="button" onclick="closeSettings()" class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors">İptal</button>
+                    <button type="submit" class="flex-1 px-4 py-2 bg-primary text-white rounded-xl hover:bg-teal-800 font-medium transition-colors">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+</body>
+</html>
