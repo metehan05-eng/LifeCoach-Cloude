@@ -6,7 +6,8 @@ import { fetchEventSource } from "@microsoft/fetch-event-source";
 import ChatInput from "./input";
 import ChatOuput from "./output";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+// Backend artık harici bir Cloudflare Worker. URL'yi buraya girin.
+const API_URL = "https://lifecoach-worker.YOUR_ACCOUNT.workers.dev";
 
 export default function Chat({ id, ...properties }) {
   const [messages, setMessages] = useState([]);
