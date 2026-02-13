@@ -1,20 +1,14 @@
 #!/bin/bash
 
-REPO_PATH="gitlab.com/hanshoperbas-group/lifecoachai.git"
+REPO_URL="https://github.com/metehan05-eng/LifeCoach-Cloude.git"
 
 echo "----------------------------------------------------------------"
-echo "GitLab Yükleme Aracı"
+echo "GitHub Yükleme Aracı"
+echo "Hedef: $REPO_URL"
 echo "----------------------------------------------------------------"
-echo "⚠️  GitLab artık şifre ile giriş kabul etmemektedir."
-echo "Lütfen oluşturduğunuz 'Personal Access Token'ı kullanın."
+echo "⚠️  ÖNEMLİ: GitHub şifre ile girişi kaldırmıştır."
+echo "Şifre sorulduğunda 'Personal Access Token' yapıştırmalısınız."
 echo "----------------------------------------------------------------"
-
-read -p "GitLab Kullanıcı Adınız: " GIT_USER
-read -s -p "GitLab Access Token (glpat-...): " GIT_TOKEN
-echo ""
-
-# Token içeren güvenli URL oluşturuluyor
-REPO_URL="https://${GIT_USER}:${GIT_TOKEN}@${REPO_PATH}"
 
 # 1. Git Başlatma
 if [ ! -d ".git" ]; then
@@ -35,13 +29,14 @@ git remote add origin "$REPO_URL"
 echo "🔗 Remote eklendi: origin -> $REPO_URL"
 
 # 3. Dosyaları Ekleme ve Commit
-echo "📦 Dosyalar ekleniyor (node_modules ve hassas dosyalar hariç)..."
+echo "📦 Dosyalar ekleniyor..."
 git add .
-git commit -m "Proje GitLab'a yüklendi" || echo "⚠️ Commit edilecek yeni değişiklik yok."
+git commit -m "Proje GitHub'a taşındı" || echo "⚠️ Commit edilecek yeni değişiklik yok."
 
 # 4. Push
-echo "🚀 GitLab'a gönderiliyor..."
-echo "👉 Not: Giriş yapmanız gerekebilir."
+echo "🚀 GitHub'a gönderiliyor..."
+echo "👉 Kullanıcı Adı: metehan05-eng"
+echo "👉 Şifre: (Token'ınızı yapıştırın)"
 git push -u origin main
 
 echo "----------------------------------------------------------------"
