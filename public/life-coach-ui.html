@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -61,23 +61,23 @@
         <div class="p-4">
             <button onclick="startNewChat()" class="w-full bg-primary hover:bg-teal-800 text-white py-3 px-4 rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 font-medium">
                 <i class="fa-solid fa-plus"></i>
-                Yeni Seans
+                New Session
             </button>
             <button onclick="exportChat()" class="w-full mt-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 py-3 px-4 rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 font-medium text-sm">
                 <i class="fa-solid fa-download"></i>
-                Sohbeti İndir (.txt)
+                Export Chat (.txt)
             </button>
         </div>
 
         <div class="px-4 pb-2">
             <div class="relative">
                 <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs"></i>
-                <input type="text" id="history-search" onkeyup="filterHistory()" placeholder="Geçmişte ara..." class="w-full bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg pl-8 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all">
+                <input type="text" id="history-search" onkeyup="filterHistory()" placeholder="Search history..." class="w-full bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg pl-8 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all">
             </div>
         </div>
 
         <div class="flex-1 overflow-y-auto px-4 space-y-2" id="history-list">
-            <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 mt-2">Geçmiş Seanslar</div>
+            <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 mt-2">Past Sessions</div>
             <!-- History items will be injected here -->
         </div>
 
@@ -108,18 +108,18 @@
                 <div class="w-16 h-16 bg-secondary rounded-2xl flex items-center justify-center mb-2">
                     <i class="fa-solid fa-hands-holding-circle text-3xl text-primary"></i>
                 </div>
-                <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Merhaba, bugün nasıl hissediyorsun?</h2>
-                <p class="text-gray-500 dark:text-gray-400 max-w-md">Senin kişisel yaşam koçun olarak buradayım. Hedeflerin, endişelerin veya sadece sohbet etmek için bana yazabilirsin.</p>
+                <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Hello, how are you feeling today?</h2>
+                <p class="text-gray-500 dark:text-gray-400 max-w-md">I am here as your personal life coach. You can write to me about your goals, concerns, or just to chat.</p>
                 
                 <!-- Prompt Templates (Referencing the context of prompt-templates) -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-2xl mt-8">
-                    <button onclick="useTemplate('Sabah rutinimi nasıl daha verimli hale getirebilirim?')" class="p-4 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-primary hover:bg-accent dark:hover:bg-gray-800 text-left transition-all group">
-                        <span class="block font-medium text-gray-700 dark:text-gray-200 group-hover:text-primary mb-1">🌅 Sabah Rutini</span>
-                        <span class="text-sm text-gray-500">Güne daha enerjik başlamak için öneriler.</span>
+                    <button onclick="useTemplate('How can I make my morning routine more efficient?')" class="p-4 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-primary hover:bg-accent dark:hover:bg-gray-800 text-left transition-all group">
+                        <span class="block font-medium text-gray-700 dark:text-gray-200 group-hover:text-primary mb-1">🌅 Morning Routine</span>
+                        <span class="text-sm text-gray-500">Suggestions to start the day with more energy.</span>
                     </button>
-                    <button onclick="useTemplate('Erteleme alışkanlığıyla nasıl başa çıkabilirim?')" class="p-4 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-primary hover:bg-accent dark:hover:bg-gray-800 text-left transition-all group">
-                        <span class="block font-medium text-gray-700 dark:text-gray-200 group-hover:text-primary mb-1">⏳ Erteleme</span>
-                        <span class="text-sm text-gray-500">Odaklanma ve üretkenlik stratejileri.</span>
+                    <button onclick="useTemplate('How can I deal with procrastination?')" class="p-4 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-primary hover:bg-accent dark:hover:bg-gray-800 text-left transition-all group">
+                        <span class="block font-medium text-gray-700 dark:text-gray-200 group-hover:text-primary mb-1">⏳ Procrastination</span>
+                        <span class="text-sm text-gray-500">Focus and productivity strategies.</span>
                     </button>
                 </div>
             </div>
@@ -134,11 +134,11 @@
                     <textarea 
                         id="user-input" 
                         rows="1" 
-                        placeholder="Buraya yazın..." 
+                        placeholder="Type here..." 
                         class="w-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white dark:placeholder-gray-400 rounded-xl px-4 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-white dark:focus:bg-gray-600 transition-all resize-none max-h-32"
                         oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"
                     ></textarea>
-                    <button type="button" id="mic-btn" onclick="toggleDictation()" class="absolute right-3 bottom-3 text-gray-400 hover:text-gray-600 transition-colors" title="Sesli Yaz">
+                    <button type="button" id="mic-btn" onclick="toggleDictation()" class="absolute right-3 bottom-3 text-gray-400 hover:text-gray-600 transition-colors" title="Voice Type">
                         <i class="fa-solid fa-microphone"></i>
                     </button>
                 </div>
@@ -147,12 +147,17 @@
                 </button>
             </form>
             <div class="text-center mt-2">
-                <p class="text-xs text-gray-400">LifeCoach AI kişisel gelişim amaçlıdır, tıbbi tavsiye vermez.</p>
+                <p class="text-xs text-gray-400">LifeCoach AI is for personal development purposes and does not provide medical advice.</p>
             </div>
         </div>
     </main>
 
     <script>
+        // Sayfa yüklenirken güvenlik kontrolü: Token yoksa Login'e at
+        if (!localStorage.getItem('token')) {
+            window.location.href = '/login';
+        }
+
         function escapeJS(str) {
             if (str === null || str === undefined) return '';
             // onclick içerisindeki string'i bozacak karakterlerden kaçış
@@ -220,9 +225,10 @@
         // Auth Kontrolü
         function checkAuth() {
             const user = getSafeUser();
+            const token = storage.get('token');
             const authContainer = document.getElementById('auth-container');
             
-            if (user) {
+            if (user && token) {
                 const avatarHtml = user.avatar 
                     ? `<img src="${user.avatar}" alt="${user.name}" class="w-9 h-9 rounded-full object-cover border border-gray-200 dark:border-gray-600">`
                     : `<div class="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-bold">${user.name.charAt(0).toUpperCase()}</div>`;
@@ -236,13 +242,13 @@
                             <p class="text-xs text-gray-500 truncate">${user.email}</p>
                         </div>
                         <div class="flex items-center gap-1">
-                            <button onclick="toggleDarkMode()" class="p-1.5 text-gray-400 hover:text-yellow-500 rounded-md hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors" title="Karanlık Mod">
+                            <button onclick="toggleDarkMode()" class="p-1.5 text-gray-400 hover:text-yellow-500 rounded-md hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors" title="Dark Mode">
                                 <i class="fa-solid ${document.documentElement.classList.contains('dark') ? 'fa-sun' : 'fa-moon'}"></i>
                             </button>
-                            <button onclick="openSettings()" class="p-1.5 text-gray-400 hover:text-primary rounded-md hover:bg-gray-100 transition-colors" title="Ayarlar">
+                            <button onclick="openSettings()" class="p-1.5 text-gray-400 hover:text-primary rounded-md hover:bg-gray-100 transition-colors" title="Settings">
                                 <i class="fa-solid fa-gear"></i>
                             </button>
-                            <button onclick="logout()" class="p-1.5 text-gray-400 hover:text-red-500 rounded-md hover:bg-gray-100 transition-colors" title="Çıkış">
+                            <button onclick="logout()" class="p-1.5 text-gray-400 hover:text-red-500 rounded-md hover:bg-gray-100 transition-colors" title="Logout">
                                 <i class="fa-solid fa-right-from-bracket"></i>
                             </button>
                         </div>
@@ -250,20 +256,18 @@
                 `;
                 
                 if (!welcomeShown) {
-                    showToast(`Hoşgeldin, ${user.name}! 👋✨`);
+                    showToast(`Welcome, ${user.name}! 👋✨`);
                     welcomeShown = true;
                 }
                 loadHistory(); // Kullanıcı giriş yaptıysa geçmişi yükle
             } else {
-                authContainer.innerHTML = `
-                    <button onclick="window.location.href='/login'" class="w-full mb-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 py-2.5 px-4 rounded-xl transition-all text-sm font-medium">Giriş Yap</button>
-                    <button onclick="window.location.href='/signup'" class="w-full bg-primary hover:bg-teal-800 text-white py-2.5 px-4 rounded-xl shadow-sm transition-all text-sm font-medium">Kayıt Ol</button>
-                `;
+                window.location.href = '/login';
             }
         }
 
         function logout() {
             storage.remove('user');
+            storage.remove('token');
             window.location.reload();
         }
 
@@ -305,13 +309,17 @@
 
         async function loadHistory() {
             const user = getSafeUser();
-            if (!user) return;
+            const token = storage.get('token');
+            if (!user || !token) return;
 
             try {
                 const res = await fetch('/api/history', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: user.email })
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({})
                 });
                 const sessions = await res.json();
                 
@@ -320,10 +328,10 @@
                 
                 // Gruplama Mantığı
                 const groups = {
-                    'Bugün': [],
-                    'Dün': [],
-                    'Bu Hafta': [],
-                    'Geçmiş': []
+                    'Today': [],
+                    'Yesterday': [],
+                    'This Week': [],
+                    'Older': []
                 };
 
                 const now = new Date();
@@ -336,13 +344,13 @@
 
                 sessions.forEach(session => {
                     if (session.id >= todayStart) {
-                        groups['Bugün'].push(session);
+                        groups['Today'].push(session);
                     } else if (session.id >= yesterdayStart) {
-                        groups['Dün'].push(session);
+                        groups['Yesterday'].push(session);
                     } else if (session.id >= weekStart) {
-                        groups['Bu Hafta'].push(session);
+                        groups['This Week'].push(session);
                     } else {
-                        groups['Geçmiş'].push(session);
+                        groups['Older'].push(session);
                     }
                 });
 
@@ -362,7 +370,7 @@
                                 <i class="fa-regular fa-message text-gray-400 group-hover:text-primary flex-shrink-0"></i>
                                 <div class="truncate text-sm text-gray-600 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white">${session.title}</div>
                             </button>
-                            <button onclick="deleteSession(${session.id})" class="p-2 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity" title="Sil"><i class="fa-solid fa-trash"></i></button>
+                            <button onclick="deleteSession(${session.id})" class="p-2 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity" title="Delete"><i class="fa-solid fa-trash"></i></button>
                         `;
                         historyList.appendChild(div);
                     });
@@ -403,13 +411,17 @@
 
         async function loadSession(sessionId) {
             const user = getSafeUser();
-            if (!user) return;
+            const token = storage.get('token');
+            if (!user || !token) return;
 
             try {
                 const res = await fetch('/api/get-session', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: user.email, sessionId })
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ sessionId })
                 });
                 const session = await res.json();
                 
@@ -427,14 +439,17 @@
         }
 
         async function deleteSession(sessionId) {
-            const user = getSafeUser();
-            if (!confirm("Bu seansı silmek istediğinize emin misiniz?")) return;
+            const token = storage.get('token');
+            if (!confirm("Are you sure you want to delete this session?")) return;
 
             try {
                 const res = await fetch('/api/delete-session', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: user.email, sessionId })
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ sessionId })
                 });
                 const data = await res.json();
                 if (data.success) {
@@ -484,7 +499,7 @@
 
         function toggleDictation() {
             if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-                alert("Tarayıcınız sesli yazdırmayı desteklemiyor.");
+                alert("Your browser does not support voice typing.");
                 return;
             }
 
@@ -518,16 +533,16 @@
 
         function exportChat() {
             if (messageHistory.length === 0) {
-                alert("Dışa aktarılacak bir sohbet geçmişi yok.");
+                alert("No chat history to export.");
                 return;
             }
 
-            let textContent = "LifeCoach AI - Sohbet Geçmişi\n";
-            textContent += "Tarih: " + new Date().toLocaleString() + "\n";
+            let textContent = "LifeCoach AI - Chat History\n";
+            textContent += "Date: " + new Date().toLocaleString() + "\n";
             textContent += "----------------------------------------\n\n";
 
             messageHistory.forEach(msg => {
-                const role = msg.role === 'user' ? 'Siz' : 'LifeCoach AI';
+                const role = msg.role === 'user' ? 'You' : 'LifeCoach AI';
                 textContent += `[${role}]:\n${msg.content}\n\n`;
             });
 
@@ -542,8 +557,8 @@
         }
 
         async function sendFeedback(btn, type, messageContent) {
-            const user = getSafeUser();
-            if (!user || !currentSessionId) return;
+            const token = storage.get('token');
+            if (!token || !currentSessionId) return;
 
             // Görsel geri bildirim
             const parent = btn.parentElement;
@@ -555,9 +570,11 @@
             try {
                 await fetch('/api/feedback', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
                     body: JSON.stringify({
-                        email: user.email,
                         sessionId: currentSessionId,
                         messageContent: messageContent,
                         feedback: type
@@ -588,16 +605,16 @@
 
             const actionBtns = !isUser ? `
                 <div class="absolute -right-24 top-0 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-gray-800 p-1 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
-                    <button onclick="speakText('${escapeJS(text)}')" class="text-gray-400 hover:text-primary p-1" title="Sesli Oku">
+                    <button onclick="speakText('${escapeJS(text)}')" class="text-gray-400 hover:text-primary p-1" title="Read Aloud">
                         <i class="fa-solid fa-volume-high text-xs"></i>
                     </button>
-                    <button onclick="copyToClipboard(this, '${escapeJS(text)}')" class="text-gray-400 hover:text-primary p-1" title="Kopyala">
+                    <button onclick="copyToClipboard(this, '${escapeJS(text)}')" class="text-gray-400 hover:text-primary p-1" title="Copy">
                         <i class="fa-regular fa-copy text-xs"></i>
                     </button>
-                    <button onclick="sendFeedback(this, 'like', '${escapeJS(text)}')" class="text-gray-400 hover:text-green-500 p-1" title="Beğen">
+                    <button onclick="sendFeedback(this, 'like', '${escapeJS(text)}')" class="text-gray-400 hover:text-green-500 p-1" title="Like">
                         <i class="fa-regular fa-thumbs-up text-xs"></i>
                     </button>
-                    <button onclick="sendFeedback(this, 'dislike', '${escapeJS(text)}')" class="text-gray-400 hover:text-red-500 p-1" title="Beğenme">
+                    <button onclick="sendFeedback(this, 'dislike', '${escapeJS(text)}')" class="text-gray-400 hover:text-red-500 p-1" title="Dislike">
                         <i class="fa-regular fa-thumbs-down text-xs"></i>
                     </button>
                 </div>
@@ -706,16 +723,18 @@
                     // Simulate AI Response
                     showTyping();
                     
-                    const user = getSafeUser();
+                    const token = storage.get('token');
 
                     try {
+                        const headers = { 'Content-Type': 'application/json' };
+                        if (token) headers['Authorization'] = `Bearer ${token}`;
+
                         const response = await fetch('/api/chat', {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
+                            headers: headers,
                             body: JSON.stringify({
                                 message: text,
                                 history: messageHistory,
-                                email: user ? user.email : null,
                                 sessionId: currentSessionId
                             })
                         });
@@ -737,7 +756,7 @@
                     } catch (error) {
                         console.error('Error:', error);
                         removeTyping();
-                        appendMessage("Üzgünüm, bir bağlantı hatası oluştu.", 'ai');
+                        appendMessage("Sorry, a connection error occurred.", 'ai');
                     }
                 });
             }
@@ -753,7 +772,7 @@
                     const user = getSafeUser();
 
                     if (!/^[a-zA-Z0-9_.]+$/.test(newName)) {
-                        errorMsg.textContent = "Kullanıcı adı sadece harf, rakam, nokta ve alt çizgi içerebilir.";
+                        errorMsg.textContent = "Username can only contain letters, numbers, dots and underscores.";
                         errorMsg.classList.remove('hidden');
                         return;
                     }
@@ -776,7 +795,7 @@
                             errorMsg.classList.remove('hidden');
                         }
                     } catch (err) {
-                        errorMsg.textContent = "Bir hata oluştu.";
+                        errorMsg.textContent = "An error occurred.";
                         errorMsg.classList.remove('hidden');
                     }
                 });
@@ -791,29 +810,29 @@
     <div id="settings-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden items-center justify-center z-50 backdrop-blur-sm">
         <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-sm mx-4 shadow-2xl border border-gray-100 dark:border-gray-700">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold text-gray-900 dark:text-white">Profili Düzenle</h3>
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white">Edit Profile</h3>
                 <button onclick="closeSettings()" class="text-gray-400 hover:text-gray-600">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
             <form id="settings-form" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Kullanıcı Adı</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Username</label>
                     <div class="relative">
                         <span class="absolute left-3 top-2.5 text-gray-400">@</span>
                         <input type="text" id="settings-name" class="pl-8 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm" placeholder="kullanici_adi">
                     </div>
-                    <p class="text-xs text-gray-500 mt-1">Sadece harf, rakam, nokta ve alt çizgi kullanabilirsiniz.</p>
+                    <p class="text-xs text-gray-500 mt-1">Only letters, numbers, dots, and underscores allowed.</p>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Profil Resmi URL</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Avatar URL</label>
                     <input type="url" id="settings-avatar" class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm" placeholder="https://example.com/avatar.jpg">
-                    <p class="text-xs text-gray-500 mt-1">İsteğe bağlı: Bir resim bağlantısı yapıştırın.</p>
+                    <p class="text-xs text-gray-500 mt-1">Optional: Paste an image link.</p>
                 </div>
                 <div id="settings-error" class="text-red-500 text-sm hidden"></div>
                 <div class="flex gap-3 pt-2">
-                    <button type="button" onclick="closeSettings()" class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors">İptal</button>
-                    <button type="submit" class="flex-1 px-4 py-2 bg-primary text-white rounded-xl hover:bg-teal-800 font-medium transition-colors">Kaydet</button>
+                    <button type="button" onclick="closeSettings()" class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors">Cancel</button>
+                    <button type="submit" class="flex-1 px-4 py-2 bg-primary text-white rounded-xl hover:bg-teal-800 font-medium transition-colors">Save</button>
                 </div>
             </form>
         </div>

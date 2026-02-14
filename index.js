@@ -4,6 +4,8 @@ import cors from 'cors';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import { getKVData, setKVData } from './lib/db.js';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 
 // __dirname ES Module çözümü
 const __filename = fileURLToPath(import.meta.url);
@@ -27,19 +29,28 @@ const OPENROUTER_MODELS = [
     "openrouter/free"
 ];
 
+const JWT_SECRET = process.env.JWT_SECRET || 'gizli-anahtar-degistir';
+
 // --- YARDIMCI FONKSİYONLAR ---
+
+// Middleware: Token Doğrulama
+const authenticateToken = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    if (!token) return res.status(401).json({ error: "Giriş yapmanız gerekiyor." });
+
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+        if (err) return res.status(403).json({ error: "Oturum geçersiz." });
+        req.user = user;
+        next();
+    });
+};
 
 // Limit Kontrolü (Vercel KV)
 async function checkRateLimit(req) {
     try {
-        let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
-        if (Array.isArray(ip)) ip = ip[0];
-        if (ip.includes(',')) ip = ip.split(',')[0].trim();
-
-        // IP + UserAgent + Fingerprint Hash
-        const ua = req.headers['user-agent'] || 'unknown';
-        const fingerprint = req.body.fingerprintID || 'none';
-        const identity = crypto.createHash('sha256').update(`${ip}-${ua}-${fingerprint}`).digest('hex');
+        if (!req.user || !req.user.email) return { allowed: false, error: "Kimlik doğrulanamadı." };
+        const identity = `limit:${req.user.email}`;
 
         // KV'den limitleri çek
         const limits = await getKVData('user_limits');
@@ -109,9 +120,10 @@ async function callOpenRouter(messages) {
 // --- API ROTALARI ---
 
 // 1. Chat API
-app.post('/api/chat', async (req, res) => {
+app.post('/api/chat', authenticateToken, async (req, res) => {
     try {
-        const { message, history, email, sessionId, fingerprintID } = req.body;
+        const { message, history, sessionId } = req.body;
+        const email = req.user.email;
 
         // Limit Kontrolü
         const limitStatus = await checkRateLimit(req);
@@ -172,7 +184,8 @@ app.post('/api/register', async (req, res) => {
             return res.status(400).json({ error: "Bu email zaten kayıtlı." });
         }
 
-        const newUser = { id: Date.now(), name, email, password };
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const newUser = { id: Date.now(), name, email, password: hashedPassword, sessions: [] };
         users.push(newUser);
         await setKVData('users', users);
 
@@ -187,9 +200,12 @@ app.post('/api/login', async (req, res) => {
     try {
         const { email, password } = req.body;
         const users = await getKVData('users');
-        const user = users.find(u => u.email === email && u.password === password);
+        const user = users.find(u => u.email === email);
 
-        if (user) res.json({ success: true, user: { name: user.name, email: user.email } });
+        if (user && await bcrypt.compare(password, user.password)) {
+            const token = jwt.sign({ email: user.email, name: user.name }, JWT_SECRET, { expiresIn: '24h' });
+            res.json({ success: true, token, user: { name: user.name, email: user.email } });
+        }
         else res.status(401).json({ error: "Hatalı email veya şifre." });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -197,9 +213,9 @@ app.post('/api/login', async (req, res) => {
 });
 
 // 4. History API
-app.post('/api/history', async (req, res) => {
+app.post('/api/history', authenticateToken, async (req, res) => {
     try {
-        const { email } = req.body;
+        const email = req.user.email;
         const users = await getKVData('users');
         const user = users.find(u => u.email === email);
         
@@ -214,9 +230,10 @@ app.post('/api/history', async (req, res) => {
 });
 
 // 5. Get Session API
-app.post('/api/get-session', async (req, res) => {
+app.post('/api/get-session', authenticateToken, async (req, res) => {
     try {
-        const { email, sessionId } = req.body;
+        const { sessionId } = req.body;
+        const email = req.user.email;
         const users = await getKVData('users');
         const user = users.find(u => u.email === email);
         
