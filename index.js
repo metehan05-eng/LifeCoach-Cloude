@@ -28,7 +28,10 @@ const OPENROUTER_MODELS = [
     "qwen/qwen3-next-80b-a3b-instruct:free",
     "google/gemma-3-27b-it:free",
     "openrouter/free",
-    "openai/gpt-oss-120b:free"
+    "openai/gpt-oss-120b:free",
+    "mistralai/mistral-small-3.1-24b-instruct:free",
+    "z-ai/glm-4.5-air:free"
+
 ];
 
 const JWT_SECRET = process.env.JWT_SECRET || 'gizli-anahtar-degistir';
