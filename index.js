@@ -140,6 +140,13 @@ app.post('/api/chat', authenticateToken, async (req, res) => {
         if (!limitStatus.allowed) {
             return res.status(429).json(limitStatus);
         }
+        
+        // Kullanıcı hedeflerini çek (Context için)
+        const users = await getKVData('users');
+        const currentUser = users.find(u => u.email === email);
+        const activeGoals = currentUser && currentUser.goals ? currentUser.goals.filter(g => g.status === 'active') : [];
+        
+        const goalContext = activeGoals.length > 0 ? `\n\nCURRENT USER ACTIVE GOALS (Keep these in mind):\n${activeGoals.map(g => `- ${g.title}`).join('\n')}` : "";
 
         // Sistem Promptu
         const systemPrompt = `You are LifeCoach AI.
@@ -292,7 +299,8 @@ LifeCoach AI does not replace human relationships.
 LifeCoach AI supports growth.
 
 Core philosophy:
-"You are not behind. You are building."`;
+"You are not behind. You are building."
+${goalContext}`;
 
         // AI Cevabı
         const aiResponse = await callOpenRouter([
@@ -304,7 +312,7 @@ Core philosophy:
         // Veritabanı Kaydı (Kullanıcı varsa)
         let newSessionId = sessionId;
         if (email) {
-            const users = await getKVData('users');
+            // users dizisi yukarıda çekilmişti, tekrar çekmeye gerek yok ama güncel hali için index bulalım
             const userIndex = users.findIndex(u => u.email === email);
 
             if (userIndex !== -1) {
@@ -398,6 +406,48 @@ app.post('/api/get-session', authenticateToken, async (req, res) => {
             if (session) return res.json(session);
         }
         res.status(404).json({ error: "Seans bulunamadı." });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 6. Goals API (Yeni Özellik: Hedef Takibi)
+app.get('/api/goals', authenticateToken, async (req, res) => {
+    try {
+        const email = req.user.email;
+        const users = await getKVData('users');
+        const user = users.find(u => u.email === email);
+        
+        res.json(user && user.goals ? user.goals : []);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.post('/api/goals', authenticateToken, async (req, res) => {
+    try {
+        const { title, action } = req.body; // action: 'add', 'complete', 'delete'
+        const email = req.user.email;
+        const users = await getKVData('users');
+        const userIndex = users.findIndex(u => u.email === email);
+
+        if (userIndex === -1) return res.status(404).json({ error: "Kullanıcı bulunamadı." });
+
+        if (!users[userIndex].goals) users[userIndex].goals = [];
+
+        if (action === 'add') {
+            users[userIndex].goals.push({ id: Date.now(), title, status: 'active', createdAt: Date.now() });
+        } else if (action === 'complete' || action === 'delete') {
+            const { id } = req.body;
+            const goalIndex = users[userIndex].goals.findIndex(g => g.id == id);
+            if (goalIndex !== -1) {
+                if (action === 'delete') users[userIndex].goals.splice(goalIndex, 1);
+                else users[userIndex].goals[goalIndex].status = 'completed';
+            }
+        }
+        
+        await setKVData('users', users);
+        res.json({ success: true, goals: users[userIndex].goals });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
