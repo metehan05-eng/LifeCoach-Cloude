@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -61,23 +61,23 @@
         <div class="p-4">
             <button onclick="startNewChat()" class="w-full bg-primary hover:bg-teal-800 text-white py-3 px-4 rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 font-medium">
                 <i class="fa-solid fa-plus"></i>
-                New Session
+                Yeni Oturum
             </button>
             <button onclick="exportChat()" class="w-full mt-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 py-3 px-4 rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 font-medium text-sm">
                 <i class="fa-solid fa-download"></i>
-                Export Chat (.txt)
+                Sohbeti Dışa Aktar (.txt)
             </button>
         </div>
 
         <div class="px-4 pb-2">
             <div class="relative">
                 <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs"></i>
-                <input type="text" id="history-search" onkeyup="filterHistory()" placeholder="Search history..." class="w-full bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg pl-8 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all">
+                <input type="text" id="history-search" onkeyup="filterHistory()" placeholder="Geçmişi ara..." class="w-full bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg pl-8 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all">
             </div>
         </div>
 
         <div class="flex-1 overflow-y-auto px-4 space-y-2" id="history-list">
-            <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 mt-2">Past Sessions</div>
+            <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 mt-2">Geçmiş Oturumlar</div>
             <!-- History items will be injected here -->
         </div>
 
@@ -108,18 +108,18 @@
                 <div class="w-16 h-16 bg-secondary rounded-2xl flex items-center justify-center mb-2">
                     <i class="fa-solid fa-hands-holding-circle text-3xl text-primary"></i>
                 </div>
-                <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Hello, how are you feeling today?</h2>
-                <p class="text-gray-500 dark:text-gray-400 max-w-md">I am here as your personal life coach. You can write to me about your goals, concerns, or just to chat.</p>
+                <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Merhaba, bugün nasılsın?</h2>
+                <p class="text-gray-500 dark:text-gray-400 max-w-md">Kişisel yaşam koçunuz olarak buradayım. Hedefleriniz, endişeleriniz hakkında veya sadece sohbet etmek için bana yazabilirsiniz.</p>
                 
                 <!-- Prompt Templates (Referencing the context of prompt-templates) -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-2xl mt-8">
-                    <button onclick="useTemplate('How can I make my morning routine more efficient?')" class="p-4 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-primary hover:bg-accent dark:hover:bg-gray-800 text-left transition-all group">
-                        <span class="block font-medium text-gray-700 dark:text-gray-200 group-hover:text-primary mb-1">🌅 Morning Routine</span>
-                        <span class="text-sm text-gray-500">Suggestions to start the day with more energy.</span>
+                    <button onclick="useTemplate('Sabah rutinim nasıl daha verimli hale getirebilirim?')" class="p-4 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-primary hover:bg-accent dark:hover:bg-gray-800 text-left transition-all group">
+                        <span class="block font-medium text-gray-700 dark:text-gray-200 group-hover:text-primary mb-1">🌅 Sabah Rutini</span>
+                        <span class="text-sm text-gray-500">Günü daha enerjik başlamak için öneriler.</span>
                     </button>
-                    <button onclick="useTemplate('How can I deal with procrastination?')" class="p-4 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-primary hover:bg-accent dark:hover:bg-gray-800 text-left transition-all group">
-                        <span class="block font-medium text-gray-700 dark:text-gray-200 group-hover:text-primary mb-1">⏳ Procrastination</span>
-                        <span class="text-sm text-gray-500">Focus and productivity strategies.</span>
+                    <button onclick="useTemplate('Ertelemecilikle nasıl başa çıkabilirim?')" class="p-4 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-primary hover:bg-accent dark:hover:bg-gray-800 text-left transition-all group">
+                        <span class="block font-medium text-gray-700 dark:text-gray-200 group-hover:text-primary mb-1">⏳ Ertelemecilik</span>
+                        <span class="text-sm text-gray-500">Odaklanma ve verimlilik stratejileri.</span>
                     </button>
                 </div>
             </div>
@@ -134,7 +134,7 @@
                     <textarea 
                         id="user-input" 
                         rows="1" 
-                        placeholder="Type here..." 
+                        placeholder="Buraya yazın..."
                         class="w-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white dark:placeholder-gray-400 rounded-xl px-4 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-white dark:focus:bg-gray-600 transition-all resize-none max-h-32"
                         oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"
                     ></textarea>
@@ -147,7 +147,7 @@
                 </button>
             </form>
             <div class="text-center mt-2">
-                <p class="text-xs text-gray-400">LifeCoach AI is for personal development purposes and does not provide medical advice.</p>
+                <p class="text-xs text-gray-400">LifeCoach AI kişisel gelişim amaçlıdır ve tıbbi tavsiye sağlamaz.</p>
             </div>
         </div>
     </main>
@@ -256,7 +256,7 @@
                 `;
                 
                 if (!welcomeShown) {
-                    showToast(`Welcome, ${user.name}! 👋✨`);
+                    showToast(`Hoş geldin, ${user.name}! 👋✨`);
                     welcomeShown = true;
                 }
                 loadHistory(); // Kullanıcı giriş yaptıysa geçmişi yükle
@@ -328,10 +328,10 @@
                 
                 // Gruplama Mantığı
                 const groups = {
-                    'Today': [],
-                    'Yesterday': [],
-                    'This Week': [],
-                    'Older': []
+                    'Bugün': [],
+                    'Dün': [],
+                    'Bu Hafta': [],
+                    'Daha Eski': []
                 };
 
                 const now = new Date();
@@ -344,13 +344,13 @@
 
                 sessions.forEach(session => {
                     if (session.id >= todayStart) {
-                        groups['Today'].push(session);
+                        groups['Bugün'].push(session);
                     } else if (session.id >= yesterdayStart) {
-                        groups['Yesterday'].push(session);
+                        groups['Dün'].push(session);
                     } else if (session.id >= weekStart) {
-                        groups['This Week'].push(session);
+                        groups['Bu Hafta'].push(session);
                     } else {
-                        groups['Older'].push(session);
+                        groups['Daha Eski'].push(session);
                     }
                 });
 
@@ -440,7 +440,7 @@
 
         async function deleteSession(sessionId) {
             const token = storage.get('token');
-            if (!confirm("Are you sure you want to delete this session?")) return;
+            if (!confirm("Bu oturumu silmek istediğinizden emin misiniz?")) return;
 
             try {
                 const res = await fetch('/api/delete-session', {
