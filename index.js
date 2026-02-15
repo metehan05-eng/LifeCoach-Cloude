@@ -30,7 +30,12 @@ const OPENROUTER_MODELS = [
     "openrouter/free",
     "openai/gpt-oss-120b:free",
     "mistralai/mistral-small-3.1-24b-instruct:free",
-    "z-ai/glm-4.5-air:free"
+    "z-ai/glm-4.5-air:free",
+    "meta-llama/llama-3.1-8b-instruct:free",
+    "nvidia/nemotron-nano-9b-v2:free",
+    "nvidia/nemotron-nano-12b-v2-vl:free",
+    "upstage/solar-pro-3:free",
+    "openrouter/aurora-alpha"
 
 ];
 
