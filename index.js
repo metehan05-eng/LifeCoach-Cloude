@@ -394,6 +394,63 @@ app.post('/api/get-session', authenticateToken, async (req, res) => {
     }
 });
 
+// 6. Forgot Password APIs
+
+// PIN Gönder
+app.post('/api/send-pin', async (req, res) => {
+    try {
+        const { email } = req.body;
+        const users = await getKVData('users');
+        const user = users.find(u => u.email === email);
+        
+        if (!user) return res.status(404).json({ error: "Bu e-posta adresiyle kayıtlı kullanıcı bulunamadı." });
+
+        // 6 haneli PIN oluştur
+        const pin = Math.floor(100000 + Math.random() * 900000).toString();
+        const expires = Date.now() + 3 * 60 * 1000; // 3 dakika geçerli
+
+        // PIN'i kaydet (password_resets tablosu)
+        const resets = await getKVData('password_resets') || {};
+        resets[email] = { pin, expires };
+        await setKVData('password_resets', resets);
+
+        console.log(`\n[SİSTEM] ${email} için oluşturulan PIN Kodu: ${pin}\n`); // Konsola yazdır (Email servisi olmadığı için)
+
+        res.json({ success: true, message: "PIN kodu gönderildi." });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Şifre Sıfırla (PIN Doğrulamalı)
+app.post('/api/reset-password-confirm', async (req, res) => {
+    try {
+        const { email, pin, newPassword } = req.body;
+        
+        const resets = await getKVData('password_resets') || {};
+        const record = resets[email];
+
+        if (!record) return res.status(400).json({ error: "PIN talebi bulunamadı." });
+        if (Date.now() > record.expires) return res.status(400).json({ error: "PIN kodunun süresi doldu. Lütfen tekrar gönderin." });
+        if (record.pin !== pin) return res.status(400).json({ error: "Hatalı PIN kodu." });
+
+        const users = await getKVData('users');
+        const userIndex = users.findIndex(u => u.email === email);
+        
+        if (userIndex !== -1) {
+            users[userIndex].password = await bcrypt.hash(newPassword, 10);
+            await setKVData('users', users);
+            delete resets[email]; // Kullanılan PIN'i sil
+            await setKVData('password_resets', resets);
+            res.json({ success: true });
+        } else {
+            res.status(404).json({ error: "Kullanıcı bulunamadı." });
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // --- SAYFA YÖNLENDİRMELERİ (Frontend) ---
 
 app.get('/', (req, res) => {
@@ -406,6 +463,10 @@ app.get('/login', (req, res) => {
 
 app.get('/signup', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'signup.html'));
+});
+
+app.get('/forgot-password', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'forgot-password.html'));
 });
 
 // Sunucuyu Başlat
