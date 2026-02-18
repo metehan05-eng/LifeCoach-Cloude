@@ -45,6 +45,12 @@
             0%, 80%, 100% { transform: scale(0); }
             40% { transform: scale(1); }
         }
+        @keyframes star-upgrade {
+            0% { transform: scale(1) rotate(0deg); color: #FBBF24; }
+            50% { transform: scale(1.5) rotate(180deg); color: #FEF9C3; }
+            100% { transform: scale(1) rotate(360deg); color: #FBBF24; }
+        }
+        .star-upgraded { animation: star-upgrade 0.6s ease-in-out; }
     </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 h-screen flex overflow-hidden font-sans text-slate-800 dark:text-gray-100 transition-colors duration-200">
@@ -67,6 +73,23 @@
                 <i class="fa-solid fa-download"></i>
                 Sohbeti Dışa Aktar (.txt)
             </button>
+        </div>
+
+        <!-- Discipline Badge -->
+        <div class="px-4 py-2">
+            <div id="discipline-badge" class="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl p-4 text-center hidden">
+                <div class="flex justify-center items-center gap-2 mb-2">
+                    <i class="fa-solid fa-shield-halved text-primary"></i>
+                    <h3 class="font-bold text-gray-800 dark:text-white">DISCIPLINE CORE</h3>
+                </div>
+                <div id="badge-stars" class="flex justify-center text-xl text-amber-400 mb-3">
+                    <!-- Stars will be injected here -->
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">Mevcut Seri: <span id="badge-streak" class="font-bold">0</span> gün</p>
+                <button id="checkin-btn" onclick="handleCheckIn()" class="w-full bg-white dark:bg-gray-700 text-primary dark:text-white text-sm font-semibold py-2 px-4 rounded-lg border border-primary/50 hover:bg-primary/10 dark:hover:bg-gray-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent">
+                    <i class="fa-solid fa-calendar-check mr-1"></i> Günlük Check-in
+                </button>
+            </div>
         </div>
 
         <div class="px-4 pb-2">
@@ -260,6 +283,7 @@
                     welcomeShown = true;
                 }
                 loadHistory(); // Kullanıcı giriş yaptıysa geçmişi yükle
+                loadBadgeStatus(); // Rozet durumunu yükle
             } else {
                 window.location.href = '/login';
             }
@@ -305,6 +329,74 @@
             modal.classList.add('hidden');
             modal.classList.remove('flex');
             document.getElementById('settings-error').classList.add('hidden');
+        }
+
+        // Rozet ve Check-in Fonksiyonları
+        async function loadBadgeStatus() {
+            const token = storage.get('token');
+            if (!token) return;
+
+            try {
+                const res = await fetch('/api/badge-status', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) return;
+                
+                const data = await res.json();
+                updateBadgeDisplay(data.streak, data.stars);
+
+                // Check-in butonunu kontrol et
+                const checkinBtn = document.getElementById('checkin-btn');
+                const todayStr = new Date().toISOString().split('T')[0];
+                if (data.lastCheckinDate && data.lastCheckinDate.startsWith(todayStr)) {
+                    checkinBtn.disabled = true;
+                    checkinBtn.innerHTML = '<i class="fa-solid fa-check-double mr-1"></i> Check-in Yapıldı';
+                } else {
+                    checkinBtn.disabled = false;
+                    checkinBtn.innerHTML = '<i class="fa-solid fa-calendar-check mr-1"></i> Günlük Check-in';
+                }
+
+            } catch (err) {
+                console.error("Rozet durumu yüklenemedi:", err);
+            }
+        }
+
+        function updateBadgeDisplay(streak, stars, oldStars = -1) {
+            const badgeEl = document.getElementById('discipline-badge');
+            const streakEl = document.getElementById('badge-streak');
+            const starsEl = document.getElementById('badge-stars');
+
+            badgeEl.classList.remove('hidden');
+            streakEl.textContent = streak;
+            
+            let starsHTML = '';
+            for (let i = 1; i <= 4; i++) {
+                const isFilled = i <= stars;
+                const wasFilled = i <= oldStars;
+                // Yeni bir yıldız kazanıldıysa animasyon sınıfını ekle
+                const animationClass = (isFilled && !wasFilled) ? 'star-upgraded' : '';
+                starsHTML += `<i class="fa-solid fa-star ${isFilled ? 'text-amber-400' : 'text-gray-300 dark:text-gray-600'} ${animationClass}"></i>`;
+            }
+            starsEl.innerHTML = starsHTML;
+        }
+
+        async function handleCheckIn() {
+            const token = storage.get('token');
+            const btn = document.getElementById('checkin-btn');
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/check-in', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                showToast(data.message || data.error);
+                loadBadgeStatus(); // Check-in sonrası durumu tekrar yükle
+            } catch (err) {
+                showToast("Bir hata oluştu.");
+                btn.disabled = false;
+            }
         }
 
         async function loadHistory() {
