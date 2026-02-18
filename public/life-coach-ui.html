@@ -308,24 +308,52 @@
         }
 
         async function loadHistory() {
-            const user = getSafeUser();
+            const historyList = document.getElementById('history-list');
+            if (!historyList) {
+                console.error("Hata: 'history-list' ID'li element bulunamadı.");
+                return;
+            }
+
+            historyList.innerHTML = '<div class="p-4 text-sm text-gray-500">Geçmiş yükleniyor...</div>';
+
             const token = storage.get('token');
-            if (!user || !token) return;
+            if (!token) {
+                historyList.innerHTML = '<div class="p-4 text-sm text-gray-500">Geçmişi görmek için giriş yapmalısınız.</div>';
+                return;
+            }
 
             try {
-                const res = await fetch('/api/history', {
+                const response = await fetch('/api/history', {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify({})
+                    body: JSON.stringify({}) // Body'nin gönderilmesi önemli
                 });
-                const sessions = await res.json();
+                const sessions = await response.json();
                 
-                const historyList = document.getElementById('history-list');
+                // --- GÜÇLENDİRİLMİŞ HATA KONTROLÜ ---
+                if (!response.ok || (sessions && sessions.error)) {
+                    const errorMessage = sessions.error || `Sunucu hatası: ${response.status}`;
+                    console.error('Geçmiş yüklenirken sunucu hatası:', errorMessage);
+                    historyList.innerHTML = `<div class="p-4 text-sm text-red-500">Hata: ${errorMessage}</div>`;
+                    return;
+                }
+
+                if (!Array.isArray(sessions)) {
+                    console.error('Geçmiş yüklenirken API\'den dizi formatında veri gelmedi.', sessions);
+                    historyList.innerHTML = '<div class="p-4 text-sm text-red-500">Geçmiş yüklenemedi (Format hatası).</div>';
+                    return;
+                }
+
                 historyList.innerHTML = ''; // Listeyi temizle
                 
+                if (sessions.length === 0) {
+                    historyList.innerHTML = '<div class="p-4 text-sm text-gray-500">Henüz bir sohbet geçmişiniz yok.</div>';
+                    return;
+                }
+
                 // Gruplama Mantığı
                 const groups = {
                     'Bugün': [],
@@ -339,26 +367,20 @@
                 const yesterdayStart = todayStart - 86400000;
                 const weekStart = todayStart - 6 * 86400000;
 
-                // Yeniden eskiye sırala
                 sessions.sort((a, b) => b.id - a.id);
 
                 sessions.forEach(session => {
-                    if (session.id >= todayStart) {
-                        groups['Bugün'].push(session);
-                    } else if (session.id >= yesterdayStart) {
-                        groups['Dün'].push(session);
-                    } else if (session.id >= weekStart) {
-                        groups['Bu Hafta'].push(session);
-                    } else {
-                        groups['Daha Eski'].push(session);
-                    }
+                    if (session.id >= todayStart) groups['Bugün'].push(session);
+                    else if (session.id >= yesterdayStart) groups['Dün'].push(session);
+                    else if (session.id >= weekStart) groups['Bu Hafta'].push(session);
+                    else groups['Daha Eski'].push(session);
                 });
 
                 Object.entries(groups).forEach(([label, groupSessions]) => {
                     if (groupSessions.length === 0) return;
 
                     const header = document.createElement('div');
-                    header.className = 'text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 mt-4 sticky top-0 bg-white dark:bg-gray-800 py-1 z-10';
+                    header.className = 'text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 mt-4 px-3 sticky top-0 bg-white dark:bg-gray-800 py-1 z-10';
                     header.textContent = label;
                     historyList.appendChild(header);
 
@@ -378,6 +400,7 @@
 
             } catch (err) {
                 console.error("Geçmiş yüklenirken hata:", err);
+                historyList.innerHTML = '<div class="p-4 text-sm text-red-500">Geçmiş yüklenirken bir ağ hatası oluştu.</div>';
             }
         }
 
