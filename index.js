@@ -389,6 +389,7 @@ app.post('/api/history', authenticateToken, async (req, res) => {
             res.json([]);
         }
     } catch (error) {
+        console.error("History API Hatası:", error);
         res.status(500).json({ error: error.message });
     }
 });
