@@ -43,6 +43,11 @@ const JWT_SECRET = process.env.JWT_SECRET || 'gizli-anahtar-degistir';
 
 // --- YARDIMCI FONKSİYONLAR ---
 
+// UTC tarih string'i (YYYY-MM-DD) döndüren yardımcı fonksiyon
+const getUTCDateString = (date) => {
+    return new Date(date).toISOString().split('T')[0];
+};
+
 // Middleware: Token Doğrulama
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
@@ -349,7 +354,14 @@ app.post('/api/register', async (req, res) => {
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        const newUser = { id: Date.now(), name, email, password: hashedPassword, sessions: [] };
+        const newUser = { 
+            id: Date.now(), 
+            name, email, 
+            password: hashedPassword, 
+            sessions: [], 
+            goals: [], 
+            streak: 0, 
+            lastCheckinDate: null };
         users.push(newUser);
         await setKVData('users', users);
 
@@ -435,6 +447,83 @@ app.post('/api/delete-session', authenticateToken, async (req, res) => {
     }
 });
 
+// 5.2 Badge Status API (GET)
+app.get('/api/badge-status', authenticateToken, async (req, res) => {
+    try {
+        const email = req.user.email;
+        const users = await getKVData('users');
+        const user = users.find(u => u.email === email);
+
+        if (!user) return res.status(404).json({ error: "Kullanıcı bulunamadı." });
+
+        const streak = user.streak || 0;
+        const lastCheckinDate = user.lastCheckinDate || null;
+
+        const calculateStars = (s) => {
+            if (s >= 28) return 4;
+            if (s >= 21) return 3;
+            if (s >= 14) return 2;
+            if (s >= 7) return 1;
+            return 0;
+        };
+
+        res.json({ streak, stars: calculateStars(streak), lastCheckinDate });
+
+    } catch (error) {
+        console.error("Badge Status API Hatası:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 5.3 Daily Check-in API (POST)
+app.post('/api/check-in', authenticateToken, async (req, res) => {
+    try {
+        const email = req.user.email;
+        const users = await getKVData('users');
+        const userIndex = users.findIndex(u => u.email === email);
+
+        if (userIndex === -1) return res.status(404).json({ error: "Kullanıcı bulunamadı." });
+        
+        const user = users[userIndex];
+        const todayStr = getUTCDateString(new Date());
+
+        // 1. Bugün tamamlanmış bir görev var mı kontrol et
+        const hasCompletedTaskToday = user.goals?.some(g => 
+            g.status === 'completed' && g.completedAt && getUTCDateString(g.completedAt) === todayStr
+        );
+
+        if (!hasCompletedTaskToday) {
+            return res.status(400).json({ error: "Check-in yapabilmek için bugünün hedeflerinden en az birini tamamlamalısın." });
+        }
+
+        // 2. Bugün zaten check-in yapılmış mı kontrol et
+        if (user.lastCheckinDate && getUTCDateString(user.lastCheckinDate) === todayStr) {
+            return res.status(400).json({ error: "Bugün zaten check-in yaptın." });
+        }
+
+        // 3. Yeni seriyi hesapla
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = getUTCDateString(yesterday);
+
+        if (user.lastCheckinDate && getUTCDateString(user.lastCheckinDate) === yesterdayStr) {
+            user.streak = (user.streak || 0) + 1; // Seriyi devam ettir
+        } else {
+            user.streak = 1; // Yeni seri veya kırılmış seri
+        }
+
+        user.lastCheckinDate = new Date().toISOString();
+        users[userIndex] = user; // Kullanıcı verisini güncelle
+
+        await setKVData('users', users);
+        res.json({ success: true, message: `Tebrikler! Serin ${user.streak} güne ulaştı.` });
+
+    } catch (error) {
+        console.error("Check-in API Hatası:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // 6. Goals API (Yeni Özellik: Hedef Takibi)
 app.get('/api/goals', authenticateToken, async (req, res) => {
     try {
@@ -465,8 +554,12 @@ app.post('/api/goals', authenticateToken, async (req, res) => {
             const { id } = req.body;
             const goalIndex = users[userIndex].goals.findIndex(g => g.id == id);
             if (goalIndex !== -1) {
-                if (action === 'delete') users[userIndex].goals.splice(goalIndex, 1);
-                else users[userIndex].goals[goalIndex].status = 'completed';
+                if (action === 'delete') {
+                    users[userIndex].goals.splice(goalIndex, 1);
+                } else { // 'complete'
+                    users[userIndex].goals[goalIndex].status = 'completed';
+                    users[userIndex].goals[goalIndex].completedAt = new Date().toISOString();
+                }
             }
         }
         
