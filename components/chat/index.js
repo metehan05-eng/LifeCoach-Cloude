@@ -38,11 +38,15 @@ export default function Chat({ id, ...properties }) {
   useEffect(() => {
     if (id) {
       const email = localStorage.getItem("userEmail"); // Kullanıcı email'ini localStorage'dan alıyoruz
+      const token = localStorage.getItem("token"); // Token'ı al
       if (!email) return;
 
       fetch(`${API_URL}/api/get-session`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` // Token'ı header'a ekle
+        },
         body: JSON.stringify({ email, sessionId: id }),
       })
         .then((res) => (res.ok ? res.json() : Promise.reject(res)))
@@ -75,6 +79,7 @@ export default function Chat({ id, ...properties }) {
       }));
 
       const email = localStorage.getItem("userEmail");
+      const token = localStorage.getItem("token"); // Token'ı al
       if (!email) {
         alert("Please log in first.");
         setIsSendingMessage(false);
@@ -85,7 +90,10 @@ export default function Chat({ id, ...properties }) {
 
       await fetchEventSource(`${API_URL}/api/chat`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` // Token'ı header'a ekle
+        },
         body: JSON.stringify({
           message: values,
           history,
