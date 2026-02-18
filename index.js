@@ -412,6 +412,29 @@ app.post('/api/get-session', authenticateToken, async (req, res) => {
     }
 });
 
+// 5.1 Delete Session API
+app.post('/api/delete-session', authenticateToken, async (req, res) => {
+    try {
+        const { sessionId } = req.body;
+        const email = req.user.email;
+        const users = await getKVData('users');
+        const userIndex = users.findIndex(u => u.email === email);
+
+        if (userIndex !== -1 && users[userIndex].sessions) {
+            const sessionIndex = users[userIndex].sessions.findIndex(s => s.id == sessionId);
+            if (sessionIndex !== -1) {
+                users[userIndex].sessions.splice(sessionIndex, 1);
+                await setKVData('users', users);
+                return res.json({ success: true });
+            }
+        }
+        res.status(404).json({ error: "Seans bulunamadı veya silinemedi." });
+    } catch (error) {
+        console.error("Delete Session API Hatası:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // 6. Goals API (Yeni Özellik: Hedef Takibi)
 app.get('/api/goals', authenticateToken, async (req, res) => {
     try {
