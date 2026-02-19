@@ -151,6 +151,16 @@ app.post('/api/chat', authenticateToken, async (req, res) => {
         const currentUser = users.find(u => u.email === email);
         const activeGoals = currentUser && currentUser.goals ? currentUser.goals.filter(g => g.status === 'active') : [];
         
+        // Kullanıcı İstatistiklerini Hesapla (Mock veri yerine gerçek veritabanından çekilebilir)
+        const streak = currentUser.streak || 0;
+        const lastCheckin = currentUser.lastCheckinDate ? getUTCDateString(currentUser.lastCheckinDate) : "Never";
+        
+        const userStatsContext = `
+USER STATS:
+- Current Streak: ${streak} days
+- Last Check-in: ${lastCheckin}
+`;
+
         const goalContext = activeGoals.length > 0 ? `\n\nCURRENT USER ACTIVE GOALS (Keep these in mind):\n${activeGoals.map(g => `- ${g.title}`).join('\n')}` : "";
 
         // Sistem Promptu
@@ -305,6 +315,7 @@ LifeCoach AI supports growth.
 
 Core philosophy:
 "You are not behind. You are building."
+${userStatsContext}
 ${goalContext}`;
 
         // AI Cevabı
