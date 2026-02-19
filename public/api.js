@@ -44,4 +44,20 @@ router.post('/goals/advanced', async (req, res) => {
     } catch (e) { res.status(400).json({ error: e.message }); }
 });
 
+// --- AI Goal Routes (Feature 5) ---
+router.post('/goals/analyze', async (req, res) => {
+    try {
+        const { text } = req.body;
+        const analysis = await goalService.analyzeGoal(req.user.id, text);
+        res.json(analysis);
+    } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+router.post('/goals/confirm', async (req, res) => {
+    try {
+        const result = await goalService.createConfirmedGoal(req.user.id, req.body);
+        res.json(result);
+    } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
 export default router;

@@ -51,3 +51,33 @@ export const generateStudyPlan = async (subject, hours, userLevel) => {
     const jsonEnd = content.lastIndexOf(']') + 1;
     return JSON.parse(content.substring(jsonStart, jsonEnd));
 };
+
+export const analyzeGoalInput = async (text) => {
+    const prompt = `
+        Act as a goal-setting expert. Analyze this user input: "${text}".
+        Current Date: ${new Date().toISOString().split('T')[0]}.
+        
+        1. Extract the subject, current level, target level, and deadline.
+        2. Assess feasibility (0-100). If < 50, explain why in feedback.
+        3. Create a weekly milestone breakdown.
+        4. Suggest daily study time (minutes).
+        
+        Output ONLY valid JSON:
+        {
+            "title": "Refined Goal Title",
+            "subject": "Math/Physics/etc",
+            "current_value": 15,
+            "target_value": 30,
+            "deadline": "YYYY-MM-DD",
+            "feasibility_score": 85,
+            "feedback": "Realistic goal...",
+            "daily_effort_minutes": 45,
+            "breakdown": [{"week": 1, "target": 17, "focus": "Foundations"}]
+        }
+    `;
+    
+    const content = await callOpenRouter([{ role: "user", content: prompt }], "openai/gpt-3.5-turbo");
+    const jsonStart = content.indexOf('{');
+    const jsonEnd = content.lastIndexOf('}') + 1;
+    return JSON.parse(content.substring(jsonStart, jsonEnd));
+};
