@@ -135,15 +135,8 @@
                 <p class="text-gray-500 dark:text-gray-400 max-w-md">Kişisel yaşam koçunuz olarak buradayım. Hedefleriniz, endişeleriniz hakkında veya sadece sohbet etmek için bana yazabilirsiniz.</p>
                 
                 <!-- Prompt Templates (Referencing the context of prompt-templates) -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-2xl mt-8">
-                    <button onclick="useTemplate('Sabah rutinim nasıl daha verimli hale getirebilirim?')" class="p-4 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-primary hover:bg-accent dark:hover:bg-gray-800 text-left transition-all group">
-                        <span class="block font-medium text-gray-700 dark:text-gray-200 group-hover:text-primary mb-1">🌅 Sabah Rutini</span>
-                        <span class="text-sm text-gray-500">Günü daha enerjik başlamak için öneriler.</span>
-                    </button>
-                    <button onclick="useTemplate('Ertelemecilikle nasıl başa çıkabilirim?')" class="p-4 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-primary hover:bg-accent dark:hover:bg-gray-800 text-left transition-all group">
-                        <span class="block font-medium text-gray-700 dark:text-gray-200 group-hover:text-primary mb-1">⏳ Ertelemecilik</span>
-                        <span class="text-sm text-gray-500">Odaklanma ve verimlilik stratejileri.</span>
-                    </button>
+                <div id="dynamic-prompts" class="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-2xl mt-8">
+                    <!-- Javascript ile rastgele doldurulacak -->
                 </div>
             </div>
             
@@ -700,6 +693,12 @@
             }
         }
 
+        // Markdown Resimlerini HTML'e Çevir
+        function parseMarkdownImages(text) {
+            // !Alt Text formatını <img src="URL" alt="Alt Text"> formatına çevirir
+            return text.replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1" class="rounded-xl shadow-lg mt-3 mb-1 max-w-full h-auto border border-gray-200 dark:border-gray-700 block">');
+        }
+
         function appendMessage(text, sender, animate = false) {
             if (!welcomeScreen.classList.contains('hidden')) {
                 welcomeScreen.classList.add('hidden');
@@ -737,11 +736,14 @@
 
             const msgId = 'msg-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
 
+            // Eğer mesaj AI'dan geliyorsa ve animasyon yoksa (geçmiş yükleniyorsa) veya animasyon bittiyse resimleri işle
+            const processedText = (!animate) ? parseMarkdownImages(text) : text;
+
             const bubble = `
                 <div class="max-w-[80%] md:max-w-[70%] ${isUser ? 'order-1' : 'order-2'} group relative">
                     ${actionBtns}
                     <div id="${msgId}" class="${isUser ? 'bg-primary text-white rounded-2xl rounded-tr-sm' : 'bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-gray-800 dark:text-gray-100 rounded-2xl rounded-tl-sm shadow-sm'} px-5 py-3.5 text-sm leading-relaxed whitespace-pre-wrap">
-                        ${animate ? '' : text}
+                        ${animate ? '' : processedText}
                     </div>
                     <div class="text-[10px] text-gray-400 mt-1 ${isUser ? 'text-right' : 'text-left'}">
                         ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
@@ -771,6 +773,11 @@
                 if (!el) return; // Element silindiyse dur
                 
                 if (i < parts.length) {
+                    // Eğer parça bir resim linki içeriyorsa (basit kontrol)
+                    // Not: Typewriter efekti sırasında resmi parça parça yazmak yerine, 
+                    // metin tamamlandığında parse etmek daha sağlıklıdır. 
+                    // Ancak basitlik için burada text node olarak ekliyoruz, 
+                    // döngü bittiğinde HTML'i güncelleyeceğiz.
                     el.appendChild(document.createTextNode(parts[i]));
                     i++;
                     chatContainer.scrollTop = chatContainer.scrollHeight;
@@ -779,6 +786,12 @@
                 }
             }
             type();
+            
+            // Yazma işlemi bittiğinde (tahmini süre) içeriği parse et
+            setTimeout(() => {
+                const el = document.getElementById(elementId);
+                if(el) el.innerHTML = parseMarkdownImages(text);
+            }, parts.length * 60 + 500);
         }
 
         function showTyping() {
@@ -804,8 +817,69 @@
             if (typing) typing.remove();
         }
 
+        // Dinamik Prompt Şablonları
+        const templateOptions = [
+            {
+                title: "🌅 Sabah Rutini",
+                desc: "Güne enerjik başlamak için stratejiler.",
+                text: "Sabah rutinim nasıl daha verimli hale getirebilirim? Bana bilimsel temelli öneriler ver."
+            },
+            {
+                title: "🚀 Girişim Desteği",
+                desc: "Fikrini hayata geçirmek için ilk adımlar.",
+                text: "Bir girişim fikrim var ama nereden başlayacağımı bilmiyorum. MVP oluşturma sürecinde bana rehberlik et."
+            },
+            {
+                title: "🧠 Duygusal Destek",
+                desc: "Bunalmış hissettiğinde konuş.",
+                text: "Bugün kendimi çok yorgun ve tükenmiş hissediyorum. Duygularımı anlamama ve sakinleşmeme yardım et."
+            },
+            {
+                title: "🛡️ Red Team Aracı",
+                desc: "Siber güvenlik için Python scripti.",
+                text: "Bana Python ile gelişmiş bir Port Scanner (Red Team aracı) yazar mısın? Kodları detaylı açıkla."
+            },
+            {
+                title: "⏳ Ertelemecilik",
+                desc: "Odaklanma sorununu çöz.",
+                text: "Sürekli işlerimi erteliyorum. Disiplin kazanmak ve odaklanmak için bana sert ama etkili bir yöntem öner."
+            },
+            {
+                title: "💡 Kodlama Projesi",
+                desc: "Backend yeteneklerini geliştir.",
+                text: "Aklıma proje fikri gelmiyor. Backend yeteneklerimi geliştirecek zorlu bir proje öner ve temel yapısını kodla."
+            },
+            {
+                title: "🎯 Hedef Belirleme",
+                desc: "Gerçekçi hedefler koy.",
+                text: "Hayatımda bir yön eksikliği hissediyorum. Bana 3 aylık, ölçülebilir ve gerçekçi bir gelişim planı hazırla."
+            },
+            {
+                title: "🎨 Resim Oluştur",
+                desc: "Hayal gücünü görsele dök.",
+                text: "Bana siberpunk tarzında, yağmurlu bir sokakta yürüyen bir robot resmi çiz."
+            }
+        ];
+
+        function renderRandomTemplates() {
+            const container = document.getElementById('dynamic-prompts');
+            if (!container) return;
+
+            // Diziyi karıştır ve ilk 2 tanesini al
+            const shuffled = [...templateOptions].sort(() => 0.5 - Math.random());
+            const selected = shuffled.slice(0, 2);
+
+            container.innerHTML = selected.map(t => `
+                <button onclick="useTemplate('${t.text.replace(/'/g, "\\'")}')" class="p-4 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-primary hover:bg-accent dark:hover:bg-gray-800 text-left transition-all group">
+                    <span class="block font-medium text-gray-700 dark:text-gray-200 group-hover:text-primary mb-1">${t.title}</span>
+                    <span class="text-sm text-gray-500">${t.desc}</span>
+                </button>
+            `).join('');
+        }
+
         // Sayfa Yüklendiğinde Başlat
         document.addEventListener('DOMContentLoaded', () => {
+            renderRandomTemplates();
             // Elementleri Seç
             chatContainer = document.getElementById('chat-container');
             chatForm = document.getElementById('chat-form');
@@ -838,6 +912,9 @@
                     // Simulate AI Response
                     showTyping();
                     
+                    // Tarayıcı dilini otomatik algıla (Örn: 'tr-TR', 'en-US', 'de-DE')
+                    const userLang = navigator.language || 'tr-TR';
+
                     const token = storage.get('token');
 
                     try {
@@ -850,7 +927,8 @@
                             body: JSON.stringify({
                                 message: text,
                                 history: messageHistory,
-                                sessionId: currentSessionId
+                                sessionId: currentSessionId,
+                                userLanguage: userLang // Dili backend'e gönderiyoruz
                             })
                         });
 
