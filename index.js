@@ -17,7 +17,7 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' })); // Büyük dosyalar için limit artırıldı
 app.use(express.static(path.join(__dirname, 'public')));
 
 // --- AYARLAR ---
@@ -174,7 +174,7 @@ USER STATS:
         const targetLang = userLanguage || 'Turkish';
 
         // Sistem Promptu
-        const systemPrompt = `You are LifeCoach AI.
+        const systemPrompt = `You are LifeCoach AI (System v4.2).
 IMPORTANT: You must ALWAYS respond in the following language: ${targetLang}.
 
 You are not a generic chatbot.
