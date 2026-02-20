@@ -403,14 +403,18 @@ ${userStatsContext}
 ${goalContext}`;
 
         // Mesaj içeriğini hazırla (Resim varsa format değişir)
-        let userContent;
-        if (image) {
-            userContent = [
-                { type: "text", text: message },
-                { type: "image_url", image_url: { url: image } }
-            ];
-        } else {
-            userContent = message;
+        let userContent = message;
+        const isImage = file && file.type && file.type.startsWith('image/');
+
+        if (file) {
+            if (isImage) {
+                userContent = [
+                    { type: "text", text: message },
+                    { type: "image_url", image_url: { url: file.data } }
+                ];
+            } else {
+                userContent = `[User has uploaded a file named '${file.name}'. The user's message is about this file.]\n\n${message}`;
+            }
         }
 
         // AI Cevabı
