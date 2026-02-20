@@ -51,6 +51,10 @@
             100% { transform: scale(1) rotate(360deg); color: #FBBF24; }
         }
         .star-upgraded { animation: star-upgrade 0.6s ease-in-out; }
+        
+        /* Düşünce Balonu Stili */
+        details > summary { list-style: none; }
+        details > summary::-webkit-details-marker { display: none; }
     </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 h-screen flex overflow-hidden font-sans text-slate-800 dark:text-gray-100 transition-colors duration-200">
@@ -145,15 +149,24 @@
 
         <!-- Input Area -->
         <div class="p-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 md:m-4 md:rounded-2xl md:shadow-lg md:border-none transition-colors duration-200">
+            <!-- File Preview -->
+            <div id="file-preview-container" class="hidden mb-2 p-2 border border-gray-200 dark:border-gray-600 rounded-lg relative inline-flex items-center gap-3 bg-gray-50 dark:bg-gray-700/50">
+                <!-- JS ile doldurulacak -->
+            </div>
+
             <form id="chat-form" class="relative flex items-end gap-2">
                 <div class="relative flex-1">
                     <textarea 
                         id="user-input" 
                         rows="1" 
-                        placeholder="Buraya yazın..."
+                        placeholder="Buraya yazın veya bir dosya ekleyin..."
                         class="w-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white dark:placeholder-gray-400 rounded-xl px-4 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-white dark:focus:bg-gray-600 transition-all resize-none max-h-32"
                         oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"
                     ></textarea>
+                    <!-- File Upload Button -->
+                    <button type="button" onclick="document.getElementById('file-upload').click()" class="absolute right-10 bottom-3 text-gray-400 hover:text-primary transition-colors" title="Dosya Yükle">
+                        <i class="fa-solid fa-paperclip"></i>
+                    </button>
                     <button type="button" id="mic-btn" onclick="toggleDictation()" class="absolute right-3 bottom-3 text-gray-400 hover:text-gray-600 transition-colors" title="Voice Type">
                         <i class="fa-solid fa-microphone"></i>
                     </button>
@@ -162,6 +175,7 @@
                     <i class="fa-solid fa-paper-plane"></i>
                 </button>
             </form>
+            <input type="file" id="file-upload" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" class="hidden" onchange="handleFileSelect(this)">
             <div class="text-center mt-2">
                 <p class="text-xs text-gray-400">LifeCoach AI kişisel gelişim amaçlıdır ve tıbbi tavsiye sağlamaz.</p>
             </div>
@@ -186,6 +200,7 @@
         let welcomeScreen;
         let messageHistory = [];
         let currentSessionId = null;
+        let currentFile = null; // { data, name, type }
         
         // Güvenli LocalStorage Erişimi
         const storage = {
@@ -693,6 +708,71 @@
             }
         }
 
+        // --- DOSYA İŞLEME FONKSİYONLARI ---
+        function handleFileSelect(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    currentFile = {
+                        data: e.target.result, // Base64 data URL
+                        name: file.name,
+                        type: file.type
+                    };
+                    
+                    const container = document.getElementById('file-preview-container');
+                    let previewHTML = '';
+                    if (file.type.startsWith('image/')) {
+                        previewHTML = `<img src="${currentFile.data}" class="h-16 w-auto rounded-md object-cover">`;
+                    } else {
+                        const iconClass = getFileIcon(file.name);
+                        previewHTML = `<i class="${iconClass} text-3xl text-gray-500 dark:text-gray-400"></i>`;
+                    }
+
+                    container.innerHTML = `
+                        ${previewHTML}
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">${file.name}</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">${(file.size / 1024).toFixed(1)} KB</p>
+                        </div>
+                        <button onclick="clearFile()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow-md hover:bg-red-600 transition-colors">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    `;
+                    container.classList.remove('hidden');
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function getFileIcon(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            if (['pdf'].includes(ext)) return 'fa-solid fa-file-pdf';
+            if (['doc', 'docx'].includes(ext)) return 'fa-solid fa-file-word';
+            if (['xls', 'xlsx'].includes(ext)) return 'fa-solid fa-file-excel';
+            if (['ppt', 'pptx'].includes(ext)) return 'fa-solid fa-file-powerpoint';
+            return 'fa-solid fa-file';
+        }
+
+        function clearFile() {
+            currentFile = null;
+            document.getElementById('file-upload').value = '';
+            document.getElementById('file-preview-container').classList.add('hidden');
+        }
+
+        // --- DÜŞÜNCE ZİNCİRİ (Reasoning) İŞLEME ---
+        function parseThinkingProcess(text) {
+            // <think>...</think> etiketlerini bul ve şık bir detay kutusuna çevir
+            return text.replace(/<think>([\s\S]*?)<\/think>/g, (match, content) => {
+                return `<details class="mb-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden group">
+                    <summary class="cursor-pointer p-2 text-xs font-medium text-gray-500 hover:text-primary flex items-center gap-2 select-none">
+                        <i class="fa-solid fa-brain text-primary/70"></i> Düşünce Süreci (Tıkla)
+                    </summary>
+                    <div class="p-3 text-xs text-gray-600 dark:text-gray-400 font-mono border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 whitespace-pre-wrap">${content.trim()}</div>
+                </details>`;
+            });
+        }
+
         // Markdown Resimlerini HTML'e Çevir
         function parseMarkdownImages(text) {
             // !Alt Text formatını <img src="URL" alt="Alt Text"> formatına çevirir
@@ -737,7 +817,11 @@
             const msgId = 'msg-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
 
             // Eğer mesaj AI'dan geliyorsa ve animasyon yoksa (geçmiş yükleniyorsa) veya animasyon bittiyse resimleri işle
-            const processedText = (!animate) ? parseMarkdownImages(text) : text;
+            // Ayrıca <think> etiketlerini işle
+            let processedText = (!animate) ? parseMarkdownImages(text) : text;
+            if (!isUser && !animate) {
+                processedText = parseThinkingProcess(processedText);
+            }
 
             const bubble = `
                 <div class="max-w-[80%] md:max-w-[70%] ${isUser ? 'order-1' : 'order-2'} group relative">
@@ -790,7 +874,10 @@
             // Yazma işlemi bittiğinde (tahmini süre) içeriği parse et
             setTimeout(() => {
                 const el = document.getElementById(elementId);
-                if(el) el.innerHTML = parseMarkdownImages(text);
+                if(el) {
+                    // Hem resimleri hem de düşünce balonlarını işle
+                    el.innerHTML = parseThinkingProcess(parseMarkdownImages(text));
+                }
             }, parts.length * 60 + 500);
         }
 
@@ -905,9 +992,16 @@
                     if (!text) return;
 
                     // User Message
-                    appendMessage(text, 'user');
+                    let displayMessage = text;
+                    if (currentFile) {
+                        displayMessage += `\n\n[Dosya eklendi: ${currentFile.name}]`;
+                    }
+                    
+                    appendMessage(displayMessage, 'user');
                     userInput.value = '';
                     userInput.style.height = 'auto';
+                    const fileToSend = currentFile; // Göndermek için sakla
+                    clearFile(); // UI'ı temizle
 
                     // Simulate AI Response
                     showTyping();
@@ -928,7 +1022,8 @@
                                 message: text,
                                 history: messageHistory,
                                 sessionId: currentSessionId,
-                                userLanguage: userLang // Dili backend'e gönderiyoruz
+                                userLanguage: userLang,
+                                file: fileToSend // Dosyayı gönder
                             })
                         });
 

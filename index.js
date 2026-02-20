@@ -23,6 +23,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // --- AYARLAR ---
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const OPENROUTER_MODELS = [
+    "google/gemini-2.0-flash-exp:free", // Vision destekli ve çok hızlı
     "arcee-ai/trinity-large-preview:free",
     "deepseek/deepseek-r1-0528:free",
     "qwen/qwen3-next-80b-a3b-instruct:free",
@@ -107,8 +108,14 @@ async function checkRateLimit(req) {
 }
 
 // OpenRouter Çağrısı
-async function callOpenRouter(messages) {
-    for (const model of OPENROUTER_MODELS) {
+async function callOpenRouter(messages, file = null) {
+    // Eğer dosya bir resimse, Vision destekli modeli (listenin başındaki) kullanmayı önceliklendir.
+    const isImage = file && file.type && file.type.startsWith('image/');
+    
+    // Eğer resim varsa, sadece Vision destekli modelleri dene.
+    const modelsToTry = isImage ? [OPENROUTER_MODELS[0]] : OPENROUTER_MODELS;
+
+    for (const model of modelsToTry) {
         try {
             const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
                 method: "POST",
@@ -137,7 +144,7 @@ async function callOpenRouter(messages) {
 // 1. Chat API
 app.post('/api/chat', authenticateToken, async (req, res) => {
     try {
-        const { message, history, sessionId, userLanguage } = req.body;
+        const { message, file, history, sessionId, userLanguage } = req.body;
         const email = req.user.email;
 
         // Limit Kontrolü
@@ -278,6 +285,34 @@ User: "Bana fütüristik bir İstanbul resmi çiz."
 Response: "İşte hayal ettiğim fütüristik İstanbul manzarası:\n\n![Futuristic Istanbul Cityscape](https://image.pollinations.ai/prompt/futuristic%20istanbul%20cityscape%20cyberpunk%20style%20neon%20lights%20bosphorus%20bridge?width=1024&height=1024&nologo=true&model=flux)"
 
 ------------------------------------
+DOCUMENT ANALYSIS & CREATION MODE
+------------------------------------
+
+If the user uploads a document (PDF, DOCX, XLSX, PPTX), you are an expert analyst.
+
+1.  **Acknowledge the File:** Start by acknowledging the uploaded file by its name. Example: "I see you've uploaded 'quarterly_report.docx'."
+2.  **Analyze Request:** Understand what the user wants to do with the file (summarize, analyze, find info, etc.).
+3.  **Act as an Expert:**
+    *   **For Analysis/Summarization:** You cannot *read* the file directly. Politely explain this and ask the user to paste the relevant text or data. Then, perform the analysis on the text they provide.
+        *   *Example:* "I can't access local files directly for security reasons. Could you please paste the text from the PDF that you'd like me to summarize?"
+    *   **For Creation:** When asked to create a document, generate the content in a structured, copy-paste-friendly format.
+        *   **Word/Docs:** Use Markdown (headings, bold, lists).
+        *   **PowerPoint/PPTX:** Use a slide-by-slide breakdown. Use `---` to separate slides. Provide titles, bullet points, and speaker notes for each slide.
+        *   **Excel/XLSX:** Provide data in a CSV (Comma-Separated Values) format or a Markdown table that the user can easily copy into a spreadsheet.
+
+Example (PPTX Creation):
+User: "Create a 5-slide presentation on Time Management."
+Response:
+"Of course. Here is a 5-slide presentation outline on Time Management you can use in PowerPoint.
+
+---
+**Slide 1: Title**
+- Title: The Art of Effective Time Management
+- Subtitle: By [User's Name]
+---
+..."
+
+------------------------------------
 FOUNDER MODE (Auto-Trigger)
 ------------------------------------
 
@@ -367,12 +402,23 @@ Core philosophy:
 ${userStatsContext}
 ${goalContext}`;
 
+        // Mesaj içeriğini hazırla (Resim varsa format değişir)
+        let userContent;
+        if (image) {
+            userContent = [
+                { type: "text", text: message },
+                { type: "image_url", image_url: { url: image } }
+            ];
+        } else {
+            userContent = message;
+        }
+
         // AI Cevabı
         const aiResponse = await callOpenRouter([
             { "role": "system", "content": systemPrompt },
             ...(history || []),
-            { "role": "user", "content": message }
-        ]);
+            { "role": "user", "content": userContent }
+        ], !!image);
 
         // Veritabanı Kaydı (Kullanıcı varsa)
         let newSessionId = sessionId;
@@ -391,6 +437,7 @@ ${goalContext}`;
                 }
 
                 session.messages.push({ role: 'user', content: message });
+                // Not: Veritabanına base64 resmi kaydetmiyoruz (çok yer kaplar), sadece metni kaydediyoruz.
                 session.messages.push({ role: 'assistant', content: aiResponse });
                 await setKVData('users', users);
             }
