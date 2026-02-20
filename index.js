@@ -418,7 +418,7 @@ ${goalContext}`;
             { "role": "system", "content": systemPrompt },
             ...(history || []),
             { "role": "user", "content": userContent }
-        ], !!image);
+        ], file);
 
         // Veritabanı Kaydı (Kullanıcı varsa)
         let newSessionId = sessionId;
