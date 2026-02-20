@@ -173,7 +173,7 @@ USER STATS:
         // Dil Ayarı (Varsayılan: Türkçe)
         const targetLang = userLanguage || 'Turkish';
 
-        // Sistem Promptu
+        // SYSTEM PROMPT START
         const systemPrompt = `You are LifeCoach AI (System v4.2).
 IMPORTANT: You must ALWAYS respond in the following language: ${targetLang}.
 
