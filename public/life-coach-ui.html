@@ -3,194 +3,1058 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LifeCoach AI</title>
+    <title>LifeCoach AI — Your Personal Growth Partner</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
-                        primary: '#0F766E', // Teal-700
-                        secondary: '#CCFBF1', // Teal-100
-                        accent: '#F0FDFA', // Teal-50
+                        primary: '#0F766E',
+                        'primary-light': '#14B8A6',
+                        'primary-dark': '#0D5E57',
+                        secondary: '#CCFBF1',
+                        accent: '#F0FDFA',
+                        'neon-teal': '#2DD4BF',
+                        'neon-cyan': '#22D3EE',
+                        'deep-dark': '#030712',
+                        'card-dark': '#0F172A',
+                        'surface-dark': '#1E293B',
                     },
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
+                        display: ['Space Grotesk', 'sans-serif'],
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-glow': 'pulse-glow 2s ease-in-out infinite',
+                        'slide-in-left': 'slide-in-left 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+                        'slide-in-right': 'slide-in-right 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+                        'fade-up': 'fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+                        'shimmer': 'shimmer 2s linear infinite',
+                        'spin-slow': 'spin 8s linear infinite',
+                        'bounce-subtle': 'bounce-subtle 2s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                        'pulse-glow': {
+                            '0%, 100%': { boxShadow: '0 0 20px rgba(20, 184, 166, 0.3)' },
+                            '50%': { boxShadow: '0 0 40px rgba(20, 184, 166, 0.6), 0 0 80px rgba(20, 184, 166, 0.2)' },
+                        },
+                        'slide-in-left': {
+                            '0%': { transform: 'translateX(-20px)', opacity: '0' },
+                            '100%': { transform: 'translateX(0)', opacity: '1' },
+                        },
+                        'slide-in-right': {
+                            '0%': { transform: 'translateX(20px)', opacity: '0' },
+                            '100%': { transform: 'translateX(0)', opacity: '1' },
+                        },
+                        'fade-up': {
+                            '0%': { transform: 'translateY(15px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        shimmer: {
+                            '0%': { backgroundPosition: '-200% 0' },
+                            '100%': { backgroundPosition: '200% 0' },
+                        },
+                        'bounce-subtle': {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-4px)' },
+                        },
+                    },
+                    backdropBlur: {
+                        xs: '2px',
                     }
                 }
             }
         }
     </script>
     <style>
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 6px;
+        /* ===== ROOT VARIABLES ===== */
+        :root {
+            --primary: #0F766E;
+            --primary-light: #14B8A6;
+            --neon-teal: #2DD4BF;
+            --neon-cyan: #22D3EE;
+            --glow-color: rgba(20, 184, 166, 0.4);
+            --sidebar-width: 320px;
         }
-        ::-webkit-scrollbar-track {
+
+        /* ===== SCROLLBAR ===== */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, var(--neon-teal), var(--primary)); border-radius: 20px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary-light); }
+
+        /* ===== BODY & BACKGROUND ===== */
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #030712;
+            overflow: hidden;
+        }
+
+        /* Animated mesh gradient background */
+        .bg-mesh {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background: 
+                radial-gradient(ellipse 80% 50% at 20% 40%, rgba(15, 118, 110, 0.15) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 40% at 80% 60%, rgba(34, 211, 238, 0.08) 0%, transparent 60%),
+                radial-gradient(ellipse 40% 60% at 50% 10%, rgba(45, 212, 191, 0.06) 0%, transparent 60%),
+                #030712;
+            animation: mesh-shift 15s ease-in-out infinite alternate;
+        }
+
+        @keyframes mesh-shift {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 100%; }
+        }
+
+        /* Floating orbs */
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.12;
+            pointer-events: none;
+            z-index: 0;
+            animation: float 8s ease-in-out infinite;
+        }
+        .orb-1 { width: 400px; height: 400px; background: #0F766E; top: -100px; left: -100px; animation-delay: 0s; }
+        .orb-2 { width: 300px; height: 300px; background: #22D3EE; bottom: -50px; right: 20%; animation-delay: -3s; }
+        .orb-3 { width: 200px; height: 200px; background: #2DD4BF; top: 40%; right: -50px; animation-delay: -6s; }
+
+        /* ===== SIDEBAR ===== */
+        #main-sidebar {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-right: 1px solid rgba(45, 212, 191, 0.1);
+            box-shadow: 4px 0 30px rgba(0, 0, 0, 0.4);
+            position: relative;
+            z-index: 10;
+        }
+
+        .sidebar-logo {
+            background: linear-gradient(135deg, rgba(15, 118, 110, 0.3), rgba(45, 212, 191, 0.1));
+            border: 1px solid rgba(45, 212, 191, 0.2);
+            border-radius: 16px;
+            padding: 20px;
+            margin: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sidebar-logo::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, transparent 40%, rgba(45, 212, 191, 0.05) 100%);
+        }
+
+        .logo-icon {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #0F766E, #2DD4BF);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 20px rgba(45, 212, 191, 0.4), 0 4px 12px rgba(0,0,0,0.3);
+            animation: pulse-glow 3s ease-in-out infinite;
+        }
+
+        .logo-text {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 1.2rem;
+            background: linear-gradient(135deg, #fff 0%, #2DD4BF 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo-subtitle {
+            font-size: 0.65rem;
+            color: rgba(45, 212, 191, 0.7);
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            font-weight: 500;
+        }
+
+        /* ===== BUTTONS ===== */
+        .btn-primary {
+            background: linear-gradient(135deg, #0F766E, #14B8A6);
+            border: 1px solid rgba(45, 212, 191, 0.3);
+            color: white;
+            border-radius: 14px;
+            padding: 12px 20px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(15, 118, 110, 0.3);
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(15, 118, 110, 0.5), 0 0 0 1px rgba(45, 212, 191, 0.3);
+        }
+
+        .btn-primary:hover::before { opacity: 1; }
+        .btn-primary:active { transform: translateY(0); }
+
+        .btn-secondary {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(45, 212, 191, 0.15);
+            color: rgba(255,255,255,0.8);
+            border-radius: 14px;
+            padding: 10px 20px;
+            font-weight: 500;
+            font-size: 0.8rem;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(45, 212, 191, 0.1);
+            border-color: rgba(45, 212, 191, 0.3);
+            color: #2DD4BF;
+            transform: translateY(-1px);
+        }
+
+        /* ===== DISCIPLINE BADGE ===== */
+        .discipline-badge {
+            background: linear-gradient(135deg, rgba(15, 118, 110, 0.2), rgba(45, 212, 191, 0.05));
+            border: 1px solid rgba(45, 212, 191, 0.2);
+            border-radius: 16px;
+            padding: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .discipline-badge::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(45, 212, 191, 0.5), transparent);
+        }
+
+        /* ===== SEARCH INPUT ===== */
+        .search-input {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(45, 212, 191, 0.1);
+            border-radius: 12px;
+            color: rgba(255,255,255,0.8);
+            padding: 10px 12px 10px 36px;
+            font-size: 0.8rem;
+            transition: all 0.3s;
+            width: 100%;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: rgba(45, 212, 191, 0.4);
+            background: rgba(30, 41, 59, 0.9);
+            box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.1);
+        }
+
+        .search-input::placeholder { color: rgba(148, 163, 184, 0.5); }
+
+        /* ===== HISTORY ITEMS ===== */
+        .history-item {
+            border-radius: 12px;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            border: 1px solid transparent;
+        }
+
+        .history-item:hover {
+            background: rgba(45, 212, 191, 0.08);
+            border-color: rgba(45, 212, 191, 0.15);
+        }
+
+        .history-item.active {
+            background: rgba(15, 118, 110, 0.2);
+            border-color: rgba(45, 212, 191, 0.3);
+        }
+
+        /* ===== MAIN AREA ===== */
+        #main-content {
             background: transparent;
+            position: relative;
+            z-index: 1;
         }
-        ::-webkit-scrollbar-thumb {
-            background-color: #cbd5e1;
-            border-radius: 20px;
+
+        /* ===== MOBILE HEADER ===== */
+        .mobile-header {
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(45, 212, 191, 0.1);
         }
+
+        /* ===== CHAT CONTAINER ===== */
+        #chat-container {
+            scrollbar-width: thin;
+        }
+
+        /* ===== WELCOME SCREEN ===== */
+        .welcome-icon-wrapper {
+            width: 90px;
+            height: 90px;
+            background: linear-gradient(135deg, rgba(15, 118, 110, 0.3), rgba(45, 212, 191, 0.1));
+            border: 1px solid rgba(45, 212, 191, 0.3);
+            border-radius: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            animation: float 6s ease-in-out infinite;
+            box-shadow: 0 0 40px rgba(45, 212, 191, 0.2), inset 0 1px 0 rgba(255,255,255,0.1);
+        }
+
+        .welcome-icon-wrapper::before {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: 29px;
+            background: linear-gradient(135deg, rgba(45, 212, 191, 0.4), transparent, rgba(45, 212, 191, 0.1));
+            z-index: -1;
+        }
+
+        .welcome-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff 0%, #2DD4BF 60%, #22D3EE 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* ===== PROMPT CARDS ===== */
+        .prompt-card {
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(45, 212, 191, 0.12);
+            border-radius: 16px;
+            padding: 16px;
+            text-align: left;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .prompt-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(45, 212, 191, 0.05), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .prompt-card:hover {
+            border-color: rgba(45, 212, 191, 0.35);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.3), 0 0 0 1px rgba(45, 212, 191, 0.2);
+        }
+
+        .prompt-card:hover::before { opacity: 1; }
+
+        /* ===== MESSAGE BUBBLES ===== */
+        .msg-user {
+            background: linear-gradient(135deg, #0F766E, #14B8A6);
+            border-radius: 20px 20px 4px 20px;
+            color: white;
+            box-shadow: 0 4px 20px rgba(15, 118, 110, 0.4);
+            position: relative;
+        }
+
+        .msg-user::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+            pointer-events: none;
+        }
+
+        .msg-ai {
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(45, 212, 191, 0.12);
+            border-radius: 20px 20px 20px 4px;
+            color: rgba(226, 232, 240, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+
+        .msg-ai-avatar {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #0F766E, #2DD4BF);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 15px rgba(45, 212, 191, 0.3);
+            flex-shrink: 0;
+        }
+
+        .msg-user-avatar {
+            width: 36px;
+            height: 36px;
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(45, 212, 191, 0.2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        /* Message action buttons */
+        .msg-actions {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(45, 212, 191, 0.2);
+            border-radius: 12px;
+            padding: 4px 6px;
+            display: flex;
+            gap: 2px;
+            opacity: 0;
+            transition: all 0.2s;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+
+        .msg-wrapper:hover .msg-actions { opacity: 1; }
+
+        .msg-action-btn {
+            width: 26px;
+            height: 26px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(148, 163, 184, 0.8);
+            transition: all 0.2s;
+            font-size: 0.65rem;
+        }
+
+        .msg-action-btn:hover {
+            background: rgba(45, 212, 191, 0.15);
+            color: #2DD4BF;
+        }
+
+        /* ===== TYPING INDICATOR ===== */
         .typing-dot {
-            animation: typing 1.4s infinite ease-in-out both;
+            width: 8px;
+            height: 8px;
+            background: linear-gradient(135deg, #0F766E, #2DD4BF);
+            border-radius: 50%;
+            animation: typing-bounce 1.4s ease-in-out infinite;
         }
-        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
-        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
-        
-        @keyframes typing {
-            0%, 80%, 100% { transform: scale(0); }
-            40% { transform: scale(1); }
+
+        .typing-dot:nth-child(1) { animation-delay: 0s; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing-bounce {
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+            30% { transform: translateY(-8px); opacity: 1; }
         }
+
+        /* ===== INPUT AREA ===== */
+        .input-area {
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(45, 212, 191, 0.15);
+            border-radius: 20px;
+            margin: 16px;
+            padding: 16px;
+            box-shadow: 0 -4px 30px rgba(0,0,0,0.3), 0 0 0 1px rgba(45, 212, 191, 0.05);
+            position: relative;
+        }
+
+        .input-area::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 20px; right: 20px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(45, 212, 191, 0.3), transparent);
+        }
+
+        .chat-textarea {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(45, 212, 191, 0.1);
+            border-radius: 14px;
+            color: rgba(226, 232, 240, 0.95);
+            padding: 12px 80px 12px 16px;
+            font-size: 0.9rem;
+            resize: none;
+            max-height: 140px;
+            width: 100%;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .chat-textarea:focus {
+            outline: none;
+            border-color: rgba(45, 212, 191, 0.35);
+            background: rgba(30, 41, 59, 0.8);
+            box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.08);
+        }
+
+        .chat-textarea::placeholder { color: rgba(100, 116, 139, 0.7); }
+
+        .send-btn {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #0F766E, #14B8A6);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 4px 15px rgba(15, 118, 110, 0.4);
+            flex-shrink: 0;
+        }
+
+        .send-btn:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 8px 25px rgba(15, 118, 110, 0.6);
+        }
+
+        .send-btn:active { transform: scale(0.95); }
+        .send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+        .input-icon-btn {
+            position: absolute;
+            bottom: 12px;
+            color: rgba(100, 116, 139, 0.7);
+            transition: all 0.2s;
+            padding: 4px;
+            border-radius: 8px;
+        }
+
+        .input-icon-btn:hover {
+            color: #2DD4BF;
+            background: rgba(45, 212, 191, 0.1);
+        }
+
+        /* ===== SETTINGS MODAL ===== */
+        .modal-overlay {
+            background: rgba(3, 7, 18, 0.8);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        .modal-card {
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(45, 212, 191, 0.2);
+            border-radius: 24px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(45, 212, 191, 0.05);
+            backdrop-filter: blur(20px);
+        }
+
+        .modal-input {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(45, 212, 191, 0.15);
+            border-radius: 12px;
+            color: rgba(226, 232, 240, 0.95);
+            padding: 10px 14px;
+            font-size: 0.875rem;
+            width: 100%;
+            transition: all 0.3s;
+        }
+
+        .modal-input:focus {
+            outline: none;
+            border-color: rgba(45, 212, 191, 0.4);
+            box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.1);
+        }
+
+        /* ===== TOAST ===== */
+        .toast {
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(45, 212, 191, 0.2);
+            border-radius: 14px;
+            color: rgba(226, 232, 240, 0.95);
+            padding: 12px 16px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.4), 0 0 0 1px rgba(45, 212, 191, 0.05);
+            backdrop-filter: blur(20px);
+            min-width: 220px;
+        }
+
+        /* ===== STAR ANIMATION ===== */
         @keyframes star-upgrade {
-            0% { transform: scale(1) rotate(0deg); color: #FBBF24; }
-            50% { transform: scale(1.5) rotate(180deg); color: #FEF9C3; }
-            100% { transform: scale(1) rotate(360deg); color: #FBBF24; }
+            0% { transform: scale(1) rotate(0deg); }
+            25% { transform: scale(1.6) rotate(90deg); filter: drop-shadow(0 0 6px #FBBF24); }
+            50% { transform: scale(1.3) rotate(180deg); }
+            75% { transform: scale(1.5) rotate(270deg); filter: drop-shadow(0 0 8px #FEF9C3); }
+            100% { transform: scale(1) rotate(360deg); }
         }
-        .star-upgraded { animation: star-upgrade 0.6s ease-in-out; }
-        
-        /* Düşünce Balonu Stili */
+        .star-upgraded { animation: star-upgrade 0.7s cubic-bezier(0.16, 1, 0.3, 1); }
+
+        /* ===== THINKING PROCESS ===== */
         details > summary { list-style: none; }
         details > summary::-webkit-details-marker { display: none; }
+
+        .thinking-details {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(45, 212, 191, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .thinking-summary {
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            color: rgba(45, 212, 191, 0.7);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            user-select: none;
+            transition: color 0.2s;
+        }
+
+        .thinking-summary:hover { color: #2DD4BF; }
+
+        .thinking-content {
+            padding: 12px;
+            font-size: 0.75rem;
+            color: rgba(148, 163, 184, 0.8);
+            font-family: 'Space Mono', monospace;
+            border-top: 1px solid rgba(45, 212, 191, 0.1);
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+
+        /* ===== HISTORY GROUP HEADER ===== */
+        .history-group-header {
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: rgba(45, 212, 191, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            padding: 8px 12px 4px;
+            position: sticky;
+            top: 0;
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(10px);
+            z-index: 5;
+        }
+
+        /* ===== AUTH SECTION ===== */
+        .auth-section {
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid rgba(45, 212, 191, 0.08);
+            border-radius: 16px;
+            padding: 12px;
+            transition: all 0.2s;
+        }
+
+        .auth-section:hover {
+            background: rgba(30, 41, 59, 0.6);
+            border-color: rgba(45, 212, 191, 0.15);
+        }
+
+        .auth-action-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(100, 116, 139, 0.8);
+            transition: all 0.2s;
+            font-size: 0.8rem;
+        }
+
+        .auth-action-btn:hover {
+            background: rgba(45, 212, 191, 0.1);
+            color: #2DD4BF;
+        }
+
+        /* ===== CHECKIN BUTTON ===== */
+        .checkin-btn {
+            background: rgba(15, 118, 110, 0.15);
+            border: 1px solid rgba(45, 212, 191, 0.25);
+            color: #2DD4BF;
+            border-radius: 10px;
+            padding: 8px 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            width: 100%;
+            transition: all 0.3s;
+        }
+
+        .checkin-btn:hover:not(:disabled) {
+            background: rgba(15, 118, 110, 0.3);
+            border-color: rgba(45, 212, 191, 0.4);
+            box-shadow: 0 0 15px rgba(45, 212, 191, 0.2);
+        }
+
+        .checkin-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* ===== FADE IN ANIMATION ===== */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-fade-in-up {
+            animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* ===== SHIMMER LOADING ===== */
+        .shimmer-line {
+            background: linear-gradient(90deg, rgba(30,41,59,0.5) 25%, rgba(45,212,191,0.08) 50%, rgba(30,41,59,0.5) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 6px;
+            height: 12px;
+        }
+
+        /* ===== FILE PREVIEW ===== */
+        .file-preview {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(45, 212, 191, 0.15);
+            border-radius: 12px;
+            padding: 8px 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+            margin-bottom: 8px;
+        }
+
+        /* ===== GLOW DIVIDER ===== */
+        .glow-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(45, 212, 191, 0.3), transparent);
+            margin: 4px 0;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .input-area { margin: 8px; border-radius: 16px; }
+            .welcome-title { font-size: 1.5rem; }
+        }
+
+        /* ===== LIGHT MODE OVERRIDES ===== */
+        .light body { background: #f8fafc; }
+        html:not(.dark) body { background: #f1f5f9; }
+        html:not(.dark) .bg-mesh {
+            background: 
+                radial-gradient(ellipse 80% 50% at 20% 40%, rgba(15, 118, 110, 0.06) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 40% at 80% 60%, rgba(34, 211, 238, 0.04) 0%, transparent 60%),
+                #f1f5f9;
+        }
+        html:not(.dark) .orb { opacity: 0.04; }
+        html:not(.dark) #main-sidebar {
+            background: rgba(255, 255, 255, 0.92);
+            border-right-color: rgba(15, 118, 110, 0.1);
+        }
+        html:not(.dark) .sidebar-logo {
+            background: linear-gradient(135deg, rgba(15, 118, 110, 0.08), rgba(45, 212, 191, 0.04));
+            border-color: rgba(15, 118, 110, 0.15);
+        }
+        html:not(.dark) .logo-text {
+            background: linear-gradient(135deg, #0F766E 0%, #14B8A6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        html:not(.dark) .logo-subtitle { color: rgba(15, 118, 110, 0.6); }
+        html:not(.dark) .search-input {
+            background: rgba(241, 245, 249, 0.8);
+            border-color: rgba(15, 118, 110, 0.15);
+            color: #1e293b;
+        }
+        html:not(.dark) .search-input:focus { border-color: rgba(15, 118, 110, 0.4); }
+        html:not(.dark) .history-item:hover { background: rgba(15, 118, 110, 0.06); border-color: rgba(15, 118, 110, 0.15); }
+        html:not(.dark) .history-group-header { color: rgba(15, 118, 110, 0.6); background: rgba(255,255,255,0.9); }
+        html:not(.dark) .auth-section { background: rgba(241, 245, 249, 0.6); border-color: rgba(15, 118, 110, 0.1); }
+        html:not(.dark) .discipline-badge { background: linear-gradient(135deg, rgba(15, 118, 110, 0.08), rgba(45, 212, 191, 0.03)); border-color: rgba(15, 118, 110, 0.15); }
+        html:not(.dark) .mobile-header { background: rgba(255,255,255,0.92); border-bottom-color: rgba(15, 118, 110, 0.1); }
+        html:not(.dark) .input-area { background: rgba(255,255,255,0.92); border-color: rgba(15, 118, 110, 0.15); }
+        html:not(.dark) .chat-textarea { background: rgba(241, 245, 249, 0.8); border-color: rgba(15, 118, 110, 0.12); color: #1e293b; }
+        html:not(.dark) .chat-textarea:focus { border-color: rgba(15, 118, 110, 0.35); }
+        html:not(.dark) .msg-ai { background: rgba(255,255,255,0.9); border-color: rgba(15, 118, 110, 0.1); color: #1e293b; }
+        html:not(.dark) .prompt-card { background: rgba(255,255,255,0.8); border-color: rgba(15, 118, 110, 0.12); }
+        html:not(.dark) .prompt-card:hover { border-color: rgba(15, 118, 110, 0.3); }
+        html:not(.dark) .modal-card { background: rgba(255,255,255,0.97); border-color: rgba(15, 118, 110, 0.15); }
+        html:not(.dark) .modal-input { background: rgba(241, 245, 249, 0.8); border-color: rgba(15, 118, 110, 0.15); color: #1e293b; }
+        html:not(.dark) .toast { background: rgba(255,255,255,0.97); border-color: rgba(15, 118, 110, 0.15); color: #1e293b; }
+        html:not(.dark) .msg-actions { background: rgba(255,255,255,0.97); border-color: rgba(15, 118, 110, 0.15); }
+        html:not(.dark) .thinking-details { background: rgba(241, 245, 249, 0.6); border-color: rgba(15, 118, 110, 0.1); }
+        html:not(.dark) .thinking-content { color: #475569; }
+        html:not(.dark) .welcome-title {
+            background: linear-gradient(135deg, #0F766E 0%, #14B8A6 60%, #22D3EE 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        html:not(.dark) .welcome-icon-wrapper { background: linear-gradient(135deg, rgba(15, 118, 110, 0.12), rgba(45, 212, 191, 0.05)); border-color: rgba(15, 118, 110, 0.2); }
+        html:not(.dark) .checkin-btn { background: rgba(15, 118, 110, 0.08); border-color: rgba(15, 118, 110, 0.2); color: #0F766E; }
+        html:not(.dark) .auth-action-btn { color: #64748b; }
+        html:not(.dark) .auth-action-btn:hover { background: rgba(15, 118, 110, 0.08); color: #0F766E; }
+        html:not(.dark) .input-icon-btn { color: #94a3b8; }
+        html:not(.dark) .input-icon-btn:hover { color: #0F766E; background: rgba(15, 118, 110, 0.08); }
+        html:not(.dark) .btn-secondary { background: rgba(241, 245, 249, 0.8); border-color: rgba(15, 118, 110, 0.15); color: #475569; }
+        html:not(.dark) .btn-secondary:hover { background: rgba(15, 118, 110, 0.08); border-color: rgba(15, 118, 110, 0.25); color: #0F766E; }
+        html:not(.dark) .file-preview { background: rgba(241, 245, 249, 0.8); border-color: rgba(15, 118, 110, 0.15); }
     </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 h-screen flex overflow-hidden font-sans text-slate-800 dark:text-gray-100 transition-colors duration-200">
+<body class="h-screen flex overflow-hidden">
+
+    <!-- Animated Background -->
+    <div class="bg-mesh"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
 
     <!-- Sidebar -->
-    <aside id="main-sidebar" class="w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex-col hidden md:flex shadow-sm z-10 transition-colors duration-200">
-        <div class="p-6 border-b border-gray-100 dark:border-gray-700 flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white">
-                <i class="fa-solid fa-leaf text-lg"></i>
+    <aside id="main-sidebar" class="w-80 flex-col hidden md:flex z-10 relative" style="min-width: 320px;">
+        
+        <!-- Logo Section -->
+        <div class="sidebar-logo">
+            <div class="flex items-center gap-3">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-leaf text-white text-lg"></i>
+                </div>
+                <div>
+                    <div class="logo-text">LifeCoach AI</div>
+                    <div class="logo-subtitle">Personal Growth Partner</div>
+                </div>
             </div>
-            <h1 class="text-xl font-bold text-gray-800 dark:text-white tracking-tight">LifeCoach AI</h1>
         </div>
 
-        <div class="p-4">
-            <button onclick="startNewChat()" class="w-full bg-primary hover:bg-teal-800 text-white py-3 px-4 rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 font-medium">
-                <i class="fa-solid fa-plus"></i>
-                Yeni Oturum
+        <!-- Action Buttons -->
+        <div class="px-4 pb-3 space-y-2">
+            <button onclick="startNewChat()" class="btn-primary w-full flex items-center justify-center gap-2">
+                <i class="fa-solid fa-plus text-sm"></i>
+                <span>Yeni Oturum</span>
             </button>
-            <button onclick="exportChat()" class="w-full mt-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 py-3 px-4 rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 font-medium text-sm">
-                <i class="fa-solid fa-download"></i>
-                Sohbeti indir (.txt)
+            <button onclick="exportChat()" class="btn-secondary w-full flex items-center justify-center gap-2">
+                <i class="fa-solid fa-download text-xs"></i>
+                <span>Sohbeti İndir (.txt)</span>
             </button>
         </div>
 
         <!-- Discipline Badge -->
-        <div class="px-4 py-2">
-            <div id="discipline-badge" class="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl p-4 text-center hidden">
-                <div class="flex justify-center items-center gap-2 mb-2">
-                    <i class="fa-solid fa-shield-halved text-primary"></i>
-                    <h3 class="font-bold text-gray-800 dark:text-white">DISCIPLINE CORE</h3>
+        <div class="px-4 pb-3">
+            <div id="discipline-badge" class="discipline-badge hidden">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-2">
+                        <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500/20 to-amber-400/10 border border-amber-500/20 flex items-center justify-center">
+                            <i class="fa-solid fa-shield-halved text-amber-400 text-xs"></i>
+                        </div>
+                        <span class="text-xs font-bold text-white/80 tracking-wide uppercase">Discipline Core</span>
+                    </div>
+                    <div class="text-xs text-slate-400">
+                        <span id="badge-streak" class="font-bold text-amber-400">0</span>
+                        <span class="ml-1">gün</span>
+                    </div>
                 </div>
-                <div id="badge-stars" class="flex justify-center text-xl text-amber-400 mb-3">
-                    <!-- Stars will be injected here -->
+                <div id="badge-stars" class="flex justify-center gap-1 mb-3 text-lg">
+                    <!-- Stars injected here -->
                 </div>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">Mevcut Seri: <span id="badge-streak" class="font-bold">0</span> gün</p>
-                <button id="checkin-btn" onclick="handleCheckIn()" class="w-full bg-white dark:bg-gray-700 text-primary dark:text-white text-sm font-semibold py-2 px-4 rounded-lg border border-primary/50 hover:bg-primary/10 dark:hover:bg-gray-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent">
-                    <i class="fa-solid fa-calendar-check mr-1"></i> Günlük Check-in
+                <button id="checkin-btn" onclick="handleCheckIn()" class="checkin-btn">
+                    <i class="fa-solid fa-calendar-check mr-1.5"></i>
+                    Günlük Check-in
                 </button>
             </div>
         </div>
 
-        <div class="px-4 pb-2">
+        <!-- Search -->
+        <div class="px-4 pb-3">
             <div class="relative">
-                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs"></i>
-                <input type="text" id="history-search" onkeyup="filterHistory()" placeholder="Geçmişi ara..." class="w-full bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg pl-8 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                <input type="text" id="history-search" onkeyup="filterHistory()" placeholder="Geçmişi ara..." class="search-input">
             </div>
         </div>
 
-        <div class="flex-1 overflow-y-auto px-4 space-y-2" id="history-list">
-            <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 mt-2">Geçmiş Oturumlar</div>
-            <!-- History items will be injected here -->
+        <!-- History List -->
+        <div class="flex-1 overflow-y-auto px-3 space-y-0.5" id="history-list">
+            <div class="history-group-header">Geçmiş Oturumlar</div>
         </div>
 
-        <div class="p-4 border-t border-gray-100 dark:border-gray-700" id="auth-container">
+        <!-- Auth Section -->
+        <div class="p-4 border-t border-white/5" id="auth-container">
             <!-- JS ile doldurulacak -->
         </div>
     </aside>
 
-    <!-- Main Chat Area -->
-    <main class="flex-1 flex flex-col relative bg-white md:bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+    <!-- Main Content -->
+    <main id="main-content" class="flex-1 flex flex-col relative overflow-hidden">
+        
         <!-- Mobile Header -->
-        <header class="md:hidden bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between sticky top-0 z-20">
-            <div class="flex items-center gap-2">
-                <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white">
-                    <i class="fa-solid fa-leaf text-sm"></i>
+        <header class="md:hidden mobile-header p-4 flex items-center justify-between sticky top-0 z-20">
+            <div class="flex items-center gap-2.5">
+                <div class="logo-icon w-8 h-8 rounded-lg">
+                    <i class="fa-solid fa-leaf text-white text-sm"></i>
                 </div>
-                <span class="font-bold text-gray-800">LifeCoach AI</span>
+                <span class="font-bold text-white font-display">LifeCoach AI</span>
             </div>
-            <button onclick="toggleSidebar()" class="text-gray-500 hover:text-gray-700">
-                <i class="fa-solid fa-bars text-xl"></i>
+            <button onclick="toggleSidebar()" class="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 transition-all">
+                <i class="fa-solid fa-bars text-sm"></i>
             </button>
         </header>
 
         <!-- Chat Container -->
-        <div id="chat-container" class="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 scroll-smooth">
-            <!-- Welcome Message -->
-            <div class="flex flex-col items-center justify-center h-full text-center space-y-4" id="welcome-screen">
-                <div class="w-16 h-16 bg-secondary rounded-2xl flex items-center justify-center mb-2">
-                    <i class="fa-solid fa-hands-holding-circle text-3xl text-primary"></i>
+        <div id="chat-container" class="flex-1 overflow-y-auto p-4 md:p-8 space-y-5">
+            
+            <!-- Welcome Screen -->
+            <div class="flex flex-col items-center justify-center h-full text-center space-y-5" id="welcome-screen">
+                <div class="welcome-icon-wrapper">
+                    <i class="fa-solid fa-hands-holding-circle text-4xl" style="color: #2DD4BF;"></i>
                 </div>
-                <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Merhaba, bugün nasılsın?</h2>
-                <p class="text-gray-500 dark:text-gray-400 max-w-md">Kişisel yaşam koçunuz olarak buradayım. Hedefleriniz, endişeleriniz hakkında veya sadece sohbet etmek için bana yazabilirsiniz.</p>
                 
-                <!-- Prompt Templates (Referencing the context of prompt-templates) -->
-                <div id="dynamic-prompts" class="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-2xl mt-8">
-                    <!-- Javascript ile rastgele doldurulacak -->
+                <div class="space-y-2">
+                    <h2 class="welcome-title">Merhaba, bugün nasılsın?</h2>
+                    <p class="text-slate-400 max-w-md text-sm leading-relaxed">
+                        Kişisel yaşam koçunuz olarak buradayım. Hedefleriniz, endişeleriniz hakkında<br>veya sadece sohbet etmek için bana yazabilirsiniz.
+                    </p>
+                </div>
+
+                <!-- Stats Row -->
+                <div class="flex items-center gap-6 py-2">
+                    <div class="text-center">
+                        <div class="text-lg font-bold" style="color: #2DD4BF;">AI</div>
+                        <div class="text-xs text-slate-500">Powered</div>
+                    </div>
+                    <div class="w-px h-8 bg-white/10"></div>
+                    <div class="text-center">
+                        <div class="text-lg font-bold text-white">7/24</div>
+                        <div class="text-xs text-slate-500">Erişim</div>
+                    </div>
+                    <div class="w-px h-8 bg-white/10"></div>
+                    <div class="text-center">
+                        <div class="text-lg font-bold text-amber-400">∞</div>
+                        <div class="text-xs text-slate-500">Destek</div>
+                    </div>
+                </div>
+
+                <!-- Prompt Templates -->
+                <div id="dynamic-prompts" class="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-2xl mt-4">
+                    <!-- JS ile doldurulacak -->
                 </div>
             </div>
-            
-            <!-- Messages will be appended here -->
         </div>
 
         <!-- Input Area -->
-        <div class="p-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 md:m-4 md:rounded-2xl md:shadow-lg md:border-none transition-colors duration-200">
+        <div class="input-area">
             <!-- File Preview -->
-            <div id="file-preview-container" class="hidden mb-2 p-2 border border-gray-200 dark:border-gray-600 rounded-lg relative inline-flex items-center gap-3 bg-gray-50 dark:bg-gray-700/50">
+            <div id="file-preview-container" class="hidden file-preview mb-3">
                 <!-- JS ile doldurulacak -->
             </div>
 
-            <form id="chat-form" class="relative flex items-end gap-2">
+            <form id="chat-form" class="flex items-end gap-3">
                 <div class="relative flex-1">
                     <textarea 
                         id="user-input" 
                         rows="1" 
                         placeholder="Buraya yazın veya bir dosya ekleyin..."
-                        class="w-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white dark:placeholder-gray-400 rounded-xl px-4 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-white dark:focus:bg-gray-600 transition-all resize-none max-h-32"
-                        oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"
+                        class="chat-textarea"
+                        oninput="this.style.height = ''; this.style.height = Math.min(this.scrollHeight, 140) + 'px'"
                     ></textarea>
-                    <!-- File Upload Button -->
-                    <button type="button" onclick="document.getElementById('file-upload').click()" class="absolute right-10 bottom-3 text-gray-400 hover:text-primary transition-colors" title="Dosya Yükle">
-                        <i class="fa-solid fa-paperclip"></i>
+                    <button type="button" onclick="document.getElementById('file-upload').click()" class="input-icon-btn" style="right: 36px;" title="Dosya Yükle">
+                        <i class="fa-solid fa-paperclip text-sm"></i>
                     </button>
-                    <button type="button" id="mic-btn" onclick="toggleDictation()" class="absolute right-3 bottom-3 text-gray-400 hover:text-gray-600 transition-colors" title="Voice Type">
-                        <i class="fa-solid fa-microphone"></i>
+                    <button type="button" id="mic-btn" onclick="toggleDictation()" class="input-icon-btn" style="right: 8px;" title="Sesli Yazma">
+                        <i class="fa-solid fa-microphone text-sm"></i>
                     </button>
                 </div>
-                <button type="submit" class="bg-primary hover:bg-teal-800 text-white rounded-xl w-12 h-12 flex items-center justify-center shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed" id="send-btn">
-                    <i class="fa-solid fa-paper-plane"></i>
+                <button type="submit" class="send-btn" id="send-btn">
+                    <i class="fa-solid fa-paper-plane text-sm"></i>
                 </button>
             </form>
+            
             <input type="file" id="file-upload" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" class="hidden" onchange="handleFileSelect(this)">
-            <div class="text-center mt-2">
-                <p class="text-xs text-gray-400">LifeCoach AI kişisel gelişim amaçlıdır ve tıbbi tavsiye sağlamaz.</p>
+            
+            <div class="text-center mt-3">
+                <p class="text-xs text-slate-600">LifeCoach AI kişisel gelişim amaçlıdır ve tıbbi tavsiye sağlamaz.</p>
             </div>
         </div>
     </main>
 
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="fixed inset-0 modal-overlay hidden items-center justify-center z-50">
+        <div class="modal-card w-full max-w-sm mx-4 p-6">
+            <div class="flex justify-between items-center mb-5">
+                <div>
+                    <h3 class="text-lg font-bold text-white font-display">Profili Düzenle</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Hesap bilgilerinizi güncelleyin</p>
+                </div>
+                <button onclick="closeSettings()" class="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-all">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+            
+            <form id="settings-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Kullanıcı Adı</label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-2.5 text-slate-500 text-sm">@</span>
+                        <input type="text" id="settings-name" class="modal-input pl-8" placeholder="kullanici_adi">
+                    </div>
+                    <p class="text-xs text-slate-600 mt-1.5">Sadece harf, rakam, nokta ve alt çizgi kullanılabilir.</p>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Avatar URL</label>
+                    <input type="url" id="settings-avatar" class="modal-input" placeholder="https://example.com/avatar.jpg">
+                    <p class="text-xs text-slate-600 mt-1.5">İsteğe bağlı: Bir resim linki yapıştırın.</p>
+                </div>
+                <div id="settings-error" class="text-red-400 text-sm hidden bg-red-500/10 border border-red-500/20 rounded-xl p-3"></div>
+                <div class="flex gap-3 pt-1">
+                    <button type="button" onclick="closeSettings()" class="btn-secondary flex-1 py-2.5 text-sm font-medium">İptal</button>
+                    <button type="submit" class="btn-primary flex-1 py-2.5 text-sm">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
     <script>
-        // Sayfa yüklenirken güvenlik kontrolü: Token yoksa Login'e at
+        // Sayfa yüklenirken güvenlik kontrolü
         if (!localStorage.getItem('token')) {
             window.location.href = '/login';
         }
 
         function escapeJS(str) {
             if (str === null || str === undefined) return '';
-            // onclick içerisindeki string'i bozacak karakterlerden kaçış
             return String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '');
         }
 
@@ -200,9 +1064,8 @@
         let welcomeScreen;
         let messageHistory = [];
         let currentSessionId = null;
-        let currentFile = null; // { data, name, type }
+        let currentFile = null;
         
-        // Güvenli LocalStorage Erişimi
         const storage = {
             get: (key) => { try { return localStorage.getItem(key); } catch(e) { return null; } },
             set: (key, val) => { try { localStorage.setItem(key, val); } catch(e) {} },
@@ -210,7 +1073,6 @@
             has: (key) => { try { return key in localStorage; } catch(e) { return false; } }
         };
 
-        // Tema Yönetimi
         function initTheme() {
             const theme = storage.get('theme');
             if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -226,34 +1088,29 @@
         function showToast(message) {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
-            
-            toast.className = 'bg-white dark:bg-gray-800 text-gray-800 dark:text-white px-4 py-3 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 flex items-center gap-3 transform transition-all duration-500 translate-x-full opacity-0 pointer-events-auto min-w-[200px]';
-            toast.innerHTML = `<p class="font-medium text-sm flex items-center gap-2">${message}</p>`;
-            
+            toast.className = 'toast transform transition-all duration-500 translate-x-full opacity-0 pointer-events-auto';
+            toast.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <div class="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style="background: linear-gradient(135deg, rgba(15,118,110,0.3), rgba(45,212,191,0.1)); border: 1px solid rgba(45,212,191,0.2);">
+                        <i class="fa-solid fa-leaf text-xs" style="color: #2DD4BF;"></i>
+                    </div>
+                    <p class="text-sm font-medium">${message}</p>
+                </div>
+            `;
             container.appendChild(toast);
-            
-            // Animate in
             requestAnimationFrame(() => {
                 toast.classList.remove('translate-x-full', 'opacity-0');
             });
-            
-            // Remove after 3s
             setTimeout(() => {
                 toast.classList.add('translate-x-full', 'opacity-0');
                 setTimeout(() => { toast.remove(); }, 500);
-            }, 3000);
+            }, 3500);
         }
 
-        // Helper: Güvenli JSON parse
         function getSafeUser() {
-            try {
-                return JSON.parse(storage.get('user'));
-            } catch (e) {
-                return null;
-            }
+            try { return JSON.parse(storage.get('user')); } catch (e) { return null; }
         }
 
-        // Auth Kontrolü
         function checkAuth() {
             const user = getSafeUser();
             const token = storage.get('token');
@@ -261,27 +1118,28 @@
             
             if (user && token) {
                 const avatarHtml = user.avatar 
-                    ? `<img src="${user.avatar}" alt="${user.name}" class="w-9 h-9 rounded-full object-cover border border-gray-200 dark:border-gray-600">`
-                    : `<div class="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-bold">${user.name.charAt(0).toUpperCase()}</div>`;
+                    ? `<img src="${user.avatar}" alt="${user.name}" class="w-9 h-9 rounded-xl object-cover border border-white/10">`
+                    : `<div class="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-white text-sm" style="background: linear-gradient(135deg, #0F766E, #2DD4BF);">${user.name.charAt(0).toUpperCase()}</div>`;
 
                 authContainer.innerHTML = `
-                    <div class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 group relative transition-colors">
-                        ${avatarHtml}
-                        <div class="flex-1 min-w-0">
-                            <p class="text-sm font-medium text-gray-900 dark:text-white truncate">${user.name}</p>
-                            <p class="text-xs text-gray-500 dark:text-gray-400 truncate">@${user.name}</p>
-                            <p class="text-xs text-gray-500 truncate">${user.email}</p>
-                        </div>
-                        <div class="flex items-center gap-1">
-                            <button onclick="toggleDarkMode()" class="p-1.5 text-gray-400 hover:text-yellow-500 rounded-md hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors" title="Dark Mode">
-                                <i class="fa-solid ${document.documentElement.classList.contains('dark') ? 'fa-sun' : 'fa-moon'}"></i>
-                            </button>
-                            <button onclick="openSettings()" class="p-1.5 text-gray-400 hover:text-primary rounded-md hover:bg-gray-100 transition-colors" title="Settings">
-                                <i class="fa-solid fa-gear"></i>
-                            </button>
-                            <button onclick="logout()" class="p-1.5 text-gray-400 hover:text-red-500 rounded-md hover:bg-gray-100 transition-colors" title="Logout">
-                                <i class="fa-solid fa-right-from-bracket"></i>
-                            </button>
+                    <div class="auth-section">
+                        <div class="flex items-center gap-3">
+                            ${avatarHtml}
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-semibold text-white truncate">${user.name}</p>
+                                <p class="text-xs text-slate-500 truncate">${user.email}</p>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <button onclick="toggleDarkMode()" class="auth-action-btn" title="Tema Değiştir">
+                                    <i class="fa-solid ${document.documentElement.classList.contains('dark') ? 'fa-sun' : 'fa-moon'} text-xs"></i>
+                                </button>
+                                <button onclick="openSettings()" class="auth-action-btn" title="Ayarlar">
+                                    <i class="fa-solid fa-gear text-xs"></i>
+                                </button>
+                                <button onclick="logout()" class="auth-action-btn hover:!text-red-400 hover:!bg-red-500/10" title="Çıkış">
+                                    <i class="fa-solid fa-right-from-bracket text-xs"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -290,8 +1148,8 @@
                     showToast(`Hoş geldin, ${user.name}! 👋✨`);
                     welcomeShown = true;
                 }
-                loadHistory(); // Kullanıcı giriş yaptıysa geçmişi yükle
-                loadBadgeStatus(); // Rozet durumunu yükle
+                loadHistory();
+                loadBadgeStatus();
             } else {
                 window.location.href = '/login';
             }
@@ -307,7 +1165,7 @@
             document.documentElement.classList.toggle('dark');
             const isDark = document.documentElement.classList.contains('dark');
             storage.set('theme', isDark ? 'dark' : 'light');
-            checkAuth(); // İkonu güncellemek için
+            checkAuth();
         }
 
         function toggleSidebar() {
@@ -320,7 +1178,6 @@
             }
         }
 
-        // Ayarlar Modalı İşlemleri
         function openSettings() {
             const user = getSafeUser();
             if (user) {
@@ -339,31 +1196,25 @@
             document.getElementById('settings-error').classList.add('hidden');
         }
 
-        // Rozet ve Check-in Fonksiyonları
         async function loadBadgeStatus() {
             const token = storage.get('token');
             if (!token) return;
-
             try {
                 const res = await fetch('/api/badge-status', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (!res.ok) return;
-                
                 const data = await res.json();
                 updateBadgeDisplay(data.streak, data.stars);
-
-                // Check-in butonunu kontrol et
                 const checkinBtn = document.getElementById('checkin-btn');
                 const todayStr = new Date().toISOString().split('T')[0];
                 if (data.lastCheckinDate && data.lastCheckinDate.startsWith(todayStr)) {
                     checkinBtn.disabled = true;
-                    checkinBtn.innerHTML = '<i class="fa-solid fa-check-double mr-1"></i> Check-in Yapıldı';
+                    checkinBtn.innerHTML = '<i class="fa-solid fa-check-double mr-1.5"></i> Check-in Yapıldı';
                 } else {
                     checkinBtn.disabled = false;
-                    checkinBtn.innerHTML = '<i class="fa-solid fa-calendar-check mr-1"></i> Günlük Check-in';
+                    checkinBtn.innerHTML = '<i class="fa-solid fa-calendar-check mr-1.5"></i> Günlük Check-in';
                 }
-
             } catch (err) {
                 console.error("Rozet durumu yüklenemedi:", err);
             }
@@ -373,17 +1224,14 @@
             const badgeEl = document.getElementById('discipline-badge');
             const streakEl = document.getElementById('badge-streak');
             const starsEl = document.getElementById('badge-stars');
-
             badgeEl.classList.remove('hidden');
             streakEl.textContent = streak;
-            
             let starsHTML = '';
             for (let i = 1; i <= 4; i++) {
                 const isFilled = i <= stars;
                 const wasFilled = i <= oldStars;
-                // Yeni bir yıldız kazanıldıysa animasyon sınıfını ekle
-                const animationClass = (isFilled && !wasFilled) ? 'star-upgraded' : '';
-                starsHTML += `<i class="fa-solid fa-star ${isFilled ? 'text-amber-400' : 'text-gray-300 dark:text-gray-600'} ${animationClass}"></i>`;
+                const animClass = (isFilled && !wasFilled) ? 'star-upgraded' : '';
+                starsHTML += `<i class="fa-solid fa-star ${isFilled ? 'text-amber-400' : 'text-slate-700'} ${animClass}" style="${isFilled ? 'filter: drop-shadow(0 0 4px rgba(251,191,36,0.5));' : ''}"></i>`;
             }
             starsEl.innerHTML = starsHTML;
         }
@@ -392,7 +1240,6 @@
             const token = storage.get('token');
             const btn = document.getElementById('checkin-btn');
             btn.disabled = true;
-
             try {
                 const res = await fetch('/api/check-in', {
                     method: 'POST',
@@ -400,7 +1247,7 @@
                 });
                 const data = await res.json();
                 showToast(data.message || data.error);
-                loadBadgeStatus(); // Check-in sonrası durumu tekrar yükle
+                loadBadgeStatus();
             } catch (err) {
                 showToast("Bir hata oluştu.");
                 btn.disabled = false;
@@ -409,66 +1256,63 @@
 
         async function loadHistory() {
             const historyList = document.getElementById('history-list');
-            if (!historyList) {
-                console.error("Hata: 'history-list' ID'li element bulunamadı.");
-                return;
-            }
+            if (!historyList) return;
 
-            historyList.innerHTML = '<div class="p-4 text-sm text-gray-500">Geçmiş yükleniyor...</div>';
+            historyList.innerHTML = `
+                <div class="history-group-header">Geçmiş Oturumlar</div>
+                <div class="px-3 py-4 space-y-2">
+                    <div class="shimmer-line w-3/4"></div>
+                    <div class="shimmer-line w-1/2"></div>
+                    <div class="shimmer-line w-2/3"></div>
+                </div>
+            `;
 
             const token = storage.get('token');
             if (!token) {
-                historyList.innerHTML = '<div class="p-4 text-sm text-gray-500">Geçmişi görmek için giriş yapmalısınız.</div>';
+                historyList.innerHTML = '<div class="px-4 py-3 text-xs text-slate-500">Geçmişi görmek için giriş yapmalısınız.</div>';
                 return;
             }
 
             try {
                 const response = await fetch('/api/history', {
                     method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({}) // Body'nin gönderilmesi önemli
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({})
                 });
                 const sessions = await response.json();
                 
-                // --- GÜÇLENDİRİLMİŞ HATA KONTROLÜ ---
                 if (!response.ok || (sessions && sessions.error)) {
                     const errorMessage = sessions.error || `Sunucu hatası: ${response.status}`;
-                    console.error('Geçmiş yüklenirken sunucu hatası:', errorMessage);
-                    historyList.innerHTML = `<div class="p-4 text-sm text-red-500">Hata: ${errorMessage}</div>`;
+                    historyList.innerHTML = `<div class="px-4 py-3 text-xs text-red-400">Hata: ${errorMessage}</div>`;
                     return;
                 }
 
                 if (!Array.isArray(sessions)) {
-                    console.error('Geçmiş yüklenirken API\'den dizi formatında veri gelmedi.', sessions);
-                    historyList.innerHTML = '<div class="p-4 text-sm text-red-500">Geçmiş yüklenemedi (Format hatası).</div>';
+                    historyList.innerHTML = '<div class="px-4 py-3 text-xs text-red-400">Geçmiş yüklenemedi.</div>';
                     return;
                 }
 
-                historyList.innerHTML = ''; // Listeyi temizle
+                historyList.innerHTML = '';
                 
                 if (sessions.length === 0) {
-                    historyList.innerHTML = '<div class="p-4 text-sm text-gray-500">Henüz bir sohbet geçmişiniz yok.</div>';
+                    historyList.innerHTML = `
+                        <div class="px-4 py-8 text-center">
+                            <div class="w-10 h-10 rounded-xl mx-auto mb-3 flex items-center justify-center" style="background: rgba(45,212,191,0.08); border: 1px solid rgba(45,212,191,0.12);">
+                                <i class="fa-regular fa-message text-slate-500 text-sm"></i>
+                            </div>
+                            <p class="text-xs text-slate-500">Henüz sohbet geçmişiniz yok.</p>
+                        </div>
+                    `;
                     return;
                 }
 
-                // Gruplama Mantığı
-                const groups = {
-                    'Bugün': [],
-                    'Dün': [],
-                    'Bu Hafta': [],
-                    'Daha Eski': []
-                };
-
+                const groups = { 'Bugün': [], 'Dün': [], 'Bu Hafta': [], 'Daha Eski': [] };
                 const now = new Date();
                 const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
                 const yesterdayStart = todayStart - 86400000;
                 const weekStart = todayStart - 6 * 86400000;
 
                 sessions.sort((a, b) => b.id - a.id);
-
                 sessions.forEach(session => {
                     if (session.id >= todayStart) groups['Bugün'].push(session);
                     else if (session.id >= yesterdayStart) groups['Dün'].push(session);
@@ -478,29 +1322,29 @@
 
                 Object.entries(groups).forEach(([label, groupSessions]) => {
                     if (groupSessions.length === 0) return;
-
                     const header = document.createElement('div');
-                    header.className = 'text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 mt-4 px-3 sticky top-0 bg-white dark:bg-gray-800 py-1 z-10';
+                    header.className = 'history-group-header';
                     header.textContent = label;
                     historyList.appendChild(header);
 
                     groupSessions.forEach(session => {
                         const div = document.createElement('div');
-                        div.className = 'flex items-center group rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors pr-2';
+                        div.className = `history-item flex items-center group pr-1 ${currentSessionId == session.id ? 'active' : ''}`;
                         div.innerHTML = `
-                            <button onclick="loadSession(${session.id})" class="flex-1 text-left p-3 flex items-center gap-3 min-w-0">
-                                <i class="fa-regular fa-message text-gray-400 group-hover:text-primary flex-shrink-0"></i>
-                                <div class="truncate text-sm text-gray-600 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white">${session.title}</div>
+                            <button onclick="loadSession(${session.id})" class="flex-1 text-left px-3 py-2.5 flex items-center gap-2.5 min-w-0">
+                                <i class="fa-regular fa-message text-slate-600 group-hover:text-teal-400 flex-shrink-0 text-xs transition-colors"></i>
+                                <div class="truncate text-xs text-slate-400 group-hover:text-slate-200 transition-colors">${session.title}</div>
                             </button>
-                            <button onclick="deleteSession(${session.id})" class="p-2 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                            <button onclick="deleteSession(${session.id})" class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-600 hover:text-red-400 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0" title="Sil">
+                                <i class="fa-solid fa-trash text-xs"></i>
+                            </button>
                         `;
                         historyList.appendChild(div);
                     });
                 });
 
             } catch (err) {
-                console.error("Geçmiş yüklenirken hata:", err);
-                historyList.innerHTML = '<div class="p-4 text-sm text-red-500">Geçmiş yüklenirken bir ağ hatası oluştu.</div>';
+                historyList.innerHTML = '<div class="px-4 py-3 text-xs text-red-400">Ağ hatası oluştu.</div>';
             }
         }
 
@@ -509,22 +1353,17 @@
             const filter = input.value.toLowerCase();
             const historyList = document.getElementById('history-list');
             const children = Array.from(historyList.children);
-
-            // 1. Önce öğeleri filtrele
             children.forEach(child => {
-                if (!child.classList.contains('text-xs')) {
+                if (!child.classList.contains('history-group-header')) {
                     const text = child.textContent || child.innerText;
                     child.style.display = text.toLowerCase().indexOf(filter) > -1 ? "" : "none";
                 }
             });
-
-            // 2. Sonra boş kalan başlıkları gizle
             for (let i = 0; i < children.length; i++) {
-                if (children[i].classList.contains('text-xs')) {
+                if (children[i].classList.contains('history-group-header')) {
                     let visibleCount = 0;
-                    // Bir sonraki başlığa kadar olan öğeleri kontrol et
                     for (let j = i + 1; j < children.length; j++) {
-                        if (children[j].classList.contains('text-xs')) break;
+                        if (children[j].classList.contains('history-group-header')) break;
                         if (children[j].style.display !== 'none') visibleCount++;
                     }
                     children[i].style.display = visibleCount > 0 ? "" : "none";
@@ -536,22 +1375,16 @@
             const user = getSafeUser();
             const token = storage.get('token');
             if (!user || !token) return;
-
             try {
                 const res = await fetch('/api/get-session', {
                     method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                     body: JSON.stringify({ sessionId })
                 });
                 const session = await res.json();
-                
                 currentSessionId = session.id;
-                messageHistory = []; // Geçmişi sıfırla ve yeniden doldur
-                chatContainer.innerHTML = ''; // Ekranı temizle
-                
+                messageHistory = [];
+                chatContainer.innerHTML = '';
                 session.messages.forEach(msg => {
                     appendMessage(msg.content, msg.role === 'user' ? 'user' : 'ai');
                     messageHistory.push(msg);
@@ -564,14 +1397,10 @@
         async function deleteSession(sessionId) {
             const token = storage.get('token');
             if (!confirm("Bu oturumu silmek istediğinizden emin misiniz?")) return;
-
             try {
                 const res = await fetch('/api/delete-session', {
                     method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                     body: JSON.stringify({ sessionId })
                 });
                 const data = await res.json();
@@ -595,25 +1424,21 @@
         function useTemplate(text) {
             userInput.value = text;
             userInput.style.height = 'auto';
-            userInput.style.height = userInput.scrollHeight + 'px';
+            userInput.style.height = Math.min(userInput.scrollHeight, 140) + 'px';
             userInput.focus();
         }
 
         function copyToClipboard(btn, text) {
             navigator.clipboard.writeText(text).then(() => {
                 const originalIcon = btn.innerHTML;
-                btn.innerHTML = '<i class="fa-solid fa-check text-green-500"></i>';
-                setTimeout(() => {
-                    btn.innerHTML = originalIcon;
-                }, 2000);
+                btn.innerHTML = '<i class="fa-solid fa-check" style="color: #2DD4BF;"></i>';
+                setTimeout(() => { btn.innerHTML = originalIcon; }, 2000);
             });
         }
 
         function speakText(text) {
             if ('speechSynthesis' in window) {
-                if (window.speechSynthesis.speaking) {
-                    window.speechSynthesis.cancel();
-                }
+                if (window.speechSynthesis.speaking) window.speechSynthesis.cancel();
                 const utterance = new SpeechSynthesisUtterance(text);
                 utterance.lang = 'tr-TR';
                 window.speechSynthesis.speak(utterance);
@@ -622,53 +1447,44 @@
 
         function toggleDictation() {
             if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-                alert("Your browser does not support voice typing.");
+                alert("Tarayıcınız sesli yazma desteklemiyor.");
                 return;
             }
-
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             const recognition = new SpeechRecognition();
             const micBtn = document.getElementById('mic-btn');
-            
             recognition.lang = 'tr-TR';
             recognition.interimResults = false;
-
             recognition.onstart = function() {
-                micBtn.classList.remove('text-gray-400');
-                micBtn.classList.add('text-red-500', 'animate-pulse');
+                micBtn.style.color = '#ef4444';
+                micBtn.classList.add('animate-pulse');
             };
-
             recognition.onend = function() {
-                micBtn.classList.add('text-gray-400');
-                micBtn.classList.remove('text-red-500', 'animate-pulse');
+                micBtn.style.color = '';
+                micBtn.classList.remove('animate-pulse');
             };
-
             recognition.onresult = function(event) {
                 const transcript = event.results[0][0].transcript;
                 userInput.value += (userInput.value ? ' ' : '') + transcript;
                 userInput.style.height = 'auto';
-                userInput.style.height = userInput.scrollHeight + 'px';
+                userInput.style.height = Math.min(userInput.scrollHeight, 140) + 'px';
                 userInput.focus();
             };
-
             recognition.start();
         }
 
         function exportChat() {
             if (messageHistory.length === 0) {
-                alert("No chat history to export.");
+                showToast("Dışa aktarılacak sohbet geçmişi yok.");
                 return;
             }
-
-            let textContent = "LifeCoach AI - Chat History\n";
-            textContent += "Date: " + new Date().toLocaleString() + "\n";
-            textContent += "----------------------------------------\n\n";
-
+            let textContent = "LifeCoach AI — Sohbet Geçmişi\n";
+            textContent += "Tarih: " + new Date().toLocaleString('tr-TR') + "\n";
+            textContent += "━".repeat(40) + "\n\n";
             messageHistory.forEach(msg => {
-                const role = msg.role === 'user' ? 'You' : 'LifeCoach AI';
+                const role = msg.role === 'user' ? 'Sen' : 'LifeCoach AI';
                 textContent += `[${role}]:\n${msg.content}\n\n`;
             });
-
             const blob = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -682,65 +1498,47 @@
         async function sendFeedback(btn, type, messageContent) {
             const token = storage.get('token');
             if (!token || !currentSessionId) return;
-
-            // Görsel geri bildirim
             const parent = btn.parentElement;
             const buttons = parent.querySelectorAll('button');
-            buttons.forEach(b => b.classList.remove('text-green-500', 'text-red-500', 'opacity-100')); // Reset
-            
-            btn.classList.add(type === 'like' ? 'text-green-500' : 'text-red-500', 'opacity-100');
-
+            buttons.forEach(b => b.style.color = '');
+            btn.style.color = type === 'like' ? '#22c55e' : '#ef4444';
             try {
                 await fetch('/api/feedback', {
                     method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        sessionId: currentSessionId,
-                        messageContent: messageContent,
-                        feedback: type
-                    })
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ sessionId: currentSessionId, messageContent, feedback: type })
                 });
             } catch (err) {
                 console.error("Feedback error:", err);
             }
         }
 
-        // --- DOSYA İŞLEME FONKSİYONLARI ---
         function handleFileSelect(input) {
             if (input.files && input.files[0]) {
                 const file = input.files[0];
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    currentFile = {
-                        data: e.target.result, // Base64 data URL
-                        name: file.name,
-                        type: file.type
-                    };
-                    
+                    currentFile = { data: e.target.result, name: file.name, type: file.type };
                     const container = document.getElementById('file-preview-container');
                     let previewHTML = '';
                     if (file.type.startsWith('image/')) {
-                        previewHTML = `<img src="${currentFile.data}" class="h-16 w-auto rounded-md object-cover">`;
+                        previewHTML = `<img src="${currentFile.data}" class="h-12 w-auto rounded-lg object-cover">`;
                     } else {
                         const iconClass = getFileIcon(file.name);
-                        previewHTML = `<i class="${iconClass} text-3xl text-gray-500 dark:text-gray-400"></i>`;
+                        previewHTML = `<div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: rgba(45,212,191,0.1); border: 1px solid rgba(45,212,191,0.2);"><i class="${iconClass} text-xl" style="color: #2DD4BF;"></i></div>`;
                     }
-
                     container.innerHTML = `
                         ${previewHTML}
                         <div class="flex-1 min-w-0">
-                            <p class="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">${file.name}</p>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">${(file.size / 1024).toFixed(1)} KB</p>
+                            <p class="text-sm font-medium text-slate-200 truncate">${file.name}</p>
+                            <p class="text-xs text-slate-500">${(file.size / 1024).toFixed(1)} KB</p>
                         </div>
-                        <button onclick="clearFile()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow-md hover:bg-red-600 transition-colors">
+                        <button onclick="clearFile()" class="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs shadow-lg hover:bg-red-600 transition-colors">
                             <i class="fa-solid fa-xmark"></i>
                         </button>
                     `;
                     container.classList.remove('hidden');
-                }
+                };
                 reader.readAsDataURL(file);
             }
         }
@@ -760,23 +1558,21 @@
             document.getElementById('file-preview-container').classList.add('hidden');
         }
 
-        // --- DÜŞÜNCE ZİNCİRİ (Reasoning) İŞLEME ---
         function parseThinkingProcess(text) {
-            // <think>...</think> etiketlerini bul ve şık bir detay kutusuna çevir
             return text.replace(/<think>([\s\S]*?)<\/think>/g, (match, content) => {
-                return `<details class="mb-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden group">
-                    <summary class="cursor-pointer p-2 text-xs font-medium text-gray-500 hover:text-primary flex items-center gap-2 select-none">
-                        <i class="fa-solid fa-brain text-primary/70"></i> Düşünce Süreci (Tıkla)
+                return `<details class="thinking-details mb-3">
+                    <summary class="thinking-summary">
+                        <i class="fa-solid fa-brain text-xs"></i>
+                        Düşünce Süreci (Tıkla)
+                        <i class="fa-solid fa-chevron-down text-xs ml-auto opacity-50"></i>
                     </summary>
-                    <div class="p-3 text-xs text-gray-600 dark:text-gray-400 font-mono border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 whitespace-pre-wrap">${content.trim()}</div>
+                    <div class="thinking-content">${content.trim()}</div>
                 </details>`;
             });
         }
 
-        // Markdown Resimlerini HTML'e Çevir
         function parseMarkdownImages(text) {
-            // !Alt Text formatını <img src="URL" alt="Alt Text"> formatına çevirir
-            return text.replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1" class="rounded-xl shadow-lg mt-3 mb-1 max-w-full h-auto border border-gray-200 dark:border-gray-700 block">');
+            return text.replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1" class="rounded-xl shadow-lg mt-3 mb-1 max-w-full h-auto border border-white/10 block">');
         }
 
         function appendMessage(text, sender, animate = false) {
@@ -790,52 +1586,55 @@
             
             const user = getSafeUser();
             const userAvatar = (user && user.avatar) 
-                ? `<img src="${user.avatar}" class="w-8 h-8 rounded-full object-cover order-2 ml-2">`
-                : `<div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center order-2 ml-2"><i class="fa-solid fa-user text-gray-500 text-xs"></i></div>`;
+                ? `<img src="${user.avatar}" class="w-9 h-9 rounded-xl object-cover border border-white/10 flex-shrink-0">`
+                : `<div class="msg-user-avatar"><i class="fa-solid fa-user text-slate-400 text-xs"></i></div>`;
 
             const avatar = isUser 
                 ? userAvatar
-                : `<div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center order-1 mr-2"><i class="fa-solid fa-leaf text-white text-xs"></i></div>`;
+                : `<div class="msg-ai-avatar"><i class="fa-solid fa-leaf text-white text-xs"></i></div>`;
 
             const actionBtns = !isUser ? `
-                <div class="absolute -right-24 top-0 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-gray-800 p-1 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
-                    <button onclick="speakText('${escapeJS(text)}')" class="text-gray-400 hover:text-primary p-1" title="Read Aloud">
-                        <i class="fa-solid fa-volume-high text-xs"></i>
+                <div class="msg-actions">
+                    <button onclick="speakText('${escapeJS(text)}')" class="msg-action-btn" title="Sesli Oku">
+                        <i class="fa-solid fa-volume-high"></i>
                     </button>
-                    <button onclick="copyToClipboard(this, '${escapeJS(text)}')" class="text-gray-400 hover:text-primary p-1" title="Copy">
-                        <i class="fa-regular fa-copy text-xs"></i>
+                    <button onclick="copyToClipboard(this, '${escapeJS(text)}')" class="msg-action-btn" title="Kopyala">
+                        <i class="fa-regular fa-copy"></i>
                     </button>
-                    <button onclick="sendFeedback(this, 'like', '${escapeJS(text)}')" class="text-gray-400 hover:text-green-500 p-1" title="Like">
-                        <i class="fa-regular fa-thumbs-up text-xs"></i>
+                    <button onclick="sendFeedback(this, 'like', '${escapeJS(text)}')" class="msg-action-btn" title="Beğen">
+                        <i class="fa-regular fa-thumbs-up"></i>
                     </button>
-                    <button onclick="sendFeedback(this, 'dislike', '${escapeJS(text)}')" class="text-gray-400 hover:text-red-500 p-1" title="Dislike">
-                        <i class="fa-regular fa-thumbs-down text-xs"></i>
+                    <button onclick="sendFeedback(this, 'dislike', '${escapeJS(text)}')" class="msg-action-btn" title="Beğenme">
+                        <i class="fa-regular fa-thumbs-down"></i>
                     </button>
                 </div>
             ` : '';
 
             const msgId = 'msg-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
 
-            // Eğer mesaj AI'dan geliyorsa ve animasyon yoksa (geçmiş yükleniyorsa) veya animasyon bittiyse resimleri işle
-            // Ayrıca <think> etiketlerini işle
             let processedText = (!animate) ? parseMarkdownImages(text) : text;
             if (!isUser && !animate) {
                 processedText = parseThinkingProcess(processedText);
             }
 
             const bubble = `
-                <div class="max-w-[80%] md:max-w-[70%] ${isUser ? 'order-1' : 'order-2'} group relative">
+                <div class="max-w-[80%] md:max-w-[68%] ${isUser ? 'order-1' : 'order-2'} msg-wrapper relative">
                     ${actionBtns}
-                    <div id="${msgId}" class="${isUser ? 'bg-primary text-white rounded-2xl rounded-tr-sm' : 'bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-gray-800 dark:text-gray-100 rounded-2xl rounded-tl-sm shadow-sm'} px-5 py-3.5 text-sm leading-relaxed whitespace-pre-wrap">
+                    <div id="${msgId}" class="${isUser ? 'msg-user' : 'msg-ai'} px-5 py-3.5 text-sm leading-relaxed whitespace-pre-wrap">
                         ${animate ? '' : processedText}
                     </div>
-                    <div class="text-[10px] text-gray-400 mt-1 ${isUser ? 'text-right' : 'text-left'}">
+                    <div class="text-[10px] text-slate-600 mt-1.5 ${isUser ? 'text-right' : 'text-left'} flex items-center gap-1 ${isUser ? 'justify-end' : 'justify-start'}">
+                        ${!isUser ? '<i class="fa-solid fa-leaf text-teal-700" style="font-size: 8px;"></i>' : ''}
                         ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                        ${isUser ? '<i class="fa-solid fa-check-double text-teal-600" style="font-size: 8px;"></i>' : ''}
                     </div>
                 </div>
             `;
 
-            div.innerHTML = avatar + bubble;
+            div.innerHTML = isUser 
+                ? `${bubble}${avatar}` 
+                : `${avatar}${bubble}`;
+            
             chatContainer.appendChild(div);
             chatContainer.scrollTop = chatContainer.scrollHeight;
 
@@ -847,52 +1646,39 @@
         function typeWriter(text, elementId) {
             const element = document.getElementById(elementId);
             if (!element) return;
-            
-            // Metni kelimelere ve boşluklara ayır (satır sonlarını koru)
             const parts = text.split(/(\s+)/);
             let i = 0;
-            
             function type() {
                 const el = document.getElementById(elementId);
-                if (!el) return; // Element silindiyse dur
-                
+                if (!el) return;
                 if (i < parts.length) {
-                    // Eğer parça bir resim linki içeriyorsa (basit kontrol)
-                    // Not: Typewriter efekti sırasında resmi parça parça yazmak yerine, 
-                    // metin tamamlandığında parse etmek daha sağlıklıdır. 
-                    // Ancak basitlik için burada text node olarak ekliyoruz, 
-                    // döngü bittiğinde HTML'i güncelleyeceğiz.
                     el.appendChild(document.createTextNode(parts[i]));
                     i++;
                     chatContainer.scrollTop = chatContainer.scrollHeight;
-                    // Gerçekçi olması için rastgele gecikme (30ms - 70ms arası)
-                    setTimeout(type, 30 + Math.random() * 40);
+                    setTimeout(type, 25 + Math.random() * 35);
                 }
             }
             type();
-            
-            // Yazma işlemi bittiğinde (tahmini süre) içeriği parse et
             setTimeout(() => {
                 const el = document.getElementById(elementId);
                 if(el) {
-                    // Hem resimleri hem de düşünce balonlarını işle
                     el.innerHTML = parseThinkingProcess(parseMarkdownImages(text));
                 }
-            }, parts.length * 60 + 500);
+            }, parts.length * 50 + 500);
         }
 
         function showTyping() {
             const div = document.createElement('div');
             div.id = 'typing-indicator';
-            div.className = 'flex w-full justify-start';
+            div.className = 'flex w-full justify-start animate-fade-in-up';
             div.innerHTML = `
-                <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center mr-2">
+                <div class="msg-ai-avatar mr-2">
                     <i class="fa-solid fa-leaf text-white text-xs"></i>
                 </div>
-                <div class="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl rounded-tl-sm shadow-sm px-4 py-4 flex items-center gap-1">
-                    <div class="w-2 h-2 bg-gray-400 rounded-full typing-dot"></div>
-                    <div class="w-2 h-2 bg-gray-400 rounded-full typing-dot"></div>
-                    <div class="w-2 h-2 bg-gray-400 rounded-full typing-dot"></div>
+                <div class="msg-ai px-5 py-4 flex items-center gap-2">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
                 </div>
             `;
             chatContainer.appendChild(div);
@@ -904,76 +1690,37 @@
             if (typing) typing.remove();
         }
 
-        // Dinamik Prompt Şablonları
         const templateOptions = [
-            {
-                title: "🌅 Sabah Rutini",
-                desc: "Güne enerjik başlamak için stratejiler.",
-                text: "Sabah rutinim nasıl daha verimli hale getirebilirim? Bana bilimsel temelli öneriler ver."
-            },
-            {
-                title: "🚀 Girişim Desteği",
-                desc: "Fikrini hayata geçirmek için ilk adımlar.",
-                text: "Bir girişim fikrim var ama nereden başlayacağımı bilmiyorum. MVP oluşturma sürecinde bana rehberlik et."
-            },
-            {
-                title: "🧠 Duygusal Destek",
-                desc: "Bunalmış hissettiğinde konuş.",
-                text: "Bugün kendimi çok yorgun ve tükenmiş hissediyorum. Duygularımı anlamama ve sakinleşmeme yardım et."
-            },
-            {
-                title: "🛡️ Red Team Aracı",
-                desc: "Siber güvenlik için Python scripti.",
-                text: "Bana Python ile gelişmiş bir Port Scanner (Red Team aracı) yazar mısın? Kodları detaylı açıkla."
-            },
-            {
-                title: "⏳ Ertelemecilik",
-                desc: "Odaklanma sorununu çöz.",
-                text: "Sürekli işlerimi erteliyorum. Disiplin kazanmak ve odaklanmak için bana sert ama etkili bir yöntem öner."
-            },
-            {
-                title: "💡 Kodlama Projesi",
-                desc: "Backend yeteneklerini geliştir.",
-                text: "Aklıma proje fikri gelmiyor. Backend yeteneklerimi geliştirecek zorlu bir proje öner ve temel yapısını kodla."
-            },
-            {
-                title: "🎯 Hedef Belirleme",
-                desc: "Gerçekçi hedefler koy.",
-                text: "Hayatımda bir yön eksikliği hissediyorum. Bana 3 aylık, ölçülebilir ve gerçekçi bir gelişim planı hazırla."
-            },
-            {
-                title: "🎨 Resim Oluştur",
-                desc: "Hayal gücünü görsele dök.",
-                text: "Bana siberpunk tarzında, yağmurlu bir sokakta yürüyen bir robot resmi çiz."
-            }
+            { title: "🌅 Sabah Rutini", desc: "Güne enerjik başlamak için stratejiler.", text: "Sabah rutinim nasıl daha verimli hale getirebilirim? Bana bilimsel temelli öneriler ver." },
+            { title: "🚀 Girişim Desteği", desc: "Fikrini hayata geçirmek için ilk adımlar.", text: "Bir girişim fikrim var ama nereden başlayacağımı bilmiyorum. MVP oluşturma sürecinde bana rehberlik et." },
+            { title: "🧠 Duygusal Destek", desc: "Bunalmış hissettiğinde konuş.", text: "Bugün kendimi çok yorgun ve tükenmiş hissediyorum. Duygularımı anlamama ve sakinleşmeme yardım et." },
+            { title: "🛡️ Red Team Aracı", desc: "Siber güvenlik için Python scripti.", text: "Bana Python ile gelişmiş bir Port Scanner (Red Team aracı) yazar mısın? Kodları detaylı açıkla." },
+            { title: "⏳ Ertelemecilik", desc: "Odaklanma sorununu çöz.", text: "Sürekli işlerimi erteliyorum. Disiplin kazanmak ve odaklanmak için bana sert ama etkili bir yöntem öner." },
+            { title: "💡 Kodlama Projesi", desc: "Backend yeteneklerini geliştir.", text: "Aklıma proje fikri gelmiyor. Backend yeteneklerimi geliştirecek zorlu bir proje öner ve temel yapısını kodla." },
+            { title: "🎯 Hedef Belirleme", desc: "Gerçekçi hedefler koy.", text: "Hayatımda bir yön eksikliği hissediyorum. Bana 3 aylık, ölçülebilir ve gerçekçi bir gelişim planı hazırla." },
+            { title: "🎨 Resim Oluştur", desc: "Hayal gücünü görsele dök.", text: "Bana siberpunk tarzında, yağmurlu bir sokakta yürüyen bir robot resmi çiz." }
         ];
 
         function renderRandomTemplates() {
             const container = document.getElementById('dynamic-prompts');
             if (!container) return;
-
-            // Diziyi karıştır ve ilk 2 tanesini al
             const shuffled = [...templateOptions].sort(() => 0.5 - Math.random());
-            const selected = shuffled.slice(0, 2);
-
+            const selected = shuffled.slice(0, 4);
             container.innerHTML = selected.map(t => `
-                <button onclick="useTemplate('${t.text.replace(/'/g, "\\'")}')" class="p-4 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-primary hover:bg-accent dark:hover:bg-gray-800 text-left transition-all group">
-                    <span class="block font-medium text-gray-700 dark:text-gray-200 group-hover:text-primary mb-1">${t.title}</span>
-                    <span class="text-sm text-gray-500">${t.desc}</span>
+                <button onclick="useTemplate('${t.text.replace(/'/g, "\\'")}')" class="prompt-card">
+                    <span class="block font-semibold text-sm text-slate-200 mb-1">${t.title}</span>
+                    <span class="text-xs text-slate-500 leading-relaxed">${t.desc}</span>
                 </button>
             `).join('');
         }
 
-        // Sayfa Yüklendiğinde Başlat
         document.addEventListener('DOMContentLoaded', () => {
             renderRandomTemplates();
-            // Elementleri Seç
             chatContainer = document.getElementById('chat-container');
             chatForm = document.getElementById('chat-form');
             userInput = document.getElementById('user-input');
             welcomeScreen = document.getElementById('welcome-screen');
 
-            // Enter Tuşu Dinleyicisi
             if (userInput) {
                 userInput.addEventListener('keydown', (e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
@@ -983,15 +1730,12 @@
                 });
             }
 
-            // Form Gönderim Dinleyicisi
             if (chatForm) {
                 chatForm.addEventListener('submit', async (e) => {
-                    e.preventDefault(); // Sayfa yenilenmesini engelle
-                    
+                    e.preventDefault();
                     const text = userInput.value.trim();
                     if (!text) return;
 
-                    // User Message
                     let displayMessage = text;
                     if (currentFile) {
                         displayMessage += `\n\n[Dosya eklendi: ${currentFile.name}]`;
@@ -1000,15 +1744,12 @@
                     appendMessage(displayMessage, 'user');
                     userInput.value = '';
                     userInput.style.height = 'auto';
-                    const fileToSend = currentFile; // Göndermek için sakla
-                    clearFile(); // UI'ı temizle
+                    const fileToSend = currentFile;
+                    clearFile();
 
-                    // Simulate AI Response
                     showTyping();
                     
-                    // Tarayıcı dilini otomatik algıla (Örn: 'tr-TR', 'en-US', 'de-DE')
                     const userLang = navigator.language || 'tr-TR';
-
                     const token = storage.get('token');
 
                     try {
@@ -1023,7 +1764,7 @@
                                 history: messageHistory,
                                 sessionId: currentSessionId,
                                 userLanguage: userLang,
-                                file: fileToSend // Dosyayı gönder
+                                file: fileToSend
                             })
                         });
 
@@ -1035,7 +1776,6 @@
                             messageHistory.push({ role: 'user', content: text });
                             messageHistory.push({ role: 'assistant', content: data.response });
                             
-                            // Eğer yeni bir seans başladıysa ID'yi güncelle ve listeyi yenile
                             if (!currentSessionId && data.sessionId) {
                                 currentSessionId = data.sessionId;
                                 loadHistory();
@@ -1044,12 +1784,11 @@
                     } catch (error) {
                         console.error('Error:', error);
                         removeTyping();
-                        appendMessage("Sorry, a connection error occurred.", 'ai');
+                        appendMessage("Üzgünüm, bir bağlantı hatası oluştu. Lütfen tekrar deneyin.", 'ai');
                     }
                 });
             }
 
-            // Ayarlar Formu Dinleyicisi
             const settingsForm = document.getElementById('settings-form');
             if (settingsForm) {
                 settingsForm.addEventListener('submit', async (e) => {
@@ -1060,7 +1799,7 @@
                     const user = getSafeUser();
 
                     if (!/^[a-zA-Z0-9_.]+$/.test(newName)) {
-                        errorMsg.textContent = "Username can only contain letters, numbers, dots and underscores.";
+                        errorMsg.textContent = "Kullanıcı adı sadece harf, rakam, nokta ve alt çizgi içerebilir.";
                         errorMsg.classList.remove('hidden');
                         return;
                     }
@@ -1071,62 +1810,25 @@
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ email: user.email, newName, newAvatar })
                         });
-                        
                         const data = await res.json();
-
                         if (data.success) {
                             storage.set('user', JSON.stringify(data.user));
                             checkAuth();
                             closeSettings();
+                            showToast("Profil başarıyla güncellendi! ✨");
                         } else {
                             errorMsg.textContent = data.error;
                             errorMsg.classList.remove('hidden');
                         }
                     } catch (err) {
-                        errorMsg.textContent = "An error occurred.";
+                        errorMsg.textContent = "Bir hata oluştu.";
                         errorMsg.classList.remove('hidden');
                     }
                 });
             }
 
-            // Başlangıç Kontrolleri
             checkAuth();
         });
     </script>
-
-    <!-- Settings Modal -->
-    <div id="settings-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden items-center justify-center z-50 backdrop-blur-sm">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-sm mx-4 shadow-2xl border border-gray-100 dark:border-gray-700">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold text-gray-900 dark:text-white">Edit Profile</h3>
-                <button onclick="closeSettings()" class="text-gray-400 hover:text-gray-600">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-            <form id="settings-form" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Username</label>
-                    <div class="relative">
-                        <span class="absolute left-3 top-2.5 text-gray-400">@</span>
-                        <input type="text" id="settings-name" class="pl-8 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm" placeholder="kullanici_adi">
-                    </div>
-                    <p class="text-xs text-gray-500 mt-1">Only letters, numbers, dots, and underscores allowed.</p>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Avatar URL</label>
-                    <input type="url" id="settings-avatar" class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm" placeholder="https://example.com/avatar.jpg">
-                    <p class="text-xs text-gray-500 mt-1">Optional: Paste an image link.</p>
-                </div>
-                <div id="settings-error" class="text-red-500 text-sm hidden"></div>
-                <div class="flex gap-3 pt-2">
-                    <button type="button" onclick="closeSettings()" class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors">Cancel</button>
-                    <button type="submit" class="flex-1 px-4 py-2 bg-primary text-white rounded-xl hover:bg-teal-800 font-medium transition-colors">Save</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Toast Container -->
-    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 </body>
 </html>
