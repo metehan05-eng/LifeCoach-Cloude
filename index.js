@@ -9,7 +9,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import mammoth from 'mammoth';
 import xlsx from 'xlsx';
-import pdf from 'pdf-parse';
+import * as pdf from 'pdf-parse';
 
 // __dirname ES Module çözümü
 const __filename = fileURLToPath(import.meta.url);
@@ -212,7 +212,10 @@ async function extractTextFromFile(file) {
             return content;
         }
         if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
-            const data = await pdf(buffer);
+            // CJS/ESM uyumluluğu için: Hata, 'default' export olmadığını belirtiyor.
+            // Bu durumda, modülün kendisi veya 'default' özelliği bir fonksiyon olabilir.
+            const parser = pdf.default || pdf;
+            const data = await parser(buffer);
             return data.text;
         }
         if (file.type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation' || file.name.endsWith('.pptx')) {

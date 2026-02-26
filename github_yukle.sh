@@ -1,12 +1,14 @@
 #!/bin/bash
 
-REPO_URL="https://github.com/metehan05-eng/LifeCoach-Cloude.git"
+read -p "GitHub kullanıcı adınızı girin (örn: metehan05-eng): " GITHUB_USER
+read -p "GitHub repo adını girin (örn: LifeCoach-Cloude): " GITHUB_REPO
+REPO_URL="https://github.com/${GITHUB_USER}/${GITHUB_REPO}.git"
 
 echo "----------------------------------------------------------------"
 echo "GitHub Yükleme Aracı"
 echo "Hedef: $REPO_URL"
 echo "----------------------------------------------------------------"
-echo "⚠️  ÖNEMLİ: GitHub şifre ile girişi kaldırmıştır."
+echo "⚠️  ÖNEMLİ: GitHub artık şifre ile girişi desteklemiyor."
 echo "Şifre sorulduğunda 'Personal Access Token' yapıştırmalısınız."
 echo "----------------------------------------------------------------"
 
@@ -38,7 +40,7 @@ git commit -m "$COMMIT_MSG" || echo "⚠️ Commit edilecek yeni değişiklik yo
 
 # 4. Push
 echo "🚀 GitHub'a gönderiliyor..."
-echo "👉 Kullanıcı Adı: metehan05-eng"
+echo "👉 Kullanıcı Adı: ${GITHUB_USER}"
 echo "👉 Şifre: (Token'ınızı yapıştırın)"
 git push -u origin main
 
