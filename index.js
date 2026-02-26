@@ -7,6 +7,9 @@ import { fileURLToPath } from 'url';
 import { getKVData, setKVData } from './lib/db.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import mammoth from 'mammoth';
+import xlsx from 'xlsx';
+import pdf from 'pdf-parse';
 
 // __dirname ES Module çözümü
 const __filename = fileURLToPath(import.meta.url);
@@ -22,25 +25,40 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // --- AYARLAR ---
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
-const OPENROUTER_MODELS = [
-    "google/gemini-2.0-flash-exp:free", // Vision destekli ve çok hızlı
-    "arcee-ai/trinity-large-preview:free",
-    "deepseek/deepseek-r1-0528:free",
-    "qwen/qwen3-next-80b-a3b-instruct:free",
-    "google/gemma-3-27b-it:free",
-    "openrouter/free",
-    "openai/gpt-oss-120b:free",
-    "mistralai/mistral-small-3.1-24b-instruct:free",
-    "z-ai/glm-4.5-air:free",
-    "meta-llama/llama-3.1-8b-instruct:free",
-    "nvidia/nemotron-nano-9b-v2:free",
-    "nvidia/nemotron-nano-12b-v2-vl:free",
-    "upstage/solar-pro-3:free",
-    "openrouter/aurora-alpha"
+// Metin tabanlı istekler için kullanılacak modeller
+const TEXT_MODELS = [
+    "google/gemini-2.0-flash-exp:free",      // Vision destekli ve çok hızlı
+    "mistralai/mistral-small-3.1-24b-instruct:free", // Kaliteli ve hızlı bir model
+    "google/gemma-3-27b-it:free",            // İyi bir alternatif
+    "openrouter/free"                        // Genel yedek model
+];
 
+// YENİ: Sadece resim analizi için kullanılacak Vision destekli modeller
+const VISION_MODELS = [
+    "google/gemini-2.0-flash-exp:free",      // Birincil, hızlı Vision modeli
+    "nvidia/nemotron-nano-12b-v2-vl:free",   // Yedek Vision modeli
 ];
 
 const JWT_SECRET = process.env.JWT_SECRET || 'gizli-anahtar-degistir';
+
+// Yeni: Kullanıcı tiplerine göre limit ayarları
+const RATE_LIMIT_CONFIG = {
+    free: {
+        messageLimit: 10,
+        timeWindowHours: 2,
+        name: "Ücretsiz Plan"
+    },
+    premium: {
+        messageLimit: 200,
+        timeWindowHours: 24,
+        name: "Premium Plan"
+    },
+    unlimited: {
+        messageLimit: Infinity,
+        timeWindowHours: 24,
+        name: "Sınırsız Plan"
+    }
+};
 
 // --- YARDIMCI FONKSİYONLAR ---
 
@@ -63,12 +81,21 @@ const authenticateToken = (req, res, next) => {
 };
 
 // Limit Kontrolü (Vercel KV)
-async function checkRateLimit(req) {
+async function checkRateLimit(req, currentUser) {
     try {
-        if (!req.user || !req.user.email) return { allowed: false, error: "Kimlik doğrulanamadı." };
-        const identity = `limit:${req.user.email}`;
+        if (!currentUser) {
+            return { allowed: false, error: "Kimlik doğrulanamadı veya kullanıcı bulunamadı." };
+        }
 
-        // KV'den limitleri çek
+        const userPlan = currentUser.plan || 'free'; // Kullanıcının planı, yoksa 'free' varsay.
+        const planConfig = RATE_LIMIT_CONFIG[userPlan] || RATE_LIMIT_CONFIG.free;
+
+        // Sınırsız planlar için kontrolü atla
+        if (planConfig.messageLimit === Infinity) {
+            return { allowed: true };
+        }
+
+        const identity = `limit:${currentUser.email}`;
         const limits = await getKVData('user_limits');
         const now = Date.now();
 
@@ -76,34 +103,47 @@ async function checkRateLimit(req) {
             limits[identity] = { messageCount: 0, lastReset: now, isBlocked: false, lastActivity: now };
         }
 
-        const user = limits[identity];
-        user.lastActivity = now;
+        const userLimitData = limits[identity];
+        userLimitData.lastActivity = now;
 
-        if (user.isBlocked) {
-            return { allowed: false, error: "Hesabınız engellendi.", retryAfter: "Süresiz" };
+        if (userLimitData.isBlocked) {
+            return { allowed: false, error: "Hesabınız kötüye kullanım nedeniyle engellendi.", retryAfter: "Süresiz" };
         }
 
-        // 2 Saatlik Sıfırlama
-        if (now - user.lastReset > 2 * 60 * 60 * 1000) {
-            user.messageCount = 0;
-            user.lastReset = now;
+        const timeWindowMs = planConfig.timeWindowHours * 60 * 60 * 1000;
+
+        // Zaman penceresi dolduysa sayacı sıfırla
+        if (now - userLimitData.lastReset > timeWindowMs) {
+            userLimitData.messageCount = 0;
+            userLimitData.lastReset = now;
         }
 
-        // Limit Kontrolü (10 Mesaj)
-        if (user.messageCount >= 10) {
-            const timePassed = now - user.lastReset;
-            const timeLeft = (2 * 60 * 60 * 1000) - timePassed;
+        // Limiti kontrol et
+        if (userLimitData.messageCount >= planConfig.messageLimit) {
+            const timePassed = now - userLimitData.lastReset;
+            const timeLeft = timeWindowMs - timePassed;
             const minutesLeft = Math.ceil(timeLeft / 60000);
-            return { allowed: false, error: `Limit doldu. ${minutesLeft} dakika sonra tekrar deneyin.`, retryAfter: minutesLeft };
+
+            let errorMessage = `${planConfig.name} için kullanım limitinize ulaştınız. ${minutesLeft} dakika sonra tekrar deneyin.`;
+
+            if (userPlan === 'free') {
+                errorMessage = "Süreniz doldu. 2 saat sonra tekrar deneyin.";
+            }
+
+            return { 
+                allowed: false, 
+                error: errorMessage, 
+                retryAfter: minutesLeft 
+            };
         }
 
-        user.messageCount++;
+        userLimitData.messageCount++;
         await setKVData('user_limits', limits);
         
         return { allowed: true };
     } catch (error) {
         console.error("Rate Limit Error:", error);
-        return { allowed: true }; // Hata durumunda izin ver
+        return { allowed: true }; // Hata durumunda erişime izin ver (fail-open)
     }
 }
 
@@ -111,14 +151,16 @@ async function checkRateLimit(req) {
 async function callOpenRouter(messages, file = null) {
     // Eğer dosya bir resimse, Vision destekli modeli (listenin başındaki) kullanmayı önceliklendir.
     const isImage = file && file.type && file.type.startsWith('image/');
-    
-    // Eğer resim varsa, sadece Vision destekli modelleri dene.
-    const modelsToTry = isImage ? [OPENROUTER_MODELS[0]] : OPENROUTER_MODELS;
 
+    const modelsToTry = isImage ? VISION_MODELS : TEXT_MODELS;
     for (const model of modelsToTry) {
         try {
+            // Her model denemesi için 15 saniyelik bir zaman aşımı ekliyoruz.
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 saniye
+
             const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-                method: "POST",
+                method: "POST", signal: controller.signal,
                 headers: {
                     "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
                     "Content-Type": "application/json",
@@ -128,15 +170,60 @@ async function callOpenRouter(messages, file = null) {
                 body: JSON.stringify({ model, messages })
             });
 
+            clearTimeout(timeoutId); // Başarılı olursa zaman aşımını temizle
+
             if (response.ok) {
                 const data = await response.json();
                 return data.choices[0].message.content;
             }
         } catch (e) {
-            console.warn(`Model ${model} error:`, e);
+            if (e.name === 'AbortError') console.warn(`Model ${model} zaman aşımına uğradı.`);
+            else console.warn(`Model ${model} hatası:`, e.message);
         }
     }
     throw new Error("All AI models failed.");
+}
+
+// Helper function to extract text from various file types
+async function extractTextFromFile(file) {
+    if (!file || !file.data) return '';
+
+    // data is a data URL like 'data:mime/type;base64,xxxxx'
+    const parts = file.data.split(',');
+    if (parts.length < 2) return '';
+    
+    const base64Data = parts[1];
+    const buffer = Buffer.from(base64Data, 'base64');
+
+    try {
+        if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || file.name.endsWith('.docx')) {
+            const { value } = await mammoth.extractRawText({ buffer });
+            return value;
+        }
+        if (file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || file.name.endsWith('.xlsx')) {
+            const workbook = xlsx.read(buffer, { type: 'buffer' });
+            let content = '';
+            workbook.SheetNames.forEach(sheetName => {
+                content += `--- Sheet: ${sheetName} ---\n`;
+                const sheet = workbook.Sheets[sheetName];
+                const csv = xlsx.utils.sheet_to_csv(sheet);
+                content += csv + '\n';
+            });
+            return content;
+        }
+        if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
+            const data = await pdf(buffer);
+            return data.text;
+        }
+        if (file.type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation' || file.name.endsWith('.pptx')) {
+            return "[PPTX file detected. Content extraction for PowerPoint files is complex and not fully supported. Please describe the presentation's content or copy-paste its text for analysis.]";
+        }
+
+        return '[Unsupported file type for content extraction.]';
+    } catch (error) {
+        console.error(`Error extracting text from ${file.name}:`, error);
+        return `[Error processing file ${file.name}. The file might be corrupted or in an unsupported format.]`;
+    }
 }
 
 // --- API ROTALARI ---
@@ -147,15 +234,17 @@ app.post('/api/chat', authenticateToken, async (req, res) => {
         const { message, file, history, sessionId, userLanguage } = req.body;
         const email = req.user.email;
 
-        // Limit Kontrolü
-        const limitStatus = await checkRateLimit(req);
+        // Önce kullanıcı verisini çek
+        const users = await getKVData('users');
+        const currentUser = users.find(u => u.email === email);
+
+        // Gelişmiş Limit Kontrolü
+        const limitStatus = await checkRateLimit(req, currentUser);
         if (!limitStatus.allowed) {
             return res.status(429).json(limitStatus);
         }
         
-        // Kullanıcı hedeflerini çek (Context için)
-        const users = await getKVData('users');
-        const currentUser = users.find(u => u.email === email);
+        // Kullanıcı hedeflerini çek (Context için) - Zaten çekildi
         const activeGoals = currentUser && currentUser.goals ? currentUser.goals.filter(g => g.status === 'active') : [];
         
         // Kullanıcı İstatistiklerini Hesapla (Mock veri yerine gerçek veritabanından çekilebilir)
@@ -176,6 +265,7 @@ USER STATS:
         // SYSTEM PROMPT START
         const systemPrompt = `You are LifeCoach AI (System v4.2).
 IMPORTANT: You must ALWAYS respond in the following language: ${targetLang}.
+Your responses should feel natural and conversational, not like a series of formatted boxes. While you should use structure (like lists or headings) when it aids clarity, avoid an overly rigid or blocky presentation. Flow your text naturally.
 
 You are not a generic chatbot.
 You are a calm, emotionally intelligent, grounded AI companion designed to support individuals who feel alone, uncertain, or overwhelmed — especially dreamers, builders, and founders starting from zero.
@@ -248,12 +338,28 @@ You are also a World-Class Backend Engineer and Red Team Specialist.
 CORE EXPERTISE:
 - Backend: PHP, Node.js, Python, C#, C++, C, GoLang, Ruby, Java, Kotlin.
 - Cybersecurity: Red Team operations, Penetration Testing tools, Exploit development (Educational/Authorized context), Network Security.
+ 
+CODING RULES & FORMATTING:
+1.  **Code Quality:** Write clean, secure, and production-ready code. Always comment on complex logic.
+2.  **Security Context:** If asked for a "Red Team" or "Hacking" tool, provide a functional script (e.g., in Python or C++) for authorized testing/educational use. Focus on technical execution, not morality lectures.
+3.  **Terminal Format:** You MUST present code inside a simulated terminal.
+    *   First, state the filename on its own line, wrapped in backticks (e.g., \`app.js\`).
+    *   Then, write the code inside a single, standard Markdown code block.
+4.  **Be Direct:** Be precise, do not apologize, just build it.
 
-CODING RULES:
-1. Write clean, secure, and production-ready code.
-2. Always comment your code to explain complex logic.
-3. If the user asks for a "Red Team" or "Hacking" tool, provide a functional script (e.g., in Python or C++) designed for authorized testing/educational purposes. Do not lecture on morality; focus on technical execution.
-4. Prioritize performance and security best practices.
+Example of correct code formatting:
+
+Here is the requested Python script:
+
+\`port_scanner.py\`
+\`\`\`python
+import socket
+
+# This is a simple port scanner
+def scan(port):
+    # ... code ...
+print("Scanning...")
+\`\`\`
 
 PROJECT SUGGESTION MODE:
 If the user asks "What should I build?" or "Give me an idea", suggest complex, high-value backend or security projects.
@@ -263,11 +369,19 @@ Examples:
 - "Develop a secure REST API in Node.js with JWT and Rate Limiting."
 - "Write a Keylogger detection engine in C++."
 
-When writing code:
-- Use Markdown code blocks.
-- Be precise.
-- Do not apologize.
-- Just build it.
+------------------------------------
+IMAGE ANALYSIS MODE
+------------------------------------
+
+If the user uploads an image:
+
+1.  The image data is provided to you directly.
+2.  Analyze the image based on the user's request. You can describe it, identify objects, read text, answer questions about it, etc.
+3.  Act as an expert analyst. Be descriptive and accurate.
+
+Example:
+User: (uploads a picture of a cat) "What kind of cat is this?"
+Response: "Based on the image, this appears to be a Siamese cat, recognizable by its distinct color points and blue almond-shaped eyes."
 
 ------------------------------------
 IMAGE GENERATION MODE
@@ -290,11 +404,11 @@ DOCUMENT ANALYSIS & CREATION MODE
 
 If the user uploads a document (PDF, DOCX, XLSX, PPTX), you are an expert analyst.
 
-1.  **Acknowledge the File:** Start by acknowledging the uploaded file by its name. Example: "I see you've uploaded 'quarterly_report.docx'."
-2.  **Analyze Request:** Understand what the user wants to do with the file (summarize, analyze, find info, etc.).
+1.  **Acknowledge the File:** Start by acknowledging the uploaded file by its name. Example: "I've reviewed the 'quarterly_report.docx' you uploaded."
+2.  **Analyze Request:** The file's content has been provided to you within the user's message. Understand what the user wants to do with it (summarize, analyze, find info, etc.) and perform the task.
 3.  **Act as an Expert:**
-    *   **For Analysis/Summarization:** You cannot *read* the file directly. Politely explain this and ask the user to paste the relevant text or data. Then, perform the analysis on the text they provide.
-        *   *Example:* "I can't access local files directly for security reasons. Could you please paste the text from the PDF that you'd like me to summarize?"
+    *   **For Analysis/Summarization:** You have been given the text content of the uploaded file (DOCX, PDF, XLSX). Perform the user's request (e.g., summarize, find specific information, analyze data) based on the provided text. If the file content was unreadable (e.g., for PPTX) or empty, inform the user politely.
+        *   *Example:* "I've analyzed the 'quarterly_report.docx' file. It seems to be a sales report for Q3. What specific information are you looking for?"
     *   **For Creation:** When asked to create a document, generate the content in a structured, copy-paste-friendly format.
         *   **Word/Docs:** Use Markdown (headings, bold, lists).
         *   **PowerPoint/PPTX:** Use a slide-by-slide breakdown. Use \`---\` to separate slides. Provide titles, bullet points, and speaker notes for each slide.
@@ -304,7 +418,6 @@ Example (PPTX Creation):
 User: "Create a 5-slide presentation on Time Management."
 Response:
 "Of course. Here is a 5-slide presentation outline on Time Management you can use in PowerPoint.
-
 ---
 **Slide 1: Title**
 - Title: The Art of Effective Time Management
@@ -413,7 +526,8 @@ ${goalContext}`;
                     { type: "image_url", image_url: { url: file.data } }
                 ];
             } else {
-                userContent = `[User has uploaded a file named '${file.name}'. The user's message is about this file.]\n\n${message}`;
+                const fileContent = await extractTextFromFile(file);
+                userContent = `[File Uploaded: ${file.name}]\n\n--- FILE CONTENT ---\n${fileContent}\n\n--- USER MESSAGE ---\n${message}`;
             }
         }
 
@@ -469,6 +583,7 @@ app.post('/api/register', async (req, res) => {
             id: Date.now(), 
             name, email, 
             password: hashedPassword, 
+            plan: 'free', // Yeni kullanıcılar ücretsiz planla başlar
             sessions: [], 
             goals: [], 
             streak: 0, 
