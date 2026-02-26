@@ -13,13 +13,13 @@
     "@supabase/supabase-js": "^2.39.3",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
-    "dotenv": "^16.6.1",
+    "dotenv": "^16.4.5",
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.2",
-    "mammoth": "^1.11.0",
-    "nodemailer": "^8.0.1",
-    "pdf-parse": "^2.4.5",
-    "pg": "^8.18.0",
+    "mammoth": "^1.8.0",
+    "nodemailer": "^6.9.13",
+    "pdf-parse": "^1.1.1",
+    "pg": "^8.11.5",
     "xlsx": "^0.18.5"
   }
 }
