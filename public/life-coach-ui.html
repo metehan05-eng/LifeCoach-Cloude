@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LifeCoach AI — Your Personal Growth Partner</title>
+    <title>LifeCoach AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -670,6 +670,12 @@
             z-index: 5;
         }
 
+        /* ===== LINK BUTTONS ===== */
+        a.btn-primary, a.btn-secondary {
+            text-decoration: none;
+            display: flex;
+        }
+
         /* ===== AUTH SECTION ===== */
         .auth-section {
             background: rgba(30, 41, 59, 0.4);
@@ -768,6 +774,21 @@
         @media (max-width: 768px) {
             .input-area { margin: 8px; border-radius: 16px; }
             .welcome-title { font-size: 1.5rem; }
+            #main-content { width: 100%; }
+            .msg-ai, .msg-user { font-size: 0.82rem; }
+            #chat-container { padding: 12px; }
+            .max-w-\[80\%\] { max-width: 90% !important; }
+        }
+
+        /* ===== IMAGE WRAPPER ===== */
+        .img-wrapper img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        /* ===== SIDEBAR MOBILE ANIMATION ===== */
+        #main-sidebar.fixed {
+            animation: slide-in-left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         /* ===== LIGHT MODE OVERRIDES ===== */
@@ -843,6 +864,9 @@
     <div class="orb orb-2"></div>
     <div class="orb orb-3"></div>
 
+    <!-- Mobile Sidebar Overlay -->
+    <div id="sidebar-overlay" class="hidden fixed inset-0 bg-black/60 z-40 md:hidden" onclick="closeSidebarMobile()"></div>
+
     <!-- Sidebar -->
     <aside id="main-sidebar" class="w-80 flex-col hidden md:flex z-10 relative" style="min-width: 320px;">
         
@@ -874,10 +898,11 @@
         <!-- Discipline Badge -->
         <div class="px-4 pb-3">
             <div id="discipline-badge" class="discipline-badge hidden">
-                <div class="flex items-center justify-between mb-3">
+                <!-- Header -->
+                <div class="flex items-center justify-between mb-2">
                     <div class="flex items-center gap-2">
                         <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500/20 to-amber-400/10 border border-amber-500/20 flex items-center justify-center">
-                            <i class="fa-solid fa-shield-halved text-amber-400 text-xs"></i>
+                            <i class="fa-solid fa-fire text-amber-400 text-xs"></i>
                         </div>
                         <span class="text-xs font-bold text-white/80 tracking-wide uppercase">Discipline Core</span>
                     </div>
@@ -886,13 +911,27 @@
                         <span class="ml-1">gün</span>
                     </div>
                 </div>
-                <div id="badge-stars" class="flex justify-center gap-1 mb-3 text-lg">
+                <!-- Today Status -->
+                <div id="badge-today-status" class="text-xs flex items-center mb-2">
+                    <!-- JS ile doldurulacak -->
+                </div>
+                <!-- Stars -->
+                <div id="badge-stars" class="flex justify-center gap-1 mb-2 text-lg">
                     <!-- Stars injected here -->
                 </div>
-                <button id="checkin-btn" onclick="handleCheckIn()" class="checkin-btn">
-                    <i class="fa-solid fa-calendar-check mr-1.5"></i>
-                    Günlük Check-in
-                </button>
+                <!-- Progress Bar -->
+                <div id="badge-progress" class="mb-2">
+                    <!-- JS ile doldurulacak -->
+                </div>
+                <!-- Milestone Labels -->
+                <div class="flex justify-between text-[9px] text-slate-600 mb-2 px-0.5">
+                    <span>3g ⭐</span>
+                    <span>7g ⭐⭐</span>
+                    <span>14g ⭐⭐⭐</span>
+                    <span>30g ⭐⭐⭐⭐</span>
+                </div>
+                <!-- Info text -->
+                <p class="text-[10px] text-slate-600 text-center">Her gün yazarak serinizi koruyun!</p>
             </div>
         </div>
 
@@ -1048,10 +1087,24 @@
     <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
     <script>
-        // Sayfa yüklenirken güvenlik kontrolü
-        if (!localStorage.getItem('token')) {
-            window.location.href = '/login';
-        }
+        // Sayfa yüklenirken token kontrolü (zorunlu değil - misafir kullanıcılara izin ver)
+        (function checkTokenOnLoad() {
+            const token = localStorage.getItem('token');
+            if (!token) return; // Misafir kullanıcı - devam et
+            // JWT expiry check (client-side, no verification)
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                if (payload.exp && Date.now() / 1000 > payload.exp) {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    // Token süresi dolmuş ama sayfada kalmaya devam et (misafir olarak)
+                }
+            } catch(e) {
+                // Bozuk token - temizle ama sayfada kal
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+            }
+        })();
 
         function escapeJS(str) {
             if (str === null || str === undefined) return '';
@@ -1115,10 +1168,12 @@
             const user = getSafeUser();
             const token = storage.get('token');
             const authContainer = document.getElementById('auth-container');
+            const disciplineBadge = document.getElementById('discipline-badge');
             
             if (user && token) {
-                const avatarHtml = user.avatar 
-                    ? `<img src="${user.avatar}" alt="${user.name}" class="w-9 h-9 rounded-xl object-cover border border-white/10">`
+                // Giriş yapmış kullanıcı
+                const avatarHtml = user.avatar
+                    ? `<img src="${user.avatar}" alt="${user.name}" class="w-9 h-9 rounded-xl object-cover border border-white/10" onerror="this.onerror=null; this.outerHTML='<div class=\\'w-9 h-9 rounded-xl flex items-center justify-center font-bold text-white text-sm\\' style=\\'background: linear-gradient(135deg, #0F766E, #2DD4BF);\\'>${user.name.charAt(0).toUpperCase()}</div>'">`
                     : `<div class="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-white text-sm" style="background: linear-gradient(135deg, #0F766E, #2DD4BF);">${user.name.charAt(0).toUpperCase()}</div>`;
 
                 authContainer.innerHTML = `
@@ -1151,7 +1206,36 @@
                 loadHistory();
                 loadBadgeStatus();
             } else {
-                window.location.href = '/login';
+                // Misafir kullanıcı - giriş yapmadan devam et
+                if (disciplineBadge) disciplineBadge.classList.add('hidden');
+                authContainer.innerHTML = `
+                    <div class="auth-section">
+                        <div class="space-y-2">
+                            <p class="text-xs text-slate-400 text-center mb-2">Geçmişini kaydetmek için giriş yap</p>
+                            <a href="/login" class="btn-primary w-full flex items-center justify-center gap-2 text-sm py-2.5 no-underline">
+                                <i class="fa-solid fa-right-to-bracket text-xs"></i>
+                                <span>Giriş Yap</span>
+                            </a>
+                            <a href="/signup" class="btn-secondary w-full flex items-center justify-center gap-2 text-sm py-2 no-underline">
+                                <i class="fa-solid fa-user-plus text-xs"></i>
+                                <span>Kayıt Ol</span>
+                            </a>
+                        </div>
+                    </div>
+                `;
+                // Misafir için geçmiş listesini güncelle
+                const historyList = document.getElementById('history-list');
+                if (historyList) {
+                    historyList.innerHTML = `
+                        <div class="px-4 py-6 text-center">
+                            <div class="w-10 h-10 rounded-xl mx-auto mb-3 flex items-center justify-center" style="background: rgba(45,212,191,0.08); border: 1px solid rgba(45,212,191,0.12);">
+                                <i class="fa-solid fa-lock text-slate-500 text-sm"></i>
+                            </div>
+                            <p class="text-xs text-slate-500 mb-3">Konuşma geçmişini görmek için giriş yapın.</p>
+                            <a href="/login" class="text-xs text-teal-400 hover:text-teal-300 underline">Giriş Yap →</a>
+                        </div>
+                    `;
+                }
             }
         }
 
@@ -1170,11 +1254,24 @@
 
         function toggleSidebar() {
             const sidebar = document.getElementById('main-sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
             sidebar.classList.toggle('hidden');
             if (!sidebar.classList.contains('hidden')) {
                 sidebar.classList.add('fixed', 'inset-y-0', 'left-0', 'z-50', 'w-80', 'shadow-2xl', 'flex');
+                if (overlay) overlay.classList.remove('hidden');
             } else {
                 sidebar.classList.remove('fixed', 'inset-y-0', 'left-0', 'z-50', 'w-80', 'shadow-2xl', 'flex');
+                if (overlay) overlay.classList.add('hidden');
+            }
+        }
+
+        function closeSidebarMobile() {
+            const sidebar = document.getElementById('main-sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            if (window.innerWidth < 768) {
+                sidebar.classList.add('hidden');
+                sidebar.classList.remove('fixed', 'inset-y-0', 'left-0', 'z-50', 'w-80', 'shadow-2xl', 'flex');
+                if (overlay) overlay.classList.add('hidden');
             }
         }
 
@@ -1205,27 +1302,22 @@
                 });
                 if (!res.ok) return;
                 const data = await res.json();
-                updateBadgeDisplay(data.streak, data.stars);
-                const checkinBtn = document.getElementById('checkin-btn');
-                const todayStr = new Date().toISOString().split('T')[0];
-                if (data.lastCheckinDate && data.lastCheckinDate.startsWith(todayStr)) {
-                    checkinBtn.disabled = true;
-                    checkinBtn.innerHTML = '<i class="fa-solid fa-check-double mr-1.5"></i> Check-in Yapıldı';
-                } else {
-                    checkinBtn.disabled = false;
-                    checkinBtn.innerHTML = '<i class="fa-solid fa-calendar-check mr-1.5"></i> Günlük Check-in';
-                }
+                updateBadgeDisplay(data.streak, data.stars, data.chattedToday);
             } catch (err) {
                 console.error("Rozet durumu yüklenemedi:", err);
             }
         }
 
-        function updateBadgeDisplay(streak, stars, oldStars = -1) {
+        function updateBadgeDisplay(streak, stars, chattedToday = false, oldStars = -1) {
             const badgeEl = document.getElementById('discipline-badge');
             const streakEl = document.getElementById('badge-streak');
             const starsEl = document.getElementById('badge-stars');
+            const statusEl = document.getElementById('badge-today-status');
+            if (!badgeEl) return;
             badgeEl.classList.remove('hidden');
             streakEl.textContent = streak;
+
+            // Yıldız gösterimi (4 yıldız: 3gün=1, 7gün=2, 14gün=3, 30gün=4)
             let starsHTML = '';
             for (let i = 1; i <= 4; i++) {
                 const isFilled = i <= stars;
@@ -1234,12 +1326,39 @@
                 starsHTML += `<i class="fa-solid fa-star ${isFilled ? 'text-amber-400' : 'text-slate-700'} ${animClass}" style="${isFilled ? 'filter: drop-shadow(0 0 4px rgba(251,191,36,0.5));' : ''}"></i>`;
             }
             starsEl.innerHTML = starsHTML;
+
+            // Bugünkü durum
+            if (statusEl) {
+                if (chattedToday) {
+                    statusEl.innerHTML = '<i class="fa-solid fa-check-circle text-teal-400 mr-1"></i><span class="text-teal-400">Bugün yazıldı ✓</span>';
+                } else {
+                    statusEl.innerHTML = '<i class="fa-solid fa-clock text-slate-500 mr-1"></i><span class="text-slate-500">Bugün henüz yazmadın</span>';
+                }
+            }
+
+            // Sonraki yıldız için ne kadar kaldı
+            const nextMilestone = streak < 3 ? 3 : streak < 7 ? 7 : streak < 14 ? 14 : streak < 30 ? 30 : null;
+            const progressEl = document.getElementById('badge-progress');
+            if (progressEl && nextMilestone) {
+                const pct = Math.min(100, Math.round((streak / nextMilestone) * 100));
+                progressEl.innerHTML = `
+                    <div class="flex justify-between text-[10px] text-slate-500 mb-1">
+                        <span>${streak} gün</span>
+                        <span>${nextMilestone} günde yeni yıldız</span>
+                    </div>
+                    <div class="w-full bg-slate-700/50 rounded-full h-1.5">
+                        <div class="h-1.5 rounded-full transition-all duration-500" style="width:${pct}%; background: linear-gradient(90deg, #0F766E, #2DD4BF);"></div>
+                    </div>
+                `;
+            } else if (progressEl && !nextMilestone) {
+                progressEl.innerHTML = `<div class="text-center text-xs text-amber-400"><i class="fa-solid fa-crown mr-1"></i>Maksimum seviye!</div>`;
+            }
         }
 
         async function handleCheckIn() {
             const token = storage.get('token');
             const btn = document.getElementById('checkin-btn');
-            btn.disabled = true;
+            if (btn) btn.disabled = true;
             try {
                 const res = await fetch('/api/check-in', {
                     method: 'POST',
@@ -1250,11 +1369,11 @@
                 loadBadgeStatus();
             } catch (err) {
                 showToast("Bir hata oluştu.");
-                btn.disabled = false;
+                if (btn) btn.disabled = false;
             }
         }
 
-        async function loadHistory() {
+        async function loadHistory(retryCount = 0) {
             const historyList = document.getElementById('history-list');
             if (!historyList) return;
 
@@ -1274,20 +1393,48 @@
             }
 
             try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000);
+
                 const response = await fetch('/api/history', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({})
+                    body: JSON.stringify({}),
+                    signal: controller.signal
                 });
+                clearTimeout(timeoutId);
+
+                // Token geçersiz veya süresi dolmuş
+                if (response.status === 401 || response.status === 403) {
+                    historyList.innerHTML = '<div class="px-4 py-3 text-xs text-slate-500">Oturum süresi doldu. Lütfen tekrar giriş yapın.</div>';
+                    setTimeout(() => {
+                        storage.remove('token');
+                        storage.remove('user');
+                        window.location.href = '/login';
+                    }, 2000);
+                    return;
+                }
+
                 const sessions = await response.json();
                 
                 if (!response.ok || (sessions && sessions.error)) {
                     const errorMessage = sessions.error || `Sunucu hatası: ${response.status}`;
+                    // Retry once on server error
+                    if (retryCount < 1) {
+                        setTimeout(() => loadHistory(retryCount + 1), 2000);
+                        historyList.innerHTML = `<div class="px-4 py-3 text-xs text-slate-400">Yükleniyor... <span class="text-teal-500">yeniden deneniyor</span></div>`;
+                        return;
+                    }
                     historyList.innerHTML = `<div class="px-4 py-3 text-xs text-red-400">Hata: ${errorMessage}</div>`;
                     return;
                 }
 
                 if (!Array.isArray(sessions)) {
+                    if (retryCount < 1) {
+                        setTimeout(() => loadHistory(retryCount + 1), 2000);
+                        historyList.innerHTML = `<div class="px-4 py-3 text-xs text-slate-400">Yükleniyor... <span class="text-teal-500">yeniden deneniyor</span></div>`;
+                        return;
+                    }
                     historyList.innerHTML = '<div class="px-4 py-3 text-xs text-red-400">Geçmiş yüklenemedi.</div>';
                     return;
                 }
@@ -1312,11 +1459,13 @@
                 const yesterdayStart = todayStart - 86400000;
                 const weekStart = todayStart - 6 * 86400000;
 
-                sessions.sort((a, b) => b.id - a.id);
+                // session.id is a timestamp (Date.now()), sort descending
+                sessions.sort((a, b) => Number(b.id) - Number(a.id));
                 sessions.forEach(session => {
-                    if (session.id >= todayStart) groups['Bugün'].push(session);
-                    else if (session.id >= yesterdayStart) groups['Dün'].push(session);
-                    else if (session.id >= weekStart) groups['Bu Hafta'].push(session);
+                    const sid = Number(session.id);
+                    if (sid >= todayStart) groups['Bugün'].push(session);
+                    else if (sid >= yesterdayStart) groups['Dün'].push(session);
+                    else if (sid >= weekStart) groups['Bu Hafta'].push(session);
                     else groups['Daha Eski'].push(session);
                 });
 
@@ -1330,10 +1479,11 @@
                     groupSessions.forEach(session => {
                         const div = document.createElement('div');
                         div.className = `history-item flex items-center group pr-1 ${currentSessionId == session.id ? 'active' : ''}`;
+                        const safeTitle = (session.title || 'Sohbet').replace(/</g, '&lt;').replace(/>/g, '&gt;');
                         div.innerHTML = `
                             <button onclick="loadSession(${session.id})" class="flex-1 text-left px-3 py-2.5 flex items-center gap-2.5 min-w-0">
                                 <i class="fa-regular fa-message text-slate-600 group-hover:text-teal-400 flex-shrink-0 text-xs transition-colors"></i>
-                                <div class="truncate text-xs text-slate-400 group-hover:text-slate-200 transition-colors">${session.title}</div>
+                                <div class="truncate text-xs text-slate-400 group-hover:text-slate-200 transition-colors">${safeTitle}</div>
                             </button>
                             <button onclick="deleteSession(${session.id})" class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-600 hover:text-red-400 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0" title="Sil">
                                 <i class="fa-solid fa-trash text-xs"></i>
@@ -1344,7 +1494,21 @@
                 });
 
             } catch (err) {
-                historyList.innerHTML = '<div class="px-4 py-3 text-xs text-red-400">Ağ hatası oluştu.</div>';
+                if (err.name === 'AbortError') {
+                    if (retryCount < 1) {
+                        setTimeout(() => loadHistory(retryCount + 1), 3000);
+                        historyList.innerHTML = `<div class="px-4 py-3 text-xs text-slate-400">Bağlantı yavaş, yeniden deneniyor...</div>`;
+                    } else {
+                        historyList.innerHTML = '<div class="px-4 py-3 text-xs text-red-400">Bağlantı zaman aşımına uğradı.</div>';
+                    }
+                } else {
+                    if (retryCount < 1) {
+                        setTimeout(() => loadHistory(retryCount + 1), 2000);
+                        historyList.innerHTML = `<div class="px-4 py-3 text-xs text-slate-400">Yükleniyor... <span class="text-teal-500">yeniden deneniyor</span></div>`;
+                    } else {
+                        historyList.innerHTML = '<div class="px-4 py-3 text-xs text-red-400">Ağ hatası oluştu.</div>';
+                    }
+                }
             }
         }
 
@@ -1376,21 +1540,64 @@
             const token = storage.get('token');
             if (!user || !token) return;
             try {
+                // Close sidebar on mobile after selecting a session
+                closeSidebarMobile();
+
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000);
+
                 const res = await fetch('/api/get-session', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ sessionId })
+                    body: JSON.stringify({ sessionId }),
+                    signal: controller.signal
                 });
+                clearTimeout(timeoutId);
+
+                if (res.status === 401 || res.status === 403) {
+                    showToast("Oturum süresi doldu. Yeniden giriş yapılıyor...");
+                    setTimeout(() => {
+                        storage.remove('token');
+                        storage.remove('user');
+                        window.location.href = '/login';
+                    }, 1500);
+                    return;
+                }
+
+                if (!res.ok) {
+                    showToast("Sohbet yüklenemedi. Lütfen tekrar deneyin.");
+                    return;
+                }
+
                 const session = await res.json();
+                if (!session || !session.id) {
+                    showToast("Sohbet bulunamadı.");
+                    return;
+                }
+
                 currentSessionId = session.id;
                 messageHistory = [];
                 chatContainer.innerHTML = '';
-                session.messages.forEach(msg => {
+                if (welcomeScreen) chatContainer.appendChild(welcomeScreen);
+                if (welcomeScreen) welcomeScreen.classList.add('hidden');
+
+                (session.messages || []).forEach(msg => {
                     appendMessage(msg.content, msg.role === 'user' ? 'user' : 'ai');
                     messageHistory.push(msg);
                 });
+
+                // Update active state in history list
+                document.querySelectorAll('.history-item').forEach(el => el.classList.remove('active'));
+                const activeItems = document.querySelectorAll(`[onclick="loadSession(${sessionId})"]`);
+                activeItems.forEach(btn => btn.closest('.history-item')?.classList.add('active'));
+
             } catch (err) {
-                console.error("Seans yüklenirken hata:", err);
+                if (err.name === 'AbortError') {
+                    showToast("Bağlantı zaman aşımına uğradı. Tekrar deneyin.");
+                } else {
+                    console.error("Seans yüklenirken hata:", err);
+                    showToast("Sohbet yüklenirken bir hata oluştu.");
+                }
             }
         }
 
@@ -1572,7 +1779,22 @@
         }
 
         function parseMarkdownImages(text) {
-            return text.replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1" class="rounded-xl shadow-lg mt-3 mb-1 max-w-full h-auto border border-white/10 block">');
+            return text.replace(/!\[(.*?)\]\((.*?)\)/g, (match, alt, src) => {
+                const escapedAlt = alt.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                const escapedSrc = src.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                return `<div class="img-wrapper mt-3 mb-1 relative">
+                    <div class="img-loading-placeholder rounded-xl" style="min-height:80px; background: rgba(30,41,59,0.5); display:flex; align-items:center; justify-content:center; border: 1px solid rgba(45,212,191,0.1);">
+                        <i class="fa-solid fa-spinner fa-spin text-teal-500 text-xl"></i>
+                    </div>
+                    <img src="${escapedSrc}" alt="${escapedAlt}"
+                        class="rounded-xl shadow-lg max-w-full h-auto border border-white/10 block"
+                        loading="lazy"
+                        style="display:none;"
+                        onload="this.style.display='block'; this.previousElementSibling.style.display='none';"
+                        onerror="this.style.display='none'; this.previousElementSibling.innerHTML='<div style=\\'padding:12px; text-align:center; color:#94a3b8; font-size:0.75rem;\\'><i class=\\'fa-solid fa-image-slash\\' style=\\'color:#64748b; font-size:1.2rem; display:block; margin-bottom:6px;\\'></i>Görsel yüklenemedi. <a href=\\'${escapedSrc}\\' target=\\'_blank\\' rel=\\'noopener noreferrer\\' style=\\'color:#2DD4BF; text-decoration:underline;\\'>Bağlantıyı aç</a></div>'"
+                    >
+                </div>`;
+            });
         }
 
         function appendMessage(text, sender, animate = false) {
@@ -1780,6 +2002,13 @@
                                 currentSessionId = data.sessionId;
                                 loadHistory();
                             }
+
+                            // Giriş yapmış kullanıcı için streak güncelle
+                            if (storage.get('token')) {
+                                loadBadgeStatus();
+                            }
+                        } else if (data.error) {
+                            appendMessage(`Hata: ${data.error}`, 'ai');
                         }
                     } catch (error) {
                         console.error('Error:', error);
