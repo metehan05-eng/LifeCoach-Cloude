@@ -67,7 +67,7 @@ const getUTCDateString = (date) => {
     return new Date(date).toISOString().split('T')[0];
 };
 
-// Middleware: Token Doğrulama
+// Middleware: Token Doğrulama (Zorunlu)
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
@@ -76,6 +76,20 @@ const authenticateToken = (req, res, next) => {
     jwt.verify(token, JWT_SECRET, (err, user) => {
         if (err) return res.status(403).json({ error: "Oturum geçersiz." });
         req.user = user;
+        next();
+    });
+};
+
+// Middleware: Token Doğrulama (İsteğe Bağlı - Misafir kullanıcılara izin verir)
+const optionalAuth = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    if (!token) {
+        req.user = null; // Misafir kullanıcı
+        return next();
+    }
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+        req.user = err ? null : user; // Hatalı token = misafir gibi davran
         next();
     });
 };
@@ -232,33 +246,68 @@ async function extractTextFromFile(file) {
 // --- API ROTALARI ---
 
 // 1. Chat API
-app.post('/api/chat', authenticateToken, async (req, res) => {
+app.post('/api/chat', optionalAuth, async (req, res) => {
     try {
         const { message, file, history, sessionId, userLanguage } = req.body;
-        const email = req.user.email;
+        const email = req.user ? req.user.email : null;
 
-        // Önce kullanıcı verisini çek
-        const users = await getKVData('users');
-        const currentUser = users.find(u => u.email === email);
+        let currentUser = null;
+        let users = [];
 
-        // Gelişmiş Limit Kontrolü
-        const limitStatus = await checkRateLimit(req, currentUser);
-        if (!limitStatus.allowed) {
-            return res.status(429).json(limitStatus);
+        if (email) {
+            // Kayıtlı kullanıcı: veritabanından çek
+            users = await getKVData('users');
+            currentUser = users.find(u => u.email === email);
+
+            // Gelişmiş Limit Kontrolü (sadece kayıtlı kullanıcılar için)
+            const limitStatus = await checkRateLimit(req, currentUser);
+            if (!limitStatus.allowed) {
+                return res.status(429).json(limitStatus);
+            }
+
+            // Günlük chat aktivitesine göre streak güncelle
+            if (currentUser) {
+                const todayStr = getUTCDateString(new Date());
+                const lastChatDate = currentUser.lastChatDate || null;
+                if (!lastChatDate || !lastChatDate.startsWith(todayStr)) {
+                    const userIndex = users.findIndex(u => u.email === email);
+                    if (userIndex !== -1) {
+                        const yesterday = new Date();
+                        yesterday.setDate(yesterday.getDate() - 1);
+                        const yesterdayStr = getUTCDateString(yesterday);
+                        if (lastChatDate && lastChatDate.startsWith(yesterdayStr)) {
+                            users[userIndex].streak = (users[userIndex].streak || 0) + 1;
+                        } else if (!lastChatDate) {
+                            users[userIndex].streak = 1;
+                        } else {
+                            users[userIndex].streak = 1; // Seri kırıldı, sıfırla
+                        }
+                        users[userIndex].lastChatDate = new Date().toISOString();
+                        currentUser = users[userIndex];
+                        // Kaydı sonraki adımda yapacağız (session kaydıyla birlikte)
+                    }
+                }
+            }
+        } else {
+            // Misafir kullanıcı: basit rate limit (IP bazlı, fail-open)
+            const guestLimit = await checkRateLimit(req, { email: req.ip || 'guest', plan: 'free' });
+            if (!guestLimit.allowed) {
+                return res.status(429).json({ error: "Çok fazla mesaj gönderdiniz. Lütfen bekleyin veya giriş yapın.", retryAfter: guestLimit.retryAfter });
+            }
         }
         
-        // Kullanıcı hedeflerini çek (Context için) - Zaten çekildi
+        // Kullanıcı hedeflerini çek (Context için)
         const activeGoals = currentUser && currentUser.goals ? currentUser.goals.filter(g => g.status === 'active') : [];
         
-        // Kullanıcı İstatistiklerini Hesapla (Mock veri yerine gerçek veritabanından çekilebilir)
-        const streak = currentUser.streak || 0;
-        const lastCheckin = currentUser.lastCheckinDate ? getUTCDateString(currentUser.lastCheckinDate) : "Never";
+        // Kullanıcı İstatistikleri
+        const streak = currentUser ? (currentUser.streak || 0) : 0;
+        const lastChatDate = currentUser ? (currentUser.lastChatDate ? getUTCDateString(currentUser.lastChatDate) : "Never") : "Never";
         
-        const userStatsContext = `
+        const userStatsContext = email ? `
 USER STATS:
 - Current Streak: ${streak} days
-- Last Check-in: ${lastCheckin}
-`;
+- Last Chat: ${lastChatDate}
+` : '';
 
         const goalContext = activeGoals.length > 0 ? `\n\nCURRENT USER ACTIVE GOALS (Keep these in mind):\n${activeGoals.map(g => `- ${g.title}`).join('\n')}` : "";
 
@@ -269,6 +318,8 @@ USER STATS:
         const systemPrompt = `You are LifeCoach AI (System v4.2).
 IMPORTANT: You must ALWAYS respond in the following language: ${targetLang}.
 Your responses should feel natural and conversational, not like a series of formatted boxes. While you should use structure (like lists or headings) when it aids clarity, avoid an overly rigid or blocky presentation. Flow your text naturally.
+
+CRITICAL ANTI-REPETITION RULE: NEVER repeat, summarize, or restate information you have already provided in this conversation. Each response must add NEW value. If you have already explained a concept, do not explain it again. If the user asks about something you already covered, briefly reference it and expand with new information only. Do not repeat bullet points, examples, or conclusions from previous messages.
 
 You are not a generic chatbot.
 You are a calm, emotionally intelligent, grounded AI companion designed to support individuals who feel alone, uncertain, or overwhelmed — especially dreamers, builders, and founders starting from zero.
@@ -608,7 +659,7 @@ app.post('/api/login', async (req, res) => {
         const user = users.find(u => u.email === email);
 
         if (user && await bcrypt.compare(password, user.password)) {
-            const token = jwt.sign({ email: user.email, name: user.name }, JWT_SECRET, { expiresIn: '24h' });
+            const token = jwt.sign({ email: user.email, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
             res.json({ success: true, token, user: { name: user.name, email: user.email } });
         }
         else res.status(401).json({ error: "Hatalı email veya şifre." });
@@ -686,17 +737,22 @@ app.get('/api/badge-status', authenticateToken, async (req, res) => {
         if (!user) return res.status(404).json({ error: "Kullanıcı bulunamadı." });
 
         const streak = user.streak || 0;
-        const lastCheckinDate = user.lastCheckinDate || null;
+        const lastChatDate = user.lastChatDate || null;
 
+        // Yıldız sistemi: 3 gün = 1 yıldız, 7 gün = 2 yıldız, 14 gün = 3 yıldız, 30 gün = 4 yıldız
         const calculateStars = (s) => {
-            if (s >= 28) return 4;
-            if (s >= 21) return 3;
-            if (s >= 14) return 2;
-            if (s >= 7) return 1;
+            if (s >= 30) return 4;
+            if (s >= 14) return 3;
+            if (s >= 7) return 2;
+            if (s >= 3) return 1;
             return 0;
         };
 
-        res.json({ streak, stars: calculateStars(streak), lastCheckinDate });
+        // Bugün yazıldı mı?
+        const todayStr = getUTCDateString(new Date());
+        const chattedToday = lastChatDate && lastChatDate.startsWith(todayStr);
+
+        res.json({ streak, stars: calculateStars(streak), lastChatDate, chattedToday });
 
     } catch (error) {
         console.error("Badge Status API Hatası:", error);
@@ -704,48 +760,37 @@ app.get('/api/badge-status', authenticateToken, async (req, res) => {
     }
 });
 
-// 5.3 Daily Check-in API (POST)
+// 5.3 Daily Check-in API (POST) - Artık sadece bilgi döndürür, streak chat'ten otomatik güncellenir
 app.post('/api/check-in', authenticateToken, async (req, res) => {
     try {
         const email = req.user.email;
         const users = await getKVData('users');
-        const userIndex = users.findIndex(u => u.email === email);
+        const user = users.find(u => u.email === email);
 
-        if (userIndex === -1) return res.status(404).json({ error: "Kullanıcı bulunamadı." });
-        
-        const user = users[userIndex];
+        if (!user) return res.status(404).json({ error: "Kullanıcı bulunamadı." });
+
         const todayStr = getUTCDateString(new Date());
+        const chattedToday = user.lastChatDate && user.lastChatDate.startsWith(todayStr);
 
-        // 1. Bugün tamamlanmış bir görev var mı kontrol et
-        const hasCompletedTaskToday = user.goals?.some(g => 
-            g.status === 'completed' && g.completedAt && getUTCDateString(g.completedAt) === todayStr
-        );
-
-        if (!hasCompletedTaskToday) {
-            return res.status(400).json({ error: "Check-in yapabilmek için bugünün hedeflerinden en az birini tamamlamalısın." });
+        if (!chattedToday) {
+            return res.status(400).json({ error: "Bugün henüz mesaj göndermediniz. Yapay zeka ile konuşarak streak'inizi koruyun!" });
         }
 
-        // 2. Bugün zaten check-in yapılmış mı kontrol et
-        if (user.lastCheckinDate && getUTCDateString(user.lastCheckinDate) === todayStr) {
-            return res.status(400).json({ error: "Bugün zaten check-in yaptın." });
-        }
+        const streak = user.streak || 0;
+        const calculateStars = (s) => {
+            if (s >= 30) return 4;
+            if (s >= 14) return 3;
+            if (s >= 7) return 2;
+            if (s >= 3) return 1;
+            return 0;
+        };
 
-        // 3. Yeni seriyi hesapla
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayStr = getUTCDateString(yesterday);
-
-        if (user.lastCheckinDate && getUTCDateString(user.lastCheckinDate) === yesterdayStr) {
-            user.streak = (user.streak || 0) + 1; // Seriyi devam ettir
-        } else {
-            user.streak = 1; // Yeni seri veya kırılmış seri
-        }
-
-        user.lastCheckinDate = new Date().toISOString();
-        users[userIndex] = user; // Kullanıcı verisini güncelle
-
-        await setKVData('users', users);
-        res.json({ success: true, message: `Tebrikler! Serin ${user.streak} güne ulaştı.` });
+        res.json({
+            success: true,
+            message: `Harika! ${streak} günlük seriniz devam ediyor. ${calculateStars(streak)} yıldız kazandınız! 🌟`,
+            streak,
+            stars: calculateStars(streak)
+        });
 
     } catch (error) {
         console.error("Check-in API Hatası:", error);
