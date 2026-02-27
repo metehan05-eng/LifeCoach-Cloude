@@ -67,33 +67,6 @@ const getUTCDateString = (date) => {
     return new Date(date).toISOString().split('T')[0];
 };
 
-// Middleware: Token Doğrulama (Zorunlu)
-const authenticateToken = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-    if (!token) return res.status(401).json({ error: "Giriş yapmanız gerekiyor." });
-
-    jwt.verify(token, JWT_SECRET, (err, user) => {
-        if (err) return res.status(403).json({ error: "Oturum geçersiz." });
-        req.user = user;
-        next();
-    });
-};
-
-// Middleware: Token Doğrulama (İsteğe Bağlı - Misafir kullanıcılara izin verir)
-const optionalAuth = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-    if (!token) {
-        req.user = null; // Misafir kullanıcı
-        return next();
-    }
-    jwt.verify(token, JWT_SECRET, (err, user) => {
-        req.user = err ? null : user; // Hatalı token = misafir gibi davran
-        next();
-    });
-};
-
 // Limit Kontrolü (Vercel KV)
 async function checkRateLimit(req, currentUser) {
     try {
