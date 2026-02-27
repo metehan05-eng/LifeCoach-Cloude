@@ -492,7 +492,9 @@
             -webkit-backdrop-filter: blur(20px);
             border: 1px solid rgba(45, 212, 191, 0.15);
             border-radius: 20px;
-            margin: 16px;
+            margin: 0 auto 24px auto;
+            width: 90%;
+            max-width: 800px;
             padding: 16px;
             box-shadow: 0 -4px 30px rgba(0,0,0,0.3), 0 0 0 1px rgba(45, 212, 191, 0.05);
             position: relative;
@@ -772,7 +774,7 @@
 
         /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
-            .input-area { margin: 8px; border-radius: 16px; }
+            .input-area { margin: 12px; width: auto; max-width: none; border-radius: 16px; }
             .welcome-title { font-size: 1.5rem; }
             #main-content { width: 100%; }
             .msg-ai, .msg-user { font-size: 0.82rem; }
