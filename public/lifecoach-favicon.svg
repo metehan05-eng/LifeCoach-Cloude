@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#0d2a2a"/>
+      <stop offset="100%" stop-color="#061515"/>
+    </radialGradient>
+    <linearGradient id="icon" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f5d4"/>
+      <stop offset="100%" stop-color="#00b4a0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="64" height="64" fill="url(#bg)" rx="14"/>
+  
+  <!-- Border ring -->
+  <rect width="64" height="64" fill="none" stroke="#00e5c8" stroke-width="1.5" stroke-opacity="0.5" rx="14"/>
+
+  <!-- Heart -->
+  <path d="M32 28 C32 28 39 21 44 23.5 C49 26 50 33 44 39 L32 50 L20 39 C14 33 15 26 20 23.5 C25 21 32 28 32 28Z" 
+        fill="url(#icon)"/>
+  
+  <!-- Hands -->
+  <path d="M23 40 C19 46 17 52 20.5 54.5 C22.5 56 24.5 54 24.5 50 L26 42Z" fill="url(#icon)" opacity="0.85"/>
+  <path d="M41 40 C45 46 47 52 43.5 54.5 C41.5 56 39.5 54 39.5 50 L38 42Z" fill="url(#icon)" opacity="0.85"/>
+</svg>
