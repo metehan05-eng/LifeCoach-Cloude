@@ -905,6 +905,17 @@
         #main-sidebar.fixed {
             animation: slide-in-left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
+        
+        /* Mobile sidebar touch improvements */
+        @media (max-width: 768px) {
+            #main-sidebar {
+                touch-action: pan-y;
+            }
+            
+            #sidebar-overlay {
+                backdrop-filter: blur(2px);
+            }
+        }
 
         /* ===== LIGHT MODE OVERRIDES ===== */
         .light body { background: #f8fafc; }
@@ -980,7 +991,7 @@
     <div class="orb orb-3"></div>
 
     <!-- Mobile Sidebar Overlay -->
-    <div id="sidebar-overlay" class="hidden fixed inset-0 bg-black/60 z-40 md:hidden" onclick="closeSidebarMobile()"></div>
+    <div id="sidebar-overlay" class="hidden fixed inset-0 bg-black/40 z-40 md:hidden" onclick="closeSidebarMobile()"></div>
 
     <!-- Sidebar -->
     <aside id="main-sidebar" class="w-80 flex-col hidden md:flex z-10 relative" style="min-width: 320px;">
@@ -1373,21 +1384,26 @@
             sidebar.classList.toggle('hidden');
             if (!sidebar.classList.contains('hidden')) {
                 sidebar.classList.add('fixed', 'inset-y-0', 'left-0', 'z-50', 'w-80', 'shadow-2xl', 'flex');
-                if (overlay) overlay.classList.remove('hidden');
+                if (overlay) {
+                    overlay.classList.remove('hidden');
+                    // Enable touch events on overlay
+                    overlay.style.touchAction = 'none';
+                }
+                document.body.style.overflow = 'hidden';
             } else {
                 sidebar.classList.remove('fixed', 'inset-y-0', 'left-0', 'z-50', 'w-80', 'shadow-2xl', 'flex');
                 if (overlay) overlay.classList.add('hidden');
+                document.body.style.overflow = '';
             }
         }
 
         function closeSidebarMobile() {
             const sidebar = document.getElementById('main-sidebar');
             const overlay = document.getElementById('sidebar-overlay');
-            if (window.innerWidth < 768) {
-                sidebar.classList.add('hidden');
-                sidebar.classList.remove('fixed', 'inset-y-0', 'left-0', 'z-50', 'w-80', 'shadow-2xl', 'flex');
-                if (overlay) overlay.classList.add('hidden');
-            }
+            sidebar.classList.add('hidden');
+            sidebar.classList.remove('fixed', 'inset-y-0', 'left-0', 'z-50', 'w-80', 'shadow-2xl', 'flex');
+            if (overlay) overlay.classList.add('hidden');
+            document.body.style.overflow = '';
         }
 
         function openSettings() {
