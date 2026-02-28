@@ -1,0 +1,25 @@
+{
+  "name": "LifeCoach AI",
+  "short_name": "LifeCoach",
+  "description": "Kişisel gelişim için yapay zeka destekli koçluk uygulaması",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#030712",
+  "theme_color": "#0F766E",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/lifecoach-favicon.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/lifecoach-logo-splash.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ],
+  "categories": ["lifestyle", "productivity", "education"],
+  "lang": "tr",
+  "dir": "ltr"
+}
