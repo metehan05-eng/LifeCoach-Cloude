@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <radialGradient id="bgGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#0d2a2a"/>
+      <stop offset="100%" stop-color="#061515"/>
+    </radialGradient>
+    <radialGradient id="glowGrad" cx="50%" cy="40%" r="50%">
+      <stop offset="0%" stop-color="#00e5c8" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#00e5c8" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="iconGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f5d4"/>
+      <stop offset="100%" stop-color="#00b4a0"/>
+    </linearGradient>
+    <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f5d4" stop-opacity="0.8"/>
+      <stop offset="50%" stop-color="#00e5c8" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#00f5d4" stop-opacity="0.8"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="softGlow">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="400" fill="url(#bgGrad)" rx="32"/>
+  
+  <!-- Ambient glow -->
+  <ellipse cx="200" cy="160" rx="180" ry="140" fill="url(#glowGrad)"/>
+
+  <!-- Outer decorative ring -->
+  <circle cx="200" cy="185" r="105" fill="none" stroke="url(#ringGrad)" stroke-width="1.5" stroke-dasharray="8 5"/>
+  
+  <!-- Inner ring -->
+  <circle cx="200" cy="185" r="88" fill="none" stroke="#00e5c8" stroke-width="0.5" stroke-opacity="0.3"/>
+
+  <!-- Icon background circle -->
+  <circle cx="200" cy="185" r="72" fill="#0a2020"/>
+  <circle cx="200" cy="185" r="72" fill="none" stroke="#00e5c8" stroke-width="1.5" stroke-opacity="0.6"/>
+
+  <!-- Hands holding heart / person icon -->
+  <!-- Heart shape -->
+  <path d="M200 168 C200 168 212 156 220 160 C230 164 232 178 220 188 L200 206 L180 188 C168 178 170 164 180 160 C188 156 200 168 200 168Z" 
+        fill="url(#iconGrad)" filter="url(#glow)"/>
+  
+  <!-- Two leaf/hand shapes beneath heart -->
+  <path d="M183 198 C175 210 170 220 175 228 C178 232 183 230 185 224 L188 208Z" 
+        fill="url(#iconGrad)" opacity="0.9"/>
+  <path d="M217 198 C225 210 230 220 225 228 C222 232 217 230 215 224 L212 208Z" 
+        fill="url(#iconGrad)" opacity="0.9"/>
+
+  <!-- Glowing dot accent -->
+  <circle cx="200" cy="155" r="3.5" fill="#00f5d4" filter="url(#glow)"/>
+  
+  <!-- Small sparkle dots -->
+  <circle cx="148" cy="145" r="2" fill="#00f5d4" opacity="0.6"/>
+  <circle cx="252" cy="145" r="2" fill="#00f5d4" opacity="0.6"/>
+  <circle cx="138" cy="195" r="1.5" fill="#00f5d4" opacity="0.4"/>
+  <circle cx="262" cy="195" r="1.5" fill="#00f5d4" opacity="0.4"/>
+
+  <!-- App name -->
+  <text x="200" y="288" font-family="'Georgia', 'Times New Roman', serif" font-size="22" font-weight="700" 
+        fill="#00f5d4" text-anchor="middle" letter-spacing="3" filter="url(#glow)">LIFECOACH</text>
+  
+  <!-- Subtitle -->
+  <text x="200" y="310" font-family="'Georgia', serif" font-size="10.5" font-weight="400" 
+        fill="#00b4a0" text-anchor="middle" letter-spacing="5" opacity="0.8">AI · PERSONAL GROWTH</text>
+
+  <!-- Bottom accent line -->
+  <line x1="155" y1="322" x2="245" y2="322" stroke="#00e5c8" stroke-width="0.8" stroke-opacity="0.4"/>
+</svg>
