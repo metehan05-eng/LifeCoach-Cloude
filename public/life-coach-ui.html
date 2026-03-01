@@ -3,99 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LifeCoach AI</title>
+    <title>LifeCoach AI - Chat First</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/svg+xml" href="/lifecoach-favicon.svg">
-    <link rel="apple-touch-icon" href="/lifecoach-logo-splash.svg">
-    <link rel="manifest" href="/manifest.json">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="LifeCoach AI">
-    <link rel="apple-touch-startup-image" href="/lifecoach-logo-splash.svg">
     
-    <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#0F766E">
-    <meta name="msapplication-TileColor" content="#0F766E">
-    <meta name="msapplication-TileImage" content="/lifecoach-logo-splash.svg">
-    <meta name="application-name" content="LifeCoach AI">
-    <meta name="msapplication-starturl" content="/">
-    <meta name="msapplication-navbutton-color" content="#0F766E">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="mobile-web-app-capable" content="yes">
-    
-    <!-- Service Worker -->
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
-            .then((registration) => {
-              console.log('Service Worker registered: ', registration.scope);
-            })
-            .catch((error) => {
-              console.log('Service Worker registration failed: ', error);
-            });
-        });
-      }
-    </script>
-    
-    <!-- Add to Home Screen Prompt -->
-    <script>
-      let deferredPrompt;
-      
-      window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        
-        // Show install button
-        const installButton = document.createElement('button');
-        installButton.innerHTML = 'İndirime Ekle <i class="fa-solid fa-download fa-xs ml-1"></i>';
-        installButton.className = 'install-btn btn-primary fixed bottom-4 right-4 z-50 rounded-lg px-4 py-2 text-sm shadow-lg hover:scale-105 transition-all';
-        installButton.style.display = 'none';
-        
-        document.body.appendChild(installButton);
-        
-        // Show button after 3 seconds
-        setTimeout(() => {
-          if (deferredPrompt) {
-            installButton.style.display = 'block';
-          }
-        }, 3000);
-        
-        installButton.addEventListener('click', () => {
-          installButton.style.display = 'none';
-          deferredPrompt.prompt();
-          deferredPrompt.userChoice.then((choiceResult) => {
-            if (choiceResult.outcome === 'accepted') {
-              console.log('User accepted the install prompt');
-            } else {
-              console.log('User dismissed the install prompt');
-            }
-            deferredPrompt = null;
-          });
-        });
-      });
-      
-      // Check if app is launched from home screen
-      window.addEventListener('appinstalled', (evt) => {
-        console.log('App was installed.');
-        // Hide install button if app is already installed
-        const installButton = document.querySelector('.install-btn');
-        if (installButton) {
-          installButton.style.display = 'none';
-        }
-      });
-      
-      // Check if launched from home screen
-      if (window.matchMedia('(display-mode: standalone)').matches) {
-        console.log('Launched in standalone mode');
-        // Hide browser UI elements for standalone mode
-        document.body.classList.add('standalone-mode');
-      } else {
-        console.log('Launched in browser');
-      }
-    </script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -117,2077 +30,232 @@
                         sans: ['Inter', 'sans-serif'],
                         display: ['Space Grotesk', 'sans-serif'],
                     },
-                    animation: {
-                        'float': 'float 6s ease-in-out infinite',
-                        'pulse-glow': 'pulse-glow 2s ease-in-out infinite',
-                        'slide-in-left': 'slide-in-left 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
-                        'slide-in-right': 'slide-in-right 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
-                        'fade-up': 'fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
-                        'shimmer': 'shimmer 2s linear infinite',
-                        'spin-slow': 'spin 8s linear infinite',
-                        'bounce-subtle': 'bounce-subtle 2s ease-in-out infinite',
-                    },
-                    keyframes: {
-                        float: {
-                            '0%, 100%': { transform: 'translateY(0px)' },
-                            '50%': { transform: 'translateY(-10px)' },
-                        },
-                        'pulse-glow': {
-                            '0%, 100%': { boxShadow: '0 0 20px rgba(20, 184, 166, 0.3)' },
-                            '50%': { boxShadow: '0 0 40px rgba(20, 184, 166, 0.6), 0 0 80px rgba(20, 184, 166, 0.2)' },
-                        },
-                        'slide-in-left': {
-                            '0%': { transform: 'translateX(-20px)', opacity: '0' },
-                            '100%': { transform: 'translateX(0)', opacity: '1' },
-                        },
-                        'slide-in-right': {
-                            '0%': { transform: 'translateX(20px)', opacity: '0' },
-                            '100%': { transform: 'translateX(0)', opacity: '1' },
-                        },
-                        'fade-up': {
-                            '0%': { transform: 'translateY(15px)', opacity: '0' },
-                            '100%': { transform: 'translateY(0)', opacity: '1' },
-                        },
-                        shimmer: {
-                            '0%': { backgroundPosition: '-200% 0' },
-                            '100%': { backgroundPosition: '200% 0' },
-                        },
-                        'bounce-subtle': {
-                            '0%, 100%': { transform: 'translateY(0)' },
-                            '50%': { transform: 'translateY(-4px)' },
-                        },
-                    },
-                    backdropBlur: {
-                        xs: '2px',
-                    }
                 }
             }
         }
     </script>
     <style>
-        /* ===== ROOT VARIABLES ===== */
-        :root {
-            --primary: #0F766E;
-            --primary-light: #14B8A6;
-            --neon-teal: #2DD4BF;
-            --neon-cyan: #22D3EE;
-            --glow-color: rgba(20, 184, 166, 0.4);
-            --sidebar-width: 320px;
+        :root { 
+            --sidebar-width: 320px; 
         }
+        body { font-family: 'Inter', sans-serif; background: #030712; }
 
-        /* ===== SCROLLBAR ===== */
-        ::-webkit-scrollbar { width: 4px; height: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, var(--neon-teal), var(--primary)); border-radius: 20px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--primary-light); }
-
-        /* ===== BODY & BACKGROUND ===== */
-        body {
-            font-family: 'Inter', sans-serif;
-            background: #030712;
-            overflow: auto;
-        }
-
-        /* Animated mesh gradient background */
-        .bg-mesh {
-            position: fixed;
-            inset: 0;
-            z-index: 0;
-            background: 
-                radial-gradient(ellipse 80% 50% at 20% 40%, rgba(15, 118, 110, 0.15) 0%, transparent 60%),
-                radial-gradient(ellipse 60% 40% at 80% 60%, rgba(34, 211, 238, 0.08) 0%, transparent 60%),
-                radial-gradient(ellipse 40% 60% at 50% 10%, rgba(45, 212, 191, 0.06) 0%, transparent 60%),
-                #030712;
-            animation: mesh-shift 15s ease-in-out infinite alternate;
-        }
-
-        @keyframes mesh-shift {
-            0% { background-position: 0% 0%; }
-            100% { background-position: 100% 100%; }
-        }
-
-        /* Floating orbs */
-        .orb {
-            position: fixed;
-            border-radius: 50%;
-            filter: blur(80px);
-            opacity: 0.12;
-            pointer-events: none;
-            z-index: 0;
-            animation: float 8s ease-in-out infinite;
-        }
-        .orb-1 { width: 400px; height: 400px; background: #0F766E; top: -100px; left: -100px; animation-delay: 0s; }
-        .orb-2 { width: 300px; height: 300px; background: #22D3EE; bottom: -50px; right: 20%; animation-delay: -3s; }
-        .orb-3 { width: 200px; height: 200px; background: #2DD4BF; top: 40%; right: -50px; animation-delay: -6s; }
-
-        /* ===== SIDEBAR ===== */
-        #main-sidebar {
-            background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border-right: 1px solid rgba(45, 212, 191, 0.1);
-            box-shadow: 4px 0 30px rgba(0, 0, 0, 0.4);
-            position: relative;
-            z-index: 10;
-        }
-
-        .sidebar-logo {
-            background: linear-gradient(135deg, rgba(15, 118, 110, 0.3), rgba(45, 212, 191, 0.1));
-            border: 1px solid rgba(45, 212, 191, 0.2);
-            border-radius: 16px;
-            padding: 20px;
-            margin: 16px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .sidebar-logo::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, transparent 40%, rgba(45, 212, 191, 0.05) 100%);
-        }
-
-        .logo-icon {
-            width: 44px;
-            height: 44px;
-            background: linear-gradient(135deg, #0F766E, #2DD4BF);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 0 20px rgba(45, 212, 191, 0.4), 0 4px 12px rgba(0,0,0,0.3);
-            animation: pulse-glow 3s ease-in-out infinite;
-        }
-
-        .logo-text {
-            font-family: 'Space Grotesk', sans-serif;
-            font-weight: 700;
-            font-size: 1.2rem;
-            background: linear-gradient(135deg, #fff 0%, #2DD4BF 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .logo-subtitle {
-            font-size: 0.65rem;
-            color: rgba(45, 212, 191, 0.7);
-            letter-spacing: 0.15em;
-            text-transform: uppercase;
-            font-weight: 500;
-        }
-
-        /* ===== BUTTONS ===== */
-        .btn-primary {
-            background: linear-gradient(135deg, #0F766E, #14B8A6);
-            border: 1px solid rgba(45, 212, 191, 0.3);
-            color: white;
-            border-radius: 14px;
-            padding: 12px 20px;
-            font-weight: 600;
-            font-size: 0.875rem;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(15, 118, 110, 0.3);
-        }
-
-        .btn-primary::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(15, 118, 110, 0.5), 0 0 0 1px rgba(45, 212, 191, 0.3);
-        }
-
-        .btn-primary:hover::before { opacity: 1; }
-        .btn-primary:active { transform: translateY(0); }
-
-        .btn-secondary {
-            background: rgba(30, 41, 59, 0.8);
-            border: 1px solid rgba(45, 212, 191, 0.15);
-            color: rgba(255,255,255,0.8);
-            border-radius: 14px;
-            padding: 10px 20px;
-            font-weight: 500;
-            font-size: 0.8rem;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .btn-secondary:hover {
-            background: rgba(45, 212, 191, 0.1);
-            border-color: rgba(45, 212, 191, 0.3);
-            color: #2DD4BF;
-            transform: translateY(-1px);
-        }
-
-        /* ===== DISCIPLINE BADGE ===== */
-        .discipline-badge {
-            background: linear-gradient(135deg, rgba(15, 118, 110, 0.2), rgba(45, 212, 191, 0.05));
-            border: 1px solid rgba(45, 212, 191, 0.2);
-            border-radius: 16px;
-            padding: 16px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .discipline-badge::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(45, 212, 191, 0.5), transparent);
-        }
-
-        /* ===== SEARCH INPUT ===== */
-        .search-input {
-            background: rgba(30, 41, 59, 0.6);
-            border: 1px solid rgba(45, 212, 191, 0.1);
-            border-radius: 12px;
-            color: rgba(255,255,255,0.8);
-            padding: 10px 12px 10px 36px;
-            font-size: 0.8rem;
-            transition: all 0.3s;
-            width: 100%;
-        }
-
-        .search-input:focus {
-            outline: none;
-            border-color: rgba(45, 212, 191, 0.4);
-            background: rgba(30, 41, 59, 0.9);
-            box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.1);
-        }
-
-        .search-input::placeholder { color: rgba(148, 163, 184, 0.5); }
-
-        /* ===== HISTORY ITEMS ===== */
-        .history-item {
-            border-radius: 12px;
-            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-            border: 1px solid transparent;
-        }
-
-        .history-item:hover {
-            background: rgba(45, 212, 191, 0.08);
-            border-color: rgba(45, 212, 191, 0.15);
-        }
-
-        .history-item.active {
-            background: rgba(15, 118, 110, 0.2);
-            border-color: rgba(45, 212, 191, 0.3);
-        }
-
-        /* ===== MAIN AREA ===== */
         #main-content {
-            background: transparent;
-            position: relative;
-            z-index: 1;
+            height: 100vh; /* Fallback */
+            height: calc(var(--vh, 1vh) * 100);
         }
 
-        /* ===== MOBILE HEADER ===== */
-        .mobile-header {
-            background: rgba(15, 23, 42, 0.9);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(45, 212, 191, 0.1);
-        }
-
-        /* ===== CHAT CONTAINER ===== */
-        #chat-container {
-            scrollbar-width: thin;
-        }
-
-        /* ===== WELCOME SCREEN ===== */
-        .welcome-icon-wrapper {
-            width: 90px;
-            height: 90px;
-            background: linear-gradient(135deg, rgba(15, 118, 110, 0.3), rgba(45, 212, 191, 0.1));
-            border: 1px solid rgba(45, 212, 191, 0.3);
-            border-radius: 28px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            animation: float 6s ease-in-out infinite;
-            box-shadow: 0 0 40px rgba(45, 212, 191, 0.2), inset 0 1px 0 rgba(255,255,255,0.1);
-        }
-
-        .welcome-icon-wrapper::before {
-            content: '';
-            position: absolute;
-            inset: -1px;
-            border-radius: 29px;
-            background: linear-gradient(135deg, rgba(45, 212, 191, 0.4), transparent, rgba(45, 212, 191, 0.1));
-            z-index: -1;
-        }
-
-        .welcome-title {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 2rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #fff 0%, #2DD4BF 60%, #22D3EE 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        /* ===== PROMPT CARDS ===== */
-        .prompt-card {
-            background: rgba(15, 23, 42, 0.7);
-            border: 1px solid rgba(45, 212, 191, 0.12);
-            border-radius: 16px;
-            padding: 16px;
-            text-align: left;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            position: relative;
-            overflow: hidden;
-            backdrop-filter: blur(10px);
-        }
-
-        .prompt-card::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, rgba(45, 212, 191, 0.05), transparent);
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-
-        .prompt-card:hover {
-            border-color: rgba(45, 212, 191, 0.35);
-            transform: translateY(-3px);
-            box-shadow: 0 12px 30px rgba(0,0,0,0.3), 0 0 0 1px rgba(45, 212, 191, 0.2);
-        }
-
-        .prompt-card:hover::before { opacity: 1; }
-
-        /* ===== MESSAGE BUBBLES ===== */
-        .msg-user {
-            background: linear-gradient(135deg, #0F766E, #14B8A6);
-            border-radius: 20px 20px 4px 20px;
-            color: white;
-            box-shadow: 0 4px 20px rgba(15, 118, 110, 0.4);
-            position: relative;
-        }
-
-        .msg-user::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: inherit;
-            background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
-            pointer-events: none;
-        }
-
-        .msg-ai {
-            background: rgba(15, 23, 42, 0.85);
-            border: 1px solid rgba(45, 212, 191, 0.12);
-            border-radius: 20px 20px 20px 4px;
-            color: rgba(226, 232, 240, 0.95);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-        }
-
-        .msg-ai-avatar {
-            width: 36px;
-            height: 36px;
-            background: linear-gradient(135deg, #0F766E, #2DD4BF);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 0 15px rgba(45, 212, 191, 0.3);
-            flex-shrink: 0;
-        }
-
-        .msg-user-avatar {
-            width: 36px;
-            height: 36px;
-            background: rgba(30, 41, 59, 0.8);
-            border: 1px solid rgba(45, 212, 191, 0.2);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        /* Message action buttons */
-        .msg-actions {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            background: rgba(15, 23, 42, 0.95);
-            border: 1px solid rgba(45, 212, 191, 0.2);
-            border-radius: 12px;
-            padding: 4px 6px;
-            display: flex;
-            gap: 2px;
-            opacity: 0;
-            transition: all 0.2s;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            z-index: 10;
-        }
-
-        .msg-wrapper:hover .msg-actions { opacity: 1; }
-
-        .msg-action-btn {
-            width: 26px;
-            height: 26px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: rgba(148, 163, 184, 0.8);
-            transition: all 0.2s;
-            font-size: 0.65rem;
-        }
-
-        .msg-action-btn:hover {
-            background: rgba(45, 212, 191, 0.15);
-            color: #2DD4BF;
-        }
-
-        /* ===== TYPING INDICATOR ===== */
-        .typing-dot {
-            width: 8px;
-            height: 8px;
-            background: linear-gradient(135deg, #0F766E, #2DD4BF);
-            border-radius: 50%;
-            animation: typing-bounce 1.4s ease-in-out infinite;
-        }
-
-        .typing-dot:nth-child(1) { animation-delay: 0s; }
-        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-
-        @keyframes typing-bounce {
-            0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-            30% { transform: translateY(-8px); opacity: 1; }
-        }
-
-        /* ===== STANDALONE MODE STYLES ===== */
-        .standalone-mode body {
-            margin-top: 0 !important;
-            padding-top: 0 !important;
-        }
-        
-        .standalone-mode .mobile-header {
-            top: 0 !important;
-            position: fixed !important;
-            z-index: 1000 !important;
-        }
-        
-        .standalone-mode .install-btn {
-            display: none !important;
-        }
-        
-        .standalone-mode #main-content {
-            margin-top: 0 !important;
-        }
-        
-        .standalone-mode ::-webkit-scrollbar {
-            display: none;
-        }
-
-        /* ===== INPUT AREA ===== */
         .input-area {
             background: rgba(15, 23, 42, 0.9);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border: 1px solid rgba(45, 212, 191, 0.15);
             border-radius: 20px;
-            margin: 0 auto 24px auto;
+            margin: 0 auto; 
             width: 90%;
             max-width: 800px;
             padding: 16px;
-            box-shadow: 0 -4px 30px rgba(0,0,0,0.3), 0 0 0 1px rgba(45, 212, 191, 0.05);
-            position: relative;
-        }
-
-        .input-area::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 20px; right: 20px;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(45, 212, 191, 0.3), transparent);
-        }
-
-        .chat-textarea {
-            background: rgba(30, 41, 59, 0.5);
-            border: 1px solid rgba(45, 212, 191, 0.1);
-            border-radius: 14px;
-            color: rgba(226, 232, 240, 0.95);
-            padding: 12px 80px 12px 16px;
-            font-size: 0.9rem;
-            resize: none;
-            max-height: 140px;
-            width: 100%;
-            transition: all 0.3s;
-            font-family: 'Inter', sans-serif;
-        }
-
-        .chat-textarea:focus {
-            outline: none;
-            border-color: rgba(45, 212, 191, 0.35);
-            background: rgba(30, 41, 59, 0.8);
-            box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.08);
-        }
-
-        .chat-textarea::placeholder { color: rgba(100, 116, 139, 0.7); }
-
-        .send-btn {
-            width: 44px;
-            height: 44px;
-            background: linear-gradient(135deg, #0F766E, #14B8A6);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            box-shadow: 0 4px 15px rgba(15, 118, 110, 0.4);
-            flex-shrink: 0;
-        }
-
-        .send-btn:hover {
-            transform: translateY(-2px) scale(1.05);
-            box-shadow: 0 8px 25px rgba(15, 118, 110, 0.6);
-        }
-
-        .send-btn:active { transform: scale(0.95); }
-        .send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-
-        .input-icon-btn {
-            position: absolute;
-            bottom: 12px;
-            color: rgba(100, 116, 139, 0.7);
-            transition: all 0.2s;
-            padding: 4px;
-            border-radius: 8px;
-        }
-
-        .input-icon-btn:hover {
-            color: #2DD4BF;
-            background: rgba(45, 212, 191, 0.1);
-        }
-
-        /* ===== SETTINGS MODAL ===== */
-        .modal-overlay {
-            background: rgba(3, 7, 18, 0.8);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-        }
-
-        .modal-card {
-            background: rgba(15, 23, 42, 0.95);
-            border: 1px solid rgba(45, 212, 191, 0.2);
-            border-radius: 24px;
-            box-shadow: 0 25px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(45, 212, 191, 0.05);
-            backdrop-filter: blur(20px);
-        }
-
-        .modal-input {
-            background: rgba(30, 41, 59, 0.6);
-            border: 1px solid rgba(45, 212, 191, 0.15);
-            border-radius: 12px;
-            color: rgba(226, 232, 240, 0.95);
-            padding: 10px 14px;
-            font-size: 0.875rem;
-            width: 100%;
-            transition: all 0.3s;
-        }
-
-        .modal-input:focus {
-            outline: none;
-            border-color: rgba(45, 212, 191, 0.4);
-            box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.1);
-        }
-
-        /* ===== TOAST ===== */
-        .toast {
-            background: rgba(15, 23, 42, 0.95);
-            border: 1px solid rgba(45, 212, 191, 0.2);
-            border-radius: 14px;
-            color: rgba(226, 232, 240, 0.95);
-            padding: 12px 16px;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.4), 0 0 0 1px rgba(45, 212, 191, 0.05);
-            backdrop-filter: blur(20px);
-            min-width: 220px;
-        }
-
-        /* ===== STAR ANIMATION ===== */
-        @keyframes star-upgrade {
-            0% { transform: scale(1) rotate(0deg); }
-            25% { transform: scale(1.6) rotate(90deg); filter: drop-shadow(0 0 6px #FBBF24); }
-            50% { transform: scale(1.3) rotate(180deg); }
-            75% { transform: scale(1.5) rotate(270deg); filter: drop-shadow(0 0 8px #FEF9C3); }
-            100% { transform: scale(1) rotate(360deg); }
-        }
-        .star-upgraded { animation: star-upgrade 0.7s cubic-bezier(0.16, 1, 0.3, 1); }
-
-        /* ===== THINKING PROCESS ===== */
-        details > summary { list-style: none; }
-        details > summary::-webkit-details-marker { display: none; }
-
-        .thinking-details {
-            background: rgba(30, 41, 59, 0.5);
-            border: 1px solid rgba(45, 212, 191, 0.1);
-            border-radius: 12px;
-            overflow: hidden;
-            margin-bottom: 12px;
-        }
-
-        .thinking-summary {
-            padding: 8px 12px;
-            cursor: pointer;
-            font-size: 0.75rem;
-            color: rgba(45, 212, 191, 0.7);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            user-select: none;
-            transition: color 0.2s;
-        }
-
-        .thinking-summary:hover { color: #2DD4BF; }
-
-        .thinking-content {
-            padding: 12px;
-            font-size: 0.75rem;
-            color: rgba(148, 163, 184, 0.8);
-            font-family: 'Space Mono', monospace;
-            border-top: 1px solid rgba(45, 212, 191, 0.1);
-            white-space: pre-wrap;
-            line-height: 1.6;
-        }
-
-        /* ===== HISTORY GROUP HEADER ===== */
-        .history-group-header {
-            font-size: 0.65rem;
-            font-weight: 600;
-            color: rgba(45, 212, 191, 0.5);
-            text-transform: uppercase;
-            letter-spacing: 0.12em;
-            padding: 8px 12px 4px;
-            position: sticky;
-            top: 0;
-            background: rgba(15, 23, 42, 0.9);
-            backdrop-filter: blur(10px);
-            z-index: 5;
-        }
-
-        /* ===== LINK BUTTONS ===== */
-        a.btn-primary, a.btn-secondary {
-            text-decoration: none;
-            display: flex;
-        }
-
-        /* ===== AUTH SECTION ===== */
-        .auth-section {
-            background: rgba(30, 41, 59, 0.4);
-            border: 1px solid rgba(45, 212, 191, 0.08);
-            border-radius: 16px;
-            padding: 12px;
-            transition: all 0.2s;
-        }
-
-        .auth-section:hover {
-            background: rgba(30, 41, 59, 0.6);
-            border-color: rgba(45, 212, 191, 0.15);
-        }
-
-        .auth-action-btn {
-            width: 30px;
-            height: 30px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: rgba(100, 116, 139, 0.8);
-            transition: all 0.2s;
-            font-size: 0.8rem;
-        }
-
-        .auth-action-btn:hover {
-            background: rgba(45, 212, 191, 0.1);
-            color: #2DD4BF;
-        }
-
-        /* ===== CHECKIN BUTTON ===== */
-        .checkin-btn {
-            background: rgba(15, 118, 110, 0.15);
-            border: 1px solid rgba(45, 212, 191, 0.25);
-            color: #2DD4BF;
-            border-radius: 10px;
-            padding: 8px 12px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            width: 100%;
-            transition: all 0.3s;
-        }
-
-        .checkin-btn:hover:not(:disabled) {
-            background: rgba(15, 118, 110, 0.3);
-            border-color: rgba(45, 212, 191, 0.4);
-            box-shadow: 0 0 15px rgba(45, 212, 191, 0.2);
-        }
-
-        .checkin-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        /* ===== FADE IN ANIMATION ===== */
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(12px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .animate-fade-in-up {
-            animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-
-        /* ===== SHIMMER LOADING ===== */
-        .shimmer-line {
-            background: linear-gradient(90deg, rgba(30,41,59,0.5) 25%, rgba(45,212,191,0.08) 50%, rgba(30,41,59,0.5) 75%);
-            background-size: 200% 100%;
-            animation: shimmer 1.5s infinite;
-            border-radius: 6px;
-            height: 12px;
-        }
-
-        /* ===== FILE PREVIEW ===== */
-        .file-preview {
-            background: rgba(30, 41, 59, 0.6);
-            border: 1px solid rgba(45, 212, 191, 0.15);
-            border-radius: 12px;
-            padding: 8px 12px;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            position: relative;
-            margin-bottom: 8px;
-        }
-
-        /* ===== GLOW DIVIDER ===== */
-        .glow-divider {
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(45, 212, 191, 0.3), transparent);
-            margin: 4px 0;
-        }
-
-        /* ===== RESPONSIVE ===== */
-        @media (max-width: 768px) {
-            .input-area { margin: 12px; width: auto; max-width: none; border-radius: 16px; }
-            .welcome-title { font-size: 1.5rem; }
-            #main-content { width: 100%; }
-            .msg-ai, .msg-user { font-size: 0.82rem; }
-            #chat-container { padding: 12px; }
-            .max-w-\[80\%\] { max-width: 90% !important; }
-        }
-
-        /* ===== IMAGE WRAPPER ===== */
-        .img-wrapper img {
-            max-width: 100%;
-            height: auto;
-        }
-
-        /* ===== SIDEBAR MOBILE ANIMATION ===== */
-        #main-sidebar.fixed {
-            animation: slide-in-left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); 
+            box-shadow: 0 -4px 30px rgba(0,0,0,0.3);
+            flex-shrink: 0; 
         }
         
-        /* Mobile sidebar touch improvements */
-        @media (max-width: 768px) {
-            #main-sidebar {
-                touch-action: pan-y;
-            }
-            
-            #sidebar-overlay {
-                backdrop-filter: blur(2px);
-            }
+        .prompt-card {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(45, 212, 191, 0.12);
+            border-radius: 14px;
+            padding: 12px 16px;
+            text-align: left;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            display: block;
+            text-decoration: none;
+        }
+        .prompt-card:hover {
+            border-color: rgba(45, 212, 191, 0.35);
+            transform: translateY(-2px);
+            background: rgba(45, 58, 80, 1);
         }
 
-        /* ===== LIGHT MODE OVERRIDES ===== */
-        .light body { background: #f8fafc; }
-        html:not(.dark) body { background: #f1f5f9; }
-        html:not(.dark) .bg-mesh {
-            background: 
-                radial-gradient(ellipse 80% 50% at 20% 40%, rgba(15, 118, 110, 0.06) 0%, transparent 60%),
-                radial-gradient(ellipse 60% 40% at 80% 60%, rgba(34, 211, 238, 0.04) 0%, transparent 60%),
-                #f1f5f9;
+        body.drawer-open { overflow: hidden; }
+        #sidebar-overlay {
+            position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.5);
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 40;
         }
-        html:not(.dark) .orb { opacity: 0.04; }
-        html:not(.dark) #main-sidebar {
-            background: rgba(255, 255, 255, 0.92);
-            border-right-color: rgba(15, 118, 110, 0.1);
+        body.drawer-open #sidebar-overlay { opacity: 1; pointer-events: auto; }
+        #main-sidebar {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+            border-right: 1px solid rgba(45, 212, 191, 0.1);
         }
-        html:not(.dark) .sidebar-logo {
-            background: linear-gradient(135deg, rgba(15, 118, 110, 0.08), rgba(45, 212, 191, 0.04));
-            border-color: rgba(15, 118, 110, 0.15);
+        @media (max-width: 767px) {
+            #main-sidebar {
+                position: fixed; top: 0; left: 0; height: 100vh;
+                width: var(--sidebar-width); max-width: 85%; z-index: 50;
+                transform: translateX(-100%);
+                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            body.drawer-open #main-sidebar {
+                transform: translateX(0);
+                box-shadow: 4px 0 30px rgba(0, 0, 0, 0.4);
+            }
         }
-        html:not(.dark) .logo-text {
-            background: linear-gradient(135deg, #0F766E 0%, #14B8A6 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        html:not(.dark) .logo-subtitle { color: rgba(15, 118, 110, 0.6); }
-        html:not(.dark) .search-input {
-            background: rgba(241, 245, 249, 0.8);
-            border-color: rgba(15, 118, 110, 0.15);
-            color: #1e293b;
-        }
-        html:not(.dark) .search-input:focus { border-color: rgba(15, 118, 110, 0.4); }
-        html:not(.dark) .history-item:hover { background: rgba(15, 118, 110, 0.06); border-color: rgba(15, 118, 110, 0.15); }
-        html:not(.dark) .history-group-header { color: rgba(15, 118, 110, 0.6); background: rgba(255,255,255,0.9); }
-        html:not(.dark) .auth-section { background: rgba(241, 245, 249, 0.6); border-color: rgba(15, 118, 110, 0.1); }
-        html:not(.dark) .discipline-badge { background: linear-gradient(135deg, rgba(15, 118, 110, 0.08), rgba(45, 212, 191, 0.03)); border-color: rgba(15, 118, 110, 0.15); }
-        html:not(.dark) .mobile-header { background: rgba(255,255,255,0.92); border-bottom-color: rgba(15, 118, 110, 0.1); }
-        html:not(.dark) .input-area { background: rgba(255,255,255,0.92); border-color: rgba(15, 118, 110, 0.15); }
-        html:not(.dark) .chat-textarea { background: rgba(241, 245, 249, 0.8); border-color: rgba(15, 118, 110, 0.12); color: #1e293b; }
-        html:not(.dark) .chat-textarea:focus { border-color: rgba(15, 118, 110, 0.35); }
-        html:not(.dark) .msg-ai { background: rgba(255,255,255,0.9); border-color: rgba(15, 118, 110, 0.1); color: #1e293b; }
-        html:not(.dark) .prompt-card { background: rgba(255,255,255,0.8); border-color: rgba(15, 118, 110, 0.12); }
-        html:not(.dark) .prompt-card:hover { border-color: rgba(15, 118, 110, 0.3); }
-        html:not(.dark) .modal-card { background: rgba(255,255,255,0.97); border-color: rgba(15, 118, 110, 0.15); }
-        html:not(.dark) .modal-input { background: rgba(241, 245, 249, 0.8); border-color: rgba(15, 118, 110, 0.15); color: #1e293b; }
-        html:not(.dark) .toast { background: rgba(255,255,255,0.97); border-color: rgba(15, 118, 110, 0.15); color: #1e293b; }
-        html:not(.dark) .msg-actions { background: rgba(255,255,255,0.97); border-color: rgba(15, 118, 110, 0.15); }
-        html:not(.dark) .thinking-details { background: rgba(241, 245, 249, 0.6); border-color: rgba(15, 118, 110, 0.1); }
-        html:not(.dark) .thinking-content { color: #475569; }
-        html:not(.dark) .welcome-title {
-            background: linear-gradient(135deg, #0F766E 0%, #14B8A6 60%, #22D3EE 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        html:not(.dark) .welcome-icon-wrapper { background: linear-gradient(135deg, rgba(15, 118, 110, 0.12), rgba(45, 212, 191, 0.05)); border-color: rgba(15, 118, 110, 0.2); }
-        html:not(.dark) .checkin-btn { background: rgba(15, 118, 110, 0.08); border-color: rgba(15, 118, 110, 0.2); color: #0F766E; }
-        html:not(.dark) .auth-action-btn { color: #64748b; }
-        html:not(.dark) .auth-action-btn:hover { background: rgba(15, 118, 110, 0.08); color: #0F766E; }
-        html:not(.dark) .input-icon-btn { color: #94a3b8; }
-        html:not(.dark) .input-icon-btn:hover { color: #0F766E; background: rgba(15, 118, 110, 0.08); }
-        html:not(.dark) .btn-secondary { background: rgba(241, 245, 249, 0.8); border-color: rgba(15, 118, 110, 0.15); color: #475569; }
-        html:not(.dark) .btn-secondary:hover { background: rgba(15, 118, 110, 0.08); border-color: rgba(15, 118, 110, 0.25); color: #0F766E; }
-        html:not(.dark) .file-preview { background: rgba(241, 245, 249, 0.8); border-color: rgba(15, 118, 110, 0.15); }
+        
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #2DD4BF, #0F766E); border-radius: 20px; }
+        .bg-mesh { position: fixed; inset: 0; z-index: -1; background: radial-gradient(ellipse 80% 50% at 20% 40%, rgba(15, 118, 110, 0.15) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 80% 60%, rgba(34, 211, 238, 0.08) 0%, transparent 60%), #030712; }
+        .mobile-header { background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid rgba(45, 212, 191, 0.1); flex-shrink: 0; }
+        .logo-icon { width: 44px; height: 44px; background: linear-gradient(135deg, #0F766E, #2DD4BF); border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(45, 212, 191, 0.4); }
+        .chat-textarea { background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(45, 212, 191, 0.1); border-radius: 14px; color: rgba(226, 232, 240, 0.95); padding: 12px 80px 12px 16px; font-size: 0.9rem; resize: none; max-height: 140px; width: 100%; }
+        .send-btn { width: 44px; height: 44px; background: linear-gradient(135deg, #0F766E, #14B8A6); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 4px 15px rgba(15, 118, 110, 0.4); flex-shrink: 0; }
+        #chat-container { scrollbar-width: thin; background-color: transparent; }
     </style>
 </head>
-<body class="h-screen flex overflow-hidden">
+<body class="flex overflow-hidden bg-deep-dark">
 
-    <!-- Animated Background -->
     <div class="bg-mesh"></div>
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-    <div class="orb orb-3"></div>
+    <div id="sidebar-overlay" class="md:hidden"></div>
 
-    <!-- Mobile Sidebar Overlay -->
-    <div id="sidebar-overlay" class="hidden fixed inset-0 bg-black/40 z-40 md:hidden" onclick="closeSidebarMobile()"></div>
-
-    <!-- Sidebar -->
-    <aside id="main-sidebar" class="w-80 flex-col hidden md:flex z-10 relative" style="min-width: 320px;">
-        
-        <!-- Logo Section -->
-        <div class="sidebar-logo">
-            <div class="flex items-center gap-3">
-                <div class="logo-icon">
-                    <i class="fa-solid fa-leaf text-white text-lg"></i>
+    <aside id="main-sidebar" class="w-80 flex-col flex md:flex z-10" style="min-width: var(--sidebar-width);">
+        <div class="p-4 border-b border-white/5">
+             <div class="flex items-center gap-3">
+                <div class="logo-icon !w-10 !h-10">
+                    <i class="fa-solid fa-leaf text-white text-base"></i>
                 </div>
                 <div>
-                    <div class="logo-text">LifeCoach AI</div>
-                    <div class="logo-subtitle">Personal Growth Partner</div>
+                    <div class="font-display font-bold text-lg bg-gradient-to-r from-white to-neon-teal text-transparent bg-clip-text">LifeCoach AI</div>
+                    <div class="text-xs uppercase tracking-widest font-medium text-primary-light/50">Personal Growth</div>
                 </div>
             </div>
         </div>
-
-        <!-- Action Buttons -->
-        <div class="px-4 pb-3 space-y-2">
-            <button onclick="startNewChat()" class="btn-primary w-full flex items-center justify-center gap-2">
+        <div class="p-4 space-y-2">
+            <button class="w-full bg-primary hover:bg-primary-light transition-all text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2">
                 <i class="fa-solid fa-plus text-sm"></i>
                 <span>Yeni Oturum</span>
             </button>
-            <button onclick="exportChat()" class="btn-secondary w-full flex items-center justify-center gap-2">
-                <i class="fa-solid fa-download text-xs"></i>
-                <span>Sohbeti İndir (.txt)</span>
-            </button>
         </div>
-
-        <!-- Discipline Badge -->
-        <div class="px-4 pb-3">
-            <div id="discipline-badge" class="discipline-badge hidden">
-                <!-- Header -->
-                <div class="flex items-center justify-between mb-2">
-                    <div class="flex items-center gap-2">
-                        <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500/20 to-amber-400/10 border border-amber-500/20 flex items-center justify-center">
-                            <i class="fa-solid fa-fire text-amber-400 text-xs"></i>
-                        </div>
-                        <span class="text-xs font-bold text-white/80 tracking-wide uppercase">Discipline Core</span>
-                    </div>
-                    <div class="text-xs text-slate-400">
-                        <span id="badge-streak" class="font-bold text-amber-400">0</span>
-                        <span class="ml-1">gün</span>
-                    </div>
+        
+        <!-- Kartlar Drawer İçine Taşındı -->
+        <div class="flex-1 overflow-y-auto">
+            <div class="p-4">
+                <h3 class="text-xs font-semibold uppercase text-slate-500 tracking-wider mb-3">Hızlı Başlangıç</h3>
+                <div class="space-y-2">
+                    <a href="#" class="prompt-card" onclick="document.getElementById('user-input').value = this.querySelector('p:last-child').textContent; return false;">
+                         <p class="font-semibold text-sm text-white">Hedef Belirleme</p>
+                         <p class="text-xs text-slate-400 mt-1">Haftalık hedeflerimi nasıl belirleyebilirim?</p>
+                    </a>
+                    <a href="#" class="prompt-card" onclick="document.getElementById('user-input').value = this.querySelector('p:last-child').textContent; return false;">
+                         <p class="font-semibold text-sm text-white">Stres Yönetimi</p>
+                         <p class="text-xs text-slate-400 mt-1">İş yerindeki stresi nasıl azaltabilirim?</p>
+                    </a>
+                    <a href="#" class="prompt-card" onclick="document.getElementById('user-input').value = this.querySelector('p:last-child').textContent; return false;">
+                         <p class="font-semibold text-sm text-white">Motivasyon</p>
+                         <p class="text-xs text-slate-400 mt-1">Bu sabah motivasyonum neden düşük?</p>
+                    </a>
                 </div>
-                <!-- Today Status -->
-                <div id="badge-today-status" class="text-xs flex items-center mb-2">
-                    <!-- JS ile doldurulacak -->
-                </div>
-                <!-- Stars -->
-                <div id="badge-stars" class="flex justify-center gap-1 mb-2 text-lg">
-                    <!-- Stars injected here -->
-                </div>
-                <!-- Progress Bar -->
-                <div id="badge-progress" class="mb-2">
-                    <!-- JS ile doldurulacak -->
-                </div>
-                <!-- Milestone Labels -->
-                <div class="flex justify-between text-[9px] text-slate-600 mb-2 px-0.5">
-                    <span>3g ⭐</span>
-                    <span>7g ⭐⭐</span>
-                    <span>14g ⭐⭐⭐</span>
-                    <span>30g ⭐⭐⭐⭐</span>
-                </div>
-                <!-- Info text -->
-                <p class="text-[10px] text-slate-600 text-center">Her gün yazarak serinizi koruyun!</p>
+            </div>
+            <div class="p-4 border-t border-white/5">
+                 <h3 class="text-xs font-semibold uppercase text-slate-500 tracking-wider mb-3">Geçmiş</h3>
+                 <div class="text-center text-xs text-slate-500 py-6">Giriş yapıldığında<br>sohbet geçmişi burada listelenir.</div>
             </div>
         </div>
 
-        <!-- Search -->
-        <div class="px-4 pb-3">
-            <div class="relative">
-                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
-                <input type="text" id="history-search" onkeyup="filterHistory()" placeholder="Geçmişi ara..." class="search-input">
-            </div>
-        </div>
-
-        <!-- History List -->
-        <div class="flex-1 overflow-y-auto px-3 space-y-0.5" id="history-list">
-            <div class="history-group-header">Geçmiş Oturumlar</div>
-        </div>
-
-        <!-- Auth Section -->
-        <div class="p-4 border-t border-white/5" id="auth-container">
-            <!-- JS ile doldurulacak -->
+        <div class="p-4 border-t border-white/5">
+            <p class="text-xs text-slate-500 text-center">Alt bölüm</p>
         </div>
     </aside>
 
-    <!-- Main Content -->
     <main id="main-content" class="flex-1 flex flex-col relative overflow-hidden">
         
-        <!-- Mobile Header -->
-        <header class="md:hidden mobile-header p-4 flex items-center justify-between sticky top-0 z-20">
+        <header class="md:hidden mobile-header p-4 flex items-center justify-between z-20">
             <div class="flex items-center gap-2.5">
-                <div class="logo-icon w-8 h-8 rounded-lg">
+                <div class="logo-icon !w-8 !h-8 !rounded-lg">
                     <i class="fa-solid fa-leaf text-white text-sm"></i>
                 </div>
                 <span class="font-bold text-white font-display">LifeCoach AI</span>
             </div>
-            <button onclick="toggleSidebar()" class="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 transition-all">
+            <button id="open-sidebar-btn" class="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 transition-all" aria-label="Menüyü aç">
                 <i class="fa-solid fa-bars text-sm"></i>
             </button>
         </header>
 
-        <!-- Chat Container -->
+        <!-- Karşılama Ekranı Kaldırıldı, Yerine Boş Sohbet Bildirimi Geldi -->
         <div id="chat-container" class="flex-1 overflow-y-auto p-4 md:p-8 space-y-5">
-            
-            <!-- Welcome Screen -->
-            <div class="flex flex-col items-center justify-center h-full text-center space-y-5" id="welcome-screen">
-                <div class="welcome-icon-wrapper">
-                    <i class="fa-solid fa-hands-holding-circle text-4xl" style="color: #2DD4BF;"></i>
-                </div>
-                
-                <div class="space-y-2">
-                    <h2 class="welcome-title">Merhaba, bugün nasılsın?</h2>
-                    <p class="text-slate-400 max-w-md text-sm leading-relaxed">
-                        Kişisel yaşam koçunuz olarak buradayım. Hedefleriniz, endişeleriniz hakkında<br>veya sadece sohbet etmek için bana yazabilirsiniz.
-                    </p>
-                </div>
-
-                <!-- Stats Row -->
-                <div class="flex items-center gap-6 py-2">
-                    <div class="text-center">
-                        <div class="text-lg font-bold" style="color: #2DD4BF;">AI</div>
-                        <div class="text-xs text-slate-500">Powered</div>
-                    </div>
-                    <div class="w-px h-8 bg-white/10"></div>
-                    <div class="text-center">
-                        <div class="text-lg font-bold text-white">7/24</div>
-                        <div class="text-xs text-slate-500">Erişim</div>
-                    </div>
-                    <div class="w-px h-8 bg-white/10"></div>
-                    <div class="text-center">
-                        <div class="text-lg font-bold text-amber-400">∞</div>
-                        <div class="text-xs text-slate-500">Destek</div>
+            <div id="empty-chat-placeholder" class="flex flex-col items-center justify-center h-full text-center text-slate-500/80">
+                <div class="w-24 h-24 flex items-center justify-center rounded-full bg-gradient-to-b from-primary/10 to-transparent mb-6">
+                    <div class="w-20 h-20 flex items-center justify-center rounded-full bg-gradient-to-b from-primary/10 to-transparent">
+                         <i class="fa-regular fa-comments text-4xl text-primary-light/80"></i>
                     </div>
                 </div>
-
-                <!-- Prompt Templates -->
-                <div id="dynamic-prompts" class="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-2xl mt-4">
-                    <!-- JS ile doldurulacak -->
-                </div>
+                <h2 class="text-lg font-bold font-display text-slate-300">Sohbet Başlat</h2>
+                <p class="text-sm max-w-xs">Kişisel gelişim yolculuğunuza başlamak için aşağıdaki alana mesajınızı yazın.</p>
             </div>
+            <!-- Mesajlar buraya eklenecek -->
         </div>
 
-        <!-- Input Area -->
         <div class="input-area">
-            <!-- File Preview -->
-            <div id="file-preview-container" class="hidden file-preview mb-3">
-                <!-- JS ile doldurulacak -->
-            </div>
-
             <form id="chat-form" class="flex items-end gap-3">
                 <div class="relative flex-1">
-                    <textarea 
-                        id="user-input" 
-                        rows="1" 
-                        placeholder="Buraya yazın veya bir dosya ekleyin..."
-                        class="chat-textarea"
-                        oninput="this.style.height = ''; this.style.height = Math.min(this.scrollHeight, 140) + 'px'"
-                    ></textarea>
-                    <button type="button" onclick="document.getElementById('file-upload').click()" class="input-icon-btn" style="right: 36px;" title="Dosya Yükle">
-                        <i class="fa-solid fa-paperclip text-sm"></i>
-                    </button>
-                    <button type="button" id="mic-btn" onclick="toggleDictation()" class="input-icon-btn" style="right: 8px;" title="Sesli Yazma">
-                        <i class="fa-solid fa-microphone text-sm"></i>
-                    </button>
+                    <textarea id="user-input" rows="1" placeholder="Buraya yazın..." class="chat-textarea"></textarea>
                 </div>
-                <button type="submit" class="send-btn" id="send-btn">
+                <button type="submit" class="send-btn">
                     <i class="fa-solid fa-paper-plane text-sm"></i>
                 </button>
             </form>
-            
-            <input type="file" id="file-upload" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" class="hidden" onchange="handleFileSelect(this)">
-            
-            <div class="text-center mt-3">
-                <p class="text-xs text-slate-600">LifeCoach AI kişisel gelişim amaçlıdır ve tıbbi tavsiye sağlamaz.</p>
-            </div>
         </div>
     </main>
 
-    <!-- Settings Modal -->
-    <div id="settings-modal" class="fixed inset-0 modal-overlay hidden items-center justify-center z-50">
-        <div class="modal-card w-full max-w-sm mx-4 p-6">
-            <div class="flex justify-between items-center mb-5">
-                <div>
-                    <h3 class="text-lg font-bold text-white font-display">Profili Düzenle</h3>
-                    <p class="text-xs text-slate-500 mt-0.5">Hesap bilgilerinizi güncelleyin</p>
-                </div>
-                <button onclick="closeSettings()" class="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-all">
-                    <i class="fa-solid fa-xmark text-sm"></i>
-                </button>
-            </div>
-            
-            <form id="settings-form" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Kullanıcı Adı</label>
-                    <div class="relative">
-                        <span class="absolute left-3 top-2.5 text-slate-500 text-sm">@</span>
-                        <input type="text" id="settings-name" class="modal-input pl-8" placeholder="kullanici_adi">
-                    </div>
-                    <p class="text-xs text-slate-600 mt-1.5">Sadece harf, rakam, nokta ve alt çizgi kullanılabilir.</p>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Avatar URL</label>
-                    <input type="url" id="settings-avatar" class="modal-input" placeholder="https://example.com/avatar.jpg">
-                    <p class="text-xs text-slate-600 mt-1.5">İsteğe bağlı: Bir resim linki yapıştırın.</p>
-                </div>
-                <div id="settings-error" class="text-red-400 text-sm hidden bg-red-500/10 border border-red-500/20 rounded-xl p-3"></div>
-                <div class="flex gap-3 pt-1">
-                    <button type="button" onclick="closeSettings()" class="btn-secondary flex-1 py-2.5 text-sm font-medium">İptal</button>
-                    <button type="submit" class="btn-primary flex-1 py-2.5 text-sm">Kaydet</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Toast Container -->
-    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
-
     <script>
-        // Sayfa yüklenirken token kontrolü (zorunlu değil - misafir kullanıcılara izin ver)
-        (function checkTokenOnLoad() {
-            const token = localStorage.getItem('token');
-            if (!token) return; // Misafir kullanıcı - devam et
-            // JWT expiry check (client-side, no verification)
-            try {
-                const payload = JSON.parse(atob(token.split('.')[1]));
-                if (payload.exp && Date.now() / 1000 > payload.exp) {
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
-                    // Token süresi dolmuş ama sayfada kalmaya devam et (misafir olarak)
-                }
-            } catch(e) {
-                // Bozuk token - temizle ama sayfada kal
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-            }
-        })();
-
-        function escapeJS(str) {
-            if (str === null || str === undefined) return '';
-            return String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '');
-        }
-
-        let chatContainer;
-        let chatForm;
-        let userInput;
-        let welcomeScreen;
-        let messageHistory = [];
-        let currentSessionId = null;
-        let currentFile = null;
-        
-        const storage = {
-            get: (key) => { try { return localStorage.getItem(key); } catch(e) { return null; } },
-            set: (key, val) => { try { localStorage.setItem(key, val); } catch(e) {} },
-            remove: (key) => { try { localStorage.removeItem(key); } catch(e) {} },
-            has: (key) => { try { return key in localStorage; } catch(e) { return false; } }
-        };
-
-        function initTheme() {
-            const theme = storage.get('theme');
-            if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-            }
-        }
-        initTheme();
-
-        let welcomeShown = false;
-
-        function showToast(message) {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = 'toast transform transition-all duration-500 translate-x-full opacity-0 pointer-events-auto';
-            toast.innerHTML = `
-                <div class="flex items-center gap-3">
-                    <div class="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style="background: linear-gradient(135deg, rgba(15,118,110,0.3), rgba(45,212,191,0.1)); border: 1px solid rgba(45,212,191,0.2);">
-                        <i class="fa-solid fa-leaf text-xs" style="color: #2DD4BF;"></i>
-                    </div>
-                    <p class="text-sm font-medium">${message}</p>
-                </div>
-            `;
-            container.appendChild(toast);
-            requestAnimationFrame(() => {
-                toast.classList.remove('translate-x-full', 'opacity-0');
-            });
-            setTimeout(() => {
-                toast.classList.add('translate-x-full', 'opacity-0');
-                setTimeout(() => { toast.remove(); }, 500);
-            }, 3500);
-        }
-
-        function getSafeUser() {
-            try { return JSON.parse(storage.get('user')); } catch (e) { return null; }
-        }
-
-        function checkAuth() {
-            const user = getSafeUser();
-            const token = storage.get('token');
-            const authContainer = document.getElementById('auth-container');
-            const disciplineBadge = document.getElementById('discipline-badge');
+        document.addEventListener('DOMContentLoaded', function () {
             
-            if (user && token) {
-                // Giriş yapmış kullanıcı
-                const avatarHtml = user.avatar
-                    ? `<img src="${user.avatar}" alt="${user.name}" class="w-9 h-9 rounded-xl object-cover border border-white/10" onerror="this.onerror=null; this.outerHTML='<div class=\\'w-9 h-9 rounded-xl flex items-center justify-center font-bold text-white text-sm\\' style=\\'background: linear-gradient(135deg, #0F766E, #2DD4BF);\\'>${user.name.charAt(0).toUpperCase()}</div>'">`
-                    : `<div class="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-white text-sm" style="background: linear-gradient(135deg, #0F766E, #2DD4BF);">${user.name.charAt(0).toUpperCase()}</div>`;
+            const setViewportHeight = () => {
+                const vh = window.innerHeight * 0.01;
+                document.documentElement.style.setProperty('--vh', `${vh}px`);
+            };
+            setViewportHeight();
+            window.addEventListener('resize', setViewportHeight);
 
-                authContainer.innerHTML = `
-                    <div class="auth-section">
-                        <div class="flex items-center gap-3">
-                            ${avatarHtml}
-                            <div class="flex-1 min-w-0">
-                                <p class="text-sm font-semibold text-white truncate">${user.name}</p>
-                                <p class="text-xs text-slate-500 truncate">${user.email}</p>
-                            </div>
-                            <div class="flex items-center gap-1">
-                                <button onclick="toggleDarkMode()" class="auth-action-btn" title="Tema Değiştir">
-                                    <i class="fa-solid ${document.documentElement.classList.contains('dark') ? 'fa-sun' : 'fa-moon'} text-xs"></i>
-                                </button>
-                                <button onclick="openSettings()" class="auth-action-btn" title="Ayarlar">
-                                    <i class="fa-solid fa-gear text-xs"></i>
-                                </button>
-                                <button onclick="logout()" class="auth-action-btn hover:!text-red-400 hover:!bg-red-500/10" title="Çıkış">
-                                    <i class="fa-solid fa-right-from-bracket text-xs"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                
-                if (!welcomeShown) {
-                    showToast(`Hoş geldin, ${user.name}! 👋✨`);
-                    welcomeShown = true;
-                }
-                loadHistory();
-                loadBadgeStatus();
-            } else {
-                // Misafir kullanıcı - giriş yapmadan devam et
-                if (disciplineBadge) disciplineBadge.classList.add('hidden');
-                authContainer.innerHTML = `
-                    <div class="auth-section">
-                        <div class="space-y-2">
-                            <p class="text-xs text-slate-400 text-center mb-2">Geçmişini kaydetmek için giriş yap</p>
-                            <a href="/login" class="btn-primary w-full flex items-center justify-center gap-2 text-sm py-2.5 no-underline">
-                                <i class="fa-solid fa-right-to-bracket text-xs"></i>
-                                <span>Giriş Yap</span>
-                            </a>
-                            <a href="/signup" class="btn-secondary w-full flex items-center justify-center gap-2 text-sm py-2 no-underline">
-                                <i class="fa-solid fa-user-plus text-xs"></i>
-                                <span>Kayıt Ol</span>
-                            </a>
-                        </div>
-                    </div>
-                `;
-                // Misafir için geçmiş listesini güncelle
-                const historyList = document.getElementById('history-list');
-                if (historyList) {
-                    historyList.innerHTML = `
-                        <div class="px-4 py-6 text-center">
-                            <div class="w-10 h-10 rounded-xl mx-auto mb-3 flex items-center justify-center" style="background: rgba(45,212,191,0.08); border: 1px solid rgba(45,212,191,0.12);">
-                                <i class="fa-solid fa-lock text-slate-500 text-sm"></i>
-                            </div>
-                            <p class="text-xs text-slate-500 mb-3">Konuşma geçmişini görmek için giriş yapın.</p>
-                            <a href="/login" class="text-xs text-teal-400 hover:text-teal-300 underline">Giriş Yap →</a>
-                        </div>
-                    `;
-                }
-            }
-        }
-
-        function logout() {
-            storage.remove('user');
-            storage.remove('token');
-            window.location.reload();
-        }
-
-        function toggleDarkMode() {
-            document.documentElement.classList.toggle('dark');
-            const isDark = document.documentElement.classList.contains('dark');
-            storage.set('theme', isDark ? 'dark' : 'light');
-            checkAuth();
-        }
-
-        function toggleSidebar() {
-            const sidebar = document.getElementById('main-sidebar');
+            const body = document.body;
+            const openBtn = document.getElementById('open-sidebar-btn');
             const overlay = document.getElementById('sidebar-overlay');
-            sidebar.classList.toggle('hidden');
-            if (!sidebar.classList.contains('hidden')) {
-                sidebar.classList.add('fixed', 'inset-y-0', 'left-0', 'z-50', 'w-80', 'shadow-2xl', 'flex');
-                if (overlay) {
-                    overlay.classList.remove('hidden');
-                    // Enable touch events on overlay
-                    overlay.style.touchAction = 'none';
-                }
-                document.body.style.overflow = 'hidden';
-            } else {
-                sidebar.classList.remove('fixed', 'inset-y-0', 'left-0', 'z-50', 'w-80', 'shadow-2xl', 'flex');
-                if (overlay) overlay.classList.add('hidden');
-                document.body.style.overflow = '';
-            }
-        }
-
-        function closeSidebarMobile() {
-            const sidebar = document.getElementById('main-sidebar');
-            const overlay = document.getElementById('sidebar-overlay');
-            sidebar.classList.add('hidden');
-            sidebar.classList.remove('fixed', 'inset-y-0', 'left-0', 'z-50', 'w-80', 'shadow-2xl', 'flex');
-            if (overlay) overlay.classList.add('hidden');
-            document.body.style.overflow = '';
-        }
-
-        function openSettings() {
-            const user = getSafeUser();
-            if (user) {
-                document.getElementById('settings-name').value = user.name;
-                document.getElementById('settings-avatar').value = user.avatar || '';
-            }
-            const modal = document.getElementById('settings-modal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        }
-
-        function closeSettings() {
-            const modal = document.getElementById('settings-modal');
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-            document.getElementById('settings-error').classList.add('hidden');
-        }
-
-        async function loadBadgeStatus() {
-            const token = storage.get('token');
-            if (!token) return;
-            try {
-                const res = await fetch('/api/badge-status', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (!res.ok) return;
-                const data = await res.json();
-                updateBadgeDisplay(data.streak, data.stars, data.chattedToday);
-            } catch (err) {
-                console.error("Rozet durumu yüklenemedi:", err);
-            }
-        }
-
-        function updateBadgeDisplay(streak, stars, chattedToday = false, oldStars = -1) {
-            const badgeEl = document.getElementById('discipline-badge');
-            const streakEl = document.getElementById('badge-streak');
-            const starsEl = document.getElementById('badge-stars');
-            const statusEl = document.getElementById('badge-today-status');
-            if (!badgeEl) return;
-            badgeEl.classList.remove('hidden');
-            streakEl.textContent = streak;
-
-            // Yıldız gösterimi (4 yıldız: 3gün=1, 7gün=2, 14gün=3, 30gün=4)
-            let starsHTML = '';
-            for (let i = 1; i <= 4; i++) {
-                const isFilled = i <= stars;
-                const wasFilled = i <= oldStars;
-                const animClass = (isFilled && !wasFilled) ? 'star-upgraded' : '';
-                starsHTML += `<i class="fa-solid fa-star ${isFilled ? 'text-amber-400' : 'text-slate-700'} ${animClass}" style="${isFilled ? 'filter: drop-shadow(0 0 4px rgba(251,191,36,0.5));' : ''}"></i>`;
-            }
-            starsEl.innerHTML = starsHTML;
-
-            // Bugünkü durum
-            if (statusEl) {
-                if (chattedToday) {
-                    statusEl.innerHTML = '<i class="fa-solid fa-check-circle text-teal-400 mr-1"></i><span class="text-teal-400">Bugün yazıldı ✓</span>';
-                } else {
-                    statusEl.innerHTML = '<i class="fa-solid fa-clock text-slate-500 mr-1"></i><span class="text-slate-500">Bugün henüz yazmadın</span>';
-                }
-            }
-
-            // Sonraki yıldız için ne kadar kaldı
-            const nextMilestone = streak < 3 ? 3 : streak < 7 ? 7 : streak < 14 ? 14 : streak < 30 ? 30 : null;
-            const progressEl = document.getElementById('badge-progress');
-            if (progressEl && nextMilestone) {
-                const pct = Math.min(100, Math.round((streak / nextMilestone) * 100));
-                progressEl.innerHTML = `
-                    <div class="flex justify-between text-[10px] text-slate-500 mb-1">
-                        <span>${streak} gün</span>
-                        <span>${nextMilestone} günde yeni yıldız</span>
-                    </div>
-                    <div class="w-full bg-slate-700/50 rounded-full h-1.5">
-                        <div class="h-1.5 rounded-full transition-all duration-500" style="width:${pct}%; background: linear-gradient(90deg, #0F766E, #2DD4BF);"></div>
-                    </div>
-                `;
-            } else if (progressEl && !nextMilestone) {
-                progressEl.innerHTML = `<div class="text-center text-xs text-amber-400"><i class="fa-solid fa-crown mr-1"></i>Maksimum seviye!</div>`;
-            }
-        }
-
-        async function handleCheckIn() {
-            const token = storage.get('token');
-            const btn = document.getElementById('checkin-btn');
-            if (btn) btn.disabled = true;
-            try {
-                const res = await fetch('/api/check-in', {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await res.json();
-                showToast(data.message || data.error);
-                loadBadgeStatus();
-            } catch (err) {
-                showToast("Bir hata oluştu.");
-                if (btn) btn.disabled = false;
-            }
-        }
-
-        async function loadHistory(retryCount = 0) {
-            const historyList = document.getElementById('history-list');
-            if (!historyList) return;
-
-            historyList.innerHTML = `
-                <div class="history-group-header">Geçmiş Oturumlar</div>
-                <div class="px-3 py-4 space-y-2">
-                    <div class="shimmer-line w-3/4"></div>
-                    <div class="shimmer-line w-1/2"></div>
-                    <div class="shimmer-line w-2/3"></div>
-                </div>
-            `;
-
-            const token = storage.get('token');
-            if (!token) {
-                historyList.innerHTML = '<div class="px-4 py-3 text-xs text-slate-500">Geçmişi görmek için giriş yapmalısınız.</div>';
-                return;
-            }
-
-            try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-                const response = await fetch('/api/history', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({}),
-                    signal: controller.signal
-                });
-                clearTimeout(timeoutId);
-
-                // Token geçersiz veya süresi dolmuş
-                if (response.status === 401 || response.status === 403) {
-                    historyList.innerHTML = '<div class="px-4 py-3 text-xs text-slate-500">Oturum süresi doldu. Lütfen tekrar giriş yapın.</div>';
-                    setTimeout(() => {
-                        storage.remove('token');
-                        storage.remove('user');
-                        window.location.href = '/login';
-                    }, 2000);
-                    return;
-                }
-
-                const sessions = await response.json();
-                
-                if (!response.ok || (sessions && sessions.error)) {
-                    const errorMessage = sessions.error || `Sunucu hatası: ${response.status}`;
-                    // Retry once on server error
-                    if (retryCount < 1) {
-                        setTimeout(() => loadHistory(retryCount + 1), 2000);
-                        historyList.innerHTML = `<div class="px-4 py-3 text-xs text-slate-400">Yükleniyor... <span class="text-teal-500">yeniden deneniyor</span></div>`;
-                        return;
-                    }
-                    historyList.innerHTML = `<div class="px-4 py-3 text-xs text-red-400">Hata: ${errorMessage}</div>`;
-                    return;
-                }
-
-                if (!Array.isArray(sessions)) {
-                    if (retryCount < 1) {
-                        setTimeout(() => loadHistory(retryCount + 1), 2000);
-                        historyList.innerHTML = `<div class="px-4 py-3 text-xs text-slate-400">Yükleniyor... <span class="text-teal-500">yeniden deneniyor</span></div>`;
-                        return;
-                    }
-                    historyList.innerHTML = '<div class="px-4 py-3 text-xs text-red-400">Geçmiş yüklenemedi.</div>';
-                    return;
-                }
-
-                historyList.innerHTML = '';
-                
-                if (sessions.length === 0) {
-                    historyList.innerHTML = `
-                        <div class="px-4 py-8 text-center">
-                            <div class="w-10 h-10 rounded-xl mx-auto mb-3 flex items-center justify-center" style="background: rgba(45,212,191,0.08); border: 1px solid rgba(45,212,191,0.12);">
-                                <i class="fa-regular fa-message text-slate-500 text-sm"></i>
-                            </div>
-                            <p class="text-xs text-slate-500">Henüz sohbet geçmişiniz yok.</p>
-                        </div>
-                    `;
-                    return;
-                }
-
-                const groups = { 'Bugün': [], 'Dün': [], 'Bu Hafta': [], 'Daha Eski': [] };
-                const now = new Date();
-                const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-                const yesterdayStart = todayStart - 86400000;
-                const weekStart = todayStart - 6 * 86400000;
-
-                // session.id is a timestamp (Date.now()), sort descending
-                sessions.sort((a, b) => Number(b.id) - Number(a.id));
-                sessions.forEach(session => {
-                    const sid = Number(session.id);
-                    if (sid >= todayStart) groups['Bugün'].push(session);
-                    else if (sid >= yesterdayStart) groups['Dün'].push(session);
-                    else if (sid >= weekStart) groups['Bu Hafta'].push(session);
-                    else groups['Daha Eski'].push(session);
-                });
-
-                Object.entries(groups).forEach(([label, groupSessions]) => {
-                    if (groupSessions.length === 0) return;
-                    const header = document.createElement('div');
-                    header.className = 'history-group-header';
-                    header.textContent = label;
-                    historyList.appendChild(header);
-
-                    groupSessions.forEach(session => {
-                        const div = document.createElement('div');
-                        div.className = `history-item flex items-center group pr-1 ${currentSessionId == session.id ? 'active' : ''}`;
-                        const safeTitle = (session.title || 'Sohbet').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                        div.innerHTML = `
-                            <button onclick="loadSession(${session.id})" class="flex-1 text-left px-3 py-2.5 flex items-center gap-2.5 min-w-0">
-                                <i class="fa-regular fa-message text-slate-600 group-hover:text-teal-400 flex-shrink-0 text-xs transition-colors"></i>
-                                <div class="truncate text-xs text-slate-400 group-hover:text-slate-200 transition-colors">${safeTitle}</div>
-                            </button>
-                            <button onclick="deleteSession(${session.id})" class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-600 hover:text-red-400 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0" title="Sil">
-                                <i class="fa-solid fa-trash text-xs"></i>
-                            </button>
-                        `;
-                        historyList.appendChild(div);
-                    });
-                });
-
-            } catch (err) {
-                if (err.name === 'AbortError') {
-                    if (retryCount < 1) {
-                        setTimeout(() => loadHistory(retryCount + 1), 3000);
-                        historyList.innerHTML = `<div class="px-4 py-3 text-xs text-slate-400">Bağlantı yavaş, yeniden deneniyor...</div>`;
-                    } else {
-                        historyList.innerHTML = '<div class="px-4 py-3 text-xs text-red-400">Bağlantı zaman aşımına uğradı.</div>';
-                    }
-                } else {
-                    if (retryCount < 1) {
-                        setTimeout(() => loadHistory(retryCount + 1), 2000);
-                        historyList.innerHTML = `<div class="px-4 py-3 text-xs text-slate-400">Yükleniyor... <span class="text-teal-500">yeniden deneniyor</span></div>`;
-                    } else {
-                        historyList.innerHTML = '<div class="px-4 py-3 text-xs text-red-400">Ağ hatası oluştu.</div>';
-                    }
-                }
-            }
-        }
-
-        function filterHistory() {
-            const input = document.getElementById('history-search');
-            const filter = input.value.toLowerCase();
-            const historyList = document.getElementById('history-list');
-            const children = Array.from(historyList.children);
-            children.forEach(child => {
-                if (!child.classList.contains('history-group-header')) {
-                    const text = child.textContent || child.innerText;
-                    child.style.display = text.toLowerCase().indexOf(filter) > -1 ? "" : "none";
-                }
-            });
-            for (let i = 0; i < children.length; i++) {
-                if (children[i].classList.contains('history-group-header')) {
-                    let visibleCount = 0;
-                    for (let j = i + 1; j < children.length; j++) {
-                        if (children[j].classList.contains('history-group-header')) break;
-                        if (children[j].style.display !== 'none') visibleCount++;
-                    }
-                    children[i].style.display = visibleCount > 0 ? "" : "none";
-                }
-            }
-        }
-
-        async function loadSession(sessionId) {
-            const user = getSafeUser();
-            const token = storage.get('token');
-            if (!user || !token) return;
-            try {
-                // Close sidebar on mobile after selecting a session
-                closeSidebarMobile();
-
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-                const res = await fetch('/api/get-session', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ sessionId }),
-                    signal: controller.signal
-                });
-                clearTimeout(timeoutId);
-
-                if (res.status === 401 || res.status === 403) {
-                    showToast("Oturum süresi doldu. Yeniden giriş yapılıyor...");
-                    setTimeout(() => {
-                        storage.remove('token');
-                        storage.remove('user');
-                        window.location.href = '/login';
-                    }, 1500);
-                    return;
-                }
-
-                if (!res.ok) {
-                    showToast("Sohbet yüklenemedi. Lütfen tekrar deneyin.");
-                    return;
-                }
-
-                const session = await res.json();
-                if (!session || !session.id) {
-                    showToast("Sohbet bulunamadı.");
-                    return;
-                }
-
-                currentSessionId = session.id;
-                messageHistory = [];
-                chatContainer.innerHTML = '';
-                if (welcomeScreen) chatContainer.appendChild(welcomeScreen);
-                if (welcomeScreen) welcomeScreen.classList.add('hidden');
-
-                (session.messages || []).forEach(msg => {
-                    appendMessage(msg.content, msg.role === 'user' ? 'user' : 'ai');
-                    messageHistory.push(msg);
-                });
-
-                // Update active state in history list
-                document.querySelectorAll('.history-item').forEach(el => el.classList.remove('active'));
-                const activeItems = document.querySelectorAll(`[onclick="loadSession(${sessionId})"]`);
-                activeItems.forEach(btn => btn.closest('.history-item')?.classList.add('active'));
-
-            } catch (err) {
-                if (err.name === 'AbortError') {
-                    showToast("Bağlantı zaman aşımına uğradı. Tekrar deneyin.");
-                } else {
-                    console.error("Seans yüklenirken hata:", err);
-                    showToast("Sohbet yüklenirken bir hata oluştu.");
-                }
-            }
-        }
-
-        async function deleteSession(sessionId) {
-            const token = storage.get('token');
-            if (!confirm("Bu oturumu silmek istediğinizden emin misiniz?")) return;
-            try {
-                const res = await fetch('/api/delete-session', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ sessionId })
-                });
-                const data = await res.json();
-                if (data.success) {
-                    if (currentSessionId == sessionId) startNewChat();
-                    loadHistory();
-                }
-            } catch (err) {
-                console.error("Silme hatası:", err);
-            }
-        }
-
-        function startNewChat() {
-            currentSessionId = null;
-            messageHistory = [];
-            chatContainer.innerHTML = '';
-            chatContainer.appendChild(welcomeScreen);
-            welcomeScreen.classList.remove('hidden');
-        }
-
-        function useTemplate(text) {
-            userInput.value = text;
-            userInput.style.height = 'auto';
-            userInput.style.height = Math.min(userInput.scrollHeight, 140) + 'px';
-            userInput.focus();
-        }
-
-        function copyToClipboard(btn, text) {
-            navigator.clipboard.writeText(text).then(() => {
-                const originalIcon = btn.innerHTML;
-                btn.innerHTML = '<i class="fa-solid fa-check" style="color: #2DD4BF;"></i>';
-                setTimeout(() => { btn.innerHTML = originalIcon; }, 2000);
-            });
-        }
-
-        function speakText(text) {
-            if ('speechSynthesis' in window) {
-                if (window.speechSynthesis.speaking) window.speechSynthesis.cancel();
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'tr-TR';
-                window.speechSynthesis.speak(utterance);
-            }
-        }
-
-        function toggleDictation() {
-            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-                alert("Tarayıcınız sesli yazma desteklemiyor.");
-                return;
-            }
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            const recognition = new SpeechRecognition();
-            const micBtn = document.getElementById('mic-btn');
-            recognition.lang = 'tr-TR';
-            recognition.interimResults = false;
-            recognition.onstart = function() {
-                micBtn.style.color = '#ef4444';
-                micBtn.classList.add('animate-pulse');
-            };
-            recognition.onend = function() {
-                micBtn.style.color = '';
-                micBtn.classList.remove('animate-pulse');
-            };
-            recognition.onresult = function(event) {
-                const transcript = event.results[0][0].transcript;
-                userInput.value += (userInput.value ? ' ' : '') + transcript;
-                userInput.style.height = 'auto';
-                userInput.style.height = Math.min(userInput.scrollHeight, 140) + 'px';
-                userInput.focus();
-            };
-            recognition.start();
-        }
-
-        function exportChat() {
-            if (messageHistory.length === 0) {
-                showToast("Dışa aktarılacak sohbet geçmişi yok.");
-                return;
-            }
-            let textContent = "LifeCoach AI — Sohbet Geçmişi\n";
-            textContent += "Tarih: " + new Date().toLocaleString('tr-TR') + "\n";
-            textContent += "━".repeat(40) + "\n\n";
-            messageHistory.forEach(msg => {
-                const role = msg.role === 'user' ? 'Sen' : 'LifeCoach AI';
-                textContent += `[${role}]:\n${msg.content}\n\n`;
-            });
-            const blob = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `sohbet-gecmisi-${new Date().toISOString().slice(0,10)}.txt`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        }
-
-        async function sendFeedback(btn, type, messageContent) {
-            const token = storage.get('token');
-            if (!token || !currentSessionId) return;
-            const parent = btn.parentElement;
-            const buttons = parent.querySelectorAll('button');
-            buttons.forEach(b => b.style.color = '');
-            btn.style.color = type === 'like' ? '#22c55e' : '#ef4444';
-            try {
-                await fetch('/api/feedback', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ sessionId: currentSessionId, messageContent, feedback: type })
-                });
-            } catch (err) {
-                console.error("Feedback error:", err);
-            }
-        }
-
-        function handleFileSelect(input) {
-            if (input.files && input.files[0]) {
-                const file = input.files[0];
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    currentFile = { data: e.target.result, name: file.name, type: file.type };
-                    const container = document.getElementById('file-preview-container');
-                    let previewHTML = '';
-                    if (file.type.startsWith('image/')) {
-                        previewHTML = `<img src="${currentFile.data}" class="h-12 w-auto rounded-lg object-cover">`;
-                    } else {
-                        const iconClass = getFileIcon(file.name);
-                        previewHTML = `<div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: rgba(45,212,191,0.1); border: 1px solid rgba(45,212,191,0.2);"><i class="${iconClass} text-xl" style="color: #2DD4BF;"></i></div>`;
-                    }
-                    container.innerHTML = `
-                        ${previewHTML}
-                        <div class="flex-1 min-w-0">
-                            <p class="text-sm font-medium text-slate-200 truncate">${file.name}</p>
-                            <p class="text-xs text-slate-500">${(file.size / 1024).toFixed(1)} KB</p>
-                        </div>
-                        <button onclick="clearFile()" class="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs shadow-lg hover:bg-red-600 transition-colors">
-                            <i class="fa-solid fa-xmark"></i>
-                        </button>
-                    `;
-                    container.classList.remove('hidden');
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-
-        function getFileIcon(filename) {
-            const ext = filename.split('.').pop().toLowerCase();
-            if (['pdf'].includes(ext)) return 'fa-solid fa-file-pdf';
-            if (['doc', 'docx'].includes(ext)) return 'fa-solid fa-file-word';
-            if (['xls', 'xlsx'].includes(ext)) return 'fa-solid fa-file-excel';
-            if (['ppt', 'pptx'].includes(ext)) return 'fa-solid fa-file-powerpoint';
-            return 'fa-solid fa-file';
-        }
-
-        function clearFile() {
-            currentFile = null;
-            document.getElementById('file-upload').value = '';
-            document.getElementById('file-preview-container').classList.add('hidden');
-        }
-
-        function parseThinkingProcess(text) {
-            return text.replace(/<think>([\s\S]*?)<\/think>/g, (match, content) => {
-                return `<details class="thinking-details mb-3">
-                    <summary class="thinking-summary">
-                        <i class="fa-solid fa-brain text-xs"></i>
-                        Düşünce Süreci (Tıkla)
-                        <i class="fa-solid fa-chevron-down text-xs ml-auto opacity-50"></i>
-                    </summary>
-                    <div class="thinking-content">${content.trim()}</div>
-                </details>`;
-            });
-        }
-
-        function parseMarkdownImages(text) {
-            return text.replace(/!\[(.*?)\]\((.*?)\)/g, (match, alt, src) => {
-                const escapedAlt = alt.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-                const escapedSrc = src.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-                return `<div class="img-wrapper mt-3 mb-1 relative">
-                    <div class="img-loading-placeholder rounded-xl" style="min-height:80px; background: rgba(30,41,59,0.5); display:flex; align-items:center; justify-content:center; border: 1px solid rgba(45,212,191,0.1);">
-                        <i class="fa-solid fa-spinner fa-spin text-teal-500 text-xl"></i>
-                    </div>
-                    <img src="${escapedSrc}" alt="${escapedAlt}"
-                        class="rounded-xl shadow-lg max-w-full h-auto border border-white/10 block"
-                        loading="lazy"
-                        style="display:none;"
-                        onload="this.style.display='block'; this.previousElementSibling.style.display='none';"
-                        onerror="this.style.display='none'; this.previousElementSibling.innerHTML='<div style=\\'padding:12px; text-align:center; color:#94a3b8; font-size:0.75rem;\\'><i class=\\'fa-solid fa-image-slash\\' style=\\'color:#64748b; font-size:1.2rem; display:block; margin-bottom:6px;\\'></i>Görsel yüklenemedi. <a href=\\'${escapedSrc}\\' target=\\'_blank\\' rel=\\'noopener noreferrer\\' style=\\'color:#2DD4BF; text-decoration:underline;\\'>Bağlantıyı aç</a></div>'"
-                    >
-                </div>`;
-            });
-        }
-
-        function appendMessage(text, sender, animate = false) {
-            if (!welcomeScreen.classList.contains('hidden')) {
-                welcomeScreen.classList.add('hidden');
-            }
-
-            const isUser = sender === 'user';
-            const div = document.createElement('div');
-            div.className = `flex w-full ${isUser ? 'justify-end' : 'justify-start'} animate-fade-in-up`;
             
-            const user = getSafeUser();
-            const userAvatar = (user && user.avatar) 
-                ? `<img src="${user.avatar}" class="w-9 h-9 rounded-xl object-cover border border-white/10 flex-shrink-0">`
-                : `<div class="msg-user-avatar"><i class="fa-solid fa-user text-slate-400 text-xs"></i></div>`;
+            const openDrawer = () => { body.classList.add('drawer-open'); };
+            const closeDrawer = () => { body.classList.remove('drawer-open'); };
 
-            const avatar = isUser 
-                ? userAvatar
-                : `<div class="msg-ai-avatar"><i class="fa-solid fa-leaf text-white text-xs"></i></div>`;
+            if (openBtn) { openBtn.addEventListener('click', (e) => { e.stopPropagation(); openDrawer(); }); }
+            if (overlay) { overlay.addEventListener('click', closeDrawer); }
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && body.classList.contains('drawer-open')) {
+                    closeDrawer();
+                }
+            });
 
-            const actionBtns = !isUser ? `
-                <div class="msg-actions">
-                    <button onclick="speakText('${escapeJS(text)}')" class="msg-action-btn" title="Sesli Oku">
-                        <i class="fa-solid fa-volume-high"></i>
-                    </button>
-                    <button onclick="copyToClipboard(this, '${escapeJS(text)}')" class="msg-action-btn" title="Kopyala">
-                        <i class="fa-regular fa-copy"></i>
-                    </button>
-                    <button onclick="sendFeedback(this, 'like', '${escapeJS(text)}')" class="msg-action-btn" title="Beğen">
-                        <i class="fa-regular fa-thumbs-up"></i>
-                    </button>
-                    <button onclick="sendFeedback(this, 'dislike', '${escapeJS(text)}')" class="msg-action-btn" title="Beğenme">
-                        <i class="fa-regular fa-thumbs-down"></i>
-                    </button>
-                </div>
-            ` : '';
-
-            const msgId = 'msg-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-
-            let processedText = (!animate) ? parseMarkdownImages(text) : text;
-            if (!isUser && !animate) {
-                processedText = parseThinkingProcess(processedText);
-            }
-
-            const bubble = `
-                <div class="max-w-[80%] md:max-w-[68%] ${isUser ? 'order-1' : 'order-2'} msg-wrapper relative">
-                    ${actionBtns}
-                    <div id="${msgId}" class="${isUser ? 'msg-user' : 'msg-ai'} px-5 py-3.5 text-sm leading-relaxed whitespace-pre-wrap">
-                        ${animate ? '' : processedText}
-                    </div>
-                    <div class="text-[10px] text-slate-600 mt-1.5 ${isUser ? 'text-right' : 'text-left'} flex items-center gap-1 ${isUser ? 'justify-end' : 'justify-start'}">
-                        ${!isUser ? '<i class="fa-solid fa-leaf text-teal-700" style="font-size: 8px;"></i>' : ''}
-                        ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                        ${isUser ? '<i class="fa-solid fa-check-double text-teal-600" style="font-size: 8px;"></i>' : ''}
-                    </div>
-                </div>
-            `;
-
-            div.innerHTML = isUser 
-                ? `${bubble}${avatar}` 
-                : `${avatar}${bubble}`;
+            // Form gönderildiğinde boş ekranı gizle (Örnek)
+            const chatForm = document.getElementById('chat-form');
+            const chatContainer = document.getElementById('chat-container');
+            const emptyPlaceholder = document.getElementById('empty-chat-placeholder');
             
-            chatContainer.appendChild(div);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
+            chatForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const userInput = document.getElementById('user-input');
+                if (userInput.value.trim() === '') return;
 
-            if (animate) {
-                typeWriter(text, msgId);
-            }
-        }
-
-        function typeWriter(text, elementId) {
-            const element = document.getElementById(elementId);
-            if (!element) return;
-            const parts = text.split(/(\s+)/);
-            let i = 0;
-            function type() {
-                const el = document.getElementById(elementId);
-                if (!el) return;
-                if (i < parts.length) {
-                    el.appendChild(document.createTextNode(parts[i]));
-                    i++;
-                    chatContainer.scrollTop = chatContainer.scrollHeight;
-                    setTimeout(type, 25 + Math.random() * 35);
+                // Boş ekranı gizle
+                if (emptyPlaceholder) {
+                    emptyPlaceholder.style.display = 'none';
                 }
-            }
-            type();
-            setTimeout(() => {
-                const el = document.getElementById(elementId);
-                if(el) {
-                    el.innerHTML = parseThinkingProcess(parseMarkdownImages(text));
-                }
-            }, parts.length * 50 + 500);
-        }
 
-        function showTyping() {
-            const div = document.createElement('div');
-            div.id = 'typing-indicator';
-            div.className = 'flex w-full justify-start animate-fade-in-up';
-            div.innerHTML = `
-                <div class="msg-ai-avatar mr-2">
-                    <i class="fa-solid fa-leaf text-white text-xs"></i>
-                </div>
-                <div class="msg-ai px-5 py-4 flex items-center gap-2">
-                    <div class="typing-dot"></div>
-                    <div class="typing-dot"></div>
-                    <div class="typing-dot"></div>
-                </div>
-            `;
-            chatContainer.appendChild(div);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        }
-
-        function removeTyping() {
-            const typing = document.getElementById('typing-indicator');
-            if (typing) typing.remove();
-        }
-
-        const templateOptions = [
-            { title: "🌅 Sabah Rutini", desc: "Güne enerjik başlamak için stratejiler.", text: "Sabah rutinim nasıl daha verimli hale getirebilirim? Bana bilimsel temelli öneriler ver." },
-            { title: "🚀 Girişim Desteği", desc: "Fikrini hayata geçirmek için ilk adımlar.", text: "Bir girişim fikrim var ama nereden başlayacağımı bilmiyorum. MVP oluşturma sürecinde bana rehberlik et." },
-            { title: "🧠 Duygusal Destek", desc: "Bunalmış hissettiğinde konuş.", text: "Bugün kendimi çok yorgun ve tükenmiş hissediyorum. Duygularımı anlamama ve sakinleşmeme yardım et." },
-            { title: "🛡️ Red Team Aracı", desc: "Siber güvenlik için Python scripti.", text: "Bana Python ile gelişmiş bir Port Scanner (Red Team aracı) yazar mısın? Kodları detaylı açıkla." },
-            { title: "⏳ Ertelemecilik", desc: "Odaklanma sorununu çöz.", text: "Sürekli işlerimi erteliyorum. Disiplin kazanmak ve odaklanmak için bana sert ama etkili bir yöntem öner." },
-            { title: "💡 Kodlama Projesi", desc: "Backend yeteneklerini geliştir.", text: "Aklıma proje fikri gelmiyor. Backend yeteneklerimi geliştirecek zorlu bir proje öner ve temel yapısını kodla." },
-            { title: "🎯 Hedef Belirleme", desc: "Gerçekçi hedefler koy.", text: "Hayatımda bir yön eksikliği hissediyorum. Bana 3 aylık, ölçülebilir ve gerçekçi bir gelişim planı hazırla." },
-            { title: "🎨 Resim Oluştur", desc: "Hayal gücünü görsele dök.", text: "Bana siberpunk tarzında, yağmurlu bir sokakta yürüyen bir robot resmi çiz." }
-        ];
-
-        function renderRandomTemplates() {
-            const container = document.getElementById('dynamic-prompts');
-            if (!container) return;
-            const shuffled = [...templateOptions].sort(() => 0.5 - Math.random());
-            const selected = shuffled.slice(0, 4);
-            container.innerHTML = selected.map(t => `
-                <button onclick="useTemplate('${t.text.replace(/'/g, "\\'")}')" class="prompt-card">
-                    <span class="block font-semibold text-sm text-slate-200 mb-1">${t.title}</span>
-                    <span class="text-xs text-slate-500 leading-relaxed">${t.desc}</span>
-                </button>
-            `).join('');
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            renderRandomTemplates();
-            chatContainer = document.getElementById('chat-container');
-            chatForm = document.getElementById('chat-form');
-            userInput = document.getElementById('user-input');
-            welcomeScreen = document.getElementById('welcome-screen');
-
-            if (userInput) {
-                userInput.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        if (chatForm) chatForm.requestSubmit();
-                    }
-                });
-            }
-
-            if (chatForm) {
-                chatForm.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    const text = userInput.value.trim();
-                    if (!text) return;
-
-                    let displayMessage = text;
-                    if (currentFile) {
-                        displayMessage += `\n\n[Dosya eklendi: ${currentFile.name}]`;
-                    }
-                    
-                    appendMessage(displayMessage, 'user');
-                    userInput.value = '';
-                    userInput.style.height = 'auto';
-                    const fileToSend = currentFile;
-                    clearFile();
-
-                    showTyping();
-                    
-                    const userLang = navigator.language || 'tr-TR';
-                    const token = storage.get('token');
-
-                    try {
-                        const headers = { 'Content-Type': 'application/json' };
-                        if (token) headers['Authorization'] = `Bearer ${token}`;
-
-                        const response = await fetch('/api/chat', {
-                            method: 'POST',
-                            headers: headers,
-                            body: JSON.stringify({
-                                message: text,
-                                history: messageHistory,
-                                sessionId: currentSessionId,
-                                userLanguage: userLang,
-                                file: fileToSend
-                            })
-                        });
-
-                        const data = await response.json();
-                        removeTyping();
-                        
-                        if (data.response) {
-                            appendMessage(data.response, 'ai', true);
-                            messageHistory.push({ role: 'user', content: text });
-                            messageHistory.push({ role: 'assistant', content: data.response });
-                            
-                            if (!currentSessionId && data.sessionId) {
-                                currentSessionId = data.sessionId;
-                                loadHistory();
-                            }
-
-                            // Giriş yapmış kullanıcı için streak güncelle
-                            if (storage.get('token')) {
-                                loadBadgeStatus();
-                            }
-                        } else if (data.error) {
-                            appendMessage(`Hata: ${data.error}`, 'ai');
-                        }
-                    } catch (error) {
-                        console.error('Error:', error);
-                        removeTyping();
-                        appendMessage("Üzgünüm, bir bağlantı hatası oluştu. Lütfen tekrar deneyin.", 'ai');
-                    }
-                });
-            }
-
-            const settingsForm = document.getElementById('settings-form');
-            if (settingsForm) {
-                settingsForm.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    const newName = document.getElementById('settings-name').value.trim();
-                    const newAvatar = document.getElementById('settings-avatar').value.trim();
-                    const errorMsg = document.getElementById('settings-error');
-                    const user = getSafeUser();
-
-                    if (!/^[a-zA-Z0-9_.]+$/.test(newName)) {
-                        errorMsg.textContent = "Kullanıcı adı sadece harf, rakam, nokta ve alt çizgi içerebilir.";
-                        errorMsg.classList.remove('hidden');
-                        return;
-                    }
-
-                    try {
-                        const res = await fetch('/api/update-profile', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ email: user.email, newName, newAvatar })
-                        });
-                        const data = await res.json();
-                        if (data.success) {
-                            storage.set('user', JSON.stringify(data.user));
-                            checkAuth();
-                            closeSettings();
-                            showToast("Profil başarıyla güncellendi! ✨");
-                        } else {
-                            errorMsg.textContent = data.error;
-                            errorMsg.classList.remove('hidden');
-                        }
-                    } catch (err) {
-                        errorMsg.textContent = "Bir hata oluştu.";
-                        errorMsg.classList.remove('hidden');
-                    }
-                });
-            }
-
-            checkAuth();
+                // Örnek olarak kullanıcı mesajını ekle
+                const userMessage = document.createElement('div');
+                userMessage.className = 'flex justify-end';
+                userMessage.innerHTML = `<div class="bg-primary/80 text-white p-3 rounded-xl max-w-md">${userInput.value}</div>`;
+                chatContainer.appendChild(userMessage);
+                
+                userInput.value = '';
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            });
         });
     </script>
 </body>
