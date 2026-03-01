@@ -24,6 +24,7 @@
     <meta name="msapplication-navbutton-color" content="#0F766E">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-capable" content="yes">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     
     <!-- Service Worker -->
     <script>
@@ -383,6 +384,16 @@
             font-size: 9px;
         }
 
+        /* Divider */
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 20px 0;
+        }
+        .divider-line { flex: 1; height: 1px; background: rgba(45, 212, 191, 0.1); }
+        .divider-text { font-size: 0.75rem; color: rgba(100, 116, 139, 0.6); }
+
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(45, 212, 191, 0.3); border-radius: 20px; }
@@ -414,6 +425,30 @@
 
         <h1 class="auth-title">Hesap Oluştur</h1>
         <p class="auth-subtitle">Kişisel gelişim yolculuğunuza bugün başlayın.</p>
+
+        <!-- Google Login -->
+        <div class="mb-6">
+            <div id="g_id_onload"
+                 data-client_id="GOOGLE_CLIENT_ID_BURAYA"
+                 data-callback="handleCredentialResponse"
+                 data-auto_prompt="false">
+            </div>
+            <div class="g_id_signin"
+                 data-type="standard"
+                 data-size="large"
+                 data-theme="filled_black"
+                 data-text="signup_with"
+                 data-shape="rectangular"
+                 data-logo_alignment="left"
+                 data-width="100%">
+            </div>
+        </div>
+
+        <div class="divider">
+            <div class="divider-line"></div>
+            <div class="divider-text">VEYA E-POSTA İLE</div>
+            <div class="divider-line"></div>
+        </div>
 
         <!-- Benefits -->
         <div class="benefits">
@@ -479,6 +514,32 @@
     </div>
 
     <script>
+        // Google Auth Handler
+        async function handleCredentialResponse(response) {
+            const errorMsg = document.getElementById('error-msg');
+            
+            try {
+                const res = await fetch('/api/auth/google', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: response.credential })
+                });
+                
+                const data = await res.json();
+
+                if (data.success) {
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    window.location.href = '/';
+                } else {
+                    errorMsg.textContent = data.error || "Google girişi başarısız.";
+                    errorMsg.classList.remove('hidden');
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
         // Splash Screen Logic
         window.addEventListener('load', () => {
             setTimeout(() => {
