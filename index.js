@@ -10,6 +10,7 @@ import bcrypt from 'bcryptjs';
 import mammoth from 'mammoth';
 import xlsx from 'xlsx';
 import * as pdf from 'pdf-parse';
+import { OAuth2Client } from 'google-auth-library';
 
 // __dirname ES Module çözümü
 const __filename = fileURLToPath(import.meta.url);
@@ -25,6 +26,7 @@ app.use(express.static(path.join(process.cwd(), 'public')));
 
 // --- AYARLAR ---
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "GOOGLE_CLIENT_ID_BURAYA"; // .env dosyasına ekleyin
 // Metin tabanlı istekler için kullanılacak modeller
 const TEXT_MODELS = [
     "google/gemini-2.0-flash-exp:free",      // Vision destekli ve çok hızlı
@@ -40,6 +42,7 @@ const VISION_MODELS = [
 ];
 
 const JWT_SECRET = process.env.JWT_SECRET || 'gizli-anahtar-degistir';
+const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 // Yeni: Kullanıcı tiplerine göre limit ayarları
 const RATE_LIMIT_CONFIG = {
@@ -639,6 +642,47 @@ app.post('/api/login', async (req, res) => {
         else res.status(401).json({ error: "Hatalı email veya şifre." });
     } catch (error) {
         res.status(500).json({ error: error.message });
+    }
+});
+
+// 3.1 Google Auth API
+app.post('/api/auth/google', async (req, res) => {
+    try {
+        const { token } = req.body;
+        const ticket = await googleClient.verifyIdToken({
+            idToken: token,
+            audience: GOOGLE_CLIENT_ID,
+        });
+        const payload = ticket.getPayload();
+        const { email, name, sub } = payload;
+
+        const users = await getKVData('users');
+        let user = users.find(u => u.email === email);
+
+        if (!user) {
+            // Yeni kullanıcı oluştur (Google ile)
+            user = {
+                id: Date.now(),
+                name: name,
+                email: email,
+                password: await bcrypt.hash(Math.random().toString(36).slice(-8), 10), // Rastgele şifre
+                plan: 'free',
+                sessions: [],
+                goals: [],
+                streak: 0,
+                lastCheckinDate: null,
+                googleId: sub // Google ID'sini sakla
+            };
+            users.push(user);
+            await setKVData('users', users);
+        }
+
+        const jwtToken = jwt.sign({ email: user.email, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
+        res.json({ success: true, token: jwtToken, user: { name: user.name, email: user.email } });
+
+    } catch (error) {
+        console.error("Google Auth Error:", error);
+        res.status(401).json({ error: "Google girişi başarısız oldu." });
     }
 });
 
