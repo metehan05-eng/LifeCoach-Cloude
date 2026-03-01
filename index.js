@@ -21,7 +21,7 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '50mb' })); // Büyük dosyalar için limit artırıldı
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(process.cwd(), 'public')));
 
 // --- AYARLAR ---
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
@@ -821,19 +821,19 @@ app.post('/api/goals', authenticateToken, async (req, res) => {
 // --- SAYFA YÖNLENDİRMELERİ (Frontend) ---
 
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'life-coach-ui.html'));
+    res.sendFile(path.join(process.cwd(), 'public', 'life-coach-ui.html'));
 });
 
 app.get('/login', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'login.html'));
+    res.sendFile(path.join(process.cwd(), 'public', 'login.html'));
 });
 
 app.get('/signup', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'signup.html'));
+    res.sendFile(path.join(process.cwd(), 'public', 'signup.html'));
 });
 
 app.get('/forgot-password', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'forgot-password.html'));
+    res.sendFile(path.join(process.cwd(), 'public', 'forgot-password.html'));
 });
 
 // Sunucuyu Başlat
