@@ -1,7 +1,8 @@
 #!/bin/bash
 
-read -p "GitHub kullanıcı adınızı girin (örn: metehan05-eng): " GITHUB_USER
-read -p "GitHub repo adını girin (örn: LifeCoach-Cloude): " GITHUB_REPO
+# Repo bilgileri bu proje için sabitlendi
+GITHUB_USER="metehan05-eng"
+GITHUB_REPO="LifeCoach-Cloude"
 REPO_URL="https://github.com/${GITHUB_USER}/${GITHUB_REPO}.git"
 
 echo "----------------------------------------------------------------"
@@ -22,20 +23,28 @@ else
 fi
 
 # 2. Remote Ayarlama
+# 'origin' adında bir remote olup olmadığını ve doğru URL'ye sahip olup olmadığını kontrol et
 if git remote | grep -q "^origin$"; then
-    echo "🔄 Mevcut remote bağlantısı güncelleniyor..."
-    git remote remove origin
+    CURRENT_URL=$(git remote get-url origin)
+    if [ "$CURRENT_URL" != "$REPO_URL" ]; then
+        echo "🔄 Mevcut remote bağlantısı güncelleniyor..."
+        git remote set-url origin "$REPO_URL"
+        echo "✅ Remote güncellendi: origin -> $REPO_URL"
+    else
+        echo "✅ Remote bağlantısı zaten doğru şekilde ayarlanmış."
+    fi
+else
+    echo "🔗 Yeni remote bağlantısı ekleniyor..."
+    git remote add origin "$REPO_URL"
+    echo "🔗 Remote eklendi: origin -> $REPO_URL"
 fi
-
-git remote add origin "$REPO_URL"
-echo "🔗 Remote eklendi: origin -> $REPO_URL"
 
 # 3. Dosyaları Ekleme ve Commit
 echo "📦 Dosyalar ekleniyor..."
 git add .
 
-read -p "Commit mesajınız (Varsayılan: Vercel entegrasyonu ve düzeltmeler): " COMMIT_MSG
-COMMIT_MSG=${COMMIT_MSG:-"Vercel entegrasyonu ve düzeltmeler"}
+read -p "Commit mesajınız (Varsayılan: Geliştirmeler ve düzeltmeler): " COMMIT_MSG
+COMMIT_MSG=${COMMIT_MSG:-"Geliştirmeler ve düzeltmeler"}
 git commit -m "$COMMIT_MSG" || echo "⚠️ Commit edilecek yeni değişiklik yok."
 
 # 4. Push
@@ -45,4 +54,4 @@ echo "👉 Şifre: (Token'ınızı yapıştırın)"
 git push -u origin main
 
 echo "----------------------------------------------------------------"
-echo "✅ İşlem tamamlandı. Şimdi Vercel üzerinden projenizi import edebilirsiniz."
+echo "✅ İşlem tamamlandı."
