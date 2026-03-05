@@ -1,4 +1,3 @@
-import 'dotenv/config';
 import express from 'express';
 import path from 'path';
 import cors from 'cors';
@@ -12,10 +11,6 @@ import xlsx from 'xlsx';
 import * as pdf from 'pdf-parse';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { OAuth2Client } from 'google-auth-library';
-import { createRequire } from 'module';
-import nodemailer from 'nodemailer';
-
-const require = createRequire(import.meta.url);
 
 // __dirname ES Module çözümü
 const __filename = fileURLToPath(import.meta.url);
@@ -26,9 +21,8 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
-app.use(express.static(path.join(process.cwd(), 'public')));
 
-// --- AYARLAR ---
+// --- AYARLAR ve SABİTLER ---
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "GOOGLE_CLIENT_ID_BURAYA";
 
@@ -49,7 +43,9 @@ const RATE_LIMIT_CONFIG = {
 // In-memory store for rate limiting
 const messageStore = new Map();
 
-// Optional Auth middleware - token varsa kullanıcıyı ekle, yoksa devam et
+// --- MIDDLEWARE TANIMLAMALARI ---
+
+// Optional Auth: Token varsa kullanıcıyı ekler, yoksa devam eder.
 const optionalAuth = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
@@ -66,7 +62,7 @@ const optionalAuth = (req, res, next) => {
     });
 };
 
-// Auth middleware
+// Auth: Token'ı doğrular ve kullanıcıyı ekler. Token yoksa veya geçersizse hata döner.
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
@@ -84,7 +80,7 @@ const authenticateToken = (req, res, next) => {
     });
 };
 
-// Rate limit middleware
+// Rate Limit: Kullanıcı bazlı mesaj limitini kontrol eder.
 const rateLimitMiddleware = async (req, res, next) => {
     if (!req.user) return next();
     
@@ -112,7 +108,10 @@ const rateLimitMiddleware = async (req, res, next) => {
     next();
 };
 
-// === ROUTES ===
+// --- MIDDLEWARE ve STATIC DOSYALAR ---
+app.use(express.static(path.join(process.cwd(), 'public')));
+
+// === API ROTALARI ===
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -433,12 +432,11 @@ app.post('/api/delete-session', authenticateToken, async (req, res) => {
     }
 });
 
-// Default route - serve index.html
+// === VARSAYILAN ROTA (Catch-all) ===
+// Diğer rotalarla eşleşmezse ana uygulama sayfasını sunar.
 app.get('*', (req, res) => {
     res.sendFile(path.join(process.cwd(), 'public', 'life-coach-ui.html'));
 });
 
 // Vercel Serverless Handler
-export default (req, res) => {
-    return app(req, res);
-};
+export default app;
