@@ -392,6 +392,61 @@ app.put('/api/profile', authenticateToken, async (req, res) => {
     }
 });
 
+// Get History
+app.post('/api/history', authenticateToken, async (req, res) => {
+    try {
+        const email = req.user.email;
+        const users = await getKVData('users');
+        const user = users.find(u => u.email === email);
+        
+        if (user && user.sessions) {
+            res.json(user.sessions.map(s => ({ id: s.id, title: s.title })));
+        } else {
+            res.json([]);
+        }
+    } catch (error) {
+        console.error("History API Hatası:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get Session
+app.post('/api/get-session', authenticateToken, async (req, res) => {
+    try {
+        const { sessionId } = req.body;
+        const email = req.user.email;
+        const users = await getKVData('users');
+        const user = users.find(u => u.email === email);
+        
+        if (user && user.sessions) {
+            const session = user.sessions.find(s => s.id == sessionId);
+            if (session) return res.json(session);
+        }
+        res.status(404).json({ error: "Seans bulunamadı." });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Delete Session
+app.post('/api/delete-session', authenticateToken, async (req, res) => {
+    try {
+        const { sessionId } = req.body;
+        const email = req.user.email;
+        let users = await getKVData('users');
+        const userIndex = users.findIndex(u => u.email === email);
+        
+        if (userIndex !== -1 && users[userIndex].sessions) {
+            users[userIndex].sessions = users[userIndex].sessions.filter(s => s.id != sessionId);
+            await setKVData('users', users);
+            return res.json({ success: true });
+        }
+        res.status(404).json({ error: "Seans bulunamadı." });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Default route - serve index.html
 app.get('*', (req, res) => {
     res.sendFile(path.join(process.cwd(), 'public', 'life-coach-ui.html'));
