@@ -10,6 +10,7 @@ import bcrypt from 'bcryptjs';
 import mammoth from 'mammoth';
 import xlsx from 'xlsx';
 import * as pdf from 'pdf-parse';
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { OAuth2Client } from 'google-auth-library';
 import { createRequire } from 'module';
 import nodemailer from 'nodemailer';
@@ -28,20 +29,13 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.static(path.join(process.cwd(), 'public')));
 
 // --- AYARLAR ---
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "GOOGLE_CLIENT_ID_BURAYA";
 
-const TEXT_MODELS = [
-    "google/gemini-2.0-flash-exp:free",
-    "mistralai/mistral-small-3.1-24b-instruct:free",
-    "google/gemma-3-27b-it:free",
-    "openrouter/free"
-];
-
-const VISION_MODELS = [
-    "google/gemini-2.0-flash-exp:free",
-    "nvidia/nemotron-nano-12b-v2-vl:free",
-];
+if (!GEMINI_API_KEY) {
+    console.warn("UYARI: GEMINI_API_KEY ortam değişkeni ayarlanmamış. Sohbet işlevi çalışmayabilir.");
+}
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 const JWT_SECRET = process.env.JWT_SECRET || 'gizli-anahtar-degistir';
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
