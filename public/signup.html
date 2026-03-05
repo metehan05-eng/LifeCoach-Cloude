@@ -429,6 +429,7 @@
         <!-- Google Login -->
         <div class="mb-6">
             <div id="g_id_onload"
+                 <!-- ÖNEMLİ: Buradaki değeri Google Cloud Console'dan aldığınız Client ID ile değiştirin -->
                  data-client_id="GOOGLE_CLIENT_ID_BURAYA"
                  data-callback="handleCredentialResponse"
                  data-auto_prompt="false">
@@ -522,12 +523,12 @@
                 const res = await fetch('/api/auth/google', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token: response.credential })
+                    body: JSON.stringify({ credential: response.credential })
                 });
                 
                 const data = await res.json();
 
-                if (data.success) {
+                if (data.token) {
                     localStorage.setItem('token', data.token);
                     localStorage.setItem('user', JSON.stringify(data.user));
                     window.location.href = '/';
@@ -593,9 +594,11 @@
                 
                 const data = await res.json();
 
-                if (data.success) {
+                if (data.token) {
                     btnText.innerHTML = '<i class="fa-solid fa-check mr-2"></i> Hesap oluşturuldu!';
-                    setTimeout(() => { window.location.href = '/login'; }, 800);
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    setTimeout(() => { window.location.href = '/'; }, 800);
                 } else {
                     errorMsg.textContent = data.error;
                     errorMsg.classList.remove('hidden');
