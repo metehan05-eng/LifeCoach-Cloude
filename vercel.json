@@ -1,39 +1,29 @@
 {
   "version": 2,
-  "builds": [
+  "rewrites": [
     {
-      "src": "index.js",
-      "use": "@vercel/node"
+      "source": "/public/(.*)",
+      "destination": "/public/$1"
     },
     {
-      "src": "public/**",
-      "use": "@vercel/static"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/public/(.*)",
-      "dest": "/public/$1"
+      "source": "/manifest.json",
+      "destination": "/public/manifest.json"
     },
     {
-      "src": "/manifest.json",
-      "dest": "/public/manifest.json"
+      "source": "/sw.js",
+      "destination": "/public/sw.js"
     },
     {
-      "src": "/sw.js",
-      "dest": "/public/sw.js"
+      "source": "/lifecoach-favicon.svg",
+      "destination": "/public/lifecoach-favicon.svg"
     },
     {
-      "src": "/lifecoach-favicon.svg",
-      "dest": "/public/lifecoach-favicon.svg"
+      "source": "/lifecoach-logo-splash.svg",
+      "destination": "/public/lifecoach-logo-splash.svg"
     },
     {
-      "src": "/lifecoach-logo-splash.svg",
-      "dest": "/public/lifecoach-logo-splash.svg"
-    },
-    {
-      "src": "(.*)",
-      "dest": "index.js"
+      "source": "/(.*)",
+      "destination": "/api/index.js"
     }
   ],
   "headers": [
@@ -56,16 +46,7 @@
       ]
     },
     {
-      "source": "/public/manifest.json",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
-      ]
-    },
-    {
-      "source": "/public/sw.js",
+      "source": "/public/(.*)",
       "headers": [
         {
           "key": "Cache-Control",
