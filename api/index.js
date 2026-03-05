@@ -26,10 +26,12 @@ app.use(express.json({ limit: '50mb' }));
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "GOOGLE_CLIENT_ID_BURAYA";
 
-if (!GEMINI_API_KEY) {
-    console.warn("UYARI: GEMINI_API_KEY ortam değişkeni ayarlanmamış. Sohbet işlevi çalışmayabilir.");
+let genAI;
+if (GEMINI_API_KEY) {
+    genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+} else {
+    console.warn("UYARI: GEMINI_API_KEY ortam değişkeni ayarlanmamış. Sohbet işlevi çalışmayacak.");
 }
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 const JWT_SECRET = process.env.JWT_SECRET || 'gizli-anahtar-degistir';
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
@@ -121,12 +123,16 @@ app.get('/api/health', (req, res) => {
 // Chat endpoint
 app.post('/api/chat', optionalAuth, async (req, res) => {
     try {
+        if (!genAI) {
+            return res.status(500).json({ error: 'Yapay zeka hizmeti yapılandırılmamış. Sunucu yöneticisi GEMINI_API_KEY değişkenini ayarlamalı.' });
+        }
+
         const { message, image, history, systemPrompt } = req.body;
         
         if (!message && !image) {
             return res.status(400).json({ error: 'Mesaj veya görsel gerekli' });
         }
-        
+
         // Gemini modelini yapılandır
         const model = genAI.getGenerativeModel({ 
             model: "gemini-1.5-flash",
@@ -154,8 +160,12 @@ app.post('/api/chat', optionalAuth, async (req, res) => {
         
         if (image) {
             // Base64 formatındaki görseli hazırla
-            const base64Data = image.split(',')[1];
-            const mimeType = image.split(';')[0].split(':')[1];
+            const match = image.match(/^data:(image\/(?:jpeg|png|webp|gif));base64,(.*)$/);
+            if (!match) {
+                return res.status(400).json({ error: 'Geçersiz resim formatı. Data URL (jpeg, png, webp, gif) formatında olmalı.' });
+            }
+            const mimeType = match[1];
+            const base64Data = match[2];
             userMessageParts.push({
                 inlineData: {
                     data: base64Data,
@@ -381,7 +391,7 @@ app.get('/forgot-password', (req, res) => {
 app.post('/api/history', authenticateToken, async (req, res) => {
     try {
         const email = req.user.email;
-        const users = await getKVData('users');
+        const users = await getKVData('users') || [];
         const user = users.find(u => u.email === email);
         
         if (user && user.sessions) {
@@ -400,7 +410,7 @@ app.post('/api/get-session', authenticateToken, async (req, res) => {
     try {
         const { sessionId } = req.body;
         const email = req.user.email;
-        const users = await getKVData('users');
+        const users = await getKVData('users') || [];
         const user = users.find(u => u.email === email);
         
         if (user && user.sessions) {
@@ -418,7 +428,7 @@ app.post('/api/delete-session', authenticateToken, async (req, res) => {
     try {
         const { sessionId } = req.body;
         const email = req.user.email;
-        let users = await getKVData('users');
+        let users = await getKVData('users') || [];
         const userIndex = users.findIndex(u => u.email === email);
         
         if (userIndex !== -1 && users[userIndex].sessions) {
