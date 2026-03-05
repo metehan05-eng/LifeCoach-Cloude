@@ -128,76 +128,53 @@ app.post('/api/chat', optionalAuth, async (req, res) => {
             return res.status(400).json({ error: 'Mesaj veya görsel gerekli' });
         }
         
-        const modelsToTry = image ? VISION_MODELS : TEXT_MODELS;
-        let lastError = null;
+        // Gemini modelini yapılandır
+        const model = genAI.getGenerativeModel({ 
+            model: "gemini-1.5-flash",
+            systemInstruction: systemPrompt 
+        });
+
+        // Sohbet geçmişini Gemini formatına çevir
+        const chatHistory = (history || []).slice(-10).map(msg => ({
+            role: msg.role === 'assistant' ? 'model' : 'user',
+            parts: [{ text: msg.content }]
+        }));
+
+        const chat = model.startChat({
+            history: chatHistory,
+            generationConfig: {
+                maxOutputTokens: 4000,
+                temperature: 0.7,
+            },
+        });
+
+        let result;
+        const userMessageParts = [];
         
-        for (const model of modelsToTry) {
-            try {
-                const messages = [];
-                
-                if (systemPrompt) {
-                    messages.push({ role: 'system', content: systemPrompt });
+        if (message) userMessageParts.push({ text: message });
+        
+        if (image) {
+            // Base64 formatındaki görseli hazırla
+            const base64Data = image.split(',')[1];
+            const mimeType = image.split(';')[0].split(':')[1];
+            userMessageParts.push({
+                inlineData: {
+                    data: base64Data,
+                    mimeType: mimeType
                 }
-                
-                if (history && Array.isArray(history)) {
-                    messages.push(...history.slice(-10));
-                }
-                
-                if (image) {
-                    messages.push({
-                        role: 'user',
-                        content: [
-                            { type: 'text', text: message || 'Bu görseli analiz et' },
-                            { type: 'image_url', image_url: { url: image } }
-                        ]
-                    });
-                } else {
-                    messages.push({ role: 'user', content: message });
-                }
-                
-                const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-                        'Content-Type': 'application/json',
-                        'HTTP-Referer': req.headers.origin || 'https://lifecoach.app',
-                        'X-Title': 'LifeCoach AI'
-                    },
-                    body: JSON.stringify({
-                        model: model,
-                        messages: messages,
-                        temperature: 0.7,
-                        max_tokens: 4000
-                    })
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`OpenRouter error: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                
-                if (data.choices && data.choices[0] && data.choices[0].message) {
-                    return res.json({
-                        response: data.choices[0].message.content,
-                        model: model,
-                        usage: data.usage
-                    });
-                }
-                
-                throw new Error('Invalid response format');
-                
-            } catch (error) {
-                lastError = error;
-                console.error(`Model ${model} failed:`, error.message);
-                continue;
-            }
+            });
         }
+
+        result = await chat.sendMessage(userMessageParts);
+        const response = result.response;
         
-        throw lastError || new Error('Tüm modeller başarısız oldu');
+        return res.json({
+            response: response.text(),
+            model: "gemini-1.5-flash"
+        });
         
     } catch (error) {
-        console.error('Chat error:', error);
+        console.error('Gemini Chat error:', error);
         res.status(500).json({ error: 'Bir hata oluştu', details: error.message });
     }
 });
