@@ -392,6 +392,21 @@ app.put('/api/profile', authenticateToken, async (req, res) => {
     }
 });
 
+// Login Page
+app.get('/login', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'login.html'));
+});
+
+// Signup Page
+app.get('/signup', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'signup.html'));
+});
+
+// Forgot Password Page
+app.get('/forgot-password', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'forgot-password.html'));
+});
+
 // Get History
 app.post('/api/history', authenticateToken, async (req, res) => {
     try {
