@@ -55,6 +55,23 @@ const RATE_LIMIT_CONFIG = {
 // In-memory store for rate limiting
 const messageStore = new Map();
 
+// Optional Auth middleware - token varsa kullanıcıyı ekle, yoksa devam et
+const optionalAuth = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    
+    if (!token) {
+        return next(); // Token yoksa devam et (anonim kullanıcı)
+    }
+    
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+        if (!err) {
+            req.user = user; // Token geçerliyse kullanıcıyı ekle
+        }
+        next(); // Hata olsa da devam et
+    });
+};
+
 // Auth middleware
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
@@ -109,7 +126,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Chat endpoint
-app.post('/api/chat', authenticateToken, rateLimitMiddleware, async (req, res) => {
+app.post('/api/chat', optionalAuth, async (req, res) => {
     try {
         const { message, image, history, systemPrompt } = req.body;
         
