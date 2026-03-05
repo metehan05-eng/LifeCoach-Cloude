@@ -397,5 +397,7 @@ app.get('*', (req, res) => {
     res.sendFile(path.join(process.cwd(), 'public', 'life-coach-ui.html'));
 });
 
-// Vercel serverless export
-export default app;
+// Vercel Serverless Handler
+export default (req, res) => {
+    return app(req, res);
+};
