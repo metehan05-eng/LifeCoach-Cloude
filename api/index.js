@@ -191,7 +191,7 @@ app.post('/api/chat', optionalAuth, async (req, res) => {
         // Önce hızlı 'flash' modelini dene, 404 hatası verirse stabil 'pro' modeline geç.
         let aiResponse;
         let usedModel;
-        const primaryModel = "gemini-1.5-flash-001";
+        const primaryModel = "gemini-3.1-flash-lite-preview";
         const fallbackModel = "gemini-pro";
 
         try {
@@ -255,7 +255,7 @@ app.post('/api/chat', optionalAuth, async (req, res) => {
             response: aiResponse,
             // Eğer yeni bir oturum oluşturulduysa, ID'sini ön yüze gönder
             sessionId: newSessionId,
-            model: usedModel // Çalışan modelin adını gönder
+            model: usedModel, // Çalışan modelin adını gönder
         });
         
     } catch (error) {
