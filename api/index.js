@@ -135,7 +135,7 @@ app.post('/api/chat', optionalAuth, async (req, res) => {
         
         // Gemini modelini yapılandır
         const model = genAI.getGenerativeModel({ 
-            model: "gemini-1.5-pro-latest",
+            model: "gemini-1.5-flash-001",
             systemInstruction: systemPrompt 
         });
 
@@ -239,7 +239,7 @@ app.post('/api/chat', optionalAuth, async (req, res) => {
             response: aiResponse,
             // Eğer yeni bir oturum oluşturulduysa, ID'sini ön yüze gönder
             sessionId: newSessionId,
-            model: "gemini-1.5-pro-latest"
+            model: "gemini-1.5-flash-001"
         });
         
     } catch (error) {
