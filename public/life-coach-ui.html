@@ -7,6 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@2.4.0/dist/purify.min.js"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -1806,58 +1808,52 @@
 
             const isUser = sender === 'user';
             const div = document.createElement('div');
-            div.className = `flex w-full ${isUser ? 'justify-end' : 'justify-start'} animate-fade-in-up`;
+            div.className = 'msg-wrapper-nobubble animate-fade-in-up';
             
             const user = getSafeUser();
-            const userAvatar = (user && user.avatar) 
-                ? `<img src="${user.avatar}" class="w-9 h-9 rounded-xl object-cover border border-white/10 flex-shrink-0">`
-                : `<div class="msg-user-avatar"><i class="fa-solid fa-user text-slate-400 text-xs"></i></div>`;
+            const senderName = isUser ? (user ? user.name : 'Siz') : 'LifeCoach AI';
+            const senderColor = isUser ? 'text-amber-400' : 'text-teal-400';
 
-            const avatar = isUser 
-                ? userAvatar
-                : `<div class="msg-ai-avatar"><i class="fa-solid fa-leaf text-white text-xs"></i></div>`;
+            const userAvatar = (user && user.avatar)
+                ? `<img src="${user.avatar}" class="w-9 h-9 rounded-xl object-cover border border-white/10 flex-shrink-0" onerror="this.onerror=null; this.outerHTML='<div class=\\'msg-user-avatar\\'><i class=\\'fa-solid fa-user text-slate-400 text-xs\\'></i></div>'">`
+                : `<div class="msg-user-avatar"><i class="fa-solid fa-user text-slate-400 text-xs"></i></div>`;
+            const aiAvatar = `<div class="msg-ai-avatar"><i class="fa-solid fa-leaf text-white text-xs"></i></div>`;
+            const avatar = isUser ? userAvatar : aiAvatar;
 
             const actionBtns = !isUser ? `
                 <div class="msg-actions">
-                    <button onclick="speakText('${escapeJS(text)}')" class="msg-action-btn" title="Sesli Oku">
-                        <i class="fa-solid fa-volume-high"></i>
-                    </button>
-                    <button onclick="copyToClipboard(this, '${escapeJS(text)}')" class="msg-action-btn" title="Kopyala">
-                        <i class="fa-regular fa-copy"></i>
-                    </button>
-                    <button onclick="sendFeedback(this, 'like', '${escapeJS(text)}')" class="msg-action-btn" title="Beğen">
-                        <i class="fa-regular fa-thumbs-up"></i>
-                    </button>
-                    <button onclick="sendFeedback(this, 'dislike', '${escapeJS(text)}')" class="msg-action-btn" title="Beğenme">
-                        <i class="fa-regular fa-thumbs-down"></i>
-                    </button>
+                    <button onclick="speakText('${escapeJS(text)}')" class="msg-action-btn" title="Sesli Oku"><i class="fa-solid fa-volume-high"></i></button>
+                    <button onclick="copyToClipboard(this, '${escapeJS(text)}')" class="msg-action-btn" title="Kopyala"><i class="fa-regular fa-copy"></i></button>
                 </div>
             ` : '';
 
             const msgId = 'msg-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+            
+            const sanitizedAndParsedText = (rawText) => {
+                if (!rawText) return '';
+                // Önce özel etiketleri işle, sonra markdown'ı
+                let processed = parseThinkingProcess(parseMarkdownImages(rawText));
+                // marked.js'i çağır ve DOMPurify ile temizle
+                return DOMPurify.sanitize(marked.parse(processed));
+            };
 
-            let processedText = (!animate) ? parseMarkdownImages(text) : text;
-            if (!isUser && !animate) {
-                processedText = parseThinkingProcess(processedText);
-            }
+            let initialContent = animate ? '' : sanitizedAndParsedText(text);
 
-            const bubble = `
-                <div class="max-w-[80%] md:max-w-[68%] ${isUser ? 'order-1' : 'order-2'} msg-wrapper relative">
-                    ${actionBtns}
-                    <div id="${msgId}" class="${isUser ? 'msg-user' : 'msg-ai'} px-5 py-3.5 text-sm leading-relaxed whitespace-pre-wrap">
-                        ${animate ? '' : processedText}
+            div.innerHTML = `
+                ${avatar}
+                <div class="msg-content-nobubble">
+                    <div class="msg-sender-info">
+                        <div class="msg-sender-name ${senderColor}">${senderName}</div>
+                        ${actionBtns}
                     </div>
-                    <div class="text-[10px] text-slate-600 mt-1.5 ${isUser ? 'text-right' : 'text-left'} flex items-center gap-1 ${isUser ? 'justify-end' : 'justify-start'}">
-                        ${!isUser ? '<i class="fa-solid fa-leaf text-teal-700" style="font-size: 8px;"></i>' : ''}
+                    <div id="${msgId}" class="msg-body">
+                        ${initialContent}
+                    </div>
+                    <div class="text-[10px] text-slate-600 mt-2 flex items-center gap-1">
                         ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                        ${isUser ? '<i class="fa-solid fa-check-double text-teal-600" style="font-size: 8px;"></i>' : ''}
                     </div>
                 </div>
             `;
-
-            div.innerHTML = isUser 
-                ? `${bubble}${avatar}` 
-                : `${avatar}${bubble}`;
             
             chatContainer.appendChild(div);
             chatContainer.scrollTop = chatContainer.scrollHeight;
@@ -1867,42 +1863,54 @@
             }
         }
 
-        function typeWriter(text, elementId) {
+       function typeWriter(text, elementId) {
             const element = document.getElementById(elementId);
             if (!element) return;
+
+            // typewriter'ın markdown karakterlerini bozmaması için textContent kullan
+            element.textContent = '';
+
             const parts = text.split(/(\s+)/);
             let i = 0;
             function type() {
                 const el = document.getElementById(elementId);
                 if (!el) return;
                 if (i < parts.length) {
-                    el.appendChild(document.createTextNode(parts[i]));
+                    el.appendChild(document.createTextNode(parts[i])); // Bu, HTML etiketlerinin yorumlanmasını engeller
                     i++;
                     chatContainer.scrollTop = chatContainer.scrollHeight;
-                    setTimeout(type, 25 + Math.random() * 35);
+                    setTimeout(type, 15 + Math.random() * 20); // Hızlandırıldı
                 }
             }
             type();
+
+            // Yazma bittikten sonra içeriği parse edilmiş HTML ile değiştir
             setTimeout(() => {
                 const el = document.getElementById(elementId);
                 if(el) {
-                    el.innerHTML = parseThinkingProcess(parseMarkdownImages(text));
+                    let processed = parseThinkingProcess(parseMarkdownImages(text));
+                    el.innerHTML = DOMPurify.sanitize(marked.parse(processed));
                 }
-            }, parts.length * 50 + 500);
+            }, parts.length * 25 + 300); // Süre ayarlandı
         }
 
-        function showTyping() {
+       function showTyping() {
             const div = document.createElement('div');
             div.id = 'typing-indicator';
-            div.className = 'flex w-full justify-start animate-fade-in-up';
+            div.className = 'msg-wrapper-nobubble animate-fade-in-up';
             div.innerHTML = `
-                <div class="msg-ai-avatar mr-2">
+                <div class="msg-ai-avatar">
                     <i class="fa-solid fa-leaf text-white text-xs"></i>
                 </div>
-                <div class="msg-ai px-5 py-4 flex items-center gap-2">
-                    <div class="typing-dot"></div>
-                    <div class="typing-dot"></div>
-                    <div class="typing-dot"></div>
+                <div class="msg-content-nobubble">
+                    <div class="msg-sender-info">
+                        <div class="msg-sender-name text-teal-400">LifeCoach AI</div>
+                    </div>
+                    <div class="msg-body flex items-center gap-2 py-2">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
                 </div>
             `;
             chatContainer.appendChild(div);

@@ -135,7 +135,7 @@ app.post('/api/chat', optionalAuth, async (req, res) => {
         
         // Gemini modelini yapılandır
         const model = genAI.getGenerativeModel({ 
-            model: "gemini-1.5-flash",
+            model: "gemini-1.5-flash-001",
             systemInstruction: systemPrompt 
         });
 
@@ -212,7 +212,7 @@ app.post('/api/chat', optionalAuth, async (req, res) => {
             response: aiResponse,
             // Eğer yeni bir oturum oluşturulduysa, ID'sini ön yüze gönder
             sessionId: newSessionId,
-            model: "gemini-1.5-flash"
+            model: "gemini-1.5-flash-001"
         });
         
     } catch (error) {
@@ -281,6 +281,18 @@ app.post('/api/login', async (req, res) => {
         
         if (!user) {
             return res.status(401).json({ error: 'Kullanıcı bulunamadı' });
+        }
+        
+        // Eğer kullanıcı şifreyle değil, Google gibi bir sosyal medya hesabıyla
+        // kayıt olduysa, 'password' alanı olmayacaktır. Bu durumu kontrol et.
+        if (!user.password) {
+            // Eğer googleId varsa, kullanıcıya Google ile giriş yapmasını söyle.
+            if (user.googleId) {
+                return res.status(401).json({ error: 'Bu hesap Google ile oluşturulmuştur. Lütfen "Google ile Giriş Yap" butonunu kullanın.' });
+            }
+            // Şifre yoksa ve sosyal medya ID'si de yoksa, bu beklenmedik bir durumdur.
+            // Güvenlik açısından genel bir hata mesajı dönmek en iyisidir.
+            return res.status(401).json({ error: 'Geçersiz şifre' });
         }
         
         const validPassword = await bcrypt.compare(password, user.password);
@@ -398,10 +410,14 @@ app.post('/api/update-profile', authenticateToken, async (req, res) => {
         await setKVData(`user:${req.user.email}`, user);
         
         res.json({
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            type: user.type
+            success: true,
+            user: {
+                id: user.id,
+                email: user.email,
+                name: user.name,
+                type: user.type,
+                avatar: user.avatar
+            }
         });
         
     } catch (error) {
