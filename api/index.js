@@ -133,25 +133,11 @@ app.post('/api/chat', optionalAuth, async (req, res) => {
             return res.status(400).json({ error: 'Mesaj veya dosya gerekli' });
         }
         
-        // Gemini modelini yapılandır
-        const model = genAI.getGenerativeModel({ 
-            model: "gemini-1.5-flash-001",
-            systemInstruction: systemPrompt 
-        });
-
         // Sohbet geçmişini Gemini formatına çevir
         const chatHistory = (history || []).slice(-10).map(msg => ({
             role: msg.role === 'assistant' ? 'model' : 'user',
             parts: [{ text: msg.content }]
         }));
-
-        const chat = model.startChat({
-            history: chatHistory,
-            generationConfig: {
-                maxOutputTokens: 4000,
-                temperature: 0.7,
-            },
-        });
 
         const userMessageParts = [];
         let userTextMessage = message || ''; // Kullanıcının yazdığı mesajla başla
@@ -201,8 +187,38 @@ app.post('/api/chat', optionalAuth, async (req, res) => {
             userMessageParts.unshift({ text: userTextMessage }); // Metni her zaman başa koy
         }
 
-        const result = await chat.sendMessage(userMessageParts);
-        const aiResponse = result.response.text();
+        // --- Model Fallback Logic ---
+        // Önce hızlı 'flash' modelini dene, 404 hatası verirse stabil 'pro' modeline geç.
+        let aiResponse;
+        let usedModel;
+        const primaryModel = "gemini-1.5-flash-001";
+        const fallbackModel = "gemini-pro";
+
+        try {
+            console.log(`Trying primary model: ${primaryModel}`);
+            const model = genAI.getGenerativeModel({ model: primaryModel, systemInstruction: systemPrompt });
+            const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } });
+            const result = await chat.sendMessage(userMessageParts);
+            aiResponse = result.response.text();
+            usedModel = primaryModel;
+        } catch (error) {
+            // Eğer model bulunamadı hatası (404) alırsak, fallback modelini dene
+            if (error.message && (error.message.includes('is not found') || error.message.includes('404'))) {
+                console.warn(`Model '${primaryModel}' not found. Falling back to '${fallbackModel}'.`);
+                try {
+                    const model = genAI.getGenerativeModel({ model: fallbackModel, systemInstruction: systemPrompt });
+                    const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } });
+                    const result = await chat.sendMessage(userMessageParts);
+                    aiResponse = result.response.text();
+                    usedModel = fallbackModel;
+                } catch (fallbackError) {
+                    console.error(`Fallback model '${fallbackModel}' also failed.`);
+                    throw fallbackError; // Fallback de başarısız olursa hatayı fırlat
+                }
+            } else {
+                throw error; // Başka bir hata türü ise direkt fırlat
+            }
+        }
 
         let newSessionId = sessionId;
 
@@ -239,7 +255,7 @@ app.post('/api/chat', optionalAuth, async (req, res) => {
             response: aiResponse,
             // Eğer yeni bir oturum oluşturulduysa, ID'sini ön yüze gönder
             sessionId: newSessionId,
-            model: "gemini-1.5-flash-001"
+            model: usedModel // Çalışan modelin adını gönder
         });
         
     } catch (error) {
