@@ -130,12 +130,12 @@ app.post('/api/chat', optionalAuth, async (req, res) => {
         const { message, file, history, systemPrompt, sessionId } = req.body;
         
         if (!message && !file) {
-            return res.status(400).json({ error: 'Mesaj veya görsel gerekli' });
+            return res.status(400).json({ error: 'Mesaj veya dosya gerekli' });
         }
         
         // Gemini modelini yapılandır
         const model = genAI.getGenerativeModel({ 
-            model: "gemini-1.5-flash-001",
+            model: "gemini-1.5-pro-latest",
             systemInstruction: systemPrompt 
         });
 
@@ -153,28 +153,55 @@ app.post('/api/chat', optionalAuth, async (req, res) => {
             },
         });
 
-        let result;
         const userMessageParts = [];
+        let userTextMessage = message || ''; // Kullanıcının yazdığı mesajla başla
         
-        if (message) userMessageParts.push({ text: message });        
-
         if (file && file.data) {
-            // Base64 formatındaki görseli hazırla
-            const match = file.data.match(/^data:(image\/(?:jpeg|png|webp|gif));base64,(.*)$/);
-            if (!match) {
-                return res.status(400).json({ error: 'Geçersiz resim formatı. Sadece jpeg, png, webp, gif desteklenmektedir.' });
+            const mimeType = file.type;
+            const base64Data = file.data.split(',')[1];
+
+            if (!base64Data) {
+                return res.status(400).json({ error: 'Dosya verisi bozuk veya eksik.' });
             }
-            const mimeType = match[1];
-            const base64Data = match[2];
-            userMessageParts.push({
-                inlineData: {
-                    data: base64Data,
-                    mimeType: mimeType
+
+            if (mimeType.startsWith('image/')) {
+                // Eğer dosya bir resimse, ayrı bir 'part' olarak ekle
+                userMessageParts.push({
+                    inlineData: { data: base64Data, mimeType: mimeType }
+                });
+            } else {
+                // Diğer dosya türleri için metin içeriğini çıkarmaya çalış
+                let extractedText = '';
+                if (mimeType === 'application/pdf') {
+                    const pdfBuffer = Buffer.from(base64Data, 'base64');
+                    const data = await pdf(pdfBuffer);
+                    extractedText = data.text;
+                } else if (mimeType.startsWith('text/')) {
+                    const textBuffer = Buffer.from(base64Data, 'base64');
+                    extractedText = textBuffer.toString('utf-8');
+                } else if (file.name && file.name.endsWith('.docx')) {
+                    const docxBuffer = Buffer.from(base64Data, 'base64');
+                    const mammothResult = await mammoth.extractRawText({ buffer: docxBuffer });
+                    extractedText = mammothResult.value;
                 }
-            });
+
+                if (extractedText) {
+                    // Çıkarılan metni kullanıcı mesajına ekle
+                    const fileInstruction = `\n\n--- DOSYA İÇERİĞİ ---\n${extractedText}\n--- DOSYA SONU ---`;
+                    userTextMessage += fileInstruction;
+                } else {
+                    // Resim değilse ve metin çıkarılamadıysa hata ver
+                    return res.status(400).json({ error: `Desteklenmeyen dosya türü: ${mimeType}` });
+                }
+            }
         }
 
-        result = await chat.sendMessage(userMessageParts);
+        // Nihai metin mesajını (dosya içeriği dahil olabilir) bir 'part' olarak ekle
+        if (userTextMessage) {
+            userMessageParts.unshift({ text: userTextMessage }); // Metni her zaman başa koy
+        }
+
+        const result = await chat.sendMessage(userMessageParts);
         const aiResponse = result.response.text();
 
         let newSessionId = sessionId;
@@ -212,7 +239,7 @@ app.post('/api/chat', optionalAuth, async (req, res) => {
             response: aiResponse,
             // Eğer yeni bir oturum oluşturulduysa, ID'sini ön yüze gönder
             sessionId: newSessionId,
-            model: "gemini-1.5-flash-001"
+            model: "gemini-1.5-pro-latest"
         });
         
     } catch (error) {

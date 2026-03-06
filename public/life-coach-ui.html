@@ -1043,7 +1043,7 @@
                 </button>
             </form>
             
-            <input type="file" id="file-upload" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" class="hidden" onchange="handleFileSelect(this)">
+            <input type="file" id="file-upload" accept="image/*,.pdf,.txt,.md,.doc,.docx" class="hidden" onchange="handleFileSelect(this)">
             
             <div class="text-center mt-3">
                 <p class="text-xs text-slate-600">LifeCoach AI kişisel gelişim amaçlıdır ve tıbbi tavsiye sağlamaz.</p>
@@ -1760,6 +1760,7 @@
             if (['doc', 'docx'].includes(ext)) return 'fa-solid fa-file-word';
             if (['xls', 'xlsx'].includes(ext)) return 'fa-solid fa-file-excel';
             if (['ppt', 'pptx'].includes(ext)) return 'fa-solid fa-file-powerpoint';
+            if (['txt', 'md'].includes(ext)) return 'fa-solid fa-file-lines';
             return 'fa-solid fa-file';
         }
 
