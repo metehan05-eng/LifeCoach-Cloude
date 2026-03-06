@@ -1940,6 +1940,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             renderRandomTemplates();
+            // DOM elementlerini burada tanımla
             chatContainer = document.getElementById('chat-container');
             chatForm = document.getElementById('chat-form');
             userInput = document.getElementById('user-input');
@@ -1976,7 +1977,7 @@
                     const userLang = navigator.language || 'tr-TR';
                     const token = storage.get('token');
 
-                    try {
+                    try {                        
                         const headers = { 'Content-Type': 'application/json' };
                         if (token) headers['Authorization'] = `Bearer ${token}`;
 
@@ -1987,8 +1988,8 @@
                                 message: text,
                                 history: messageHistory,
                                 sessionId: currentSessionId,
-                                userLanguage: userLang,
-                                file: fileToSend
+                                userLanguage: userLang, // Bu backend'de kullanılmıyor ama kalabilir
+                                file: fileToSend // Arka uç artık bunu bekliyor
                             })
                         });
 
@@ -2036,10 +2037,11 @@
                     }
 
                     try {
+                        const token = storage.get('token');
                         const res = await fetch('/api/update-profile', {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ email: user.email, newName, newAvatar })
+                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                            body: JSON.stringify({ newName, newAvatar })
                         });
                         const data = await res.json();
                         if (data.success) {

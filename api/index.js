@@ -127,12 +127,12 @@ app.post('/api/chat', optionalAuth, async (req, res) => {
             return res.status(500).json({ error: 'Yapay zeka hizmeti yapılandırılmamış. Sunucu yöneticisi GEMINI_API_KEY değişkenini ayarlamalı.' });
         }
 
-        const { message, image, history, systemPrompt } = req.body;
+        const { message, file, history, systemPrompt, sessionId } = req.body;
         
-        if (!message && !image) {
+        if (!message && !file) {
             return res.status(400).json({ error: 'Mesaj veya görsel gerekli' });
         }
-
+        
         // Gemini modelini yapılandır
         const model = genAI.getGenerativeModel({ 
             model: "gemini-1.5-flash",
@@ -156,13 +156,13 @@ app.post('/api/chat', optionalAuth, async (req, res) => {
         let result;
         const userMessageParts = [];
         
-        if (message) userMessageParts.push({ text: message });
-        
-        if (image) {
+        if (message) userMessageParts.push({ text: message });        
+
+        if (file && file.data) {
             // Base64 formatındaki görseli hazırla
-            const match = image.match(/^data:(image\/(?:jpeg|png|webp|gif));base64,(.*)$/);
+            const match = file.data.match(/^data:(image\/(?:jpeg|png|webp|gif));base64,(.*)$/);
             if (!match) {
-                return res.status(400).json({ error: 'Geçersiz resim formatı. Data URL (jpeg, png, webp, gif) formatında olmalı.' });
+                return res.status(400).json({ error: 'Geçersiz resim formatı. Sadece jpeg, png, webp, gif desteklenmektedir.' });
             }
             const mimeType = match[1];
             const base64Data = match[2];
@@ -175,10 +175,43 @@ app.post('/api/chat', optionalAuth, async (req, res) => {
         }
 
         result = await chat.sendMessage(userMessageParts);
-        const response = result.response;
+        const aiResponse = result.response.text();
+
+        let newSessionId = sessionId;
+
+        // Oturum açmış kullanıcılar için sohbeti kaydet
+        if (req.user && req.user.email) {
+            const user = await getKVData(`user:${req.user.email}`);
+            if (user) {
+                if (!user.sessions) user.sessions = [];
+
+                let session;
+                if (sessionId) {
+                    session = user.sessions.find(s => s.id == sessionId);
+                }
+
+                if (!session) {
+                    newSessionId = Date.now().toString();
+                    const title = message.substring(0, 30) + (message.length > 30 ? '...' : '');
+                    session = { id: newSessionId, title: title, messages: [] };
+                    user.sessions.push(session);
+                }
+
+                session.messages.push({ role: 'user', content: message });
+                session.messages.push({ role: 'assistant', content: aiResponse });
+
+                // En son 20 oturumu sakla
+                user.sessions.sort((a, b) => Number(b.id) - Number(a.id));
+                user.sessions = user.sessions.slice(0, 20);
+
+                await setKVData(`user:${req.user.email}`, user);
+            }
+        }
         
         return res.json({
-            response: response.text(),
+            response: aiResponse,
+            // Eğer yeni bir oturum oluşturulduysa, ID'sini ön yüze gönder
+            sessionId: newSessionId,
             model: "gemini-1.5-flash"
         });
         
@@ -211,7 +244,8 @@ app.post('/api/register', async (req, res) => {
             name: name || email.split('@')[0],
             password: hashedPassword,
             type: 'free',
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            sessions: [] // Yeni kullanıcı için boş session dizisi
         };
         
         await setKVData(`user:${email}`, user);
@@ -300,7 +334,8 @@ app.post('/api/auth/google', async (req, res) => {
                 name,
                 type: 'free',
                 googleId: payload.sub,
-                createdAt: new Date().toISOString()
+                createdAt: new Date().toISOString(),
+                sessions: [] // Yeni kullanıcı için boş session dizisi
             };
             await setKVData(`user:${email}`, user);
             await setKVData(`user:id:${userId}`, { email });
@@ -337,7 +372,8 @@ app.get('/api/profile', authenticateToken, async (req, res) => {
             email: user.email,
             name: user.name,
             type: user.type,
-            createdAt: user.createdAt
+            avatar: user.avatar,
+            success: true
         });
         
     } catch (error) {
@@ -347,16 +383,18 @@ app.get('/api/profile', authenticateToken, async (req, res) => {
 });
 
 // Update Profile
-app.put('/api/profile', authenticateToken, async (req, res) => {
+app.post('/api/update-profile', authenticateToken, async (req, res) => {
     try {
-        const { name } = req.body;
+        const { newName, newAvatar } = req.body;
         const user = await getKVData(`user:${req.user.email}`);
         
         if (!user) {
             return res.status(404).json({ error: 'Kullanıcı bulunamadı' });
         }
         
-        user.name = name || user.name;
+        user.name = newName || user.name;
+        user.avatar = newAvatar; // Avatarı boş olsa bile ayarla (silme durumu için)
+
         await setKVData(`user:${req.user.email}`, user);
         
         res.json({
@@ -391,54 +429,55 @@ app.get('/forgot-password', (req, res) => {
 app.post('/api/history', authenticateToken, async (req, res) => {
     try {
         const email = req.user.email;
-        const users = await getKVData('users') || [];
-        const user = users.find(u => u.email === email);
+        const user = await getKVData(`user:${email}`);
         
         if (user && user.sessions) {
             res.json(user.sessions.map(s => ({ id: s.id, title: s.title })));
         } else {
-            res.json([]);
+            res.json([]); // Kullanıcı veya session yoksa boş dizi dön
         }
     } catch (error) {
         console.error("History API Hatası:", error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: "Geçmiş alınamadı: " + error.message });
     }
 });
 
 // Get Session
 app.post('/api/get-session', authenticateToken, async (req, res) => {
     try {
-        const { sessionId } = req.body;
+        const { sessionId } = req.body;        
         const email = req.user.email;
-        const users = await getKVData('users') || [];
-        const user = users.find(u => u.email === email);
+        const user = await getKVData(`user:${email}`);
         
         if (user && user.sessions) {
             const session = user.sessions.find(s => s.id == sessionId);
             if (session) return res.json(session);
         }
-        res.status(404).json({ error: "Seans bulunamadı." });
+        res.status(404).json({ error: "Oturum bulunamadı." });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: "Oturum alınamadı: " + error.message });
     }
 });
 
 // Delete Session
 app.post('/api/delete-session', authenticateToken, async (req, res) => {
     try {
-        const { sessionId } = req.body;
+        const { sessionId } = req.body;        
         const email = req.user.email;
-        let users = await getKVData('users') || [];
-        const userIndex = users.findIndex(u => u.email === email);
+        const user = await getKVData(`user:${email}`);
         
-        if (userIndex !== -1 && users[userIndex].sessions) {
-            users[userIndex].sessions = users[userIndex].sessions.filter(s => s.id != sessionId);
-            await setKVData('users', users);
+        if (user && user.sessions) {
+            const initialLength = user.sessions.length;
+            user.sessions = user.sessions.filter(s => s.id != sessionId);
+            if (user.sessions.length === initialLength) {
+                return res.status(404).json({ error: "Silinecek oturum bulunamadı." });
+            }
+            await setKVData(`user:${email}`, user);
             return res.json({ success: true });
         }
-        res.status(404).json({ error: "Seans bulunamadı." });
+        res.status(404).json({ error: "Kullanıcı veya oturumlar bulunamadı." });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: "Oturum silinemedi: " + error.message });
     }
 });
 
