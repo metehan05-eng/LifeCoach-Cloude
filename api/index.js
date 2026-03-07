@@ -294,6 +294,7 @@ app.post('/api/register', async (req, res) => {
             name: name || email.split('@')[0],
             password: hashedPassword,
             type: 'free',
+            avatar: null, // Varsayılan avatar alanı
             createdAt: new Date().toISOString(),
             sessions: [] // Yeni kullanıcı için boş session dizisi
         };
@@ -309,7 +310,7 @@ app.post('/api/register', async (req, res) => {
         
         res.json({
             token,
-            user: { id: userId, email, name: user.name, type: user.type }
+            user: { id: userId, email, name: user.name, type: user.type, avatar: user.avatar }
         });
         
     } catch (error) {
@@ -359,7 +360,7 @@ app.post('/api/login', async (req, res) => {
         
         res.json({
             token,
-            user: { id: user.id, email, name: user.name, type: user.type }
+            user: { id: user.id, email, name: user.name, type: user.type, avatar: user.avatar }
         });
         
     } catch (error) {
@@ -396,11 +397,16 @@ app.post('/api/auth/google', async (req, res) => {
                 name,
                 type: 'free',
                 googleId: payload.sub,
+                avatar: payload.picture || null, // Google profil fotoğrafını kaydet
                 createdAt: new Date().toISOString(),
                 sessions: [] // Yeni kullanıcı için boş session dizisi
             };
             await setKVData(`user:${email}`, user);
             await setKVData(`user:id:${userId}`, { email });
+        } else if (!user.avatar && payload.picture) {
+            // Daha önce kayıtlı kullanıcıda avatar yoksa, Google fotoğrafını set et
+            user.avatar = payload.picture;
+            await setKVData(`user:${email}`, user);
         }
         
         const token = jwt.sign(
@@ -411,7 +417,7 @@ app.post('/api/auth/google', async (req, res) => {
         
         res.json({
             token,
-            user: { id: user.id, email, name: user.name, type: user.type }
+            user: { id: user.id, email, name: user.name, type: user.type, avatar: user.avatar }
         });
         
     } catch (error) {
