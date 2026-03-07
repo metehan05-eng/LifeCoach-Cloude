@@ -433,23 +433,9 @@
         <h1 class="auth-title">Tekrar Hoş Geldiniz</h1>
         <p class="auth-subtitle">Kişisel gelişim yolculuğunuza devam edin.</p>
 
-        <!-- Google Login -->
+        <!-- Google Login (.env'deki GOOGLE_CLIENT_ID ile /api/config üzerinden yüklenir) -->
         <div class="mb-6">
-            <div id="g_id_onload"
-                 <!-- ÖNEMLİ: Buradaki değeri Google Cloud Console'dan aldığınız Client ID ile değiştirin -->
-                 data-client_id="GOOGLE_CLIENT_ID_BURAYA"
-                 data-callback="handleCredentialResponse"
-                 data-auto_prompt="false">
-            </div>
-            <div class="g_id_signin"
-                 data-type="standard"
-                 data-size="large"
-                 data-theme="filled_black"
-                 data-text="sign_in_with"
-                 data-shape="rectangular"
-                 data-logo_alignment="left"
-                 data-width="100%">
-            </div>
+            <div id="google-btn-container" style="min-height: 44px;"></div>
         </div>
 
         <div class="divider">
@@ -535,8 +521,35 @@
             }
         }
 
+        // Google Client ID .env'den /api/config ile alınır
+        async function initGoogleSignIn() {
+            try {
+                const res = await fetch('/api/config');
+                const { googleClientId } = await res.json();
+                if (!googleClientId) return;
+
+                function renderWhenReady() {
+                    if (window.google?.accounts?.id) {
+                        window.google.accounts.id.initialize({
+                            client_id: googleClientId,
+                            callback: handleCredentialResponse,
+                            auto_prompt: false
+                        });
+                        const el = document.getElementById('google-btn-container');
+                        if (el) window.google.accounts.id.renderButton(el, { type: 'standard', size: 'large', theme: 'filled_black', text: 'sign_in_with', shape: 'rectangular', width: el.offsetWidth || 320 });
+                        return;
+                    }
+                    setTimeout(renderWhenReady, 100);
+                }
+                renderWhenReady();
+            } catch (e) {
+                console.warn('Google Sign-In config yüklenemedi:', e);
+            }
+        }
+
         // Splash Screen Logic
         window.addEventListener('load', () => {
+            initGoogleSignIn();
             setTimeout(() => {
                 document.getElementById('splash-screen').classList.add('splash-hidden');
             }, 800);

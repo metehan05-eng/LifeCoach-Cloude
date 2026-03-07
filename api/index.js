@@ -120,6 +120,13 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
+// Frontend config (sadece client ID; .env'den alınır, Vercel'de güvenli)
+app.get('/api/config', (req, res) => {
+    res.json({
+        googleClientId: process.env.GOOGLE_CLIENT_ID || ''
+    });
+});
+
 // Chat endpoint
 app.post('/api/chat', optionalAuth, async (req, res) => {
     try {
