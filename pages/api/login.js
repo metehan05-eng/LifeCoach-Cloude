@@ -10,7 +10,14 @@ export default async function handler(req, res) {
         const users = await getKVData('users');
         const user = users.find(u => u.email === email && u.password === password);
 
-        if (user) return res.status(200).json({ success: true, user: { name: user.name, email: user.email } });
+        if (user) return res.status(200).json({ 
+            success: true, 
+            user: { 
+                name: user.name, 
+                email: user.email,
+                avatar: user.avatar || null
+            } 
+        });
         else return res.status(401).json({ error: "Invalid email or password." });
     } catch (error) {
         return res.status(500).json({ error: error.message });
