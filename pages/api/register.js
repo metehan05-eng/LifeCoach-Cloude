@@ -16,7 +16,7 @@ export default async function handler(req, res) {
         users.push(newUser);
         await setKVData('users', users);
 
-        return res.status(200).json({ success: true, user: { name, email } });
+        return res.status(200).json({ success: true, user: { name, email, avatar: null } });
     } catch (error) {
         return res.status(500).json({ error: error.message });
     }

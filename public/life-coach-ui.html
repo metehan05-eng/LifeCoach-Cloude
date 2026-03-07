@@ -900,10 +900,12 @@
     <div class="orb orb-3"></div>
 
     <!-- Mobile Sidebar Overlay -->
-    <div id="sidebar-overlay" class="hidden fixed inset-0 bg-black/60 z-40 md:hidden" onclick="closeSidebarMobile()"></div>
+    <div id="sidebar-overlay" class="hidden fixed inset-0 z-30 md:hidden" onclick="closeSidebarMobile()">
+        <!-- No dark overlay - sidebar slides over without darkening -->
+    </div>
 
     <!-- Sidebar -->
-    <aside id="main-sidebar" class="w-80 flex-col hidden md:flex z-10 relative" style="min-width: 320px;">
+    <aside id="main-sidebar" class="w-80 flex-col hidden md:flex z-20 relative" style="min-width: 320px;">
         
         <!-- Logo Section -->
         <div class="sidebar-logo">
@@ -965,8 +967,13 @@
                     <span>14g ⭐⭐⭐</span>
                     <span>30g ⭐⭐⭐⭐</span>
                 </div>
+                <!-- Check-in Button -->
+                <button id="checkin-btn" onclick="handleCheckIn()" class="checkin-btn">
+                    <i class="fa-solid fa-check-circle mr-1.5"></i>
+                    <span>Bugünü İşaretle</span>
+                </button>
                 <!-- Info text -->
-                <p class="text-[10px] text-slate-600 text-center">Her gün yazarak serinizi koruyun!</p>
+                <p class="text-[10px] text-slate-600 text-center mt-2">Her gün yazarak serinizi koruyun!</p>
             </div>
         </div>
 
@@ -1170,6 +1177,46 @@
 
         let welcomeShown = false;
 
+        // Refresh session from NextAuth (for Google/GitHub login)
+        async function refreshSession() {
+            try {
+                const res = await fetch('/api/auth/session');
+                const session = await res.json();
+                if (session?.user) {
+                    const currentUser = getSafeUser();
+                    const updatedUser = {
+                        ...currentUser,
+                        name: session.user.name || currentUser?.name,
+                        email: session.user.email || currentUser?.email,
+                        avatar: session.user.avatar || session.user.image || session.user.picture || currentUser?.avatar
+                    };
+                    storage.set('user', JSON.stringify(updatedUser));
+                    return updatedUser;
+                }
+            } catch (e) {
+                console.error('Session refresh error:', e);
+            }
+            return null;
+        }
+
+        // Check if user has NextAuth session and sync with localStorage
+        async function syncNextAuthSession() {
+            const token = storage.get('token');
+            if (!token) return;
+            
+            // Check if it's a JWT from NextAuth (contains typical NextAuth claims)
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                // If it has sub, iat, exp but not our custom claims, it's likely a NextAuth token
+                if (payload.sub && payload.iat && !payload.password) {
+                    await refreshSession();
+                    checkAuth();
+                }
+            } catch (e) {
+                // Not a valid JWT, ignore
+            }
+        }
+
         function showToast(message) {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
@@ -1204,16 +1251,20 @@
             
             if (user && token) {
                 // Giriş yapmış kullanıcı
-                const avatarHtml = user.avatar
-                    ? `<img src="${user.avatar}" alt="${user.name}" class="w-9 h-9 rounded-xl object-cover border border-white/10" onerror="this.onerror=null; this.outerHTML='<div class=\\'w-9 h-9 rounded-xl flex items-center justify-center font-bold text-white text-sm\\' style=\\'background: linear-gradient(135deg, #0F766E, #2DD4BF);\\'>${user.name.charAt(0).toUpperCase()}</div>'">`
-                    : `<div class="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-white text-sm" style="background: linear-gradient(135deg, #0F766E, #2DD4BF);">${user.name.charAt(0).toUpperCase()}</div>`;
+                // Google avatar'ını kontrol et
+                const avatarUrl = user.avatar || user.image || user.picture;
+                const displayName = user.name || user.email.split('@')[0];
+                
+                const avatarHtml = avatarUrl
+                    ? `<img src="${avatarUrl}" alt="${displayName}" class="w-9 h-9 rounded-xl object-cover border border-white/10" onerror="this.onerror=null; this.outerHTML='<div class=\\'w-9 h-9 rounded-xl flex items-center justify-center font-bold text-white text-sm\\' style=\\'background: linear-gradient(135deg, #0F766E, #2DD4BF);\\'>${displayName.charAt(0).toUpperCase()}</div>'">`
+                    : `<div class="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-white text-sm" style="background: linear-gradient(135deg, #0F766E, #2DD4BF);">${displayName.charAt(0).toUpperCase()}</div>`;
 
                 authContainer.innerHTML = `
                     <div class="auth-section">
                         <div class="flex items-center gap-3">
                             ${avatarHtml}
                             <div class="flex-1 min-w-0">
-                                <p class="text-sm font-semibold text-white truncate">${user.name}</p>
+                                <p class="text-sm font-semibold text-white truncate">${displayName}</p>
                                 <p class="text-xs text-slate-500 truncate">${user.email}</p>
                             </div>
                             <div class="flex items-center gap-1">
@@ -1232,11 +1283,13 @@
                 `;
                 
                 if (!welcomeShown) {
-                    showToast(`Hoş geldin, ${user.name}! 👋✨`);
+                    showToast(`Hoş geldin, ${displayName}! 👋✨`);
                     welcomeShown = true;
                 }
                 loadHistory();
                 loadBadgeStatus();
+                // NextAuth session'ını senkronize et (Google/GitHub avatar için)
+                syncNextAuthSession();
             } else {
                 // Misafir kullanıcı - giriş yapmadan devam et
                 if (disciplineBadge) disciplineBadge.classList.add('hidden');
@@ -1290,9 +1343,11 @@
             sidebar.classList.toggle('hidden');
             if (!sidebar.classList.contains('hidden')) {
                 sidebar.classList.add('fixed', 'inset-y-0', 'left-0', 'z-50', 'w-80', 'shadow-2xl', 'flex');
+                sidebar.classList.remove('md:flex'); // Remove md:flex when in mobile fixed mode
                 if (overlay) overlay.classList.remove('hidden');
             } else {
                 sidebar.classList.remove('fixed', 'inset-y-0', 'left-0', 'z-50', 'w-80', 'shadow-2xl', 'flex');
+                sidebar.classList.add('md:flex'); // Restore md:flex
                 if (overlay) overlay.classList.add('hidden');
             }
         }
@@ -1304,6 +1359,7 @@
             if (sidebar) {
                 sidebar.classList.add('hidden');
                 sidebar.classList.remove('fixed', 'inset-y-0', 'left-0', 'z-50', 'w-80', 'shadow-2xl', 'flex');
+                sidebar.classList.add('md:flex'); // Restore md:flex
             }
             if (overlay) {
                 overlay.classList.add('hidden');
@@ -1313,8 +1369,11 @@
         function openSettings() {
             const user = getSafeUser();
             if (user) {
-                document.getElementById('settings-name').value = user.name;
-                document.getElementById('settings-avatar').value = user.avatar || '';
+                // Kullanıcı adını ve avatar'ı doldur
+                document.getElementById('settings-name').value = user.name || '';
+                // Google avatar'ı veya mevcut avatar'ı göster
+                const avatarValue = user.avatar || user.image || user.picture || '';
+                document.getElementById('settings-avatar').value = avatarValue;
             }
             const modal = document.getElementById('settings-modal');
             modal.classList.remove('hidden');
@@ -1393,6 +1452,10 @@
         async function handleCheckIn() {
             const token = storage.get('token');
             const btn = document.getElementById('checkin-btn');
+            if (!token) {
+                showToast('Check-in yapmak için giriş yapmalısınız!');
+                return;
+            }
             if (btn) btn.disabled = true;
             try {
                 const res = await fetch('/api/check-in', {
@@ -1402,9 +1465,36 @@
                 const data = await res.json();
                 showToast(data.message || data.error);
                 loadBadgeStatus();
+                
+                // If successfully checked in, also update the button state
+                if (data.success && !data.alreadyCheckedIn && btn) {
+                    btn.innerHTML = '<i class="fa-solid fa-check mr-1.5"></i><span>Bugün İşaretlendi!</span>';
+                    btn.classList.add('opacity-50');
+                }
             } catch (err) {
                 showToast("Bir hata oluştu.");
+            } finally {
                 if (btn) btn.disabled = false;
+            }
+        }
+        
+        // Auto check-in when user sends a message (if not already checked in today)
+        async function autoCheckInOnMessage() {
+            const token = storage.get('token');
+            if (!token) return;
+            
+            try {
+                const res = await fetch('/api/check-in', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                // Silent check - don't show toast for auto check-in unless it's first of the day
+                if (data.success && !data.alreadyCheckedIn) {
+                    loadBadgeStatus();
+                }
+            } catch (err) {
+                // Silent fail for auto check-in
             }
         }
 
@@ -1985,6 +2075,9 @@
                     clearFile();
 
                     showTyping();
+                    
+                    // Auto check-in when user sends a message
+                    autoCheckInOnMessage();
                     
                     const userLang = navigator.language || 'tr-TR';
                     const token = storage.get('token');

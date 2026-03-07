@@ -20,6 +20,43 @@ export const authOptions = {
     signIn: "/",
     signOut: "/user/logout",
   },
+  callbacks: {
+    async session({ session, user }) {
+      // Add avatar to session from provider
+      if (session?.user) {
+        session.user.id = user.id;
+        // Get avatar from database if available
+        try {
+          const dbUser = await prismaClient.user.findUnique({
+            where: { email: session.user.email },
+            select: { image: true }
+          });
+          if (dbUser?.image) {
+            session.user.avatar = dbUser.image;
+          } else if (user.image) {
+            session.user.avatar = user.image;
+          }
+        } catch (e) {
+          // If prisma fails, try to use user.image from provider
+          if (user.image) {
+            session.user.avatar = user.image;
+          }
+        }
+      }
+      return session;
+    },
+    async jwt({ token, user, account }) {
+      // Add provider info to token
+      if (account) {
+        token.provider = account.provider;
+        token.providerId = account.providerAccountId;
+      }
+      return token;
+    }
+  },
+  session: {
+    strategy: "jwt",
+  },
 };
 
 export default NextAuth(authOptions);
