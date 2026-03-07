@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LifeCoach AI</title>
+    <link rel="icon" type="image/svg+xml" href="/lifecoach-favicon.svg">
+    <link rel="apple-touch-icon" href="/lifecoach-favicon.svg">
+    <link rel="apple-touch-startup-image" href="/lifecoach-favicon.svg">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -406,6 +409,34 @@
             color: rgba(226, 232, 240, 0.95);
             backdrop-filter: blur(10px);
             box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+
+        .msg-wrapper-nobubble {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .msg-wrapper-nobubble.user {
+            justify-content: flex-end;
+            flex-direction: row-reverse; /* Kullanıcı mesajını sağa al */
+        }
+
+        .msg-content-nobubble {
+            max-width: 80%;
+        }
+
+        .msg-body {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: rgba(226, 232, 240, 0.96); /* Karanlık modda daha açık yazı rengi */
+        }
+
+        .msg-body p,
+        .msg-body span,
+        .msg-body li {
+            color: inherit;
         }
 
         .msg-ai-avatar {
@@ -1008,10 +1039,7 @@
                     </div>
                 </div>
 
-                <!-- Prompt Templates -->
-                <div id="dynamic-prompts" class="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-2xl mt-4">
-                    <!-- JS ile doldurulacak -->
-                </div>
+
             </div>
         </div>
 
@@ -1272,10 +1300,13 @@
         function closeSidebarMobile() {
             const sidebar = document.getElementById('main-sidebar');
             const overlay = document.getElementById('sidebar-overlay');
-            if (window.innerWidth < 768) {
+            // Ekran genişliğinden bağımsız olarak her çağrıldığında kapat
+            if (sidebar) {
                 sidebar.classList.add('hidden');
                 sidebar.classList.remove('fixed', 'inset-y-0', 'left-0', 'z-50', 'w-80', 'shadow-2xl', 'flex');
-                if (overlay) overlay.classList.add('hidden');
+            }
+            if (overlay) {
+                overlay.classList.add('hidden');
             }
         }
 
@@ -1632,12 +1663,7 @@
             welcomeScreen.classList.remove('hidden');
         }
 
-        function useTemplate(text) {
-            userInput.value = text;
-            userInput.style.height = 'auto';
-            userInput.style.height = Math.min(userInput.scrollHeight, 140) + 'px';
-            userInput.focus();
-        }
+
 
         function copyToClipboard(btn, text) {
             navigator.clipboard.writeText(text).then(() => {
@@ -1809,7 +1835,7 @@
 
             const isUser = sender === 'user';
             const div = document.createElement('div');
-            div.className = 'msg-wrapper-nobubble animate-fade-in-up';
+            div.className = 'msg-wrapper-nobubble ' + (isUser ? 'user ' : 'ai ') + 'animate-fade-in-up';
             
             const user = getSafeUser();
             const senderName = isUser ? (user ? user.name : 'Siz') : 'LifeCoach AI';
@@ -1847,7 +1873,7 @@
                         <div class="msg-sender-name ${senderColor}">${senderName}</div>
                         ${actionBtns}
                     </div>
-                    <div id="${msgId}" class="msg-body">
+                    <div id="${msgId}" class="msg-body ${isUser ? 'msg-user' : 'msg-ai'}">
                         ${initialContent}
                     </div>
                     <div class="text-[10px] text-slate-600 mt-2 flex items-center gap-1">
@@ -1923,32 +1949,9 @@
             if (typing) typing.remove();
         }
 
-        const templateOptions = [
-            { title: "🌅 Sabah Rutini", desc: "Güne enerjik başlamak için stratejiler.", text: "Sabah rutinim nasıl daha verimli hale getirebilirim? Bana bilimsel temelli öneriler ver." },
-            { title: "🚀 Girişim Desteği", desc: "Fikrini hayata geçirmek için ilk adımlar.", text: "Bir girişim fikrim var ama nereden başlayacağımı bilmiyorum. MVP oluşturma sürecinde bana rehberlik et." },
-            { title: "🧠 Duygusal Destek", desc: "Bunalmış hissettiğinde konuş.", text: "Bugün kendimi çok yorgun ve tükenmiş hissediyorum. Duygularımı anlamama ve sakinleşmeme yardım et." },
-            { title: "🛡️ Red Team Aracı", desc: "Siber güvenlik için Python scripti.", text: "Bana Python ile gelişmiş bir Port Scanner (Red Team aracı) yazar mısın? Kodları detaylı açıkla." },
-            { title: "⏳ Ertelemecilik", desc: "Odaklanma sorununu çöz.", text: "Sürekli işlerimi erteliyorum. Disiplin kazanmak ve odaklanmak için bana sert ama etkili bir yöntem öner." },
-            { title: "💡 Kodlama Projesi", desc: "Backend yeteneklerini geliştir.", text: "Aklıma proje fikri gelmiyor. Backend yeteneklerimi geliştirecek zorlu bir proje öner ve temel yapısını kodla." },
-            { title: "🎯 Hedef Belirleme", desc: "Gerçekçi hedefler koy.", text: "Hayatımda bir yön eksikliği hissediyorum. Bana 3 aylık, ölçülebilir ve gerçekçi bir gelişim planı hazırla." },
-            { title: "🎨 Resim Oluştur", desc: "Hayal gücünü görsele dök.", text: "Bana siberpunk tarzında, yağmurlu bir sokakta yürüyen bir robot resmi çiz." }
-        ];
-
-        function renderRandomTemplates() {
-            const container = document.getElementById('dynamic-prompts');
-            if (!container) return;
-            const shuffled = [...templateOptions].sort(() => 0.5 - Math.random());
-            const selected = shuffled.slice(0, 4);
-            container.innerHTML = selected.map(t => `
-                <button onclick="useTemplate('${t.text.replace(/'/g, "\\'")}')" class="prompt-card">
-                    <span class="block font-semibold text-sm text-slate-200 mb-1">${t.title}</span>
-                    <span class="text-xs text-slate-500 leading-relaxed">${t.desc}</span>
-                </button>
-            `).join('');
-        }
+        const templateOptions = [];
 
         document.addEventListener('DOMContentLoaded', () => {
-            renderRandomTemplates();
             // DOM elementlerini burada tanımla
             chatContainer = document.getElementById('chat-container');
             chatForm = document.getElementById('chat-form');
