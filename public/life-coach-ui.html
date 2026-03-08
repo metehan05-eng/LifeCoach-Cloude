@@ -361,6 +361,15 @@
         /* ===== CHAT CONTAINER ===== */
         #chat-container {
             scrollbar-width: thin;
+            /* Add padding to account for fixed input on desktop */
+            padding-bottom: 100px;
+        }
+
+        /* Ensure section-chat has full height for centering */
+        #section-chat {
+            min-height: calc(100vh - 120px);
+            display: flex;
+            flex-direction: column;
         }
 
         /* ===== WELCOME SCREEN ===== */
@@ -594,12 +603,22 @@
             -webkit-backdrop-filter: blur(20px);
             border: 1px solid rgba(45, 212, 191, 0.15);
             border-radius: 20px;
-            margin: 0 auto 24px auto;
+            margin: 0 auto;
             width: 90%;
             max-width: 800px;
             padding: 16px;
             box-shadow: 0 -4px 30px rgba(0,0,0,0.3), 0 0 0 1px rgba(45, 212, 191, 0.05);
-            position: relative;
+            /* Claude AI style - fixed at bottom center */
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 40;
+        }
+
+        /* When chat input is hidden (not on chat page) */
+        #chat-input-container.hidden {
+            display: none;
         }
 
         /* Input area responsive */
@@ -616,6 +635,9 @@
                 padding: 12px;
                 z-index: 30;
                 box-shadow: 0 -4px 20px rgba(0,0,0,0.3), 0 0 0 1px rgba(45, 212, 191, 0.05);
+                /* Remove transform on mobile to use full width */
+                transform: none;
+                left: 0;
             }
             
             /* Adjust main content padding for fixed input */
@@ -623,32 +645,14 @@
                 padding-bottom: 80px;
             }
             
-            /* Smaller chat textarea on mobile */
-            .chat-textarea {
-                font-size: 16px; /* Prevent zoom on iOS */
-                padding: 10px 50px 10px 12px;
-            }
-            
-            /* Smaller send button on mobile */
-            .send-btn {
-                width: 40px;
-                height: 40px;
-            }
-            
-            /* Adjust input icons */
-            .input-icon-btn {
-                bottom: 10px;
-            }
-            .input-icon-btn[style*="right: 36px"] {
-                right: 30px !important;
-            }
-            .input-icon-btn[style*="right: 8px"] {
-                right: 6px !important;
-            }
-            
             /* Chat container should account for fixed input */
             #chat-container {
                 padding-bottom: 80px !important;
+            }
+            
+            /* Ensure section-chat has proper height on mobile */
+            #section-chat {
+                min-height: calc(100vh - 160px);
             }
         }
 
@@ -1842,9 +1846,9 @@
             </div>
 
             <!-- Chat Section (Original) -->
-            <div id="section-chat" class="section-content">
+            <div id="section-chat" class="section-content flex flex-col min-h-full">
                 <!-- Welcome Screen -->
-                <div class="flex flex-col items-center justify-center h-full text-center space-y-5" id="welcome-screen">
+                <div class="flex flex-col items-center justify-center flex-1 text-center space-y-5" id="welcome-screen">
                 <div class="welcome-icon-wrapper">
                     <i class="fa-solid fa-hands-holding-circle text-4xl" style="color: #2DD4BF;"></i>
                 </div>
@@ -1879,8 +1883,8 @@
             </div>
             </div>
 
-        <!-- Input Area -->
-        <div id="chat-input-container" class="input-area">
+        <!-- Input Area (only visible on AI Asistan page) -->
+        <div id="chat-input-container" class="input-area hidden">
             <!-- File Preview -->
             <div id="file-preview-container" class="hidden file-preview mb-3">
                 <!-- JS ile doldurulacak -->
@@ -3029,7 +3033,7 @@
             userInput = document.getElementById('user-input');
             welcomeScreen = document.getElementById('welcome-screen');
             
-            // Set default section to dashboard (Panel)
+            // Set default section to dashboard (Panel) - chat input hidden by default
             showSection('dashboard');
 
             if (userInput) {
@@ -3184,8 +3188,10 @@
                 const chatInputContainer = document.getElementById('chat-input-container');
                 if (chatInputContainer) {
                     if (sectionName === 'chat') {
+                        chatInputContainer.classList.remove('hidden');
                         chatInputContainer.style.display = 'flex';
                     } else {
+                        chatInputContainer.classList.add('hidden');
                         chatInputContainer.style.display = 'none';
                     }
                 }
