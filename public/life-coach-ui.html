@@ -1880,7 +1880,7 @@
             </div>
 
         <!-- Input Area -->
-        <div class="input-area">
+        <div id="chat-input-container" class="input-area">
             <!-- File Preview -->
             <div id="file-preview-container" class="hidden file-preview mb-3">
                 <!-- JS ile doldurulacak -->
@@ -3028,6 +3028,9 @@
             chatForm = document.getElementById('chat-form');
             userInput = document.getElementById('user-input');
             welcomeScreen = document.getElementById('welcome-screen');
+            
+            // Set default section to dashboard (Panel)
+            showSection('dashboard');
 
             if (userInput) {
                 userInput.addEventListener('keydown', (e) => {
@@ -3175,6 +3178,16 @@
                 if (activeNav) {
                     activeNav.classList.add('bg-teal-500/20', 'text-teal-400', 'border-teal-500/30');
                     activeNav.classList.remove('text-slate-400');
+                }
+                
+                // Chat input visibility control - only show on AI Asistan (chat) section
+                const chatInputContainer = document.getElementById('chat-input-container');
+                if (chatInputContainer) {
+                    if (sectionName === 'chat') {
+                        chatInputContainer.style.display = 'flex';
+                    } else {
+                        chatInputContainer.style.display = 'none';
+                    }
                 }
                 
                 // Load data based on section
