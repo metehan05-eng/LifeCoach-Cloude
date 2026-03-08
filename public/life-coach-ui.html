@@ -372,56 +372,89 @@
             flex-direction: column;
         }
 
-        /* ===== WELCOME SCREEN ===== */
+        /* ===== WELCOME SCREEN (Only for AI Asistan) ===== */
+        #section-chat #welcome-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            text-align: center;
+            padding: 60px 20px;
+            gap: 28px;
+            background: linear-gradient(135deg, rgba(15, 118, 110, 0.05) 0%, rgba(34, 211, 238, 0.03) 100%);
+            border-radius: 24px;
+            margin: 20px;
+        }
+
+        /* Hide welcome screen from other sections */
+        #section-goals #welcome-screen,
+        #section-habits #welcome-screen,
+        #section-plans #welcome-screen,
+        #section-progress #welcome-screen { display: none !important; }
+
         .welcome-icon-wrapper {
-            width: 90px;
-            height: 90px;
-            background: linear-gradient(135deg, rgba(15, 118, 110, 0.3), rgba(45, 212, 191, 0.1));
-            border: 1px solid rgba(45, 212, 191, 0.3);
-            border-radius: 28px;
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, rgba(15, 118, 110, 0.4), rgba(45, 212, 191, 0.15));
+            border: 3px solid rgba(45, 212, 191, 0.5);
+            border-radius: 40px;
             display: flex;
             align-items: center;
             justify-content: center;
             position: relative;
             animation: float 6s ease-in-out infinite;
-            box-shadow: 0 0 40px rgba(45, 212, 191, 0.2), inset 0 1px 0 rgba(255,255,255,0.1);
+            box-shadow: 0 0 100px rgba(45, 212, 191, 0.4), 0 0 50px rgba(34, 211, 238, 0.2), inset 0 1px 0 rgba(255,255,255,0.2);
         }
 
         @media (max-width: 768px) {
             .welcome-icon-wrapper {
-                width: 70px;
-                height: 70px;
+                width: 90px;
+                height: 90px;
+                border-radius: 32px;
+                border-width: 2px;
             }
             .welcome-icon-wrapper i {
-                font-size: 2rem !important;
+                font-size: 2.5rem !important;
             }
         }
 
         .welcome-icon-wrapper::before {
             content: '';
             position: absolute;
-            inset: -1px;
-            border-radius: 29px;
-            background: linear-gradient(135deg, rgba(45, 212, 191, 0.4), transparent, rgba(45, 212, 191, 0.1));
+            inset: -3px;
+            border-radius: 43px;
+            background: linear-gradient(135deg, rgba(45, 212, 191, 0.6), transparent 50%, rgba(34, 211, 238, 0.2));
             z-index: -1;
+        }
+
+        .welcome-icon-wrapper::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 40px;
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.3), transparent 70%);
+            pointer-events: none;
         }
 
         .welcome-title {
             font-family: 'Space Grotesk', sans-serif;
-            font-size: 2rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #fff 0%, #2DD4BF 60%, #22D3EE 100%);
+            font-size: 3rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #ffffff 0%, #2DD4BF 50%, #22D3EE 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            max-width: 100%;
+            max-width: 600px;
             overflow-wrap: break-word;
+            letter-spacing: -1px;
+            line-height: 1.1;
         }
 
         @media (max-width: 768px) {
             .welcome-title {
-                font-size: 1.35rem;
-                padding: 0 8px;
+                font-size: 2rem;
+                padding: 0 12px;
             }
         }
 
@@ -947,10 +980,20 @@
                 border-radius: 16px; 
             }
             .welcome-title { font-size: 1.5rem; }
+            
+            /* AI Asistan welcome screen mobile */
+            #section-chat #welcome-screen {
+                padding: 40px 16px;
+                gap: 20px;
+                margin: 10px;
+                border-radius: 20px;
+            }
+            
             #main-content { 
                 width: 100%; 
                 max-width: 100%; 
                 overflow-x: hidden;
+                padding: 16px;
                 padding-bottom: 90px;
             }
             .msg-ai, .msg-user { font-size: 0.82rem; }
@@ -992,9 +1035,14 @@
             }
             
             /* Stats row on mobile */
-            .flex.items-center.gap-6.py-2 {
+            .flex.items-center.gap-8.py-4 {
                 gap: 1rem !important;
-                padding: 8px !important;
+                padding: 12px !important;
+                flex-wrap: wrap;
+            }
+            
+            .flex.items-center.gap-8.py-4 .w-px {
+                display: none;
             }
             
             /* Welcome screen padding */
@@ -1232,6 +1280,20 @@
         /* ===== SECTION CONTENT ===== */
         .section-content {
             animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            width: 100%;
+            max-width: 100%;
+            padding: 0;
+            margin: 0;
+            display: none;
+            flex-direction: column;
+        }
+
+        .section-content:not(.hidden) {
+            display: flex;
+        }
+
+        .section-content.hidden {
+            display: none !important;
         }
         
         /* ===== MODAL STYLES ===== */
@@ -1669,11 +1731,11 @@
             </div>
 
             <!-- Goals Section -->
-            <div id="section-goals" class="section-content hidden">
-                <div class="max-w-4xl mx-auto">
-                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <div id="section-goals" class="section-content hidden flex-col">
+                <div class="max-w-5xl mx-auto w-full">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                         <div>
-                            <h2 class="text-2xl font-bold text-white font-display mb-1">Hedeflerim 🎯</h2>
+                            <h2 class="text-3xl font-bold text-white font-display mb-2">Hedeflerim 🎯</h2>
                             <p class="text-slate-400 text-sm">Hedeflerini oluştur ve takip et</p>
                         </div>
                         <button onclick="openGoalModal()" class="btn-primary flex items-center gap-2">
@@ -1703,11 +1765,11 @@
             </div>
 
             <!-- Habits Section -->
-            <div id="section-habits" class="section-content hidden">
-                <div class="max-w-4xl mx-auto">
-                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <div id="section-habits" class="section-content hidden flex-col">
+                <div class="max-w-5xl mx-auto w-full">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                         <div>
-                            <h2 class="text-2xl font-bold text-white font-display mb-1">Alışkanlıklar ❤️</h2>
+                            <h2 class="text-3xl font-bold text-white font-display mb-2">Alışkanlıklar ❤️</h2>
                             <p class="text-slate-400 text-sm">Günlük alışkanlıklarını takip et</p>
                         </div>
                         <button onclick="openHabitModal()" class="btn-primary flex items-center gap-2">
@@ -1744,11 +1806,11 @@
             </div>
 
             <!-- Plans Section -->
-            <div id="section-plans" class="section-content hidden">
-                <div class="max-w-4xl mx-auto">
-                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <div id="section-plans" class="section-content hidden flex-col">
+                <div class="max-w-5xl mx-auto w-full">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                         <div>
-                            <h2 class="text-2xl font-bold text-white font-display mb-1">Planlar 📅</h2>
+                            <h2 class="text-3xl font-bold text-white font-display mb-2">Planlar 📅</h2>
                             <p class="text-slate-400 text-sm">AI tarafından oluşturulan planlarını görüntüle</p>
                         </div>
                         <button onclick="openPlanModal()" class="btn-primary flex items-center gap-2">
@@ -1777,10 +1839,10 @@
             </div>
 
             <!-- Progress Section -->
-            <div id="section-progress" class="section-content hidden">
-                <div class="max-w-4xl mx-auto">
-                    <div class="mb-6">
-                        <h2 class="text-2xl font-bold text-white font-display mb-1">İlerleme 📊</h2>
+            <div id="section-progress" class="section-content hidden flex-col">
+                <div class="max-w-5xl mx-auto w-full">
+                    <div class="mb-8">
+                        <h2 class="text-3xl font-bold text-white font-display mb-2">İlerleme 📊</h2>
                         <p class="text-slate-400 text-sm">İstatistiklerini ve grafiklerini görüntüle</p>
                     </div>
                     
@@ -1853,28 +1915,28 @@
                     <i class="fa-solid fa-hands-holding-circle text-4xl" style="color: #2DD4BF;"></i>
                 </div>
                 
-                <div class="space-y-2 px-2">
+                <div class="space-y-3 px-4">
                     <h2 class="welcome-title">Merhaba, bugün nasılsın?</h2>
-                    <p class="text-slate-400 max-w-md text-sm leading-relaxed px-2">
+                    <p class="text-slate-400 max-w-lg text-sm leading-relaxed">
                         Kişisel yaşam koçunuz olarak buradayım. Hedefleriniz, endişeleriniz hakkında<br>veya sadece sohbet etmek için bana yazabilirsiniz.
                     </p>
                 </div>
 
                 <!-- Stats Row -->
-                <div class="flex items-center gap-6 py-2">
+                <div class="flex items-center justify-center gap-8 py-4">
                     <div class="text-center">
-                        <div class="text-lg font-bold" style="color: #2DD4BF;">AI</div>
-                        <div class="text-xs text-slate-500">Powered</div>
+                        <div class="text-xl font-bold" style="color: #2DD4BF;">AI</div>
+                        <div class="text-xs text-slate-500 mt-1">Powered</div>
                     </div>
-                    <div class="w-px h-8 bg-white/10"></div>
+                    <div class="w-px h-10 bg-white/15"></div>
                     <div class="text-center">
-                        <div class="text-lg font-bold text-white">7/24</div>
-                        <div class="text-xs text-slate-500">Erişim</div>
+                        <div class="text-xl font-bold text-white">7/24</div>
+                        <div class="text-xs text-slate-500 mt-1">Erişim</div>
                     </div>
-                    <div class="w-px h-8 bg-white/10"></div>
+                    <div class="w-px h-10 bg-white/15"></div>
                     <div class="text-center">
-                        <div class="text-lg font-bold text-amber-400">∞</div>
-                        <div class="text-xs text-slate-500">Destek</div>
+                        <div class="text-xl font-bold text-amber-400">∞</div>
+                        <div class="text-xs text-slate-500 mt-1">Destek</div>
                     </div>
                 </div>
 
