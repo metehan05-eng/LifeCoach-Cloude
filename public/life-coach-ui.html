@@ -91,6 +91,34 @@
             --sidebar-width: 320px;
         }
 
+        /* ===== GLOBAL BOX SIZING ===== */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        /* ===== BODY & BACKGROUND ===== */
+        html, body {
+            overflow-x: hidden;
+            max-width: 100vw;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+            word-break: break-word;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #030712;
+            overflow-x: hidden;
+            max-width: 100vw;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Ensure no element exceeds viewport width */
+        * {
+            max-width: 100%;
+        }
+
         /* ===== SCROLLBAR ===== */
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -101,7 +129,15 @@
         body {
             font-family: 'Inter', sans-serif;
             background: #030712;
-            overflow: hidden;
+            overflow-x: hidden;
+            max-width: 100vw;
+        }
+
+        html, body {
+            overflow-x: hidden;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+            word-break: break-word;
         }
 
         /* Animated mesh gradient background */
@@ -145,6 +181,9 @@
             box-shadow: 4px 0 30px rgba(0, 0, 0, 0.4);
             position: relative;
             z-index: 10;
+            width: 320px !important;
+            max-width: 100%;
+            overflow-x: hidden;
         }
 
         .sidebar-logo {
@@ -305,6 +344,10 @@
             background: transparent;
             position: relative;
             z-index: 1;
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden;
+            flex: 1;
         }
 
         /* ===== MOBILE HEADER ===== */
@@ -335,6 +378,16 @@
             box-shadow: 0 0 40px rgba(45, 212, 191, 0.2), inset 0 1px 0 rgba(255,255,255,0.1);
         }
 
+        @media (max-width: 768px) {
+            .welcome-icon-wrapper {
+                width: 70px;
+                height: 70px;
+            }
+            .welcome-icon-wrapper i {
+                font-size: 2rem !important;
+            }
+        }
+
         .welcome-icon-wrapper::before {
             content: '';
             position: absolute;
@@ -352,6 +405,15 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            max-width: 100%;
+            overflow-wrap: break-word;
+        }
+
+        @media (max-width: 768px) {
+            .welcome-title {
+                font-size: 1.35rem;
+                padding: 0 8px;
+            }
         }
 
         /* ===== PROMPT CARDS ===== */
@@ -365,6 +427,10 @@
             position: relative;
             overflow: hidden;
             backdrop-filter: blur(10px);
+            max-width: 100%;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+            word-break: break-word;
         }
 
         .prompt-card::before {
@@ -430,7 +496,10 @@
         .msg-body {
             font-size: 0.9rem;
             line-height: 1.6;
-            color: rgba(226, 232, 240, 0.96); /* Karanlık modda daha açık yazı rengi */
+            color: rgba(226, 232, 240, 0.96);
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+            word-break: break-word;
         }
 
         .msg-body p,
@@ -533,6 +602,56 @@
             position: relative;
         }
 
+        /* Input area responsive */
+        @media (max-width: 768px) {
+            .input-area {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                width: 100%;
+                max-width: 100%;
+                margin: 0;
+                border-radius: 20px 20px 0 0;
+                padding: 12px;
+                z-index: 30;
+                box-shadow: 0 -4px 20px rgba(0,0,0,0.3), 0 0 0 1px rgba(45, 212, 191, 0.05);
+            }
+            
+            /* Adjust main content padding for fixed input */
+            #main-content {
+                padding-bottom: 80px;
+            }
+            
+            /* Smaller chat textarea on mobile */
+            .chat-textarea {
+                font-size: 16px; /* Prevent zoom on iOS */
+                padding: 10px 50px 10px 12px;
+            }
+            
+            /* Smaller send button on mobile */
+            .send-btn {
+                width: 40px;
+                height: 40px;
+            }
+            
+            /* Adjust input icons */
+            .input-icon-btn {
+                bottom: 10px;
+            }
+            .input-icon-btn[style*="right: 36px"] {
+                right: 30px !important;
+            }
+            .input-icon-btn[style*="right: 8px"] {
+                right: 6px !important;
+            }
+            
+            /* Chat container should account for fixed input */
+            #chat-container {
+                padding-bottom: 80px !important;
+            }
+        }
+
         .input-area::before {
             content: '';
             position: absolute;
@@ -632,7 +751,6 @@
             box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.1);
         }
 
-        /* ===== TOAST ===== */
         .toast {
             background: rgba(15, 23, 42, 0.95);
             border: 1px solid rgba(45, 212, 191, 0.2);
@@ -642,6 +760,17 @@
             box-shadow: 0 8px 30px rgba(0,0,0,0.4), 0 0 0 1px rgba(45, 212, 191, 0.05);
             backdrop-filter: blur(20px);
             min-width: 220px;
+            max-width: 100%;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+        }
+
+        @media (max-width: 480px) {
+            .toast {
+                min-width: unset;
+                width: calc(100% - 32px);
+                max-width: calc(100% - 32px);
+            }
         }
 
         /* ===== STAR ANIMATION ===== */
@@ -807,12 +936,110 @@
 
         /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
-            .input-area { margin: 12px; width: auto; max-width: none; border-radius: 16px; }
+            .input-area { 
+                margin: 12px; 
+                width: calc(100% - 24px); 
+                max-width: none; 
+                border-radius: 16px; 
+            }
             .welcome-title { font-size: 1.5rem; }
-            #main-content { width: 100%; }
+            #main-content { 
+                width: 100%; 
+                max-width: 100%; 
+                overflow-x: hidden;
+                padding-bottom: 90px;
+            }
             .msg-ai, .msg-user { font-size: 0.82rem; }
-            #chat-container { padding: 12px; }
+            #chat-container { 
+                padding: 12px; 
+                overflow-x: hidden;
+                padding-bottom: 100px;
+            }
             .max-w-\[80\%\] { max-width: 90% !important; }
+            
+            /* Mobile layout fixes */
+            .msg-content-nobubble {
+                max-width: 85%;
+                overflow-wrap: break-word;
+                word-break: break-word;
+            }
+            
+            /* Prevent horizontal scroll on all containers */
+            .overflow-hidden, .overflow-x-hidden {
+                overflow-x: hidden !important;
+            }
+            
+            /* Better button sizing for mobile */
+            .btn-primary, .btn-secondary {
+                padding: 12px 16px;
+                font-size: 0.9rem;
+            }
+            
+            /* Sidebar mobile improvements */
+            #main-sidebar {
+                width: 85% !important;
+                max-width: 320px;
+                min-width: unset !important;
+            }
+            
+            /* Mobile header improvements */
+            .mobile-header {
+                padding: 12px;
+            }
+            
+            /* Stats row on mobile */
+            .flex.items-center.gap-6.py-2 {
+                gap: 1rem !important;
+                padding: 8px !important;
+            }
+            
+            /* Welcome screen padding */
+            #welcome-screen {
+                padding: 20px 10px;
+            }
+            
+            /* Fix for main content container */
+            #main-content > div {
+                max-width: 100%;
+                overflow-x: hidden;
+            }
+            
+            /* Ensure section containers don't overflow */
+            .section-content {
+                max-width: 100%;
+                overflow-x: hidden;
+            }
+            
+            /* Prevent any element from causing overflow */
+            * {
+                max-width: 100vw;
+            }
+        }
+
+        /* Extra small screens */
+        @media (max-width: 480px) {
+            .input-area {
+                margin: 8px;
+                width: calc(100% - 16px);
+                padding: 12px;
+            }
+            .chat-textarea {
+                padding: 10px 50px 10px 12px;
+            }
+            .send-btn {
+                width: 40px;
+                height: 40px;
+            }
+            .btn-primary, .btn-secondary {
+                padding: 10px 14px;
+                font-size: 0.85rem;
+            }
+            #chat-container {
+                padding: 8px;
+            }
+            #main-content {
+                padding-bottom: 100px;
+            }
         }
 
         /* ===== IMAGE WRAPPER ===== */
@@ -821,9 +1048,107 @@
             height: auto;
         }
 
+        /* ===== HORIZONTALLY SCROLLABLE CONTENT ===== */
+        .scrollable-x {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Tables and code blocks should be scrollable */
+        .msg-ai table,
+        .msg-ai pre,
+        .msg-ai code {
+            max-width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .msg-ai pre {
+            padding: 12px;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            margin: 8px 0;
+        }
+
+        .msg-ai table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 8px 0;
+            font-size: 0.85rem;
+        }
+
+        .msg-ai th,
+        .msg-ai td {
+            padding: 8px 12px;
+            border: 1px solid rgba(45, 212, 191, 0.2);
+            text-align: left;
+        }
+
+        .msg-ai th {
+            background: rgba(45, 212, 191, 0.1);
+        }
+
         /* ===== SIDEBAR MOBILE ANIMATION ===== */
         #main-sidebar.fixed {
             animation: slide-in-left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* Sidebar overlay with proper z-index */
+        #sidebar-overlay {
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            transition: opacity 0.3s ease;
+            position: fixed;
+            inset: 0;
+            z-index: 40;
+        }
+
+        #sidebar-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #sidebar-overlay:not(.hidden) {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Mobile sidebar - slides in from left */
+        @media (max-width: 768px) {
+            #main-sidebar {
+                position: fixed !important;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                height: 100vh;
+                transform: translateX(-100%);
+                transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+                z-index: 50;
+                width: 85% !important;
+                max-width: 320px;
+            }
+            
+            #main-sidebar:not(.hidden) {
+                transform: translateX(0);
+                box-shadow: 4px 0 30px rgba(0, 0, 0, 0.5);
+            }
+            
+            #main-sidebar.hidden {
+                transform: translateX(-100%);
+            }
+            
+            /* Show sidebar on desktop, hide on mobile by default */
+            #main-sidebar {
+                display: flex !important;
+            }
+        }
+
+        /* Desktop sidebar */
+        @media (min-width: 768px) {
+            #main-sidebar {
+                transform: none !important;
+            }
         }
 
         /* ===== LIGHT MODE OVERRIDES ===== */
@@ -889,9 +1214,234 @@
         html:not(.dark) .btn-secondary { background: rgba(241, 245, 249, 0.8); border-color: rgba(15, 118, 110, 0.15); color: #475569; }
         html:not(.dark) .btn-secondary:hover { background: rgba(15, 118, 110, 0.08); border-color: rgba(15, 118, 110, 0.25); color: #0F766E; }
         html:not(.dark) .file-preview { background: rgba(241, 245, 249, 0.8); border-color: rgba(15, 118, 110, 0.15); }
+        
+        /* ===== NAVIGATION ITEMS ===== */
+        .nav-item {
+            border: 1px solid transparent;
+        }
+        .nav-item.active {
+            background: rgba(15, 118, 110, 0.2);
+            color: #2DD4BF;
+            border-color: rgba(45, 212, 191, 0.3);
+        }
+        
+        /* ===== SECTION CONTENT ===== */
+        .section-content {
+            animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        
+        /* ===== MODAL STYLES ===== */
+        .modal-overlay {
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        
+        .modal-card {
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(45, 212, 191, 0.15);
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        
+        .modal-input {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(45, 212, 191, 0.15);
+            border-radius: 12px;
+            color: white;
+            padding: 12px 16px;
+            font-size: 0.9rem;
+            width: 100%;
+            transition: all 0.3s;
+        }
+        
+        .modal-input:focus {
+            outline: none;
+            border-color: rgba(45, 212, 191, 0.4);
+            box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.1);
+        }
+        
+        .modal-input::placeholder {
+            color: rgba(148, 163, 184, 0.5);
+        }
+        
+        select.modal-input {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+            padding-right: 40px;
+        }
+        
+        .icon-btn {
+            transition: all 0.2s;
+        }
+        .icon-btn.selected {
+            background: rgba(45, 212, 191, 0.2) !important;
+        }
+        
+        /* ===== GOAL/HABIT/PLAN CARDS ===== */
+        input[type="range"] {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background: transparent;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #2DD4BF;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 0 10px rgba(45, 212, 191, 0.5);
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            -moz-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #2DD4BF;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 10px rgba(45, 212, 191, 0.5);
+        }
+        
+        input[type="range"]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+        }
+        
+        input[type="range"]:focus {
+            outline: none;
+        }
+        
+        /* ===== RESPONSIVE TABLE ===== */
+        .overflow-x-auto {
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* AI Plan Table - Fully Responsive */
+        .ai-plan-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+            min-width: 280px;
+        }
+
+        .ai-plan-table th,
+        .ai-plan-table td {
+            padding: 0.75rem 0.5rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(45, 212, 191, 0.1);
+        }
+
+        .ai-plan-table th {
+            font-weight: 600;
+            color: rgba(45, 212, 191, 0.8);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            background: rgba(45, 212, 191, 0.05);
+        }
+
+        .ai-plan-table td {
+            color: rgba(226, 232, 240, 0.9);
+        }
+
+        .ai-plan-table .task-column {
+            min-width: 120px;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .ai-plan-table .time-column {
+            width: 70px;
+            white-space: nowrap;
+            color: rgba(148, 163, 184, 0.8);
+        }
+
+        /* Mobile table scroll */
+        .table-scroll-wrapper {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin: 0 -1rem;
+            padding: 0 1rem;
+            scrollbar-width: thin;
+        }
+
+        /* Priority badges */
+        .priority-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .priority-high {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+        }
+
+        .priority-medium {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fcd34d;
+        }
+
+        .priority-low {
+            background: rgba(100, 116, 139, 0.2);
+            color: #94a3b8;
+        }
+
+        /* Status badges */
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.5rem;
+            font-size: 0.7rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .status-pending {
+            background: rgba(255, 255, 255, 0.05);
+            color: rgba(148, 163, 184, 0.8);
+        }
+
+        .status-completed {
+            background: rgba(34, 197, 94, 0.2);
+            color: #86efac;
+        }
+
+        @media (max-width: 480px) {
+            .ai-plan-table {
+                font-size: 0.8rem;
+            }
+            
+            .ai-plan-table th,
+            .ai-plan-table td {
+                padding: 0.5rem 0.375rem;
+            }
+            
+            .priority-badge,
+            .status-badge {
+                padding: 0.2rem 0.4rem;
+                font-size: 0.65rem;
+            }
+        }
     </style>
 </head>
-<body class="h-screen flex overflow-hidden">
+<body class="h-screen flex overflow-hidden max-w-full">
 
     <!-- Animated Background -->
     <div class="bg-mesh"></div>
@@ -900,12 +1450,12 @@
     <div class="orb orb-3"></div>
 
     <!-- Mobile Sidebar Overlay -->
-    <div id="sidebar-overlay" class="hidden fixed inset-0 z-30 md:hidden" onclick="closeSidebarMobile()">
-        <!-- No dark overlay - sidebar slides over without darkening -->
+    <div id="sidebar-overlay" class="fixed inset-0 z-40 md:hidden hidden" onclick="closeSidebarMobile()">
+        <!-- Dark overlay for mobile sidebar -->
     </div>
 
     <!-- Sidebar -->
-    <aside id="main-sidebar" class="w-80 flex-col hidden md:flex z-20 relative" style="min-width: 320px;">
+    <aside id="main-sidebar" class="w-80 flex-col md:flex z-20 relative" style="width: 320px; max-width: 100%;">
         
         <!-- Logo Section -->
         <div class="sidebar-logo">
@@ -922,14 +1472,50 @@
 
         <!-- Action Buttons -->
         <div class="px-4 pb-3 space-y-2">
-            <button onclick="startNewChat()" class="btn-primary w-full flex items-center justify-center gap-2">
+            <button onclick="startNewChat(); closeSidebarMobile();" class="btn-primary w-full flex items-center justify-center gap-2">
                 <i class="fa-solid fa-plus text-sm"></i>
                 <span>Yeni Oturum</span>
             </button>
-            <button onclick="exportChat()" class="btn-secondary w-full flex items-center justify-center gap-2">
+            <button onclick="exportChat();" class="btn-secondary w-full flex items-center justify-center gap-2">
                 <i class="fa-solid fa-download text-xs"></i>
                 <span>Sohbeti İndir (.txt)</span>
             </button>
+        </div>
+
+        <!-- Feature Navigation -->
+        <div class="px-4 pb-3">
+            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-1">Özellikler</div>
+            <div class="space-y-1">
+                <button onclick="showSection('dashboard'); closeSidebarMobile();" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" data-section="dashboard">
+                    <i class="fa-solid fa-chart-pie w-5 text-center"></i>
+                    <span class="text-sm font-medium">Panel</span>
+                </button>
+                <button onclick="showSection('goals'); closeSidebarMobile();" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" data-section="goals">
+                    <i class="fa-solid fa-bullseye w-5 text-center"></i>
+                    <span class="text-sm font-medium">Hedefler</span>
+                </button>
+                <button onclick="showSection('habits'); closeSidebarMobile();" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" data-section="habits">
+                    <i class="fa-solid fa-heart-pulse w-5 text-center"></i>
+                    <span class="text-sm font-medium">Alışkanlıklar</span>
+                </button>
+                <button onclick="showSection('plans'); closeSidebarMobile();" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" data-section="plans">
+                    <i class="fa-solid fa-calendar-days w-5 text-center"></i>
+                    <span class="text-sm font-medium">Planlar</span>
+                </button>
+                <button onclick="showSection('progress'); closeSidebarMobile();" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" data-section="progress">
+                    <i class="fa-solid fa-chart-line w-5 text-center"></i>
+                    <span class="text-sm font-medium">İlerleme</span>
+                </button>
+                <button onclick="showSection('chat'); closeSidebarMobile();" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" data-section="chat">
+                    <i class="fa-solid fa-robot w-5 text-center"></i>
+                    <span class="text-sm font-medium">AI Asistan</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Glow Divider -->
+        <div class="px-4 pb-2">
+            <div class="glow-divider"></div>
         </div>
 
         <!-- Discipline Badge -->
@@ -997,33 +1583,275 @@
     </aside>
 
     <!-- Main Content -->
-    <main id="main-content" class="flex-1 flex flex-col relative overflow-hidden">
+    <main id="main-content" class="flex-1 flex flex-col relative overflow-hidden max-w-full" style="margin-left: 0;">
         
-        <!-- Mobile Header -->
-        <header class="md:hidden mobile-header p-4 flex items-center justify-between sticky top-0 z-20">
-            <div class="flex items-center gap-2.5">
-                <div class="logo-icon w-8 h-8 rounded-lg">
-                    <i class="fa-solid fa-leaf text-white text-sm"></i>
+        <!-- Mobile Header (visible only on mobile) -->
+        <header class="md:hidden mobile-header p-3 flex items-center justify-between sticky top-0 z-20">
+            <div class="flex items-center gap-2">
+                <button onclick="toggleSidebar()" class="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 transition-all" aria-label="Menüyü aç">
+                    <i class="fa-solid fa-bars text-lg"></i>
+                </button>
+                <div class="flex items-center gap-2">
+                    <div class="logo-icon w-8 h-8 rounded-lg">
+                        <i class="fa-solid fa-leaf text-white text-sm"></i>
+                    </div>
+                    <span class="font-bold text-white font-display text-sm">LifeCoach AI</span>
                 </div>
-                <span class="font-bold text-white font-display">LifeCoach AI</span>
             </div>
-            <button onclick="toggleSidebar()" class="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 transition-all">
-                <i class="fa-solid fa-bars text-sm"></i>
-            </button>
+            <!-- Mobile right side buttons -->
+            <div class="flex items-center gap-1">
+                <button onclick="toggleDarkMode()" class="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 transition-all" title="Tema Değiştir">
+                    <i class="fa-solid ${document.documentElement.classList.contains('dark') ? 'fa-sun' : 'fa-moon'} text-sm"></i>
+                </button>
+            </div>
         </header>
 
         <!-- Chat Container -->
-        <div id="chat-container" class="flex-1 overflow-y-auto p-4 md:p-8 space-y-5">
+        <div id="chat-container" class="flex-1 overflow-y-auto p-4 md:p-8 space-y-5 w-full max-w-full">
             
-            <!-- Welcome Screen -->
-            <div class="flex flex-col items-center justify-center h-full text-center space-y-5" id="welcome-screen">
+            <!-- Dashboard Section -->
+            <div id="section-dashboard" class="section-content hidden">
+                <div class="max-w-4xl mx-auto">
+                    <div class="mb-8">
+                        <h2 class="text-2xl font-bold text-white font-display mb-2">Hoş Geldin! 👋</h2>
+                        <p class="text-slate-400">İşte bugünkü özetini</p>
+                    </div>
+                    
+                    <!-- Stats Grid -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                        <div class="bg-white/5 border border-white/10 rounded-2xl p-4">
+                            <div class="text-2xl font-bold text-teal-400" id="dash-goals">0</div>
+                            <div class="text-xs text-slate-500 mt-1">Aktif Hedefler</div>
+                        </div>
+                        <div class="bg-white/5 border border-white/10 rounded-2xl p-4">
+                            <div class="text-2xl font-bold text-emerald-400" id="dash-habits">0</div>
+                            <div class="text-xs text-slate-500 mt-1">Alışkanlıklar</div>
+                        </div>
+                        <div class="bg-white/5 border border-white/10 rounded-2xl p-4">
+                            <div class="text-2xl font-bold text-amber-400" id="dash-streak">0</div>
+                            <div class="text-xs text-slate-500 mt-1">Günlük Seri</div>
+                        </div>
+                        <div class="bg-white/5 border border-white/10 rounded-2xl p-4">
+                            <div class="text-2xl font-bold text-purple-400" id="dash-score">0</div>
+                            <div class="text-xs text-slate-500 mt-1">Verimlilik</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Actions -->
+                    <div class="grid md:grid-cols-3 gap-4">
+                        <button onclick="showSection('goals');" class="bg-gradient-to-br from-teal-500/20 to-teal-600/10 border border-teal-500/20 rounded-2xl p-5 text-left hover:border-teal-400/50 transition-all group">
+                            <div class="w-10 h-10 rounded-xl bg-teal-500/20 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-bullseye text-teal-400"></i>
+                            </div>
+                            <h3 class="font-semibold text-white mb-1">Yeni Hedef Ekle</h3>
+                            <p class="text-xs text-slate-400">Kendine yeni bir hedef belirle</p>
+                        </button>
+                        <button onclick="showSection('habits');" class="bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 border border-emerald-500/20 rounded-2xl p-5 text-left hover:border-emerald-400/50 transition-all group">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-heart-pulse text-emerald-400"></i>
+                            </div>
+                            <h3 class="font-semibold text-white mb-1">Alışkanlık Oluştur</h3>
+                            <p class="text-xs text-slate-400">Günlük rutinini oluştur</p>
+                        </button>
+                        <button onclick="showSection('chat');" class="bg-gradient-to-br from-purple-500/20 to-purple-600/10 border border-purple-500/20 rounded-2xl p-5 text-left hover:border-purple-400/50 transition-all group">
+                            <div class="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-robot text-purple-400"></i>
+                            </div>
+                            <h3 class="font-semibold text-white mb-1">AI ile Konuş</h3>
+                            <p class="text-xs text-slate-400">Yapay zeka asistanından yardım al</p>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Goals Section -->
+            <div id="section-goals" class="section-content hidden">
+                <div class="max-w-4xl mx-auto">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h2 class="text-2xl font-bold text-white font-display mb-1">Hedeflerim 🎯</h2>
+                            <p class="text-slate-400 text-sm">Hedeflerini oluştur ve takip et</p>
+                        </div>
+                        <button onclick="openGoalModal()" class="btn-primary flex items-center gap-2">
+                            <i class="fa-solid fa-plus text-sm"></i>
+                            <span>Yeni Hedef</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Goal Filters -->
+                    <div class="flex gap-2 mb-6 overflow-x-auto pb-2">
+                        <button onclick="filterGoals('all')" class="goal-filter-btn px-4 py-2 rounded-xl text-sm font-medium bg-teal-500/20 text-teal-400 border border-teal-500/30" data-filter="all">Tümü</button>
+                        <button onclick="filterGoals('daily')" class="goal-filter-btn px-4 py-2 rounded-xl text-sm font-medium bg-white/5 text-slate-400 border border-white/10" data-filter="daily">Günlük</button>
+                        <button onclick="filterGoals('weekly')" class="goal-filter-btn px-4 py-2 rounded-xl text-sm font-medium bg-white/5 text-slate-400 border border-white/10" data-filter="weekly">Haftalık</button>
+                        <button onclick="filterGoals('monthly')" class="goal-filter-btn px-4 py-2 rounded-xl text-sm font-medium bg-white/5 text-slate-400 border border-white/10" data-filter="monthly">Aylık</button>
+                        <button onclick="filterGoals('yearly')" class="goal-filter-btn px-4 py-2 rounded-xl text-sm font-medium bg-white/5 text-slate-400 border border-white/10" data-filter="yearly">Yıllık</button>
+                    </div>
+                    
+                    <!-- Goals List -->
+                    <div id="goals-list" class="space-y-4">
+                        <div class="text-center py-12 text-slate-500">
+                            <i class="fa-solid fa-bullseye text-4xl mb-3 opacity-30"></i>
+                            <p>Henüz hedefin yok</p>
+                            <p class="text-sm mt-1">Yeni bir hedef oluşturarak başla!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Habits Section -->
+            <div id="section-habits" class="section-content hidden">
+                <div class="max-w-4xl mx-auto">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h2 class="text-2xl font-bold text-white font-display mb-1">Alışkanlıklar ❤️</h2>
+                            <p class="text-slate-400 text-sm">Günlük alışkanlıklarını takip et</p>
+                        </div>
+                        <button onclick="openHabitModal()" class="btn-primary flex items-center gap-2">
+                            <i class="fa-solid fa-plus text-sm"></i>
+                            <span>Yeni Alışkanlık</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Habits Stats -->
+                    <div class="grid grid-cols-3 gap-4 mb-6">
+                        <div class="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
+                            <div class="text-xl font-bold text-emerald-400" id="habits-completed-today">0</div>
+                            <div class="text-xs text-slate-500 mt-1">Bugün Tamamlandı</div>
+                        </div>
+                        <div class="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
+                            <div class="text-xl font-bold text-amber-400" id="habits-best-streak">0</div>
+                            <div class="text-xs text-slate-500 mt-1">En İyi Seri</div>
+                        </div>
+                        <div class="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
+                            <div class="text-xl font-bold text-purple-400" id="habits-completion-rate">0%</div>
+                            <div class="text-xs text-slate-500 mt-1">Başarı Oranı</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Habits List -->
+                    <div id="habits-list" class="grid md:grid-cols-2 gap-4">
+                        <div class="md:col-span-2 text-center py-12 text-slate-500">
+                            <i class="fa-solid fa-heart-pulse text-4xl mb-3 opacity-30"></i>
+                            <p>Henüz alışkanlığın yok</p>
+                            <p class="text-sm mt-1">Günlük rutinini oluşturmaya başla!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Plans Section -->
+            <div id="section-plans" class="section-content hidden">
+                <div class="max-w-4xl mx-auto">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h2 class="text-2xl font-bold text-white font-display mb-1">Planlar 📅</h2>
+                            <p class="text-slate-400 text-sm">AI tarafından oluşturulan planlarını görüntüle</p>
+                        </div>
+                        <button onclick="openPlanModal()" class="btn-primary flex items-center gap-2">
+                            <i class="fa-solid fa-plus text-sm"></i>
+                            <span>Yeni Plan</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Plans Tabs -->
+                    <div class="flex gap-2 mb-6 overflow-x-auto pb-2">
+                        <button onclick="filterPlans('all')" class="plan-filter-btn px-4 py-2 rounded-xl text-sm font-medium bg-teal-500/20 text-teal-400 border border-teal-500/30" data-filter="all">Tümü</button>
+                        <button onclick="filterPlans('daily')" class="plan-filter-btn px-4 py-2 rounded-xl text-sm font-medium bg-white/5 text-slate-400 border border-white/10" data-filter="daily">Günlük</button>
+                        <button onclick="filterPlans('weekly')" class="plan-filter-btn px-4 py-2 rounded-xl text-sm font-medium bg-white/5 text-slate-400 border border-white/10" data-filter="weekly">Haftalık</button>
+                        <button onclick="filterPlans('monthly')" class="plan-filter-btn px-4 py-2 rounded-xl text-sm font-medium bg-white/5 text-slate-400 border border-white/10" data-filter="monthly">Aylık</button>
+                    </div>
+                    
+                    <!-- Plans List -->
+                    <div id="plans-list" class="space-y-4">
+                        <div class="text-center py-12 text-slate-500">
+                            <i class="fa-solid fa-calendar-days text-4xl mb-3 opacity-30"></i>
+                            <p>Henüz planın yok</p>
+                            <p class="text-sm mt-1">AI'dan bir plan oluşturmasını iste!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Section -->
+            <div id="section-progress" class="section-content hidden">
+                <div class="max-w-4xl mx-auto">
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-bold text-white font-display mb-1">İlerleme 📊</h2>
+                        <p class="text-slate-400 text-sm">İstatistiklerini ve grafiklerini görüntüle</p>
+                    </div>
+                    
+                    <!-- Productivity Score -->
+                    <div class="bg-gradient-to-br from-teal-500/10 to-emerald-500/10 border border-teal-500/20 rounded-2xl p-6 mb-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-lg font-semibold text-white mb-1">Genel Verimlilik</h3>
+                                <p class="text-sm text-slate-400">Hedefler, alışkanlıklar ve planlar</p>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-4xl font-bold text-teal-400" id="prod-score">0</div>
+                                <div class="text-xs text-slate-500">/ 100</div>
+                            </div>
+                        </div>
+                        <div class="mt-4 h-2 bg-white/10 rounded-full overflow-hidden">
+                            <div id="prod-bar" class="h-full bg-gradient-to-r from-teal-500 to-emerald-500 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Weekly Chart -->
+                    <div class="bg-white/5 border border-white/10 rounded-2xl p-6 mb-6">
+                        <h3 class="text-lg font-semibold text-white mb-4">Haftalık İlerleme</h3>
+                        <div class="h-48 flex items-end justify-between gap-2" id="weekly-chart">
+                            <!-- Chart bars will be inserted by JS -->
+                        </div>
+                    </div>
+                    
+                    <!-- Stats Grid -->
+                    <div class="grid md:grid-cols-3 gap-4">
+                        <div class="bg-white/5 border border-white/10 rounded-xl p-4">
+                            <h4 class="text-sm font-medium text-slate-400 mb-3">Hedefler</h4>
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs text-slate-500">Tamamlandı</span>
+                                <span class="text-sm font-bold text-teal-400" id="goal-completed">0/0</span>
+                            </div>
+                            <div class="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                                <div id="goal-bar" class="h-full bg-teal-500 rounded-full" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="bg-white/5 border border-white/10 rounded-xl p-4">
+                            <h4 class="text-sm font-medium text-slate-400 mb-3">Alışkanlıklar</h4>
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs text-slate-500">Bugün</span>
+                                <span class="text-sm font-bold text-emerald-400" id="habit-today">0/0</span>
+                            </div>
+                            <div class="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                                <div id="habit-bar" class="h-full bg-emerald-500 rounded-full" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="bg-white/5 border border-white/10 rounded-xl p-4">
+                            <h4 class="text-sm font-medium text-slate-400 mb-3">Planlar</h4>
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs text-slate-500">Görevler</span>
+                                <span class="text-sm font-bold text-amber-400" id="plan-tasks">0/0</span>
+                            </div>
+                            <div class="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                                <div id="plan-bar" class="h-full bg-amber-500 rounded-full" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Section (Original) -->
+            <div id="section-chat" class="section-content">
+                <!-- Welcome Screen -->
+                <div class="flex flex-col items-center justify-center h-full text-center space-y-5" id="welcome-screen">
                 <div class="welcome-icon-wrapper">
                     <i class="fa-solid fa-hands-holding-circle text-4xl" style="color: #2DD4BF;"></i>
                 </div>
                 
-                <div class="space-y-2">
+                <div class="space-y-2 px-2">
                     <h2 class="welcome-title">Merhaba, bugün nasılsın?</h2>
-                    <p class="text-slate-400 max-w-md text-sm leading-relaxed">
+                    <p class="text-slate-400 max-w-md text-sm leading-relaxed px-2">
                         Kişisel yaşam koçunuz olarak buradayım. Hedefleriniz, endişeleriniz hakkında<br>veya sadece sohbet etmek için bana yazabilirsiniz.
                     </p>
                 </div>
@@ -1048,7 +1876,8 @@
 
 
             </div>
-        </div>
+            </div>
+            </div>
 
         <!-- Input Area -->
         <div class="input-area">
@@ -1087,8 +1916,8 @@
     </main>
 
     <!-- Settings Modal -->
-    <div id="settings-modal" class="fixed inset-0 modal-overlay hidden items-center justify-center z-50">
-        <div class="modal-card w-full max-w-sm mx-4 p-6">
+    <div id="settings-modal" class="fixed inset-0 modal-overlay hidden items-center justify-center z-50 p-4">
+        <div class="modal-card w-full max-w-sm mx-auto p-6 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-5">
                 <div>
                     <h3 class="text-lg font-bold text-white font-display">Profili Düzenle</h3>
@@ -1122,8 +1951,135 @@
         </div>
     </div>
 
+    <!-- Goal Modal -->
+    <div id="goal-modal" class="fixed inset-0 modal-overlay hidden items-center justify-center z-50 p-4">
+        <div class="modal-card w-full max-w-md mx-auto p-6 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-5">
+                <div>
+                    <h3 class="text-lg font-bold text-white font-display">Yeni Hedef Ekle</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Kendine bir hedef belirle</p>
+                </div>
+                <button onclick="closeGoalModal()" class="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-all">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+            
+            <form id="goal-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Hedef Başlığı</label>
+                    <input type="text" id="goal-title" class="modal-input" placeholder="Örn: Fizik çalışmak" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Hedef Türü</label>
+                    <select id="goal-type" class="modal-input">
+                        <option value="daily">Günlük</option>
+                        <option value="weekly">Haftalık</option>
+                        <option value="monthly">Aylık</option>
+                        <option value="yearly">Yıllık</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Açıklama (İsteğe Bağlı)</label>
+                    <textarea id="goal-description" class="modal-input" rows="2" placeholder="Hedefini detaylı açıkla..."></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Hedef Tarihi (İsteğe Bağlı)</label>
+                    <input type="date" id="goal-date" class="modal-input">
+                </div>
+                <div id="goal-error" class="text-red-400 text-sm hidden bg-red-500/10 border border-red-500/20 rounded-xl p-3"></div>
+                <div class="flex gap-3 pt-1">
+                    <button type="button" onclick="closeGoalModal()" class="btn-secondary flex-1 py-2.5 text-sm font-medium">İptal</button>
+                    <button type="submit" class="btn-primary flex-1 py-2.5 text-sm">Oluştur</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Habit Modal -->
+    <div id="habit-modal" class="fixed inset-0 modal-overlay hidden items-center justify-center z-50 p-4">
+        <div class="modal-card w-full max-w-md mx-auto p-6 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-5">
+                <div>
+                    <h3 class="text-lg font-bold text-white font-display">Yeni Alışkanlık Ekle</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Günlük rutinini oluştur</p>
+                </div>
+                <button onclick="closeHabitModal()" class="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-all">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+            
+            <form id="habit-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Alışkanlık Adı</label>
+                    <input type="text" id="habit-name" class="modal-input" placeholder="Örn: Su içmek" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Açıklama (İsteğe Bağlı)</label>
+                    <textarea id="habit-description" class="modal-input" rows="2" placeholder="Bu alışkanlığı neden oluşturmak istiyorsun?"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">İkon</label>
+                    <div class="flex gap-2 flex-wrap">
+                        <button type="button" onclick="selectHabitIcon('heart')" class="icon-btn w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-red-400 hover:border-red-400/50" data-icon="heart"><i class="fa-solid fa-heart"></i></button>
+                        <button type="button" onclick="selectHabitIcon('dumbbell')" class="icon-btn w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-blue-400 hover:border-blue-400/50" data-icon="dumbbell"><i class="fa-solid fa-dumbbell"></i></button>
+                        <button type="button" onclick="selectHabitIcon('book')" class="icon-btn w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-amber-400 hover:border-amber-400/50" data-icon="book"><i class="fa-solid fa-book"></i></button>
+                        <button type="button" onclick="selectHabitIcon('water')" class="icon-btn w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-cyan-400 hover:border-cyan-400/50" data-icon="water"><i class="fa-solid fa-droplet"></i></button>
+                        <button type="button" onclick="selectHabitIcon('moon')" class="icon-btn w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-purple-400 hover:border-purple-400/50" data-icon="moon"><i class="fa-solid fa-moon"></i></button>
+                        <button type="button" onclick="selectHabitIcon('star')" class="icon-btn w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-yellow-400 hover:border-yellow-400/50" data-icon="star"><i class="fa-solid fa-star"></i></button>
+                    </div>
+                    <input type="hidden" id="habit-icon" value="heart">
+                </div>
+                <div id="habit-error" class="text-red-400 text-sm hidden bg-red-500/10 border border-red-500/20 rounded-xl p-3"></div>
+                <div class="flex gap-3 pt-1">
+                    <button type="button" onclick="closeHabitModal()" class="btn-secondary flex-1 py-2.5 text-sm font-medium">İptal</button>
+                    <button type="submit" class="btn-primary flex-1 py-2.5 text-sm">Oluştur</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Plan Modal -->
+    <div id="plan-modal" class="fixed inset-0 modal-overlay hidden items-center justify-center z-50 p-4">
+        <div class="modal-card w-full max-w-md mx-auto p-6 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-5">
+                <div>
+                    <h3 class="text-lg font-bold text-white font-display">Yeni Plan Oluştur</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">AI'dan plan oluşturmasını isteyebilirsin</p>
+                </div>
+                <button onclick="closePlanModal()" class="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-all">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+            
+            <form id="plan-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Plan Başlığı</label>
+                    <input type="text" id="plan-title" class="modal-input" placeholder="Örn: Haftalık Çalışma Programı" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Plan Türü</label>
+                    <select id="plan-type" class="modal-input">
+                        <option value="daily">Günlük</option>
+                        <option value="weekly">Haftalık</option>
+                        <option value="monthly">Aylık</option>
+                        <option value="project">Proje</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Açıklama</label>
+                    <textarea id="plan-description" class="modal-input" rows="3" placeholder="Plan hakkında detaylar..."></textarea>
+                </div>
+                <div id="plan-error" class="text-red-400 text-sm hidden bg-red-500/10 border border-red-500/20 rounded-xl p-3"></div>
+                <div class="flex gap-3 pt-1">
+                    <button type="button" onclick="closePlanModal()" class="btn-secondary flex-1 py-2.5 text-sm font-medium">İptal</button>
+                    <button type="submit" class="btn-primary flex-1 py-2.5 text-sm">Oluştur</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Toast Container -->
-    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+    <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none max-w-[calc(100vw-32px)]"></div>
 
     <script>
         // Sayfa yüklenirken token kontrolü (zorunlu değil - misafir kullanıcılara izin ver)
@@ -1297,11 +2253,11 @@
                     <div class="auth-section">
                         <div class="space-y-2">
                             <p class="text-xs text-slate-400 text-center mb-2">Geçmişini kaydetmek için giriş yap</p>
-                            <a href="/login.html" class="btn-primary w-full flex items-center justify-center gap-2 text-sm py-2.5 no-underline">
+                            <a href="/login.html" onclick="closeSidebarMobile();" class="btn-primary w-full flex items-center justify-center gap-2 text-sm py-2.5 no-underline">
                                 <i class="fa-solid fa-right-to-bracket text-xs"></i>
                                 <span>Giriş Yap</span>
                             </a>
-                            <a href="/signup.html" class="btn-secondary w-full flex items-center justify-center gap-2 text-sm py-2 no-underline">
+                            <a href="/signup.html" onclick="closeSidebarMobile();" class="btn-secondary w-full flex items-center justify-center gap-2 text-sm py-2 no-underline">
                                 <i class="fa-solid fa-user-plus text-xs"></i>
                                 <span>Kayıt Ol</span>
                             </a>
@@ -1317,7 +2273,7 @@
                                 <i class="fa-solid fa-lock text-slate-500 text-sm"></i>
                             </div>
                             <p class="text-xs text-slate-500 mb-3">Konuşma geçmişini görmek için giriş yapın.</p>
-                            <a href="/login.html" class="text-xs text-teal-400 hover:text-teal-300 underline">Giriş Yap →</a>
+                            <a href="/login.html" onclick="closeSidebarMobile();" class="text-xs text-teal-400 hover:text-teal-300 underline">Giriş Yap →</a>
                         </div>
                     `;
                 }
@@ -1340,31 +2296,56 @@
         function toggleSidebar() {
             const sidebar = document.getElementById('main-sidebar');
             const overlay = document.getElementById('sidebar-overlay');
-            sidebar.classList.toggle('hidden');
-            if (!sidebar.classList.contains('hidden')) {
-                sidebar.classList.add('fixed', 'inset-y-0', 'left-0', 'z-50', 'w-80', 'shadow-2xl', 'flex');
-                sidebar.classList.remove('md:flex'); // Remove md:flex when in mobile fixed mode
-                if (overlay) overlay.classList.remove('hidden');
+            
+            // Check if we're on mobile
+            if (window.innerWidth < 768) {
+                if (sidebar.classList.contains('hidden')) {
+                    // Open sidebar
+                    sidebar.classList.remove('hidden');
+                    if (overlay) {
+                        overlay.classList.remove('hidden');
+                    }
+                    // Prevent body scroll when sidebar is open
+                    document.body.style.overflow = 'hidden';
+                } else {
+                    // Close sidebar
+                    closeSidebarMobile();
+                }
             } else {
-                sidebar.classList.remove('fixed', 'inset-y-0', 'left-0', 'z-50', 'w-80', 'shadow-2xl', 'flex');
-                sidebar.classList.add('md:flex'); // Restore md:flex
-                if (overlay) overlay.classList.add('hidden');
+                // Desktop: just toggle visibility
+                sidebar.classList.toggle('hidden');
             }
         }
 
         function closeSidebarMobile() {
             const sidebar = document.getElementById('main-sidebar');
             const overlay = document.getElementById('sidebar-overlay');
-            // Ekran genişliğinden bağımsız olarak her çağrıldığında kapat
+            
             if (sidebar) {
                 sidebar.classList.add('hidden');
-                sidebar.classList.remove('fixed', 'inset-y-0', 'left-0', 'z-50', 'w-80', 'shadow-2xl', 'flex');
-                sidebar.classList.add('md:flex'); // Restore md:flex
             }
             if (overlay) {
                 overlay.classList.add('hidden');
             }
+            // Restore body scroll
+            document.body.style.overflow = '';
         }
+
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            if (window.innerWidth >= 768) {
+                closeSidebarMobile();
+            }
+            // Reset body overflow on resize
+            document.body.style.overflow = '';
+        });
+
+        // Close sidebar on escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeSidebarMobile();
+            }
+        });
 
         function openSettings() {
             const user = getSafeUser();
@@ -2165,6 +3146,701 @@
                 });
             }
 
+            // ==================== NAVIGATION ====================
+            
+            function showSection(sectionName) {
+                // Hide all sections
+                document.querySelectorAll('.section-content').forEach(el => el.classList.add('hidden'));
+                
+                // Show selected section
+                const section = document.getElementById('section-' + sectionName);
+                if (section) {
+                    section.classList.remove('hidden');
+                    // Scroll to top of content
+                    const mainContent = document.getElementById('main-content');
+                    if (mainContent) {
+                        mainContent.scrollTop = 0;
+                    }
+                    // Also scroll window on mobile
+                    window.scrollTo(0, 0);
+                }
+                
+                // Update nav item active state
+                document.querySelectorAll('.nav-item').forEach(el => {
+                    el.classList.remove('bg-teal-500/20', 'text-teal-400', 'border-teal-500/30');
+                    el.classList.add('text-slate-400');
+                });
+                
+                const activeNav = document.querySelector(`.nav-item[data-section="${sectionName}"]`);
+                if (activeNav) {
+                    activeNav.classList.add('bg-teal-500/20', 'text-teal-400', 'border-teal-500/30');
+                    activeNav.classList.remove('text-slate-400');
+                }
+                
+                // Load data based on section
+                if (sectionName === 'dashboard') loadDashboard();
+                if (sectionName === 'goals') loadGoals();
+                if (sectionName === 'habits') loadHabits();
+                if (sectionName === 'plans') loadPlans();
+                if (sectionName === 'progress') loadProgress();
+                if (sectionName === 'chat') {
+                    // Show welcome screen if no messages
+                    const welcomeScreen = document.getElementById('welcome-screen');
+                    if (welcomeScreen && messageHistory.length === 0) {
+                        welcomeScreen.classList.remove('hidden');
+                    }
+                }
+            }
+
+            // ==================== DASHBOARD ====================
+            
+            async function loadDashboard() {
+                const token = storage.get('token');
+                if (!token) {
+                    document.getElementById('dash-goals').textContent = '0';
+                    document.getElementById('dash-habits').textContent = '0';
+                    document.getElementById('dash-streak').textContent = '0';
+                    document.getElementById('dash-score').textContent = '0';
+                    return;
+                }
+                
+                try {
+                    const [goals, habits, progress] = await Promise.all([
+                        GoalsService.getAll(),
+                        HabitsService.getAll(),
+                        ProgressService.getStats()
+                    ]);
+                    
+                    const activeGoals = goals.filter(g => g.status === 'in-progress').length;
+                    const totalHabits = habits.length;
+                    const bestStreak = Math.max(0, ...habits.map(h => h.streak || 0));
+                    const score = progress?.productivityScore || 0;
+                    
+                    document.getElementById('dash-goals').textContent = activeGoals;
+                    document.getElementById('dash-habits').textContent = totalHabits;
+                    document.getElementById('dash-streak').textContent = bestStreak;
+                    document.getElementById('dash-score').textContent = score;
+                } catch (err) {
+                    console.error('Load dashboard error:', err);
+                }
+            }
+
+            // ==================== GOALS ====================
+            
+            let currentGoals = [];
+            let currentGoalFilter = 'all';
+            
+            async function loadGoals() {
+                const token = storage.get('token');
+                if (!token) {
+                    showToast('Hedefler için giriş yapmalısınız');
+                    return;
+                }
+                
+                try {
+                    currentGoals = await GoalsService.getAll();
+                    renderGoals();
+                } catch (err) {
+                    console.error('Load goals error:', err);
+                    showToast('Hedefler yüklenirken hata oluştu');
+                }
+            }
+            
+            function renderGoals() {
+                const container = document.getElementById('goals-list');
+                
+                const filtered = currentGoalFilter === 'all' 
+                    ? currentGoals 
+                    : currentGoals.filter(g => g.type === currentGoalFilter);
+                
+                if (filtered.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-12 text-slate-500">
+                            <i class="fa-solid fa-bullseye text-4xl mb-3 opacity-30"></i>
+                            <p>Henüz hedefin yok</p>
+                            <p class="text-sm mt-1">Yeni bir hedef oluşturarak başla!</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                container.innerHTML = filtered.map(goal => {
+                    const statusColor = goal.status === 'completed' ? 'text-emerald-400' : 
+                                       goal.status === 'paused' ? 'text-amber-400' : 'text-teal-400';
+                    const typeLabel = { daily: 'Günlük', weekly: 'Haftalık', monthly: 'Aylık', yearly: 'Yıllık' }[goal.type];
+                    
+                    return `
+                        <div class="bg-white/5 border border-white/10 rounded-2xl p-5 animate-fade-in-up">
+                            <div class="flex items-start justify-between mb-3">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <span class="text-xs px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-400">${typeLabel}</span>
+                                        <span class="text-xs ${statusColor}">${goal.status === 'completed' ? 'Tamamlandı' : goal.status === 'paused' ? 'Duraklatıldı' : 'Devam Ediyor'}</span>
+                                    </div>
+                                    <h3 class="text-white font-semibold">${escapeHTML(goal.title)}</h3>
+                                    ${goal.description ? `<p class="text-sm text-slate-400 mt-1">${escapeHTML(goal.description)}</p>` : ''}
+                                </div>
+                                <div class="flex gap-1">
+                                    <button onclick="editGoal('${goal.id}')" class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10">
+                                        <i class="fa-solid fa-pen text-xs"></i>
+                                    </button>
+                                    <button onclick="deleteGoal('${goal.id}')" class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-400 hover:text-red-400 hover:bg-red-500/10">
+                                        <i class="fa-solid fa-trash text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <div class="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
+                                    <div class="h-full bg-gradient-to-r from-teal-500 to-emerald-500 rounded-full transition-all" style="width: ${goal.progress}%"></div>
+                                </div>
+                                <span class="text-sm font-bold text-teal-400">${goal.progress}%</span>
+                            </div>
+                            <div class="mt-3 flex gap-2">
+                                <input type="range" min="0" max="100" value="${goal.progress}" 
+                                    onchange="updateGoalProgress('${goal.id}', this.value)"
+                                    class="flex-1 h-1 bg-white/10 rounded-lg appearance-none cursor-pointer">
+                                ${goal.status !== 'completed' ? `
+                                    <button onclick="completeGoal('${goal.id}')" class="px-3 py-1 text-xs bg-emerald-500/20 text-emerald-400 rounded-lg hover:bg-emerald-500/30">
+                                        Tamamla
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+            
+            function filterGoals(filter) {
+                currentGoalFilter = filter;
+                
+                document.querySelectorAll('.goal-filter-btn').forEach(btn => {
+                    btn.classList.remove('bg-teal-500/20', 'text-teal-400', 'border-teal-500/30');
+                    btn.classList.add('bg-white/5', 'text-slate-400', 'border-white/10');
+                });
+                
+                const activeBtn = document.querySelector(`.goal-filter-btn[data-filter="${filter}"]`);
+                activeBtn.classList.add('bg-teal-500/20', 'text-teal-400', 'border-teal-500/30');
+                activeBtn.classList.remove('bg-white/5', 'text-slate-400', 'border-white/10');
+                
+                renderGoals();
+            }
+            
+            function openGoalModal() {
+                document.getElementById('goal-form').reset();
+                document.getElementById('goal-error').classList.add('hidden');
+                document.getElementById('goal-modal').classList.remove('hidden');
+                document.getElementById('goal-modal').classList.add('flex');
+            }
+            
+            function closeGoalModal() {
+                document.getElementById('goal-modal').classList.add('hidden');
+                document.getElementById('goal-modal').classList.remove('flex');
+            }
+            
+            async function updateGoalProgress(goalId, progress) {
+                try {
+                    await GoalsService.updateProgress(goalId, parseInt(progress));
+                    loadGoals();
+                    showToast('Hedef güncellendi!');
+                } catch (err) {
+                    showToast('Hata: ' + err.message);
+                }
+            }
+            
+            async function completeGoal(goalId) {
+                try {
+                    await GoalsService.completeGoal(goalId);
+                    loadGoals();
+                    showToast('Tebrikler! Hedef tamamlandı! 🎉');
+                } catch (err) {
+                    showToast('Hata: ' + err.message);
+                }
+            }
+            
+            async function deleteGoal(goalId) {
+                if (!confirm('Bu hedefi silmek istediğinizden emin misiniz?')) return;
+                
+                try {
+                    await GoalsService.delete(goalId);
+                    loadGoals();
+                    showToast('Hedef silindi');
+                } catch (err) {
+                    showToast('Hata: ' + err.message);
+                }
+            }
+            
+            function editGoal(goalId) {
+                const goal = currentGoals.find(g => g.id === goalId);
+                if (!goal) return;
+                
+                document.getElementById('goal-title').value = goal.title;
+                document.getElementById('goal-type').value = goal.type;
+                document.getElementById('goal-description').value = goal.description || '';
+                document.getElementById('goal-date').value = goal.targetDate || '';
+                
+                openGoalModal();
+            }
+            
+            // Goal form submit
+            document.getElementById('goal-form')?.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const title = document.getElementById('goal-title').value.trim();
+                const type = document.getElementById('goal-type').value;
+                const description = document.getElementById('goal-description').value.trim();
+                const targetDate = document.getElementById('goal-date').value;
+                
+                try {
+                    await GoalsService.create({ title, type, description, targetDate });
+                    closeGoalModal();
+                    loadGoals();
+                    showToast('Hedef oluşturuldu! 🎯');
+                } catch (err) {
+                    document.getElementById('goal-error').textContent = err.message;
+                    document.getElementById('goal-error').classList.remove('hidden');
+                }
+            });
+
+            // ==================== HABITS ====================
+            
+            let currentHabits = [];
+            
+            async function loadHabits() {
+                const token = storage.get('token');
+                if (!token) {
+                    showToast('Alışkanlıklar için giriş yapmalısınız');
+                    return;
+                }
+                
+                try {
+                    currentHabits = await HabitsService.getAll();
+                    renderHabits();
+                } catch (err) {
+                    console.error('Load habits error:', err);
+                    showToast('Alışkanlıklar yüklenirken hata oluştu');
+                }
+            }
+            
+            function renderHabits() {
+                const container = document.getElementById('habits-list');
+                
+                if (currentHabits.length === 0) {
+                    container.innerHTML = `
+                        <div class="md:col-span-2 text-center py-12 text-slate-500">
+                            <i class="fa-solid fa-heart-pulse text-4xl mb-3 opacity-30"></i>
+                            <p>Henüz alışkanlığın yok</p>
+                            <p class="text-sm mt-1">Günlük rutinini oluşturmaya başla!</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                const today = new Date().toISOString().split('T')[0];
+                const completedToday = currentHabits.filter(h => h.completedToday).length;
+                const bestStreak = Math.max(0, ...currentHabits.map(h => h.streak || 0));
+                const completionRate = currentHabits.length > 0 
+                    ? Math.round((completedToday / currentHabits.length) * 100) 
+                    : 0;
+                
+                document.getElementById('habits-completed-today').textContent = completedToday;
+                document.getElementById('habits-best-streak').textContent = bestStreak;
+                document.getElementById('habits-completion-rate').textContent = completionRate + '%';
+                
+                const iconMap = {
+                    heart: 'fa-heart',
+                    dumbbell: 'fa-dumbbell',
+                    book: 'fa-book',
+                    water: 'fa-droplet',
+                    moon: 'fa-moon',
+                    star: 'fa-star'
+                };
+                
+                container.innerHTML = currentHabits.map(habit => {
+                    const iconClass = iconMap[habit.icon] || 'fa-star';
+                    const isCompleted = habit.completedToday;
+                    
+                    return `
+                        <div class="bg-white/5 border border-white/10 rounded-2xl p-5 animate-fade-in-up ${isCompleted ? 'opacity-60' : ''}">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center gap-3">
+                                    <button onclick="toggleHabit('${habit.id}')" 
+                                        class="w-12 h-12 rounded-xl flex items-center justify-center text-xl transition-all
+                                        ${isCompleted 
+                                            ? 'bg-emerald-500/30 text-emerald-400' 
+                                            : 'bg-white/5 text-slate-400 hover:bg-white/10'}">
+                                        <i class="fa-solid ${iconClass}"></i>
+                                    </button>
+                                    <div>
+                                        <h3 class="text-white font-semibold">${escapeHTML(habit.name)}</h3>
+                                        ${habit.description ? `<p class="text-xs text-slate-400">${escapeHTML(habit.description)}</p>` : ''}
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-amber-400 text-sm font-bold">
+                                        <i class="fa-solid fa-fire mr-1"></i>${habit.streak || 0}
+                                    </span>
+                                    <button onclick="deleteHabit('${habit.id}')" class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-400 hover:text-red-400 hover:bg-red-500/10">
+                                        <i class="fa-solid fa-trash text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+            
+            function openHabitModal() {
+                document.getElementById('habit-form').reset();
+                document.getElementById('habit-error').classList.add('hidden');
+                document.getElementById('habit-icon').value = 'heart';
+                document.querySelectorAll('.icon-btn').forEach(btn => {
+                    btn.classList.remove('border-red-400/50', 'border-blue-400/50', 'border-amber-400/50', 'border-cyan-400/50', 'border-purple-400/50', 'border-yellow-400/50');
+                    btn.classList.add('border-white/10');
+                });
+                document.querySelector('.icon-btn[data-icon="heart"]').classList.add('border-red-400/50');
+                document.querySelector('.icon-btn[data-icon="heart"]').classList.remove('border-white/10');
+                document.getElementById('habit-modal').classList.remove('hidden');
+                document.getElementById('habit-modal').classList.add('flex');
+            }
+            
+            function closeHabitModal() {
+                document.getElementById('habit-modal').classList.add('hidden');
+                document.getElementById('habit-modal').classList.remove('flex');
+            }
+            
+            function selectHabitIcon(icon) {
+                document.getElementById('habit-icon').value = icon;
+                document.querySelectorAll('.icon-btn').forEach(btn => {
+                    btn.classList.remove('border-red-400/50', 'border-blue-400/50', 'border-amber-400/50', 'border-cyan-400/50', 'border-purple-400/50', 'border-yellow-400/50');
+                    btn.classList.add('border-white/10');
+                });
+                const activeBtn = document.querySelector(`.icon-btn[data-icon="${icon}"]`);
+                const colors = { heart: 'red', dumbbell: 'blue', book: 'amber', water: 'cyan', moon: 'purple', star: 'yellow' };
+                activeBtn.classList.add(`border-${colors[icon]}-400/50`);
+                activeBtn.classList.remove('border-white/10');
+            }
+            
+            async function toggleHabit(habitId) {
+                try {
+                    await HabitsService.toggle(habitId);
+                    loadHabits();
+                } catch (err) {
+                    showToast('Hata: ' + err.message);
+                }
+            }
+            
+            async function deleteHabit(habitId) {
+                if (!confirm('Bu alışkanlığı silmek istediğinizden emin misiniz?')) return;
+                
+                try {
+                    await HabitsService.delete(habitId);
+                    loadHabits();
+                    showToast('Alışkanlık silindi');
+                } catch (err) {
+                    showToast('Hata: ' + err.message);
+                }
+            }
+            
+            // Habit form submit
+            document.getElementById('habit-form')?.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const name = document.getElementById('habit-name').value.trim();
+                const description = document.getElementById('habit-description').value.trim();
+                const icon = document.getElementById('habit-icon').value;
+                
+                try {
+                    await HabitsService.create({ name, description, icon });
+                    closeHabitModal();
+                    loadHabits();
+                    showToast('Alışkanlık oluşturuldu! ❤️');
+                } catch (err) {
+                    document.getElementById('habit-error').textContent = err.message;
+                    document.getElementById('habit-error').classList.remove('hidden');
+                }
+            });
+
+            // ==================== PLANS ====================
+            
+            let currentPlans = [];
+            let currentPlanFilter = 'all';
+            
+            async function loadPlans() {
+                const token = storage.get('token');
+                if (!token) {
+                    showToast('Planlar için giriş yapmalısınız');
+                    return;
+                }
+                
+                try {
+                    currentPlans = await PlansService.getAll();
+                    renderPlans();
+                } catch (err) {
+                    console.error('Load plans error:', err);
+                    showToast('Planlar yüklenirken hata oluştu');
+                }
+            }
+            
+            function renderPlans() {
+                const container = document.getElementById('plans-list');
+                
+                const filtered = currentPlanFilter === 'all' 
+                    ? currentPlans 
+                    : currentPlans.filter(p => p.type === currentPlanFilter);
+                
+                if (filtered.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-12 text-slate-500">
+                            <i class="fa-solid fa-calendar-days text-4xl mb-3 opacity-30"></i>
+                            <p>Henüz planın yok</p>
+                            <p class="text-sm mt-1">AI'dan bir plan oluşturmasını iste!</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                container.innerHTML = filtered.map(plan => {
+                    const typeLabel = { daily: 'Günlük', weekly: 'Haftalık', monthly: 'Aylık', project: 'Proje' }[plan.type];
+                    const completedTasks = plan.tasks?.filter(t => t.status === 'completed').length || 0;
+                    const totalTasks = plan.tasks?.length || 0;
+                    const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+                    
+                    return `
+                        <div class="bg-white/5 border border-white/10 rounded-2xl p-5 animate-fade-in-up">
+                            <div class="flex items-start justify-between mb-4">
+                                <div>
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <span class="text-xs px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400">${typeLabel}</span>
+                                        ${plan.aiGenerated ? '<span class="text-xs px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-400">AI</span>' : ''}
+                                    </div>
+                                    <h3 class="text-white font-semibold">${escapeHTML(plan.title)}</h3>
+                                    ${plan.description ? `<p class="text-sm text-slate-400 mt-1">${escapeHTML(plan.description)}</p>` : ''}
+                                </div>
+                                <button onclick="deletePlan('${plan.id}')" class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-400 hover:text-red-400 hover:bg-red-500/10">
+                                    <i class="fa-solid fa-trash text-xs"></i>
+                                </button>
+                            </div>
+                            
+                            ${plan.tasks && plan.tasks.length > 0 ? `
+                                <div class="table-scroll-wrapper">
+                                    <table class="ai-plan-table">
+                                        <thead>
+                                            <tr>
+                                                <th class="time-column">Saat</th>
+                                                <th class="task-column">Görev</th>
+                                                <th>Öncelik</th>
+                                                <th>Durum</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${plan.tasks.map(task => `
+                                                <tr>
+                                                    <td class="time-column">${task.time || '-'}</td>
+                                                    <td class="task-column" title="${escapeHTML(task.task)}">${escapeHTML(task.task)}</td>
+                                                    <td>
+                                                        <span class="priority-badge ${task.priority === 'High' ? 'priority-high' : task.priority === 'Medium' ? 'priority-medium' : 'priority-low'}">
+                                                            ${task.priority === 'High' ? 'Yüksek' : task.priority === 'Medium' ? 'Orta' : 'Düşük'}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <button onclick="toggleTask('${plan.id}', '${task.id}')" 
+                                                            class="status-badge ${task.status === 'completed' ? 'status-completed' : 'status-pending'}">
+                                                            ${task.status === 'completed' ? 'Tamamlandı' : 'Bekliyor'}
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="mt-4 flex items-center gap-3">
+                                    <div class="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
+                                        <div class="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all" style="width: ${progress}%"></div>
+                                    </div>
+                                    <span class="text-sm font-bold text-purple-400">${completedTasks}/${totalTasks}</span>
+                                </div>
+                            ` : '<p class="text-sm text-slate-500">Görev yok</p>'}}
+                        </div>
+                    `;
+                }).join('');
+            }
+            
+            function filterPlans(filter) {
+                currentPlanFilter = filter;
+                
+                document.querySelectorAll('.plan-filter-btn').forEach(btn => {
+                    btn.classList.remove('bg-teal-500/20', 'text-teal-400', 'border-teal-500/30');
+                    btn.classList.add('bg-white/5', 'text-slate-400', 'border-white/10');
+                });
+                
+                const activeBtn = document.querySelector(`.plan-filter-btn[data-filter="${filter}"]`);
+                activeBtn.classList.add('bg-teal-500/20', 'text-teal-400', 'border-teal-500/30');
+                activeBtn.classList.remove('bg-white/5', 'text-slate-400', 'border-white/10');
+                
+                renderPlans();
+            }
+            
+            function openPlanModal() {
+                document.getElementById('plan-form').reset();
+                document.getElementById('plan-error').classList.add('hidden');
+                document.getElementById('plan-modal').classList.remove('hidden');
+                document.getElementById('plan-modal').classList.add('flex');
+            }
+            
+            function closePlanModal() {
+                document.getElementById('plan-modal').classList.add('hidden');
+                document.getElementById('plan-modal').classList.remove('flex');
+            }
+            
+            async function toggleTask(planId, taskId) {
+                const plan = currentPlans.find(p => p.id === planId);
+                const task = plan?.tasks?.find(t => t.id === taskId);
+                if (!task) return;
+                
+                const newStatus = task.status === 'completed' ? 'pending' : 'completed';
+                
+                try {
+                    await PlansService.updateTask(planId, taskId, newStatus);
+                    loadPlans();
+                } catch (err) {
+                    showToast('Hata: ' + err.message);
+                }
+            }
+            
+            async function deletePlan(planId) {
+                if (!confirm('Bu planı silmek istediğinizden emin misiniz?')) return;
+                
+                try {
+                    await PlansService.delete(planId);
+                    loadPlans();
+                    showToast('Plan silindi');
+                } catch (err) {
+                    showToast('Hata: ' + err.message);
+                }
+            }
+            
+            // Plan form submit
+            document.getElementById('plan-form')?.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const title = document.getElementById('plan-title').value.trim();
+                const type = document.getElementById('plan-type').value;
+                const description = document.getElementById('plan-description').value.trim();
+                
+                try {
+                    await PlansService.create({ title, type, description, tasks: [], aiGenerated: false });
+                    closePlanModal();
+                    loadPlans();
+                    showToast('Plan oluşturuldu! 📅');
+                } catch (err) {
+                    document.getElementById('plan-error').textContent = err.message;
+                    document.getElementById('plan-error').classList.remove('hidden');
+                }
+            });
+
+            // ==================== PROGRESS ====================
+            
+            async function loadProgress() {
+                const token = storage.get('token');
+                if (!token) {
+                    showToast('İlerleme için giriş yapmalısınız');
+                    return;
+                }
+                
+                try {
+                    const stats = await ProgressService.getStats();
+                    if (!stats) return;
+                    
+                    // Productivity score
+                    const score = stats.productivityScore || 0;
+                    document.getElementById('prod-score').textContent = score;
+                    document.getElementById('prod-bar').style.width = score + '%';
+                    
+                    // Weekly chart
+                    const weeklyData = stats.weekly || [];
+                    const chartContainer = document.getElementById('weekly-chart');
+                    const maxProgress = Math.max(...weeklyData.map(d => d.progress), 1);
+                    
+                    chartContainer.innerHTML = weeklyData.map(day => {
+                        const height = Math.max(10, (day.progress / 100) * 180);
+                        return `
+                            <div class="flex-1 flex flex-col items-center gap-2">
+                                <div class="w-full bg-white/5 rounded-lg relative" style="height: 180px;">
+                                    <div class="absolute bottom-0 w-full bg-gradient-to-t from-teal-500 to-emerald-500 rounded-lg transition-all" style="height: ${height}px; opacity: ${day.progress > 0 ? 1 : 0.3}"></div>
+                                </div>
+                                <span class="text-xs text-slate-500">${day.day}</span>
+                            </div>
+                        `;
+                    }).join('');
+                    
+                    // Goal stats
+                    const goalStats = stats.goals || {};
+                    document.getElementById('goal-completed').textContent = `${goalStats.completed || 0}/${goalStats.total || 0}`;
+                    document.getElementById('goal-bar').style.width = (goalStats.completionRate || 0) + '%';
+                    
+                    // Habit stats
+                    const habitStats = stats.habits || {};
+                    document.getElementById('habit-today').textContent = `${habitStats.completedToday || 0}/${habitStats.total || 0}`;
+                    document.getElementById('habit-bar').style.width = (habitStats.completionRate || 0) + '%';
+                    
+                    // Plan stats
+                    const planStats = stats.plans || {};
+                    document.getElementById('plan-tasks').textContent = `${planStats.completedTasks || 0}/${planStats.totalTasks || 0}`;
+                    document.getElementById('plan-bar').style.width = (planStats.completionRate || 0) + '%';
+                    
+                } catch (err) {
+                    console.error('Load progress error:', err);
+                    showToast('İlerleme yüklenirken hata oluştu');
+                }
+            }
+
+            // ==================== UTILITIES ====================
+            
+            function escapeHTML(str) {
+                if (!str) return '';
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
+            
+            // Load services script
+            const servicesScript = document.createElement('script');
+            servicesScript.src = '/lifeCoachServices.js';
+            document.head.appendChild(servicesScript);
+            
+            // Make navigation function globally accessible
+            window.showSection = showSection;
+            
+            // Make other functions globally accessible for onclick handlers
+            window.closeSidebarMobile = closeSidebarMobile;
+            window.toggleSidebar = toggleSidebar;
+            window.startNewChat = startNewChat;
+            window.exportChat = exportChat;
+            window.loadSession = loadSession;
+            window.deleteSession = deleteSession;
+            window.handleCheckIn = handleCheckIn;
+            window.openSettings = openSettings;
+            window.closeSettings = closeSettings;
+            window.logout = logout;
+            window.openGoalModal = openGoalModal;
+            window.closeGoalModal = closeGoalModal;
+            window.openHabitModal = openHabitModal;
+            window.closeHabitModal = closeHabitModal;
+            window.openPlanModal = openPlanModal;
+            window.closePlanModal = closePlanModal;
+            window.filterGoals = filterGoals;
+            window.filterPlans = filterPlans;
+            window.selectHabitIcon = selectHabitIcon;
+            window.toggleHabit = toggleHabit;
+            window.toggleTask = toggleTask;
+            window.updateGoalProgress = updateGoalProgress;
+            window.completeGoal = completeGoal;
+            window.deleteGoal = deleteGoal;
+            window.deleteHabit = deleteHabit;
+            window.deletePlan = deletePlan;
+            window.editGoal = editGoal;
+            window.toggleDarkMode = toggleDarkMode;
+            
             checkAuth();
         });
     </script>
