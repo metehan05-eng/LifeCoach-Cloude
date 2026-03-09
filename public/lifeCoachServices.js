@@ -1,6 +1,6 @@
 // LifeCoach Services - Frontend API Integration
 
-const storage = {
+var storage = {
     get: (key) => { 
         try { return localStorage.getItem(key); } 
         catch(e) { return null; } 
