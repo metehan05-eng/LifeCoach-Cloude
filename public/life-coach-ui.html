@@ -1633,6 +1633,18 @@
                     <i class="fa-solid fa-robot w-5 text-center"></i>
                     <span class="text-sm font-medium">AI Asistan</span>
                 </button>
+                <button onclick="showSection('focus'); closeSidebarMobile();" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" data-section="focus">
+                    <i class="fa-solid fa-stopwatch w-5 text-center"></i>
+                    <span class="text-sm font-medium">Odak Modu</span>
+                </button>
+                <button onclick="showSection('reflection'); closeSidebarMobile();" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" data-section="reflection">
+                    <i class="fa-solid fa-pen-fancy w-5 text-center"></i>
+                    <span class="text-sm font-medium">Yansıma</span>
+                </button>
+                <button onclick="showSection('coach'); closeSidebarMobile();" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" data-section="coach">
+                    <i class="fa-solid fa-brain w-5 text-center"></i>
+                    <span class="text-sm font-medium">Smart Coach</span>
+                </button>
             </div>
         </div>
 
@@ -1959,6 +1971,191 @@
                             <div class="h-1.5 bg-white/10 rounded-full overflow-hidden">
                                 <div id="plan-bar" class="h-full bg-amber-500 rounded-full" style="width: 0%"></div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Focus Mode Section -->
+            <div id="section-focus" class="section-content hidden flex-col">
+                <div class="max-w-4xl mx-auto w-full">
+                    <div class="mb-8">
+                        <h2 class="text-3xl font-bold text-white font-display mb-2">Odak Modu 🎯</h2>
+                        <p class="text-slate-400 text-sm">Derin çalışma seansları ile verimliliğini artır</p>
+                    </div>
+                    
+                    <!-- Timer Display -->
+                    <div class="bg-gradient-to-br from-teal-500/10 to-cyan-500/10 border border-teal-500/20 rounded-2xl p-8 mb-6 text-center">
+                        <div id="focus-timer" class="text-7xl font-bold text-white font-display mb-4">25:00</div>
+                        <div id="focus-status" class="text-slate-400 text-sm mb-6">Hazır</div>
+                        <div class="flex justify-center gap-4">
+                            <button id="focus-start-btn" onclick="startFocusSession()" class="btn-primary px-8 py-3 text-lg">
+                                <i class="fa-solid fa-play mr-2"></i>Başla
+                            </button>
+                            <button id="focus-pause-btn" onclick="pauseFocusSession()" class="btn-secondary px-8 py-3 text-lg hidden">
+                                <i class="fa-solid fa-pause mr-2"></i>Duraklat
+                            </button>
+                            <button id="focus-resume-btn" onclick="resumeFocusSession()" class="btn-primary px-8 py-3 text-lg hidden">
+                                <i class="fa-solid fa-play mr-2"></i>Devam Et
+                            </button>
+                            <button id="focus-stop-btn" onclick="stopFocusSession()" class="btn-secondary px-8 py-3 text-lg hidden">
+                                <i class="fa-solid fa-stop mr-2"></i>Durdur
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Timer Options -->
+                    <div class="grid grid-cols-3 gap-4 mb-6">
+                        <button onclick="setFocusDuration(25)" class="focus-duration-btn bg-white/5 border border-white/10 rounded-xl p-4 text-center hover:border-teal-500/50 transition-all" data-duration="25">
+                            <div class="text-2xl font-bold text-white">25</div>
+                            <div class="text-xs text-slate-500">Dakika</div>
+                        </button>
+                        <button onclick="setFocusDuration(50)" class="focus-duration-btn bg-white/5 border border-white/10 rounded-xl p-4 text-center hover:border-teal-500/50 transition-all" data-duration="50">
+                            <div class="text-2xl font-bold text-white">50</div>
+                            <div class="text-xs text-slate-500">Dakika</div>
+                        </button>
+                        <button onclick="setFocusDuration(90)" class="focus-duration-btn bg-white/5 border border-white/10 rounded-xl p-4 text-center hover:border-teal-500/50 transition-all" data-duration="90">
+                            <div class="text-2xl font-bold text-white">90</div>
+                            <div class="text-xs text-slate-500">Dakika</div>
+                        </button>
+                    </div>
+                    
+                    <!-- Focus Stats -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
+                            <div class="text-2xl font-bold text-teal-400" id="focus-today-sessions">0</div>
+                            <div class="text-xs text-slate-500 mt-1">Bugünkü Seans</div>
+                        </div>
+                        <div class="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
+                            <div class="text-2xl font-bold text-cyan-400" id="focus-today-minutes">0</div>
+                            <div class="text-xs text-slate-500 mt-1">Dakika</div>
+                        </div>
+                        <div class="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
+                            <div class="text-2xl font-bold text-emerald-400" id="focus-weekly-minutes">0</div>
+                            <div class="text-xs text-slate-500 mt-1">Haftalık</div>
+                        </div>
+                        <div class="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
+                            <div class="text-2xl font-bold text-amber-400" id="focus-streak">0</div>
+                            <div class="text-xs text-slate-500 mt-1">Seri</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Sessions -->
+                    <div class="bg-white/5 border border-white/10 rounded-xl p-4">
+                        <h3 class="text-lg font-semibold text-white mb-4">Son Seanslar</h3>
+                        <div id="focus-sessions-list" class="space-y-2">
+                            <p class="text-slate-500 text-sm text-center py-4">Henüz seans yok</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reflection Section -->
+            <div id="section-reflection" class="section-content hidden flex-col">
+                <div class="max-w-4xl mx-auto w-full">
+                    <div class="mb-8">
+                        <h2 class="text-3xl font-bold text-white font-display mb-2">Yansıma 📝</h2>
+                        <p class="text-slate-400 text-sm">Kendini düşün, büyü</p>
+                    </div>
+                    
+                    <!-- Today's Reflection Card -->
+                    <div class="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20 rounded-2xl p-6 mb-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-semibold text-white">Bugünkü Yansıman</h3>
+                            <span id="reflection-streak" class="text-amber-400 text-sm">
+                                <i class="fa-solid fa-fire mr-1"></i>0 gün seri
+                            </span>
+                        </div>
+                        
+                        <div id="today-reflection-form" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Bugün en büyük başarın neydi?</label>
+                                <textarea id="reflection-achievement" class="modal-input" rows="2" placeholder="Bugün başardığım en önemli şey..."></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Neyi geliştirebilirsin?</label>
+                                <textarea id="reflection-improvement" class="modal-input" rows="2" placeholder="Yarın daha iyi yapabileceğim şeyler..."></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Yarın ne yapmak istiyorsun?</label>
+                                <textarea id="reflection-tomorrow" class="modal-input" rows="2" placeholder="Yarın için hedeflerim..."></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Genel Duygu</label>
+                                <div class="flex gap-2">
+                                    <button onclick="selectMood('great')" class="mood-btn flex-1 py-3 rounded-xl bg-white/5 border border-white/10 hover:border-purple-500/50 transition-all" data-mood="great">
+                                        <i class="fa-solid fa-face-grin-stars text-yellow-400 text-xl"></i>
+                                        <div class="text-xs mt-1">Harika</div>
+                                    </button>
+                                    <button onclick="selectMood('good')" class="mood-btn flex-1 py-3 rounded-xl bg-white/5 border border-white/10 hover:border-purple-500/50 transition-all" data-mood="good">
+                                        <i class="fa-solid fa-face-smile text-green-400 text-xl"></i>
+                                        <div class="text-xs mt-1">İyi</div>
+                                    </button>
+                                    <button onclick="selectMood('okay')" class="mood-btn flex-1 py-3 rounded-xl bg-white/5 border border-white/10 hover:border-purple-500/50 transition-all" data-mood="okay">
+                                        <i class="fa-solid fa-face-meh text-slate-400 text-xl"></i>
+                                        <div class="text-xs mt-1">Normal</div>
+                                    </button>
+                                    <button onclick="selectMood('bad')" class="mood-btn flex-1 py-3 rounded-xl bg-white/5 border border-white/10 hover:border-purple-500/50 transition-all" data-mood="bad">
+                                        <i class="fa-solid fa-face-frown text-orange-400 text-xl"></i>
+                                        <div class="text-xs mt-1">Kötü</div>
+                                    </button>
+                                </div>
+                            </div>
+                            <input type="hidden" id="reflection-mood" value="">
+                            <button onclick="saveReflection()" class="btn-primary w-full py-3">
+                                <i class="fa-solid fa-save mr-2"></i>Yansımayı Kaydet
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Past Reflections -->
+                    <div class="bg-white/5 border border-white/10 rounded-xl p-4">
+                        <h3 class="text-lg font-semibold text-white mb-4">Geçmiş Yansımalar</h3>
+                        <div id="reflections-list" class="space-y-3">
+                            <p class="text-slate-500 text-sm text-center py-4">Henüz yansıma yok</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Smart Coach Section -->
+            <div id="section-coach" class="section-content hidden flex-col">
+                <div class="max-w-4xl mx-auto w-full">
+                    <div class="mb-8">
+                        <h2 class="text-3xl font-bold text-white font-display mb-2">Smart Coach 🧠</h2>
+                        <p class="text-slate-400 text-sm">Kişisel yapay zeka koçun</p>
+                    </div>
+                    
+                    <!-- Score Display -->
+                    <div class="bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-2xl p-6 mb-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 class="text-lg font-semibold text-white">Verimlilik Puanın</h3>
+                                <p class="text-sm text-slate-400">Yapay zeka tarafından hesaplandı</p>
+                            </div>
+                            <div class="text-right">
+                                <div id="coach-score" class="text-5xl font-bold text-amber-400">0</div>
+                                <div id="coach-grade" class="text-sm text-slate-400">/ 100</div>
+                            </div>
+                        </div>
+                        <div class="h-3 bg-white/10 rounded-full overflow-hidden">
+                            <div id="coach-progress-bar" class="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                        </div>
+                        <div id="coach-summary" class="mt-4 text-slate-300 text-sm"></div>
+                    </div>
+                    
+                    <!-- Insights -->
+                    <div class="space-y-4 mb-6" id="coach-insights">
+                        <!-- Insights will be loaded dynamically -->
+                    </div>
+                    
+                    <!-- AI Recommendations -->
+                    <div class="bg-white/5 border border-white/10 rounded-xl p-4">
+                        <h3 class="text-lg font-semibold text-white mb-4">
+                            <i class="fa-solid fa-lightbulb text-amber-400 mr-2"></i>Öneriler
+                        </h3>
+                        <div id="recommendations-list" class="space-y-3">
+                            <p class="text-slate-500 text-sm text-center py-4">Öneriler yükleniyor...</p>
                         </div>
                     </div>
                 </div>
@@ -3329,6 +3526,9 @@
                 if (sectionName === 'habits') loadHabits();
                 if (sectionName === 'plans') loadPlans();
                 if (sectionName === 'progress') loadProgress();
+                if (sectionName === 'focus') loadFocusSessions();
+                if (sectionName === 'reflection') loadReflections();
+                if (sectionName === 'coach') loadSmartCoach();
                 if (sectionName === 'chat') {
                     // Show welcome screen if no messages
                     const welcomeScreen = document.getElementById('welcome-screen');
@@ -3937,6 +4137,383 @@
                 } catch (err) {
                     console.error('Load progress error:', err);
                     showToast('İlerleme yüklenirken hata oluştu');
+                }
+            }
+
+            // ==================== FOCUS MODE ====================
+            
+            let focusTimer = null;
+            let focusTimeLeft = 25 * 60; // seconds
+            let focusDuration = 25;
+            let focusState = 'idle'; // idle, running, paused
+            let focusSessionId = null;
+            
+            function setFocusDuration(minutes) {
+                if (focusState !== 'idle') return;
+                focusDuration = minutes;
+                focusTimeLeft = minutes * 60;
+                updateFocusTimerDisplay();
+                
+                // Update UI
+                document.querySelectorAll('.focus-duration-btn').forEach(btn => {
+                    if (parseInt(btn.dataset.duration) === minutes) {
+                        btn.classList.add('border-teal-500', 'bg-teal-500/20');
+                    } else {
+                        btn.classList.remove('border-teal-500', 'bg-teal-500/20');
+                    }
+                });
+            }
+            
+            function updateFocusTimerDisplay() {
+                const minutes = Math.floor(focusTimeLeft / 60);
+                const seconds = focusTimeLeft % 60;
+                document.getElementById('focus-timer').textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+            
+            async function startFocusSession() {
+                const token = storage.get('token');
+                if (!token) {
+                    showToast('Oturum açmalısınız');
+                    return;
+                }
+                
+                try {
+                    const session = await FocusService.startSession(focusDuration);
+                    focusSessionId = session.id;
+                    focusState = 'running';
+                    focusTimeLeft = focusDuration * 60;
+                    
+                    document.getElementById('focus-start-btn').classList.add('hidden');
+                    document.getElementById('focus-pause-btn').classList.remove('hidden');
+                    document.getElementById('focus-stop-btn').classList.remove('hidden');
+                    document.getElementById('focus-status').textContent = 'Odaklanma başladı...';
+                    
+                    focusTimer = setInterval(() => {
+                        focusTimeLeft--;
+                        updateFocusTimerDisplay();
+                        
+                        if (focusTimeLeft <= 0) {
+                            completeFocusSession();
+                        }
+                    }, 1000);
+                } catch (err) {
+                    showToast('Oturum başlatılamadı');
+                }
+            }
+            
+            function pauseFocusSession() {
+                if (focusTimer) {
+                    clearInterval(focusTimer);
+                    focusTimer = null;
+                }
+                focusState = 'paused';
+                
+                document.getElementById('focus-pause-btn').classList.add('hidden');
+                document.getElementById('focus-resume-btn').classList.remove('hidden');
+                document.getElementById('focus-status').textContent = 'Duraklatıldı';
+            }
+            
+            function resumeFocusSession() {
+                focusState = 'running';
+                
+                document.getElementById('focus-resume-btn').classList.add('hidden');
+                document.getElementById('focus-pause-btn').classList.remove('hidden');
+                document.getElementById('focus-status').textContent = 'Odaklanma devam ediyor...';
+                
+                focusTimer = setInterval(() => {
+                    focusTimeLeft--;
+                    updateFocusTimerDisplay();
+                    
+                    if (focusTimeLeft <= 0) {
+                        completeFocusSession();
+                    }
+                }, 1000);
+            }
+            
+            async function stopFocusSession() {
+                if (focusTimer) {
+                    clearInterval(focusTimer);
+                    focusTimer = null;
+                }
+                
+                if (focusSessionId) {
+                    try {
+                        await FocusService.completeSession();
+                    } catch (err) {
+                        console.error('Error completing session:', err);
+                    }
+                }
+                
+                resetFocusUI();
+                loadFocusSessions();
+            }
+            
+            async function completeFocusSession() {
+                if (focusTimer) {
+                    clearInterval(focusTimer);
+                    focusTimer = null;
+                }
+                
+                try {
+                    await FocusService.completeSession();
+                    showToast('🎉 Harika bir odaklanma seansı!');
+                } catch (err) {
+                    console.error('Error completing session:', err);
+                }
+                
+                resetFocusUI();
+                loadFocusSessions();
+                
+                // Play notification sound
+                const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2teleRYAabPfVcQqAG+48u2mRhU3j9/VqoVQAWq27OqYQBJEluWxpW4QQo3ou7RsF0GQ5bSzbxZAk+i3tW0XQJDouLVtFkGT6bm2bhdBk+m6tm4XQpPqu7ZvF0OU6763cBdDlO2/uHAXQ5Tuv7hxF0OU77+4cRdDlPC/uHEXQ5Twv7hxF0OU8b+4cRdDlPG/uHEXQ5Txv7hx');
+                audio.play().catch(() => {});
+            }
+            
+            function resetFocusUI() {
+                focusState = 'idle';
+                focusSessionId = null;
+                focusTimeLeft = focusDuration * 60;
+                
+                updateFocusTimerDisplay();
+                document.getElementById('focus-start-btn').classList.remove('hidden');
+                document.getElementById('focus-pause-btn').classList.add('hidden');
+                document.getElementById('focus-resume-btn').classList.add('hidden');
+                document.getElementById('focus-stop-btn').classList.add('hidden');
+                document.getElementById('focus-status').textContent = 'Hazır';
+            }
+            
+            async function loadFocusSessions() {
+                const token = storage.get('token');
+                if (!token) return;
+                
+                try {
+                    const data = await FocusService.getSessions();
+                    if (!data) return;
+                    
+                    const stats = data.stats;
+                    document.getElementById('focus-today-sessions').textContent = stats.todaySessions || 0;
+                    document.getElementById('focus-today-minutes').textContent = stats.todayMinutes || 0;
+                    document.getElementById('focus-weekly-minutes').textContent = Math.round((stats.weeklyMinutes || 0) / 60 * 10) / 10;
+                    document.getElementById('focus-streak').textContent = stats.currentStreak || 0;
+                    
+                    // Render sessions list
+                    const sessionsList = document.getElementById('focus-sessions-list');
+                    const sessions = data.sessions || [];
+                    
+                    if (sessions.length === 0) {
+                        sessionsList.innerHTML = '<p class="text-slate-500 text-sm text-center py-4">Henüz seans yok</p>';
+                    } else {
+                        sessionsList.innerHTML = sessions.slice(0, 5).map(s => `
+                            <div class="flex items-center justify-between bg-white/5 rounded-lg p-3">
+                                <div>
+                                    <div class="text-sm text-white">${s.duration || 0} dakika</div>
+                                    <div class="text-xs text-slate-500">${new Date(s.startTime).toLocaleDateString('tr-TR')}</div>
+                                </div>
+                                <div class="text-teal-400">
+                                    <i class="fa-solid fa-check-circle"></i>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                } catch (err) {
+                    console.error('Load focus sessions error:', err);
+                }
+            }
+
+            // ==================== REFLECTION MODE ====================
+            
+            let currentReflectionMood = '';
+            
+            function selectMood(mood) {
+                currentReflectionMood = mood;
+                document.getElementById('reflection-mood').value = mood;
+                
+                document.querySelectorAll('.mood-btn').forEach(btn => {
+                    if (btn.dataset.mood === mood) {
+                        btn.classList.add('border-purple-500', 'bg-purple-500/20');
+                    } else {
+                        btn.classList.remove('border-purple-500', 'bg-purple-500/20');
+                    }
+                });
+            }
+            
+            async function saveReflection() {
+                const token = storage.get('token');
+                if (!token) {
+                    showToast('Oturum açmalısınız');
+                    return;
+                }
+                
+                const achievement = document.getElementById('reflection-achievement').value.trim();
+                const improvement = document.getElementById('reflection-improvement').value.trim();
+                const tomorrow = document.getElementById('reflection-tomorrow').value.trim();
+                
+                if (!achievement && !improvement && !tomorrow) {
+                    showToast('Lütfen en az bir alanı doldurun');
+                    return;
+                }
+                
+                try {
+                    await ReflectionsService.create({
+                        content: `${achievement}\n\nGeliştirme: ${improvement}\n\nYarın: ${tomorrow}`,
+                        type: 'daily',
+                        mood: currentReflectionMood,
+                        achievements: achievement,
+                        improvements: improvement,
+                        tomorrowGoals: tomorrow
+                    });
+                    
+                    showToast('Yansımanız kaydedildi!');
+                    
+                    // Clear form
+                    document.getElementById('reflection-achievement').value = '';
+                    document.getElementById('reflection-improvement').value = '';
+                    document.getElementById('reflection-tomorrow').value = '';
+                    currentReflectionMood = '';
+                    document.getElementById('reflection-mood').value = '';
+                    document.querySelectorAll('.mood-btn').forEach(btn => {
+                        btn.classList.remove('border-purple-500', 'bg-purple-500/20');
+                    });
+                    
+                    loadReflections();
+                } catch (err) {
+                    showToast('Yansıma kaydedilemedi');
+                }
+            }
+            
+            async function loadReflections() {
+                const token = storage.get('token');
+                if (!token) return;
+                
+                try {
+                    const data = await ReflectionsService.getAll();
+                    if (!data) return;
+                    
+                    document.getElementById('reflection-streak').innerHTML = 
+                        `<i class="fa-solid fa-fire mr-1"></i>${data.streak || 0} gün seri`;
+                    
+                    const reflectionsList = document.getElementById('reflections-list');
+                    const reflections = data.reflections || [];
+                    
+                    if (reflections.length === 0) {
+                        reflectionsList.innerHTML = '<p class="text-slate-500 text-sm text-center py-4">Henüz yansıma yok</p>';
+                    } else {
+                        const moodIcons = {
+                            great: '<i class="fa-solid fa-face-grin-stars text-yellow-400"></i>',
+                            good: '<i class="fa-solid fa-face-smile text-green-400"></i>',
+                            okay: '<i class="fa-solid fa-face-meh text-slate-400"></i>',
+                            bad: '<i class="fa-solid fa-face-frown text-orange-400"></i>'
+                        };
+                        
+                        reflectionsList.innerHTML = reflections.slice(0, 7).map(r => `
+                            <div class="bg-white/5 rounded-xl p-4">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div class="text-xs text-slate-500">${new Date(r.date).toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' })}</div>
+                                    <div>${moodIcons[r.mood] || ''}</div>
+                                </div>
+                                ${r.achievements ? `<div class="text-sm text-white mb-1"><span class="text-teal-400">Başarı:</span> ${escapeHTML(r.achievements.substring(0, 80))}${r.achievements.length > 80 ? '...' : ''}</div>` : ''}
+                                ${r.improvements ? `<div class="text-sm text-white mb-1"><span class="text-amber-400">Gelişim:</span> ${escapeHTML(r.improvements.substring(0, 80))}${r.improvements.length > 80 ? '...' : ''}</div>` : ''}
+                                ${r.tomorrowGoals ? `<div class="text-sm text-white"><span class="text-purple-400">Yarın:</span> ${escapeHTML(r.tomorrowGoals.substring(0, 80))}${r.tomorrowGoals.length > 80 ? '...' : ''}</div>` : ''}
+                            </div>
+                        `).join('');
+                    }
+                } catch (err) {
+                    console.error('Load reflections error:', err);
+                }
+            }
+
+            // ==================== SMART COACH ====================
+            
+            async function loadSmartCoach() {
+                const token = storage.get('token');
+                if (!token) return;
+                
+                try {
+                    const coaching = await SmartCoachService.getCoaching();
+                    if (!coaching) return;
+                    
+                    // Update score display
+                    document.getElementById('coach-score').textContent = coaching.score || 0;
+                    document.getElementById('coach-grade').textContent = `/ 100 - ${coaching.grade?.label || ''}`;
+                    document.getElementById('coach-progress-bar').style.width = (coaching.score || 0) + '%';
+                    document.getElementById('coach-summary').textContent = coaching.summary || '';
+                    
+                    // Update insights
+                    const insightsContainer = document.getElementById('coach-insights');
+                    const insights = coaching.insights || [];
+                    
+                    if (insights.length === 0) {
+                        insightsContainer.innerHTML = '<p class="text-slate-500 text-sm text-center py-4">Henüz veri yok</p>';
+                    } else {
+                        const icons = {
+                            achievement: '<i class="fa-solid fa-trophy text-amber-400"></i>',
+                            tip: '<i class="fa-solid fa-lightbulb text-teal-400"></i>',
+                            warning: '<i class="fa-solid fa-exclamation-triangle text-orange-400"></i>',
+                            suggestion: '<i class="fa-solid fa-plus-circle text-purple-400"></i>'
+                        };
+                        
+                        insightsContainer.innerHTML = insights.map(insight => `
+                            <div class="bg-white/5 border border-white/10 rounded-xl p-4 flex gap-3">
+                                <div class="text-xl">${icons[insight.type] || icons.tip}</div>
+                                <div>
+                                    <div class="text-xs text-slate-500 uppercase mb-1">${insight.area}</div>
+                                    <div class="text-sm text-white">${escapeHTML(insight.message)}</div>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                    
+                    // Load recommendations
+                    loadRecommendations();
+                    
+                } catch (err) {
+                    console.error('Load smart coach error:', err);
+                }
+            }
+            
+            async function loadRecommendations() {
+                const token = storage.get('token');
+                if (!token) return;
+                
+                try {
+                    const recommendations = await RecommendationsService.getAll();
+                    const container = document.getElementById('recommendations-list');
+                    
+                    if (!recommendations || recommendations.length === 0) {
+                        container.innerHTML = '<p class="text-slate-500 text-sm text-center py-4">Öneri yok</p>';
+                        return;
+                    }
+                    
+                    const icons = {
+                        achievement: '<i class="fa-solid fa-trophy text-amber-400"></i>',
+                        tip: '<i class="fa-solid fa-lightbulb text-teal-400"></i>',
+                        warning: '<i class="fa-solid fa-exclamation-triangle text-orange-400"></i>',
+                        suggestion: '<i class="fa-solid fa-plus-circle text-purple-400"></i>'
+                    };
+                    
+                    const colors = {
+                        achievement: 'border-amber-500/30',
+                        tip: 'border-teal-500/30',
+                        warning: 'border-orange-500/30',
+                        suggestion: 'border-purple-500/30'
+                    };
+                    
+                    container.innerHTML = recommendations.map(rec => `
+                        <div class="bg-white/5 border ${colors[rec.type]} rounded-xl p-4">
+                            <div class="flex items-start gap-3">
+                                <div class="text-lg mt-0.5">${icons[rec.type] || icons.tip}</div>
+                                <div class="flex-1">
+                                    <div class="text-sm font-medium text-white mb-1">${escapeHTML(rec.title)}</div>
+                                    <div class="text-xs text-slate-400 mb-2">${escapeHTML(rec.message)}</div>
+                                    ${rec.action ? `<button onclick="showSection('dashboard');" class="text-xs text-teal-400 hover:underline">${escapeHTML(rec.action)}</button>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                    
+                } catch (err) {
+                    console.error('Load recommendations error:', err);
                 }
             }
 

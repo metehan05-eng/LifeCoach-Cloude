@@ -297,8 +297,192 @@ const ProgressService = {
     }
 };
 
+// ==================== FOCUS API ====================
+
+const FocusService = {
+    async getSessions() {
+        try {
+            const res = await fetch('/api/focus', {
+                method: 'GET',
+                headers: getAuthHeaders()
+            });
+            if (!res.ok) throw new Error('Failed to fetch focus sessions');
+            return await res.json();
+        } catch (error) {
+            console.error('FocusService.getSessions error:', error);
+            return null;
+        }
+    },
+
+    async startSession(duration) {
+        try {
+            const res = await fetch('/api/focus', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ action: 'start', duration })
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || 'Failed to start session');
+            }
+            return await res.json();
+        } catch (error) {
+            console.error('FocusService.startSession error:', error);
+            throw error;
+        }
+    },
+
+    async completeSession() {
+        try {
+            const res = await fetch('/api/focus', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ action: 'complete' })
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || 'Failed to complete session');
+            }
+            return await res.json();
+        } catch (error) {
+            console.error('FocusService.completeSession error:', error);
+            throw error;
+        }
+    },
+
+    async deleteSession(id) {
+        try {
+            const res = await fetch('/api/focus', {
+                method: 'DELETE',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ id })
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || 'Failed to delete session');
+            }
+            return true;
+        } catch (error) {
+            console.error('FocusService.deleteSession error:', error);
+            throw error;
+        }
+    }
+};
+
+// ==================== REFLECTIONS API ====================
+
+const ReflectionsService = {
+    async getAll() {
+        try {
+            const res = await fetch('/api/reflections', {
+                method: 'GET',
+                headers: getAuthHeaders()
+            });
+            if (!res.ok) throw new Error('Failed to fetch reflections');
+            return await res.json();
+        } catch (error) {
+            console.error('ReflectionsService.getAll error:', error);
+            return null;
+        }
+    },
+
+    async create(reflectionData) {
+        try {
+            const res = await fetch('/api/reflections', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify(reflectionData)
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || 'Failed to create reflection');
+            }
+            return await res.json();
+        } catch (error) {
+            console.error('ReflectionsService.create error:', error);
+            throw error;
+        }
+    },
+
+    async update(reflectionData) {
+        try {
+            const res = await fetch('/api/reflections', {
+                method: 'PUT',
+                headers: getAuthHeaders(),
+                body: JSON.stringify(reflectionData)
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || 'Failed to update reflection');
+            }
+            return await res.json();
+        } catch (error) {
+            console.error('ReflectionsService.update error:', error);
+            throw error;
+        }
+    },
+
+    async delete(id) {
+        try {
+            const res = await fetch('/api/reflections', {
+                method: 'DELETE',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ id })
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || 'Failed to delete reflection');
+            }
+            return true;
+        } catch (error) {
+            console.error('ReflectionsService.delete error:', error);
+            throw error;
+        }
+    }
+};
+
+// ==================== RECOMMENDATIONS API ====================
+
+const RecommendationsService = {
+    async getAll() {
+        try {
+            const res = await fetch('/api/recommendations', {
+                method: 'GET',
+                headers: getAuthHeaders()
+            });
+            if (!res.ok) throw new Error('Failed to fetch recommendations');
+            return await res.json();
+        } catch (error) {
+            console.error('RecommendationsService.getAll error:', error);
+            return [];
+        }
+    }
+};
+
+// ==================== SMART COACH API ====================
+
+const SmartCoachService = {
+    async getCoaching() {
+        try {
+            const res = await fetch('/api/smart-coach', {
+                method: 'GET',
+                headers: getAuthHeaders()
+            });
+            if (!res.ok) throw new Error('Failed to fetch coaching');
+            return await res.json();
+        } catch (error) {
+            console.error('SmartCoachService.getCoaching error:', error);
+            return null;
+        }
+    }
+};
+
 // Export for global use
 window.GoalsService = GoalsService;
 window.HabitsService = HabitsService;
 window.PlansService = PlansService;
 window.ProgressService = ProgressService;
+window.FocusService = FocusService;
+window.ReflectionsService = ReflectionsService;
+window.RecommendationsService = RecommendationsService;
+window.SmartCoachService = SmartCoachService;
