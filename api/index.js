@@ -736,6 +736,143 @@ app.get('/forgot-password', (req, res) => {
     res.sendFile(path.join(process.cwd(), 'public', 'forgot-password.html'));
 });
 
+// --- GOALS API ---
+
+// GET /api/goals - Get all goals for user
+app.get('/api/goals', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const allGoals = await getKVData('goals');
+        const userGoals = allGoals[userId] || [];
+        
+        // Sort by creation date (newest first)
+        userGoals.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        
+        res.json(userGoals);
+    } catch (error) {
+        console.error('Get goals error:', error);
+        res.status(500).json({ error: 'Hedefler yüklenirken hata oluştu' });
+    }
+});
+
+// POST /api/goals - Create new goal
+app.post('/api/goals', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { title, type, description, targetDate } = req.body;
+        
+        if (!title || !type) {
+            return res.status(400).json({ error: 'Başlık ve tür gereklidir' });
+        }
+        
+        const validTypes = ['daily', 'weekly', 'monthly', 'yearly'];
+        if (!validTypes.includes(type)) {
+            return res.status(400).json({ error: 'Geçersiz hedef türü' });
+        }
+        
+        const allGoals = await getKVData('goals');
+        const userGoals = allGoals[userId] || [];
+        
+        const newGoal = {
+            id: Date.now().toString(),
+            title,
+            type,
+            description: description || '',
+            progress: 0,
+            status: 'in-progress',
+            targetDate: targetDate || null,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            completedAt: null
+        };
+        
+        userGoals.push(newGoal);
+        allGoals[userId] = userGoals;
+        
+        await setKVData('goals', allGoals);
+        
+        res.status(201).json(newGoal);
+    } catch (error) {
+        console.error('Create goal error:', error);
+        res.status(500).json({ error: 'Hedef oluşturulurken hata oluştu' });
+    }
+});
+
+// PUT /api/goals - Update goal
+app.put('/api/goals', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { id, title, type, description, progress, status, targetDate } = req.body;
+        
+        if (!id) {
+            return res.status(400).json({ error: 'Hedef ID gereklidir' });
+        }
+        
+        const allGoals = await getKVData('goals');
+        const userGoals = allGoals[userId] || [];
+        
+        const goalIndex = userGoals.findIndex(g => g.id === id);
+        
+        if (goalIndex === -1) {
+            return res.status(404).json({ error: 'Hedef bulunamadı' });
+        }
+        
+        const updatedGoal = {
+            ...userGoals[goalIndex],
+            title: title !== undefined ? title : userGoals[goalIndex].title,
+            type: type !== undefined ? type : userGoals[goalIndex].type,
+            description: description !== undefined ? description : userGoals[goalIndex].description,
+            progress: progress !== undefined ? Math.min(100, Math.max(0, progress)) : userGoals[goalIndex].progress,
+            status: status !== undefined ? status : userGoals[goalIndex].status,
+            targetDate: targetDate !== undefined ? targetDate : userGoals[goalIndex].targetDate,
+            updatedAt: new Date().toISOString()
+        };
+        
+        if (status === 'completed' && !userGoals[goalIndex].completedAt) {
+            updatedGoal.completedAt = new Date().toISOString();
+        }
+        
+        userGoals[goalIndex] = updatedGoal;
+        allGoals[userId] = userGoals;
+        
+        await setKVData('goals', allGoals);
+        
+        res.json(updatedGoal);
+    } catch (error) {
+        console.error('Update goal error:', error);
+        res.status(500).json({ error: 'Hedef güncellenirken hata oluştu' });
+    }
+});
+
+// DELETE /api/goals - Delete goal
+app.delete('/api/goals', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { id } = req.body;
+        
+        if (!id) {
+            return res.status(400).json({ error: 'Hedef ID gereklidir' });
+        }
+        
+        const allGoals = await getKVData('goals');
+        const userGoals = allGoals[userId] || [];
+        
+        const filteredGoals = userGoals.filter(g => g.id !== id);
+        
+        if (filteredGoals.length === userGoals.length) {
+            return res.status(404).json({ error: 'Hedef bulunamadı' });
+        }
+        
+        allGoals[userId] = filteredGoals;
+        await setKVData('goals', allGoals);
+        
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Delete goal error:', error);
+        res.status(500).json({ error: 'Hedef silinirken hata oluştu' });
+    }
+});
+
 // Get History
 app.post('/api/history', authenticateToken, async (req, res) => {
     try {
