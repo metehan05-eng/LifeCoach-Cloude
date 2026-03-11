@@ -1692,72 +1692,146 @@
         <div class="px-4 pb-3 flex-1 overflow-y-auto no-scrollbar">
             <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-1 sticky top-0 bg-slate-900/90 py-1 z-10 backdrop-blur-sm">Özellikler</div>
             <div class="space-y-1">
-                <button onclick="showSection('dashboard'); closeSidebarMobile();" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" data-section="dashboard">
-                    <i class="fa-solid fa-chart-pie w-5 text-center"></i>
-                    <span class="text-sm font-medium">Panel</span>
+                <!-- Panel -->
+                <button onclick="showSection('dashboard'); closeSidebarMobile();" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all group" data-section="dashboard">
+                    <div class="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-teal-500/10 to-teal-400/5 border border-teal-500/20 group-hover:from-teal-500/20 group-hover:to-teal-400/10 group-hover:border-teal-500/30 transition-all shadow-md shadow-teal-500/10 group-hover:shadow-lg group-hover:shadow-teal-500/20">
+                        <i class="fa-solid fa-chart-pie text-teal-400 text-[13px] group-hover:scale-110 transition-transform duration-300"></i>
+                    </div>
+                    <span class="text-sm font-medium group-hover:font-semibold transition-colors">Panel</span>
                 </button>
-                <button onclick="showSection('goals'); closeSidebarMobile();" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" data-section="goals">
-                    <i class="fa-solid fa-bullseye w-5 text-center"></i>
-                    <span class="text-sm font-medium">Hedefler</span>
+                
+                <!-- Hedefler -->
+                <button onclick="showSection('goals'); closeSidebarMobile();" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all group" data-section="goals">
+                    <div class="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-rose-500/10 to-rose-400/5 border border-rose-500/20 group-hover:from-rose-500/20 group-hover:to-rose-400/10 group-hover:border-rose-500/30 transition-all shadow-md shadow-rose-500/10 group-hover:shadow-lg group-hover:shadow-rose-500/20">
+                        <i class="fa-solid fa-bullseye text-rose-400 text-[13px] group-hover:scale-110 transition-transform duration-300"></i>
+                    </div>
+                    <span class="text-sm font-medium group-hover:font-semibold transition-colors">Hedefler</span>
                 </button>
-                <button onclick="showSection('habits'); closeSidebarMobile();" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" data-section="habits">
-                    <i class="fa-solid fa-heart-pulse w-5 text-center"></i>
-                    <span class="text-sm font-medium">Alışkanlıklar</span>
+
+                <!-- Alışkanlıklar -->
+                <button onclick="showSection('habits'); closeSidebarMobile();" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all group" data-section="habits">
+                    <div class="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500/10 to-emerald-400/5 border border-emerald-500/20 group-hover:from-emerald-500/20 group-hover:to-emerald-400/10 group-hover:border-emerald-500/30 transition-all shadow-md shadow-emerald-500/10 group-hover:shadow-lg group-hover:shadow-emerald-500/20">
+                        <i class="fa-solid fa-heart-pulse text-emerald-400 text-[13px] group-hover:scale-110 transition-transform duration-300"></i>
+                    </div>
+                    <span class="text-sm font-medium group-hover:font-semibold transition-colors">Alışkanlıklar</span>
                 </button>
-                <button onclick="showSection('plans'); closeSidebarMobile();" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" data-section="plans">
-                    <i class="fa-solid fa-calendar-days w-5 text-center"></i>
-                    <span class="text-sm font-medium">Planlar</span>
+
+                <!-- Planlar -->
+                <button onclick="showSection('plans'); closeSidebarMobile();" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all group" data-section="plans">
+                    <div class="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-sky-500/10 to-sky-400/5 border border-sky-500/20 group-hover:from-sky-500/20 group-hover:to-sky-400/10 group-hover:border-sky-500/30 transition-all shadow-md shadow-sky-500/10 group-hover:shadow-lg group-hover:shadow-sky-500/20">
+                        <i class="fa-solid fa-calendar-days text-sky-400 text-[13px] group-hover:scale-110 transition-transform duration-300"></i>
+                    </div>
+                    <span class="text-sm font-medium group-hover:font-semibold transition-colors">Planlar</span>
                 </button>
-                <button onclick="showSection('progress'); closeSidebarMobile();" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" data-section="progress">
-                    <i class="fa-solid fa-chart-line w-5 text-center"></i>
-                    <span class="text-sm font-medium">İlerleme</span>
+
+                <!-- İlerleme -->
+                <button onclick="showSection('progress'); closeSidebarMobile();" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all group" data-section="progress">
+                    <div class="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500/10 to-orange-400/5 border border-orange-500/20 group-hover:from-orange-500/20 group-hover:to-orange-400/10 group-hover:border-orange-500/30 transition-all shadow-md shadow-orange-500/10 group-hover:shadow-lg group-hover:shadow-orange-500/20">
+                        <i class="fa-solid fa-chart-line text-orange-400 text-[13px] group-hover:scale-110 transition-transform duration-300"></i>
+                    </div>
+                    <span class="text-sm font-medium group-hover:font-semibold transition-colors">İlerleme</span>
                 </button>
-                <button onclick="showSection('chat'); closeSidebarMobile();" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" data-section="chat">
-                    <i class="fa-solid fa-robot w-5 text-center"></i>
-                    <span class="text-sm font-medium">AI Asistan</span>
+
+                <!-- AI Asistan -->
+                <button onclick="showSection('chat'); closeSidebarMobile();" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all group" data-section="chat">
+                    <div class="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500/10 to-indigo-400/5 border border-indigo-500/20 group-hover:from-indigo-500/20 group-hover:to-indigo-400/10 group-hover:border-indigo-500/30 transition-all shadow-md shadow-indigo-500/10 group-hover:shadow-lg group-hover:shadow-indigo-500/20">
+                        <i class="fa-solid fa-robot text-indigo-400 text-[13px] group-hover:scale-110 transition-transform duration-300"></i>
+                    </div>
+                    <span class="text-sm font-medium group-hover:font-semibold transition-colors">AI Asistan</span>
                 </button>
-                <button onclick="showSection('focus'); closeSidebarMobile();" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" data-section="focus">
-                    <i class="fa-solid fa-stopwatch w-5 text-center"></i>
-                    <span class="text-sm font-medium">Odak Modu</span>
+
+                <!-- Odak Modu -->
+                <button onclick="showSection('focus'); closeSidebarMobile();" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all group" data-section="focus">
+                    <div class="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500/10 to-blue-400/5 border border-blue-500/20 group-hover:from-blue-500/20 group-hover:to-blue-400/10 group-hover:border-blue-500/30 transition-all shadow-md shadow-blue-500/10 group-hover:shadow-lg group-hover:shadow-blue-500/20">
+                        <i class="fa-solid fa-stopwatch text-blue-400 text-[13px] group-hover:scale-110 transition-transform duration-300"></i>
+                    </div>
+                    <span class="text-sm font-medium group-hover:font-semibold transition-colors">Odak Modu</span>
                 </button>
-                <button onclick="showSection('reflection'); closeSidebarMobile();" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" data-section="reflection">
-                    <i class="fa-solid fa-pen-fancy w-5 text-center"></i>
-                    <span class="text-sm font-medium">Yansıma</span>
+
+                <!-- Yansıma -->
+                <button onclick="showSection('reflection'); closeSidebarMobile();" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all group" data-section="reflection">
+                    <div class="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-fuchsia-500/10 to-fuchsia-400/5 border border-fuchsia-500/20 group-hover:from-fuchsia-500/20 group-hover:to-fuchsia-400/10 group-hover:border-fuchsia-500/30 transition-all shadow-md shadow-fuchsia-500/10 group-hover:shadow-lg group-hover:shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-pen-fancy text-fuchsia-400 text-[13px] group-hover:scale-110 transition-transform duration-300"></i>
+                    </div>
+                    <span class="text-sm font-medium group-hover:font-semibold transition-colors">Yansıma</span>
                 </button>
-                <button onclick="showSection('coach'); closeSidebarMobile();" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" data-section="coach">
-                    <i class="fa-solid fa-brain w-5 text-center"></i>
-                    <span class="text-sm font-medium">Smart Coach</span>
+
+                <!-- Smart Coach -->
+                <button onclick="showSection('coach'); closeSidebarMobile();" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all group" data-section="coach">
+                    <div class="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500/10 to-violet-400/5 border border-violet-500/20 group-hover:from-violet-500/20 group-hover:to-violet-400/10 group-hover:border-violet-500/30 transition-all shadow-md shadow-violet-500/10 group-hover:shadow-lg group-hover:shadow-violet-500/20">
+                        <i class="fa-solid fa-brain text-violet-400 text-[13px] group-hover:scale-110 transition-transform duration-300"></i>
+                    </div>
+                    <span class="text-sm font-medium group-hover:font-semibold transition-colors">Smart Coach</span>
                 </button>
+
                 <!-- ===== YENİ ÖZELLİKLER ===== -->
-                <div class="px-1 pt-2 pb-1">
-                    <div class="text-xs font-semibold text-teal-500/60 uppercase tracking-wider px-2 mb-1">Yeni Özellikler</div>
+                <div class="px-1 pt-3 pb-1">
+                    <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-2 mb-1 flex items-center gap-2">
+                        <span>Gelişmiş AI Analiz</span>
+                        <div class="h-px bg-slate-700/50 flex-1"></div>
+                    </div>
                 </div>
-                <button onclick="showSection('persona'); closeSidebarMobile();" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" data-section="persona">
-                    <i class="fa-solid fa-masks-theater w-5 text-center text-purple-400"></i>
-                    <span class="text-sm font-medium">Koç Karakteri</span>
-                    <span class="ml-auto text-[9px] px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-400 font-bold">YENİ</span>
+
+                <!-- Koç Karakteri -->
+                <button onclick="showSection('persona'); closeSidebarMobile();" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all group" data-section="persona">
+                    <div class="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500/10 to-purple-400/5 border border-purple-500/20 group-hover:from-purple-500/20 group-hover:to-purple-400/10 group-hover:border-purple-500/30 transition-all shadow-md shadow-purple-500/10 group-hover:shadow-lg group-hover:shadow-purple-500/20 relative">
+                        <i class="fa-solid fa-masks-theater text-purple-400 text-[13px] group-hover:scale-110 transition-transform duration-300"></i>
+                        <div class="absolute -top-1 -right-1 w-2 h-2 bg-purple-500 rounded-full animate-pulse shadow-[0_0_5px_rgba(168,85,247,0.8)]"></div>
+                    </div>
+                    <span class="text-sm font-medium group-hover:font-semibold transition-colors">Koç Karakteri</span>
+                    <span class="ml-auto text-[9px] px-1.5 py-0.5 rounded-md bg-purple-500/20 text-purple-400 font-bold border border-purple-500/30 shadow-[0_0_8px_rgba(168,85,247,0.2)]">YENİ</span>
                 </button>
-                <button onclick="showSection('mood'); closeSidebarMobile();" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" data-section="mood">
-                    <i class="fa-solid fa-face-smile-beam w-5 text-center text-amber-400"></i>
-                    <span class="text-sm font-medium">Duygu Durumu</span>
-                    <span class="ml-auto text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-bold">YENİ</span>
+
+                <!-- Duygu Durumu -->
+                <button onclick="showSection('mood'); closeSidebarMobile();" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all group" data-section="mood">
+                    <div class="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500/10 to-amber-400/5 border border-amber-500/20 group-hover:from-amber-500/20 group-hover:to-amber-400/10 group-hover:border-amber-500/30 transition-all shadow-md shadow-amber-500/10 group-hover:shadow-lg group-hover:shadow-amber-500/20 relative">
+                        <i class="fa-solid fa-face-smile-beam text-amber-400 text-[13px] group-hover:scale-110 transition-transform duration-300"></i>
+                        <div class="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 rounded-full animate-pulse shadow-[0_0_5px_rgba(245,158,11,0.8)]"></div>
+                    </div>
+                    <span class="text-sm font-medium group-hover:font-semibold transition-colors">Duygu Durumu</span>
+                    <span class="ml-auto text-[9px] px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-400 font-bold border border-amber-500/30 shadow-[0_0_8px_rgba(245,158,11,0.2)]">YENİ</span>
                 </button>
-                <button onclick="showSection('taskbreak'); closeSidebarMobile();" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" data-section="taskbreak">
-                    <i class="fa-solid fa-diagram-project w-5 text-center text-cyan-400"></i>
-                    <span class="text-sm font-medium">Görev Parçala</span>
-                    <span class="ml-auto text-[9px] px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 font-bold">YENİ</span>
+
+                <!-- Görev Parçala -->
+                <button onclick="showSection('taskbreak'); closeSidebarMobile();" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all group" data-section="taskbreak">
+                    <div class="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500/10 to-cyan-400/5 border border-cyan-500/20 group-hover:from-cyan-500/20 group-hover:to-cyan-400/10 group-hover:border-cyan-500/30 transition-all shadow-md shadow-cyan-500/10 group-hover:shadow-lg group-hover:shadow-cyan-500/20 relative">
+                        <i class="fa-solid fa-diagram-project text-cyan-400 text-[13px] group-hover:scale-110 transition-transform duration-300"></i>
+                        <div class="absolute -top-1 -right-1 w-2 h-2 bg-cyan-500 rounded-full animate-pulse shadow-[0_0_5px_rgba(6,182,212,0.8)]"></div>
+                    </div>
+                    <span class="text-sm font-medium group-hover:font-semibold transition-colors">Görev Parçala</span>
+                    <span class="ml-auto text-[9px] px-1.5 py-0.5 rounded-md bg-cyan-500/20 text-cyan-400 font-bold border border-cyan-500/30 shadow-[0_0_8px_rgba(6,182,212,0.2)]">YENİ</span>
                 </button>
-                <button onclick="showSection('achievements'); closeSidebarMobile();" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" data-section="achievements">
-                    <i class="fa-solid fa-trophy w-5 text-center text-yellow-400"></i>
-                    <span class="text-sm font-medium">Başarılar</span>
-                    <span id="xp-badge-nav" class="ml-auto text-[9px] px-1.5 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 font-bold hidden">Lv.1</span>
+
+                <!-- Başarılar -->
+                <button onclick="showSection('achievements'); closeSidebarMobile();" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all group" data-section="achievements">
+                    <div class="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-yellow-400/10 to-yellow-300/5 border border-yellow-400/20 group-hover:from-yellow-400/20 group-hover:to-yellow-300/10 group-hover:border-yellow-400/30 transition-all shadow-md shadow-yellow-400/10 group-hover:shadow-lg group-hover:shadow-yellow-400/20">
+                        <i class="fa-solid fa-trophy text-yellow-400 text-[13px] group-hover:scale-110 transition-transform duration-300"></i>
+                    </div>
+                    <span class="text-sm font-medium group-hover:font-semibold transition-colors">Başarılar</span>
+                    <span id="xp-badge-nav" class="ml-auto text-[10px] px-2 py-0.5 rounded-md bg-yellow-500/20 text-yellow-400 font-bold border border-yellow-500/30 hidden shadow-[0_0_8px_rgba(234,179,8,0.2)]">Lv.1</span>
                 </button>
-                <div class="px-3 pt-2 pb-1 mt-2 mb-1 border-t border-white/5"></div>
-                <button onclick="showSection('waffle'); closeSidebarMobile();" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all relative overflow-hidden group" data-section="waffle">
-                    <div class="absolute inset-0 bg-gradient-to-r from-amber-900/40 to-orange-900/40 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                    <span class="w-5 text-center text-xl relative z-10 drop-shadow-md">🧇</span>
-                    <span class="text-sm font-bold text-amber-500 relative z-10 group-hover:text-amber-400">Waffle Modu</span>
-                    <span class="ml-auto text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-bold relative z-10 border border-amber-500/30">ÜRET</span>
+
+                <div class="px-3 pt-2 pb-1 mt-2 mb-1 border-t border-slate-700/50"></div>
+                
+                <!-- Waffle Modu -->
+                <button onclick="showSection('waffle'); closeSidebarMobile();" class="nav-item w-full flex items-center gap-3 px-3 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-amber-900/20 transition-all relative overflow-hidden group shadow-[0_4px_15px_rgba(0,0,0,0.1)] border border-transparent hover:border-amber-500/30" data-section="waffle">
+                    <!-- Elegant highlight background for waffle -->
+                    <div class="absolute inset-0 bg-gradient-to-r from-amber-500/5 via-orange-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    <div class="absolute -right-10 top-1/2 -translate-y-1/2 w-24 h-24 bg-amber-500/10 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    
+                    <!-- Icon container -->
+                    <div class="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400/20 to-orange-500/10 border border-amber-400/30 group-hover:border-amber-400/50 transition-all shadow-lg shadow-amber-500/10 group-hover:shadow-[0_0_15px_rgba(245,158,11,0.3)] group-hover:scale-105 z-10 relative">
+                        <span class="text-xl group-hover:animate-bounce-subtle drop-shadow-[0_2px_4px_rgba(251,191,36,0.5)]">🧇</span>
+                        <!-- Sparkles -->
+                        <i class="fa-solid fa-sparkles absolute -top-1 -right-1 text-yellow-300 text-[8px] opacity-0 group-hover:opacity-100 transition-opacity delay-100"></i>
+                    </div>
+                    
+                    <div class="flex flex-col items-start z-10 relative">
+                        <span class="text-sm font-bold bg-gradient-to-r from-amber-200 to-orange-300 bg-clip-text text-transparent group-hover:from-amber-300 group-hover:to-orange-400 transition-all tracking-wide">Waffle Modu</span>
+                        <span class="text-[10px] text-amber-500/70 font-medium group-hover:text-amber-400/90 transition-colors">AI Sanat Üretici</span>
+                    </div>
+                    
+                    <span class="ml-auto text-[9px] px-2 py-1 rounded-md bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black shadow-[0_2px_8px_rgba(245,158,11,0.4)] relative z-10 uppercase tracking-wider group-hover:shadow-[0_4px_12px_rgba(245,158,11,0.6)] transition-all">Üret</span>
                 </button>
             </div>
         </div>
@@ -2578,82 +2652,181 @@
                 </div>
             </div>
 
-            <!-- Chat Section (Original) -->
-            <div id="section-chat" class="section-content flex flex-col min-h-full">
+            <!-- Chat Section (Claude Style) -->
+            <div id="section-chat" class="section-content flex flex-col min-h-full justify-center">
                 <!-- Welcome Screen -->
-                <div class="flex flex-col items-center justify-center flex-1 text-center space-y-5" id="welcome-screen">
-                <div class="welcome-icon-wrapper">
-                    <i class="fa-solid fa-hands-holding-circle text-4xl" style="color: #2DD4BF;"></i>
-                </div>
-                
-                <div class="space-y-3 px-4">
-                    <h2 class="welcome-title">Merhaba, bugün nasılsın?</h2>
-                    <p class="text-slate-400 max-w-lg text-sm leading-relaxed">
-                        Kişisel yaşam koçunuz olarak buradayım. Hedefleriniz, endişeleriniz hakkında<br>veya sadece sohbet etmek için bana yazabilirsiniz.
-                    </p>
-                </div>
-
-                <!-- Stats Row -->
-                <div class="flex items-center justify-center gap-8 py-4">
-                    <div class="text-center">
-                        <div class="text-xl font-bold" style="color: #2DD4BF;">AI</div>
-                        <div class="text-xs text-slate-500 mt-1">Powered</div>
+                <div class="flex flex-col items-center justify-center w-full max-w-3xl mx-auto text-center space-y-6" id="welcome-screen">
+                    <div class="welcome-icon-wrapper mb-2 animate-bounce-subtle" style="width: 64px; height: 64px; border-radius: 16px; background: transparent; border: none; box-shadow: none;">
+                        <!-- Claude Style Asterisk Icon -->
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2V6M12 18V22M6 12H2M22 12H18M19.0711 4.92893L16.2426 7.75736M7.75736 16.2426L4.92893 19.0711M19.0711 19.0711L16.2426 16.2426M7.75736 7.75736L4.92893 4.92893" stroke="#d97757" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
                     </div>
-                    <div class="w-px h-10 bg-white/15"></div>
-                    <div class="text-center">
-                        <div class="text-xl font-bold text-white">7/24</div>
-                        <div class="text-xs text-slate-500 mt-1">Erişim</div>
-                    </div>
-                    <div class="w-px h-10 bg-white/15"></div>
-                    <div class="text-center">
-                        <div class="text-xl font-bold text-amber-400">∞</div>
-                        <div class="text-xs text-slate-500 mt-1">Destek</div>
+                    
+                    <div class="space-y-4 px-4 w-full">
+                        <h2 id="dynamic-greeting" class="text-4xl md:text-5xl font-serif text-[#eaddcf] mb-8 font-normal" style="font-family: 'Georgia', serif;">Hello, night owl</h2>
+                        
+                        <!-- Main Chat Input Centered Claude Style -->
+                        <div class="w-full relative mx-auto mb-4 group">
+                            <!-- Background Panel for Input -->
+                            <div class="absolute inset-0 bg-[#2a2b28] rounded-2xl border border-white/5 shadow-lg group-hover:border-white/10 transition-colors pointer-events-none"></div>
+                            
+                            <textarea 
+                                id="user-input-center" 
+                                rows="1" 
+                                placeholder="How can I help you today?"
+                                class="w-full bg-transparent border-none rounded-2xl pl-12 pr-28 py-5 text-[#eaddcf] placeholder-[#8a8b86] focus:outline-none focus:ring-0 resize-none transition-all duration-300 text-[16px] relative z-10 custom-scrollbar"
+                                oninput="this.style.height = ''; this.style.height = Math.min(this.scrollHeight, 200) + 'px'; syncInputs(this.value);"
+                                style="min-height: 64px;"
+                            ></textarea>
+                            
+                            <!-- Left + Menu Button -->
+                            <div class="absolute left-3 bottom-3.5 z-20" id="plus-menu-container">
+                                <button type="button" onclick="togglePlusMenu()" class="w-8 h-8 flex items-center justify-center rounded-lg text-[#8a8b86] hover:bg-white/10 hover:text-[#eaddcf] transition-colors" title="Add attachment">
+                                    <i class="fa-solid fa-plus text-[16px]"></i>
+                                </button>
+                                
+                                <!-- Dropdown Menu -->
+                                <div id="plus-dropdown" class="absolute bottom-full left-0 mb-2 w-56 bg-[#2a2b28] border border-white/10 rounded-xl shadow-2xl py-2 hidden flex-col divide-y divide-white/5 z-50 transform origin-bottom-left transition-all">
+                                    <div class="py-1">
+                                        <button onclick="document.getElementById('file-upload-center').click(); togglePlusMenu();" class="w-full text-left px-4 py-2 hover:bg-white/5 text-[13px] text-[#eaddcf] flex items-center gap-3 transition-colors">
+                                            <i class="fa-solid fa-paperclip w-4 text-center text-[#8a8b86]"></i> Add files or photos
+                                        </button>
+                                        <button class="w-full text-left px-4 py-2 hover:bg-white/5 text-[13px] text-[#eaddcf] flex items-center gap-3 transition-colors disabled:opacity-50">
+                                            <i class="fa-solid fa-camera w-4 text-center text-[#8a8b86]"></i> Take a screenshot
+                                        </button>
+                                    </div>
+                                    <div class="py-1">
+                                        <button class="w-full text-left px-4 py-2 hover:bg-white/5 text-[13px] text-[#eaddcf] flex items-center justify-between transition-colors">
+                                            <div class="flex items-center gap-3">
+                                                <i class="fa-solid fa-folder w-4 text-center text-[#8a8b86]"></i> Add to project
+                                            </div>
+                                            <i class="fa-solid fa-chevron-right text-[10px] text-[#8a8b86]"></i>
+                                        </button>
+                                    </div>
+                                    <div class="py-1">
+                                        <button class="w-full text-left px-4 py-2 hover:bg-white/5 text-[13px] text-[#4ea8e5] flex items-center justify-between transition-colors">
+                                            <div class="flex items-center gap-3">
+                                                <i class="fa-solid fa-globe w-4 text-center"></i> Web search
+                                            </div>
+                                            <i class="fa-solid fa-check text-[10px]"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Hidden File Input -->
+                            <input type="file" id="file-upload-center" accept="image/*,.pdf,.txt,.md,.doc,.docx" class="hidden" onchange="handleFileSelect(this)">
+                            
+                            <!-- Right Side Controls -->
+                            <div class="absolute right-3 bottom-3.5 flex items-center gap-1 z-20">
+                                <!-- Voice Button -->
+                                <button type="button" id="mic-btn-center" onclick="toggleDictationCenter()" class="w-8 h-8 flex items-center justify-center rounded-lg text-[#8a8b86] hover:bg-white/10 hover:text-[#eaddcf] transition-colors" title="Voice Mode">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M12 2C10.3431 2 9 3.34315 9 5V11C9 12.6569 10.3431 14 12 14C13.6569 14 15 12.6569 15 11V5C15 3.34315 13.6569 2 12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <path d="M19 10V11C19 14.866 15.866 18 12 18C8.13401 18 5 14.866 5 11V10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <path d="M12 18V22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <path d="M8 22H16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </button>
+                                
+                                <!-- Send Button -->
+                                <button type="button" onclick="submitCenterChat()" class="w-8 h-8 flex items-center justify-center rounded-lg text-black bg-[#eaddcf] hover:bg-white opacity-0 transform scale-90 translate-y-1 group-focus-within:opacity-100 group-focus-within:scale-100 group-focus-within:translate-y-0 transition-all duration-300 pointer-events-none group-focus-within:pointer-events-auto shadow-md" id="send-btn-center" title="Send message">
+                                    <i class="fa-solid fa-arrow-up text-[14px]"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Action Chips Layout -->
+                        <div class="flex flex-wrap items-center justify-center gap-2.5 mt-4">
+                            <button onclick="document.getElementById('user-input-center').value='Help me write some code...'; document.getElementById('user-input-center').focus();" class="px-3.5 py-1.5 rounded-full border border-white/10 text-[#8a8b86] text-[13px] hover:bg-white/5 hover:text-[#eaddcf] transition-colors flex items-center gap-2">
+                                <i class="fa-solid fa-code text-[#d97757]"></i> Code
+                            </button>
+                            <button onclick="document.getElementById('user-input-center').value='Can you help me write...'; document.getElementById('user-input-center').focus();" class="px-3.5 py-1.5 rounded-full border border-white/10 text-[#8a8b86] text-[13px] hover:bg-white/5 hover:text-[#eaddcf] transition-colors flex items-center gap-2">
+                                <i class="fa-solid fa-pen text-[#8b9b82]"></i> Write
+                            </button>
+                            <button onclick="document.getElementById('user-input-center').value='I want to learn about...'; document.getElementById('user-input-center').focus();" class="px-3.5 py-1.5 rounded-full border border-white/10 text-[#8a8b86] text-[13px] hover:bg-white/5 hover:text-[#eaddcf] transition-colors flex items-center gap-2">
+                                <i class="fa-solid fa-graduation-cap text-[#c0a684]"></i> Learn
+                            </button>
+                            <button onclick="document.getElementById('user-input-center').value='Need some advice on...'; document.getElementById('user-input-center').focus();" class="px-3.5 py-1.5 rounded-full border border-white/10 text-[#8a8b86] text-[13px] hover:bg-white/5 hover:text-[#eaddcf] transition-colors flex items-center gap-2">
+                                <i class="fa-solid fa-mug-hot text-[#9e96b3]"></i> Life stuff
+                            </button>
+                        </div>
+                        
                     </div>
                 </div>
-
-
             </div>
             </div>
             </div>
 
-        <!-- Input Area (only visible on AI Asistan page) -->
-        <div id="chat-input-container" class="input-area hidden p-4 md:p-6 pb-6 w-full max-w-4xl mx-auto rounded-t-[2.5rem] bg-[#030712]/80 backdrop-blur-xl border-t border-white/5 shadow-[0_-15px_40px_-15px_rgba(45,212,191,0.15)] relative z-20">
+        <!-- Input Area (Only visible when chat has started, hidden initially) -->
+        <div id="chat-input-container" class="input-area hidden p-4 pb-6 w-full max-w-4xl mx-auto bg-transparent relative z-20" style="bottom: 0px; box-shadow: none; border: none; backdrop-filter: none;">
             <!-- File Preview -->
-            <div id="file-preview-container" class="hidden file-preview mb-3 w-full max-w-4xl mx-auto">
+            <div id="file-preview-container" class="hidden file-preview mb-3 w-full max-w-3xl mx-auto">
                 <!-- JS ile doldurulacak -->
             </div>
 
-            <form id="chat-form" class="flex items-end gap-3 max-w-4xl mx-auto w-full relative">
-                <div class="relative flex-1 group">
-                    <!-- Gradient Glow Effect Behind Input -->
-                    <div class="absolute -inset-0.5 bg-gradient-to-r from-teal-500/30 via-cyan-500/30 to-teal-500/30 rounded-2xl blur-md opacity-20 group-focus-within:opacity-50 transition-opacity duration-500 pointer-events-none"></div>
-                    
-                    <textarea 
-                        id="user-input" 
-                        rows="1" 
-                        placeholder="Yapay zeka asistanına bir mesaj veya dosya gönder..."
-                        class="w-full bg-[#0F172A]/90 border border-white/10 rounded-2xl pl-5 pr-20 py-4 text-white placeholder-slate-500 focus:outline-none focus:border-teal-500/50 focus:ring-2 focus:ring-teal-500/20 focus:bg-[#0F172A] resize-none transition-all duration-300 text-[15px] shadow-inner font-medium relative z-10 custom-scrollbar"
-                        oninput="this.style.height = ''; this.style.height = Math.min(this.scrollHeight, 140) + 'px'"
-                        style="min-height: 56px;"
-                    ></textarea>
-                    
-                    <button type="button" onclick="document.getElementById('file-upload').click()" class="absolute bottom-3 right-12 w-8 h-8 flex items-center justify-center rounded-xl text-slate-400 hover:text-teal-400 hover:bg-white/5 transition-colors z-20" title="Dosya Yükle">
-                        <i class="fa-solid fa-paperclip text-[15px]"></i>
+            <form id="chat-form" class="flex flex-col max-w-3xl mx-auto w-full relative group">
+                <!-- Background Panel for Input -->
+                <div class="absolute inset-0 bg-[#2a2b28] rounded-2xl border border-white/5 shadow-2xl transition-colors pointer-events-none z-0"></div>
+                
+                <textarea 
+                    id="user-input" 
+                    rows="1" 
+                    placeholder="Reply to LifeCoach AI..."
+                    class="w-full bg-transparent border-none rounded-2xl pl-12 pr-20 py-4 pb-12 text-[#eaddcf] placeholder-[#8a8b86] focus:outline-none focus:ring-0 resize-none transition-all duration-300 text-[16px] relative z-10 custom-scrollbar"
+                    oninput="this.style.height = ''; this.style.height = Math.min(this.scrollHeight, 200) + 'px'; document.getElementById('user-input-center').value = this.value;"
+                    style="min-height: 64px;"
+                ></textarea>
+                
+                <!-- Left + Menu Button (Bottom Input) -->
+                <div class="absolute left-3 bottom-3.5 z-20" id="plus-menu-container-bottom">
+                    <button type="button" onclick="togglePlusMenuBottom()" class="w-8 h-8 flex items-center justify-center rounded-lg text-[#8a8b86] hover:bg-white/10 hover:text-[#eaddcf] transition-colors" title="Add attachment">
+                        <i class="fa-solid fa-plus text-[16px]"></i>
                     </button>
-                    <button type="button" id="mic-btn" onclick="toggleDictation()" class="absolute bottom-3 right-3 w-8 h-8 flex items-center justify-center rounded-xl text-slate-400 hover:text-cyan-400 hover:bg-white/5 transition-colors z-20" title="Sesli Yazma">
-                        <i class="fa-solid fa-microphone text-[15px]"></i>
-                    </button>
+                    
+                    <!-- Dropdown Menu -->
+                    <div id="plus-dropdown-bottom" class="absolute bottom-full left-0 mb-2 w-56 bg-[#2a2b28] border border-white/10 rounded-xl shadow-2xl py-2 hidden flex-col divide-y divide-white/5 z-50 transform origin-bottom-left transition-all">
+                        <div class="py-1">
+                            <button onclick="document.getElementById('file-upload').click(); togglePlusMenuBottom();" class="w-full text-left px-4 py-2 hover:bg-white/5 text-[13px] text-[#eaddcf] flex items-center gap-3 transition-colors">
+                                <i class="fa-solid fa-paperclip w-4 text-center text-[#8a8b86]"></i> Add files or photos
+                            </button>
+                            <button class="w-full text-left px-4 py-2 hover:bg-white/5 text-[13px] text-[#eaddcf] flex items-center gap-3 transition-colors disabled:opacity-50">
+                                <i class="fa-solid fa-camera w-4 text-center text-[#8a8b86]"></i> Take a screenshot
+                            </button>
+                        </div>
+                        <div class="py-1">
+                            <button class="w-full text-left px-4 py-2 hover:bg-white/5 text-[13px] text-[#4ea8e5] flex items-center justify-between transition-colors">
+                                <div class="flex items-center gap-3">
+                                    <i class="fa-solid fa-globe w-4 text-center"></i> Web search
+                                </div>
+                                <i class="fa-solid fa-check text-[10px]"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
                 
-                <button type="submit" class="send-btn w-12 h-[56px] flex items-center justify-center rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-600 hover:from-teal-400 hover:to-cyan-500 text-white shadow-[0_0_20px_rgba(20,184,166,0.3)] hover:shadow-[0_0_25px_rgba(20,184,166,0.5)] hover:scale-105 transition-all duration-300 flex-shrink-0 border border-teal-400/30" id="send-btn">
-                    <i class="fa-solid fa-paper-plane text-[15px] translate-x-[-1px] translate-y-[1px]"></i>
-                </button>
+                <input type="file" id="file-upload" accept="image/*,.pdf,.txt,.md,.doc,.docx" class="hidden" onchange="handleFileSelect(this)">
+                
+                <!-- Right Controls Container -->
+                <div class="absolute right-3 bottom-3 flex items-center gap-2 z-20">
+                    <button type="button" id="mic-btn" onclick="toggleDictation()" class="w-8 h-8 flex items-center justify-center rounded-lg text-[#8a8b86] hover:text-[#eaddcf] hover:bg-white/10 transition-colors" title="Voice Mode">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2C10.3431 2 9 3.34315 9 5V11C9 12.6569 10.3431 14 12 14C13.6569 14 15 12.6569 15 11V5C15 3.34315 13.6569 2 12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M19 10V11C19 14.866 15.866 18 12 18C8.13401 18 5 14.866 5 11V10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M12 18V22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M8 22H16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                    
+                    <button type="submit" class="w-8 h-8 flex items-center justify-center rounded-lg bg-[#eaddcf] hover:bg-white text-black transition-all shadow-md flex-shrink-0" id="send-btn">
+                        <i class="fa-solid fa-arrow-up text-[14px]"></i>
+                    </button>
+                </div>
             </form>
             
-            <input type="file" id="file-upload" accept="image/*,.pdf,.txt,.md,.doc,.docx" class="hidden" onchange="handleFileSelect(this)">
-            
-            <div class="text-center mt-4">
-                <p class="text-[11px] text-slate-500/70 font-medium">LifeCoach AI kişisel gelişim amaçlıdır ve profesyonel tıbbi tavsiye yerine geçmez.</p>
+            <div class="text-center mt-3">
+                <p class="text-[11px] text-slate-500/50 font-medium">LifeCoach AI can make mistakes. Consider verifying critical information.</p>
             </div>
         </div>
     </main>
@@ -5149,14 +5322,24 @@
                 const mem = getMemory();
                 const persona = getPersona();
                 const p = PERSONAS[persona];
-                const titleEl = document.getElementById('ai-greeting-title');
-                const subtitleEl = document.getElementById('ai-greeting-subtitle');
-                if (titleEl) {
-                    const greeting = mem.name ? `Merhaba, ${mem.name}! 👋` : 'Merhaba, bugün nasılsın?';
-                    titleEl.textContent = greeting;
-                }
-                if (subtitleEl && p) {
-                    subtitleEl.innerHTML = `${p.emoji} <strong style="color:#2DD4BF">${p.name}</strong> modunda yanındayım. Hedefleriniz veya bugününüz hakkında konuşalım.`;
+                const dynamicGreetingEl = document.getElementById('dynamic-greeting');
+                
+                if (dynamicGreetingEl) {
+                    const hour = new Date().getHours();
+                    let timeGreeting = '';
+                    
+                    if (hour >= 5 && hour < 12) {
+                        timeGreeting = 'Good morning';
+                    } else if (hour >= 12 && hour < 18) {
+                        timeGreeting = 'Good afternoon';
+                    } else if (hour >= 18 && hour < 22) {
+                        timeGreeting = 'Good evening';
+                    } else {
+                        timeGreeting = 'Hello, night owl';
+                    }
+                    
+                    const name = mem.name ? `, ${mem.name}` : '';
+                    dynamicGreetingEl.textContent = `${timeGreeting}${name}`;
                 }
             }
 
@@ -5634,6 +5817,86 @@
             // Chat submit override etc. already below
             const origChatFormHandler = window._origChatFormHandler;
 
+            // ===== CLAUDE STYLE CHAT UI LOGIC =====
+            function togglePlusMenu() {
+                const dropdown = document.getElementById('plus-dropdown');
+                dropdown.classList.toggle('hidden');
+                dropdown.classList.toggle('flex');
+            }
+            
+            function togglePlusMenuBottom() {
+                const dropdown = document.getElementById('plus-dropdown-bottom');
+                dropdown.classList.toggle('hidden');
+                dropdown.classList.toggle('flex');
+            }
+            
+            function syncInputs(value) {
+                const bottomInput = document.getElementById('user-input');
+                if (bottomInput) {
+                    bottomInput.value = value;
+                    bottomInput.style.height = 'auto';
+                    bottomInput.style.height = Math.min(bottomInput.scrollHeight, 200) + 'px';
+                }
+            }
+            
+            function submitCenterChat() {
+                const centerInput = document.getElementById('user-input-center');
+                const bottomInput = document.getElementById('user-input');
+                
+                if (centerInput && bottomInput && centerInput.value.trim() !== '') {
+                    bottomInput.value = centerInput.value;
+                    
+                    const welcomeScreen = document.getElementById('welcome-screen');
+                    const chatInputContainer = document.getElementById('chat-input-container');
+                    
+                    if (welcomeScreen) welcomeScreen.classList.add('hidden');
+                    if (chatInputContainer) {
+                        chatInputContainer.classList.remove('hidden');
+                        chatInputContainer.style.display = 'block'; // Make bottom input visible
+                    }
+                    
+                    // Trigger the send button on the bottom form
+                    const sendBtn = document.getElementById('send-btn');
+                    if (sendBtn) {
+                        sendBtn.click();
+                        // Clear center input after submission
+                        centerInput.value = '';
+                        centerInput.style.height = '64px';
+                    } else {
+                        const form = document.getElementById('chat-form');
+                        if (form) form.dispatchEvent(new Event('submit', { cancelable: true }));
+                    }
+                }
+            }
+            
+            // Allow Enter key to submit center chat
+            const centerInputEl = document.getElementById('user-input-center');
+            if (centerInputEl) {
+                centerInputEl.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        submitCenterChat();
+                    }
+                });
+            }
+            
+            // Hide plus dropdowns when clicking outside
+            document.addEventListener('click', function(e) {
+                const plusContainer = document.getElementById('plus-menu-container');
+                const plusDropdown = document.getElementById('plus-dropdown');
+                if (plusContainer && plusDropdown && !plusContainer.contains(e.target)) {
+                    plusDropdown.classList.add('hidden');
+                    plusDropdown.classList.remove('flex');
+                }
+                
+                const plusContainerBottom = document.getElementById('plus-menu-container-bottom');
+                const plusDropdownBottom = document.getElementById('plus-dropdown-bottom');
+                if (plusContainerBottom && plusDropdownBottom && !plusContainerBottom.contains(e.target)) {
+                    plusDropdownBottom.classList.add('hidden');
+                    plusDropdownBottom.classList.remove('flex');
+                }
+            });
+
             // Make new feature functions globally accessible
             window.generateWaffle = generateWaffle;
             window.loadWaffleSection = loadWaffleSection;
@@ -5651,6 +5914,11 @@
             window.loadPersonaSection = loadPersonaSection;
             window.loadMoodSection = loadMoodSection;
             window.loadTaskBreakSection = loadTaskBreakSection;
+            window.togglePlusMenu = togglePlusMenu;
+            window.togglePlusMenuBottom = togglePlusMenuBottom;
+            window.syncInputs = syncInputs;
+            window.submitCenterChat = submitCenterChat;
+            window.toggleDictationCenter = function() { toggleDictation(); };
 
             // Init on load
             updateChatGreeting();
