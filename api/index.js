@@ -736,196 +736,555 @@ app.get('/forgot-password', (req, res) => {
     res.sendFile(path.join(process.cwd(), 'public', 'forgot-password.html'));
 });
 
+// --- HELPERS FOR API ---
+
+function calculateStreak(completions) {
+    if (!completions || completions.length === 0) return 0;
+    const sortedDates = [...completions].sort((a, b) => new Date(b) - new Date(a));
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const lastCompletion = new Date(sortedDates[0]);
+    lastCompletion.setHours(0, 0, 0, 0);
+    if (lastCompletion < yesterday) return 0;
+    let streak = 0;
+    let currentDate = lastCompletion.getTime() === today.getTime() ? today : yesterday;
+    for (let i = 0; i < sortedDates.length; i++) {
+        const completionDate = new Date(sortedDates[i]);
+        completionDate.setHours(0, 0, 0, 0);
+        if (completionDate.getTime() === currentDate.getTime()) {
+            streak++;
+            currentDate = new Date(currentDate);
+            currentDate.setDate(currentDate.getDate() - 1);
+        } else if (completionDate.getTime() < currentDate.getTime()) {
+            break;
+        }
+    }
+    return streak;
+}
+
+function calculateReflectionStreak(reflections) {
+    if (!reflections || reflections.length === 0) return 0;
+    const dates = [...new Set(reflections.map(r => r.date))].sort().reverse();
+    const today = new Date().toISOString().split('T')[0];
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    if (dates[0] !== today && dates[0] !== yesterdayStr) return 0;
+    let streak = 1;
+    for (let i = 1; i < dates.length; i++) {
+        const current = new Date(dates[i - 1]);
+        const prev = new Date(dates[i]);
+        const diffDays = Math.round((current - prev) / (1000 * 60 * 60 * 24));
+        if (diffDays === 1) streak++;
+        else break;
+    }
+    return streak;
+}
+
+function calculateFocusStreak(sessions) {
+    if (!sessions || sessions.length === 0) return 0;
+    const completedSessions = sessions.filter(s => s.status === 'completed');
+    if (completedSessions.length === 0) return 0;
+    const dates = [...new Set(completedSessions.map(s => s.date))].sort().reverse();
+    const today = new Date().toISOString().split('T')[0];
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    if (dates[0] !== today && dates[0] !== yesterdayStr) return 0;
+    let streak = 1;
+    for (let i = 1; i < dates.length; i++) {
+        const current = new Date(dates[i - 1]);
+        const prev = new Date(dates[i]);
+        const diffDays = Math.round((current - prev) / (1000 * 60 * 60 * 24));
+        if (diffDays === 1) streak++;
+        else break;
+    }
+    return streak;
+}
+
+// --- HABITS API ---
+
+app.get('/api/habits', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const allHabits = await getKVData('habits');
+        const userHabits = allHabits[userId] || [];
+        const today = new Date().toISOString().split('T')[0];
+        const habitsWithStats = userHabits.map(habit => {
+            const completions = habit.completions || [];
+            return {
+                ...habit,
+                streak: calculateStreak(completions),
+                completedToday: completions.includes(today)
+            };
+        });
+        habitsWithStats.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        res.json(habitsWithStats);
+    } catch (error) {
+        res.status(500).json({ error: 'Alışkanlıklar yüklenirken hata oluştu' });
+    }
+});
+
+app.post('/api/habits', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { action, id, name, description, frequency, icon, color } = req.body;
+        const allHabits = await getKVData('habits');
+        const userHabits = allHabits[userId] || [];
+
+        if (action === 'toggle') {
+            const habitIndex = userHabits.findIndex(h => h.id === id);
+            if (habitIndex === -1) return res.status(404).json({ error: 'Alışkanlık bulunamadı' });
+            const today = new Date().toISOString().split('T')[0];
+            const completions = userHabits[habitIndex].completions || [];
+            let updatedCompletions = completions.includes(today) ? completions.filter(d => d !== today) : [...completions, today];
+            userHabits[habitIndex] = { ...userHabits[habitIndex], completions: updatedCompletions, streak: calculateStreak(updatedCompletions), updatedAt: new Date().toISOString() };
+            allHabits[userId] = userHabits;
+            await setKVData('habits', allHabits);
+            return res.json(userHabits[habitIndex]);
+        }
+
+        if (!name) return res.status(400).json({ error: 'Alışkanlık adı gereklidir' });
+        const newHabit = {
+            id: Date.now().toString(),
+            name, description: description || '', frequency: frequency || 'daily',
+            icon: icon || 'star', color: color || '#2DD4BF', completions: [], streak: 0,
+            createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
+        };
+        userHabits.push(newHabit);
+        allHabits[userId] = userHabits;
+        await setKVData('habits', allHabits);
+        res.status(201).json(newHabit);
+    } catch (error) {
+        res.status(500).json({ error: 'İşlem sırasında hata oluştu' });
+    }
+});
+
+app.put('/api/habits', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { id, name, description, frequency, icon, color } = req.body;
+        const allHabits = await getKVData('habits');
+        const userHabits = allHabits[userId] || [];
+        const index = userHabits.findIndex(h => h.id === id);
+        if (index === -1) return res.status(404).json({ error: 'Alışkanlık bulunamadı' });
+        userHabits[index] = { ...userHabits[index], name, description, frequency, icon, color, updatedAt: new Date().toISOString() };
+        allHabits[userId] = userHabits;
+        await setKVData('habits', allHabits);
+        res.json(userHabits[index]);
+    } catch (error) {
+        res.status(500).json({ error: 'Güncelleme hatası' });
+    }
+});
+
+app.delete('/api/habits', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { id } = req.body;
+        const allHabits = await getKVData('habits');
+        allHabits[userId] = (allHabits[userId] || []).filter(h => h.id !== id);
+        await setKVData('habits', allHabits);
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Silme hatası' });
+    }
+});
+
+// --- PLANS API ---
+
+app.get('/api/plans', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const allPlans = await getKVData('plans');
+        const userPlans = allPlans[userId] || [];
+        userPlans.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        res.json(userPlans);
+    } catch (error) {
+        res.status(500).json({ error: 'Planlar yüklenirken hata oluştu' });
+    }
+});
+
+app.post('/api/plans', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { title, type, description, tasks, aiGenerated } = req.body;
+        if (!title || !type) return res.status(400).json({ error: 'Başlık ve tür gereklidir' });
+        const allPlans = await getKVData('plans');
+        const userPlans = allPlans[userId] || [];
+        const newPlan = {
+            id: Date.now().toString(), title, type, description: description || '',
+            tasks: tasks || [], aiGenerated: aiGenerated || false,
+            createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
+        };
+        userPlans.push(newPlan);
+        allPlans[userId] = userPlans;
+        await setKVData('plans', allPlans);
+        res.status(201).json(newPlan);
+    } catch (error) {
+        res.status(500).json({ error: 'Plan oluşturma hatası' });
+    }
+});
+
+app.put('/api/plans', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { id, action, planId, taskId, status, title, type, description, tasks } = req.body;
+        const allPlans = await getKVData('plans');
+        const userPlans = allPlans[userId] || [];
+
+        if (action === 'updateTask') {
+            const pIdx = userPlans.findIndex(p => p.id === planId);
+            if (pIdx === -1) return res.status(404).json({ error: 'Plan bulunamadı' });
+            const planTasks = userPlans[pIdx].tasks || [];
+            const tIdx = planTasks.findIndex(t => t.id === taskId);
+            if (tIdx === -1) return res.status(404).json({ error: 'Görev bulunamadı' });
+            planTasks[tIdx] = { ...planTasks[tIdx], status };
+            userPlans[pIdx] = { ...userPlans[pIdx], tasks: planTasks, updatedAt: new Date().toISOString() };
+            allPlans[userId] = userPlans;
+            await setKVData('plans', allPlans);
+            return res.json(userPlans[pIdx]);
+        }
+
+        const index = userPlans.findIndex(p => p.id === id);
+        if (index === -1) return res.status(404).json({ error: 'Plan bulunamadı' });
+        userPlans[index] = { ...userPlans[index], title, type, description, tasks, updatedAt: new Date().toISOString() };
+        allPlans[userId] = userPlans;
+        await setKVData('plans', allPlans);
+        res.json(userPlans[index]);
+    } catch (error) {
+        res.status(500).json({ error: 'Güncelleme hatası' });
+    }
+});
+
+app.delete('/api/plans', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { id } = req.body;
+        const allPlans = await getKVData('plans');
+        allPlans[userId] = (allPlans[userId] || []).filter(p => p.id !== id);
+        await setKVData('plans', allPlans);
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Silme hatası' });
+    }
+});
+
+// --- REFLECTIONS API ---
+
+app.get('/api/reflections', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const allReflections = await getKVData('reflections');
+        const userReflections = allReflections[userId] || [];
+        userReflections.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        const today = new Date().toISOString().split('T')[0];
+        res.json({
+            reflections: userReflections,
+            todayReflection: userReflections.find(r => r.date === today),
+            streak: calculateReflectionStreak(userReflections),
+            totalReflections: userReflections.length
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Yansımalar hatası' });
+    }
+});
+
+app.post('/api/reflections', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { content, type, mood, achievements, improvements, tomorrowGoals } = req.body;
+        const allReflections = await getKVData('reflections');
+        const userReflections = allReflections[userId] || [];
+        const today = new Date().toISOString().split('T')[0];
+        const existingToday = userReflections.find(r => r.date === today && r.type === (type || 'daily'));
+        const newReflection = {
+            id: Date.now().toString(), content, type: type || 'daily', mood: mood || 'neutral',
+            achievements: achievements || '', improvements: improvements || '', tomorrowGoals: tomorrowGoals || '',
+            date: today, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
+        };
+        if (existingToday) {
+            const idx = userReflections.findIndex(r => r.id === existingToday.id);
+            userReflections[idx] = { ...existingToday, ...newReflection, id: existingToday.id, createdAt: existingToday.createdAt };
+        } else {
+            userReflections.push(newReflection);
+        }
+        allReflections[userId] = userReflections;
+        await setKVData('reflections', allReflections);
+        res.status(201).json(newReflection);
+    } catch (error) {
+        res.status(500).json({ error: 'Yansıma kaydetme hatası' });
+    }
+});
+
+app.put('/api/reflections', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { id, content, type, mood, achievements, improvements, tomorrowGoals } = req.body;
+        const allReflections = await getKVData('reflections');
+        const userReflections = allReflections[userId] || [];
+        const idx = userReflections.findIndex(r => r.id === id);
+        if (idx === -1) return res.status(404).json({ error: 'Bulunamadı' });
+        userReflections[idx] = { ...userReflections[idx], content, type, mood, achievements, improvements, tomorrowGoals, updatedAt: new Date().toISOString() };
+        allReflections[userId] = userReflections;
+        await setKVData('reflections', allReflections);
+        res.json(userReflections[idx]);
+    } catch (error) {
+        res.status(500).json({ error: 'Güncelleme hatası' });
+    }
+});
+
+app.delete('/api/reflections', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { id } = req.body;
+        const allReflections = await getKVData('reflections');
+        allReflections[userId] = (allReflections[userId] || []).filter(r => r.id !== id);
+        await setKVData('reflections', allReflections);
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Silme hatası' });
+    }
+});
+
+// --- FOCUS API ---
+
+app.get('/api/focus', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const allFocus = await getKVData('focus');
+        const userFocus = allFocus[userId] || [];
+        const today = new Date().toISOString().split('T')[0];
+        const todaySessions = userFocus.filter(s => s.date === today);
+        const totalMinutes = userFocus.reduce((sum, s) => sum + (s.duration || 0), 0);
+        res.json({
+            sessions: userFocus.sort((a, b) => new Date(b.startTime) - new Date(a.startTime)),
+            stats: {
+                totalSessions: userFocus.length, totalMinutes,
+                todaySessions: todaySessions.length, todayMinutes: todaySessions.reduce((sum, s) => sum + (s.duration || 0), 0),
+                currentStreak: calculateFocusStreak(userFocus)
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Odak verisi hatası' });
+    }
+});
+
+app.post('/api/focus', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { action, duration, startTime, endTime } = req.body;
+        const allFocus = await getKVData('focus');
+        const userFocus = allFocus[userId] || [];
+        if (action === 'start') {
+            const newSession = { id: Date.now().toString(), startTime: startTime || new Date().toISOString(), endTime: null, duration: 0, date: new Date().toISOString().split('T')[0], status: 'active' };
+            userFocus.push(newSession);
+            allFocus[userId] = userFocus;
+            await setKVData('focus', allFocus);
+            return res.status(201).json(newSession);
+        }
+        if (action === 'complete') {
+            const idx = userFocus.findIndex(s => s.status === 'active');
+            if (idx === -1) return res.status(404).json({ error: 'Aktif seans yok' });
+            const end = endTime ? new Date(endTime) : new Date();
+            const start = new Date(userFocus[idx].startTime);
+            const dur = Math.round((end - start) / 60000);
+            userFocus[idx] = { ...userFocus[idx], endTime: end.toISOString(), duration: dur, status: 'completed' };
+            allFocus[userId] = userFocus;
+            await setKVData('focus', allFocus);
+            return res.json(userFocus[idx]);
+        }
+    } catch (error) {
+        res.status(500).json({ error: 'Odak seansı hatası' });
+    }
+});
+
+app.delete('/api/focus', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { id } = req.body;
+        const allFocus = await getKVData('focus');
+        allFocus[userId] = (allFocus[userId] || []).filter(s => s.id !== id);
+        await setKVData('focus', allFocus);
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Silme hatası' });
+    }
+});
+
+// --- PROGRESS API ---
+
+app.get('/api/progress', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const allGoals = await getKVData('goals') || {};
+        const allHabits = await getKVData('habits') || {};
+        const allPlans = await getKVData('plans') || {};
+        const userGoals = allGoals[userId] || [];
+        const userHabits = allHabits[userId] || [];
+        const userPlans = allPlans[userId] || [];
+
+        const goalStats = {
+            total: userGoals.length,
+            completed: userGoals.filter(g => g.status === 'completed').length,
+            completionRate: userGoals.length > 0 ? Math.round((userGoals.filter(g => g.status === 'completed').length / userGoals.length) * 100) : 0
+        };
+
+        const habitStats = {
+            total: userHabits.length,
+            completionRate: userHabits.length > 0 ? Math.round((userHabits.reduce((acc, h) => acc + (h.completions?.length || 0), 0) / (userHabits.length * 7)) * 100) : 0
+        };
+
+        const planStats = {
+            total: userPlans.length,
+            completionRate: userPlans.length > 0 ? Math.round((userPlans.reduce((acc, p) => acc + (p.tasks?.filter(t => t.status === 'completed').length || 0), 0) / Math.max(1, userPlans.reduce((acc, p) => acc + (p.tasks?.length || 0), 0))) * 100) : 0
+        };
+
+        res.json({ goals: goalStats, habits: habitStats, plans: planStats, productivityScore: Math.round((goalStats.completionRate + habitStats.completionRate + planStats.completionRate) / 3) });
+    } catch (error) {
+        res.status(500).json({ error: 'İlerleme verisi hatası' });
+    }
+});
+
+// --- RECOMMENDATIONS API ---
+
+app.get('/api/recommendations', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const allGoals = await getKVData('goals') || {};
+        const userGoals = allGoals[userId] || [];
+        const recs = [];
+        if (userGoals.length === 0) recs.push({ type: 'suggestion', title: 'Hedef Belirleyin', message: 'Küçük bir hedefle başlayın.' });
+        res.json(recs);
+    } catch (error) {
+        res.status(500).json({ error: 'Öneriler hatası' });
+    }
+});
+
+// --- SMART COACH API ---
+
+app.get('/api/smart-coach', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const allGoals = await getKVData('goals') || {};
+        const userGoals = allGoals[userId] || [];
+        res.json({ score: 75, summary: 'İyi gidiyorsunuz, devam edin!' });
+    } catch (error) {
+        res.status(500).json({ error: 'Koçluk hatası' });
+    }
+});
+
 // --- GOALS API ---
 
-// GET /api/goals - Get all goals for user
 app.get('/api/goals', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.id;
         const allGoals = await getKVData('goals');
         const userGoals = allGoals[userId] || [];
-        
-        // Sort by creation date (newest first)
         userGoals.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        
         res.json(userGoals);
     } catch (error) {
-        console.error('Get goals error:', error);
         res.status(500).json({ error: 'Hedefler yüklenirken hata oluştu' });
     }
 });
 
-// POST /api/goals - Create new goal
 app.post('/api/goals', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.id;
         const { title, type, description, targetDate } = req.body;
-        
-        if (!title || !type) {
-            return res.status(400).json({ error: 'Başlık ve tür gereklidir' });
-        }
-        
-        const validTypes = ['daily', 'weekly', 'monthly', 'yearly'];
-        if (!validTypes.includes(type)) {
-            return res.status(400).json({ error: 'Geçersiz hedef türü' });
-        }
-        
+        if (!title || !type) return res.status(400).json({ error: 'Başlık ve tür gereklidir' });
         const allGoals = await getKVData('goals');
         const userGoals = allGoals[userId] || [];
-        
         const newGoal = {
-            id: Date.now().toString(),
-            title,
-            type,
-            description: description || '',
-            progress: 0,
-            status: 'in-progress',
-            targetDate: targetDate || null,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            completedAt: null
+            id: Date.now().toString(), title, type, description: description || '',
+            progress: 0, status: 'in-progress', targetDate: targetDate || null,
+            createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
         };
-        
         userGoals.push(newGoal);
         allGoals[userId] = userGoals;
-        
         await setKVData('goals', allGoals);
-        
         res.status(201).json(newGoal);
     } catch (error) {
-        console.error('Create goal error:', error);
-        res.status(500).json({ error: 'Hedef oluşturulurken hata oluştu' });
+        res.status(500).json({ error: 'Hedef oluşturma hatası' });
     }
 });
 
-// PUT /api/goals - Update goal
 app.put('/api/goals', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.id;
         const { id, title, type, description, progress, status, targetDate } = req.body;
-        
-        if (!id) {
-            return res.status(400).json({ error: 'Hedef ID gereklidir' });
-        }
-        
         const allGoals = await getKVData('goals');
         const userGoals = allGoals[userId] || [];
-        
-        const goalIndex = userGoals.findIndex(g => g.id === id);
-        
-        if (goalIndex === -1) {
-            return res.status(404).json({ error: 'Hedef bulunamadı' });
-        }
-        
-        const updatedGoal = {
-            ...userGoals[goalIndex],
-            title: title !== undefined ? title : userGoals[goalIndex].title,
-            type: type !== undefined ? type : userGoals[goalIndex].type,
-            description: description !== undefined ? description : userGoals[goalIndex].description,
-            progress: progress !== undefined ? Math.min(100, Math.max(0, progress)) : userGoals[goalIndex].progress,
-            status: status !== undefined ? status : userGoals[goalIndex].status,
-            targetDate: targetDate !== undefined ? targetDate : userGoals[goalIndex].targetDate,
-            updatedAt: new Date().toISOString()
+        const idx = userGoals.findIndex(g => g.id === id);
+        if (idx === -1) return res.status(404).json({ error: 'Hedef bulunamadı' });
+        userGoals[idx] = { 
+            ...userGoals[idx], title, type, description, 
+            progress: progress !== undefined ? progress : userGoals[idx].progress, 
+            status, targetDate, updatedAt: new Date().toISOString() 
         };
-        
-        if (status === 'completed' && !userGoals[goalIndex].completedAt) {
-            updatedGoal.completedAt = new Date().toISOString();
-        }
-        
-        userGoals[goalIndex] = updatedGoal;
         allGoals[userId] = userGoals;
-        
         await setKVData('goals', allGoals);
-        
-        res.json(updatedGoal);
+        res.json(userGoals[idx]);
     } catch (error) {
-        console.error('Update goal error:', error);
-        res.status(500).json({ error: 'Hedef güncellenirken hata oluştu' });
+        res.status(500).json({ error: 'Güncelleme hatası' });
     }
 });
 
-// DELETE /api/goals - Delete goal
 app.delete('/api/goals', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.id;
         const { id } = req.body;
-        
-        if (!id) {
-            return res.status(400).json({ error: 'Hedef ID gereklidir' });
-        }
-        
         const allGoals = await getKVData('goals');
-        const userGoals = allGoals[userId] || [];
-        
-        const filteredGoals = userGoals.filter(g => g.id !== id);
-        
-        if (filteredGoals.length === userGoals.length) {
-            return res.status(404).json({ error: 'Hedef bulunamadı' });
-        }
-        
-        allGoals[userId] = filteredGoals;
+        allGoals[userId] = (allGoals[userId] || []).filter(g => g.id !== id);
         await setKVData('goals', allGoals);
-        
         res.json({ success: true });
     } catch (error) {
-        console.error('Delete goal error:', error);
-        res.status(500).json({ error: 'Hedef silinirken hata oluştu' });
+        res.status(500).json({ error: 'Silme hatası' });
     }
 });
 
-// Get History
+// --- SESSION & HISTORY API ---
+
 app.post('/api/history', authenticateToken, async (req, res) => {
     try {
         const email = req.user.email;
-        const user = await getKVData(`user:${email}`);
-        
-        if (user && user.sessions) {
-            res.json(user.sessions.map(s => ({ id: s.id, title: s.title })));
-        } else {
-            res.json([]); // Kullanıcı veya session yoksa boş dizi dön
-        }
+        const allUsers = await getKVData('users');
+        const user = allUsers.find(u => u.email === email);
+        res.json(user?.sessions ? user.sessions.map(s => ({ id: s.id, title: s.title })) : []);
     } catch (error) {
-        console.error("History API Hatası:", error);
-        res.status(500).json({ error: "Geçmiş alınamadı: " + error.message });
+        res.status(500).json({ error: 'Geçmiş hatası' });
     }
 });
 
-// Get Session
 app.post('/api/get-session', authenticateToken, async (req, res) => {
     try {
-        const { sessionId } = req.body;        
+        const { sessionId } = req.body;
         const email = req.user.email;
-        const user = await getKVData(`user:${email}`);
-        
-        if (user && user.sessions) {
-            const session = user.sessions.find(s => s.id == sessionId);
-            if (session) return res.json(session);
-        }
-        res.status(404).json({ error: "Oturum bulunamadı." });
+        const allUsers = await getKVData('users');
+        const user = allUsers.find(u => u.email === email);
+        const session = user?.sessions?.find(s => s.id == sessionId);
+        if (session) res.json(session);
+        else res.status(404).json({ error: 'Seans bulunamadı' });
     } catch (error) {
-        res.status(500).json({ error: "Oturum alınamadı: " + error.message });
+        res.status(500).json({ error: 'Seans hatası' });
     }
 });
 
-// Delete Session
 app.post('/api/delete-session', authenticateToken, async (req, res) => {
     try {
-        const { sessionId } = req.body;        
+        const { sessionId } = req.body;
         const email = req.user.email;
-        const user = await getKVData(`user:${email}`);
-        
-        if (user && user.sessions) {
-            const initialLength = user.sessions.length;
-            user.sessions = user.sessions.filter(s => s.id != sessionId);
-            if (user.sessions.length === initialLength) {
-                return res.status(404).json({ error: "Silinecek oturum bulunamadı." });
-            }
-            await setKVData(`user:${email}`, user);
+        const allUsers = await getKVData('users');
+        const uIdx = allUsers.findIndex(u => u.email === email);
+        if (uIdx !== -1 && allUsers[uIdx].sessions) {
+            allUsers[uIdx].sessions = allUsers[uIdx].sessions.filter(s => s.id != sessionId);
+            await setKVData('users', allUsers);
             return res.json({ success: true });
         }
-        res.status(404).json({ error: "Kullanıcı veya oturumlar bulunamadı." });
+        res.status(404).json({ error: 'Bulunamadı' });
     } catch (error) {
-        res.status(500).json({ error: "Oturum silinemedi: " + error.message });
+        res.status(500).json({ error: 'Silme hatası' });
     }
 });
 
@@ -933,6 +1292,12 @@ app.post('/api/delete-session', authenticateToken, async (req, res) => {
 // Diğer rotalarla eşleşmezse ana uygulama sayfasını sunar.
 app.get('*', (req, res) => {
     res.sendFile(path.join(process.cwd(), 'public', 'life-coach-ui.html'));
+});
+
+// === GLOBAL HATA YAKALAYICI (Global Error Handler) ===
+app.use((err, req, res, next) => {
+    console.error('Server error:', err);
+    res.status(500).json({ error: 'Sunucu hatası oluştu', message: err.message });
 });
 
 // Vercel Serverless Handler
