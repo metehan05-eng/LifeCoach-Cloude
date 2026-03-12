@@ -1,23 +1,33 @@
 import React, { useCallback, useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { useRouter } from "next/navigation";
-import { Stack, Select, HStack, Text, Box } from "@chakra-ui/react";
+import { 
+  Box, 
+  Stack, 
+  HStack, 
+  Text, 
+  Select, 
+  useColorModeValue,
+  Flex,
+  Spinner,
+} from "@chakra-ui/react";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
 import ChatInput from "./input";
 import ChatOuput from "./output";
 
-// Vercel/Local için boş bırakıyoruz (relative path kullanır) veya env'den alır
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
-export default function Chat({ id, ...properties }) {
+export default function Chat({ id, onSelectChatbot, selectedChatbot, chatbots, ...properties }) {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState();
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [models, setModels] = useState([]);
   const [selectedModel, setSelectedModel] = useState("");
   const router = useRouter();
+  
+  const borderColor = useColorModeValue("gray.200", "gray.700");
+  const headerBg = useColorModeValue("white", "gray.800");
 
-  // Backend'den kullanılabilir modelleri çek
   useEffect(() => {
     async function fetchModels() {
       try {
@@ -25,7 +35,7 @@ export default function Chat({ id, ...properties }) {
         const data = await res.json();
         if (data && data.length > 0) {
           setModels(data);
-          setSelectedModel(data[0].name); // İlk modeli varsayılan yap
+          setSelectedModel(data[0].name);
         }
       } catch (error) {
         console.error("Failed to fetch models:", error);
@@ -34,18 +44,17 @@ export default function Chat({ id, ...properties }) {
     fetchModels();
   }, []);
 
-  // Sohbet geçmişini yükle
   useEffect(() => {
     if (id) {
-      const email = localStorage.getItem("userEmail"); // Kullanıcı email'ini localStorage'dan alıyoruz
-      const token = localStorage.getItem("token"); // Token'ı al
+      const email = localStorage.getItem("userEmail");
+      const token = localStorage.getItem("token");
       if (!email) return;
 
       fetch(`${API_URL}/api/get-session`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}` // Token'ı header'a ekle
+          "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify({ email, sessionId: id }),
       })
@@ -57,9 +66,9 @@ export default function Chat({ id, ...properties }) {
           }));
           setMessages(formattedMessages);
         })
-        .catch(() => setMessages([])); // Hata veya seans yoksa mesajları temizle
+        .catch(() => setMessages([]));
     } else {
-      setMessages([]); // ID yoksa (yeni sohbet) mesajları temizle
+      setMessages([]);
     }
   }, [id]);
 
@@ -79,7 +88,7 @@ export default function Chat({ id, ...properties }) {
       }));
 
       const email = localStorage.getItem("userEmail");
-      const token = localStorage.getItem("token"); // Token'ı al
+      const token = localStorage.getItem("token");
       if (!email) {
         alert("Please log in first.");
         setIsSendingMessage(false);
@@ -92,7 +101,7 @@ export default function Chat({ id, ...properties }) {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}` // Token'ı header'a ekle
+          "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify({
           message: values,
@@ -127,7 +136,7 @@ export default function Chat({ id, ...properties }) {
             setIsSendingMessage(false);
 
             if (data.sessionId && data.sessionId !== id) {
-              router.replace(`/chat/${data.sessionId}`);
+              router.replace(`/app/chatbots/${data.sessionId}`);
             }
             ctrl.abort();
           }
@@ -147,24 +156,53 @@ export default function Chat({ id, ...properties }) {
       {...properties}
       minHeight="100vh"
       maxHeight="100vh"
-      spacing={6}
+      spacing={0}
       position="relative"
+      backgroundColor={useColorModeValue("white", "gray.900")}
     >
-      <Box px={6} pt={4}>
-        <HStack>
-          <Text fontSize="sm" fontWeight="500" mr={2} whiteSpace="nowrap">
-            AI Model:
-          </Text>
-          <Select
-            size="sm"
-            value={selectedModel}
-            onChange={(e) => setSelectedModel(e.target.value)}
-            disabled={models.length === 0 || isSendingMessage}
-          >
-            {models.map((model) => (
-              <option key={model.name} value={model.name}>{model.name}</option>
-            ))}
-          </Select>
+      <Box 
+        px={6} 
+        py={3}
+        backgroundColor={headerBg}
+        borderBottomWidth={1}
+        borderColor={borderColor}
+      >
+        <HStack justifyContent="space-between">
+          <HStack spacing={3}>
+            <Box
+              width="32px"
+              height="32px"
+              borderRadius="lg"
+              backgroundColor="#6366f1"
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              boxShadow="0 2px 8px rgba(99, 102, 241, 0.3)"
+            >
+              <Text color="white" fontSize="sm" fontWeight="bold">AI</Text>
+            </Box>
+            <Text fontSize="sm" fontWeight="600" color={useColorModeValue("gray.700", "gray.200")}>
+              {selectedChatbot?.name || "AI Assistant"}
+            </Text>
+          </HStack>
+          <HStack spacing={2}>
+            <Text fontSize="xs" color="gray.500" whiteSpace="nowrap">
+              Model:
+            </Text>
+            <Select
+              size="xs"
+              value={selectedModel}
+              onChange={(e) => setSelectedModel(e.target.value)}
+              disabled={models.length === 0 || isSendingMessage}
+              width="auto"
+              minWidth="120px"
+              fontSize="xs"
+            >
+              {models.map((model) => (
+                <option key={model.name} value={model.name}>{model.name}</option>
+              ))}
+            </Select>
+          </HStack>
         </HStack>
       </Box>
       <ChatOuput
@@ -172,15 +210,14 @@ export default function Chat({ id, ...properties }) {
         messages={messages}
         newMessage={newMessage}
         overflowY="auto"
-        paddingBottom={40}
+        flex={1}
       />
       <ChatInput
-        position="absolute"
+        position="relative"
         bottom="0"
         width="100%"
         isLoading={isSendingMessage}
         onSubmit={onSubmit}
-        paddingY={6}
       />
     </Stack>
   );
@@ -188,4 +225,7 @@ export default function Chat({ id, ...properties }) {
 
 Chat.propTypes = {
   id: PropTypes.string,
+  onSelectChatbot: PropTypes.func,
+  selectedChatbot: PropTypes.object,
+  chatbots: PropTypes.array,
 };
