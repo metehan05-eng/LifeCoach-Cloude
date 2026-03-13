@@ -110,8 +110,6 @@
             overflow-x: hidden;
             max-width: 100vw;
             overflow-wrap: break-word;
-            word-wrap: break-word;
-            word-break: break-word;
         }
 
         body {
@@ -123,8 +121,8 @@
             padding: 0;
         }
 
-        /* Ensure no element exceeds viewport width */
-        * {
+        /* Ensure no element exceeds viewport width - Restricted to relevant elements */
+        img, video, canvas, svg {
             max-width: 100%;
         }
 
@@ -176,8 +174,6 @@
         body {
             overflow-x: hidden;
             overflow-wrap: break-word;
-            word-wrap: break-word;
-            word-break: break-word;
         }
 
         /* Animated mesh gradient background */
@@ -563,8 +559,7 @@
             backdrop-filter: blur(10px);
             max-width: 100%;
             overflow-wrap: break-word;
-            word-wrap: break-word;
-            word-break: break-word;
+            word-break: normal;
         }
 
         .prompt-card::before {
@@ -605,11 +600,12 @@
         }
 
         .msg-content-nobubble {
-            max-width: 80%;
+            max-width: 85%;
             display: flex;
             flex-direction: column;
             gap: 8px;
             position: relative;
+            width: fit-content;
         }
 
         .msg-wrapper-nobubble.user .msg-content-nobubble {
@@ -683,11 +679,11 @@
             padding: 16px 24px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
             width: fit-content;
-            max-width: 80%;
+            max-width: 100%;
             margin-left: auto;
             border-left: 2px solid rgba(45, 212, 191, 0.3);
-            word-wrap: break-word;
             overflow-wrap: break-word;
+            word-break: normal;
         }
 
         .msg-wrapper-nobubble.user .msg-content-nobubble {
@@ -774,8 +770,8 @@
         }
 
         .input-container-glass:focus-within {
-            border-color: rgba(45, 212, 191, 0.5);
-            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), 0 0 20px rgba(45, 212, 191, 0.1);
+            border-color: rgba(45, 212, 191, 0.3);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
             background: rgba(15, 23, 42, 0.8);
         }
 
@@ -795,6 +791,12 @@
             min-height: 56px;
             max-height: 250px;
             resize: none;
+            box-shadow: none !important;
+            outline: none !important;
+        }
+
+        .chat-textarea:focus {
+            outline: none !important;
             box-shadow: none !important;
         }
 
@@ -1173,6 +1175,12 @@
             max-height: 200px;
             resize: none;
             box-shadow: none !important;
+            outline: none !important;
+        }
+
+        .center-textarea:focus {
+            outline: none !important;
+            box-shadow: none !important;
         }
 
         .center-input-glass {
@@ -1191,8 +1199,8 @@
 
         .center-input-glass:focus-within {
             background: rgba(15, 23, 42, 0.6);
-            border-color: rgba(45, 212, 191, 0.3);
-            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(45, 212, 191, 0.1);
+            border-color: rgba(45, 212, 191, 0.25);
+            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.5);
             transform: translateY(-2px);
         }
 
@@ -1413,7 +1421,8 @@
             .msg-content-nobubble {
                 max-width: 85%;
                 overflow-wrap: break-word;
-                word-break: break-word;
+                word-break: normal;
+                width: fit-content;
             }
 
             /* Prevent horizontal scroll on all containers */
@@ -2144,6 +2153,41 @@
                 font-size: 0.65rem;
             }
         }
+        /* Chat History Sidebar Stylings */
+        #chat-history-content {
+            border-left: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(15, 23, 42, 0.2);
+            backdrop-filter: blur(20px);
+            z-index: 10;
+        }
+
+        .scrollbar-thin::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .scrollbar-thin::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+        }
+
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+            background: rgba(45, 212, 191, 0.2);
+        }
+
+        /* Adjust chat main area for history sidebar */
+        #section-chat .flex-1 {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @media (max-width: 1024px) {
+            #chat-history-content {
+                display: none;
+            }
+        }
     </style>
 </head>
 
@@ -2184,18 +2228,6 @@
             </div>
         </div>
 
-        <!-- Action Buttons -->
-        <div class="px-4 pb-3 space-y-2">
-            <button onclick="startNewChat(); closeSidebarMobile();"
-                class="btn-primary w-full flex items-center justify-center gap-2">
-                <i class="fa-solid fa-plus text-sm"></i>
-                <span>Yeni Oturum</span>
-            </button>
-            <button onclick="exportChat();" class="btn-secondary w-full flex items-center justify-center gap-2">
-                <i class="fa-solid fa-download text-xs"></i>
-                <span>Sohbeti İndir (.txt)</span>
-            </button>
-        </div>
 
         <!-- Feature Navigation -->
         <div class="px-4 pb-3 flex-1 overflow-y-auto no-scrollbar">
@@ -2475,20 +2507,6 @@
             </div>
         </div>
 
-        <!-- Search -->
-        <div class="px-4 pb-3">
-            <div class="relative">
-                <i
-                    class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
-                <input type="text" id="history-search" onkeyup="filterHistory()" placeholder="Geçmişi ara..."
-                    class="search-input">
-            </div>
-        </div>
-
-        <!-- History List -->
-        <div class="flex-1 overflow-y-auto px-3 space-y-0.5" id="history-list">
-            <div class="history-group-header">Geçmiş Oturumlar</div>
-        </div>
 
         <!-- Auth Section -->
         <div class="p-4 border-t border-white/5" id="auth-container">
@@ -2525,8 +2543,8 @@
             </div>
         </header>
 
-        <!-- Chat Container -->
-        <div id="chat-container" class="flex-1 overflow-y-auto p-4 md:p-8 space-y-5 w-full max-w-full">
+        <!-- Content Wrapper -->
+        <div id="sections-wrapper" class="flex-1 overflow-y-auto p-4 md:p-8 space-y-5 w-full max-w-full">
 
             <!-- Dashboard Section -->
             <div id="section-dashboard" class="section-content hidden">
@@ -3426,89 +3444,117 @@
             </div>
 
             <!-- Chat Section (Claude Style) -->
-            <div id="section-chat" class="section-content flex flex-col min-h-full welcome-active items-center">
-                <!-- Message Container (This will hold the actual chat messages) -->
-                <div id="chat-container"
-                    class="w-full max-w-4xl mx-auto flex flex-col space-y-6 px-4 pb-32 pt-6 overflow-y-auto hidden">
-                    <!-- Messages will be appended here -->
-                </div>
-
-                <!-- Welcome Screen -->
-                <div class="flex flex-col items-center justify-center w-full max-w-3xl mx-auto text-center space-y-6 pt-20"
-                    id="welcome-screen">
-                    <div class="welcome-icon-wrapper mb-2 animate-bounce-subtle"
-                        style="width: 64px; height: 64px; border-radius: 20px; background: linear-gradient(135deg, rgba(45, 212, 191, 0.2), rgba(15, 118, 110, 0.1)); border: 1px solid rgba(45, 212, 191, 0.2); display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
-                        <i class="fa-solid fa-leaf text-3xl text-teal-400"></i>
+            <div id="section-chat" class="section-content flex flex-row min-h-full welcome-active w-full overflow-hidden">
+                <!-- Main Chat Area -->
+                <div class="flex-1 flex flex-col relative h-full">
+                    <!-- Message Container -->
+                    <div id="chat-container"
+                        class="w-full max-w-4xl mx-auto flex flex-col space-y-6 px-4 pb-32 pt-6 overflow-y-auto hidden">
+                        <!-- Messages will be appended here -->
                     </div>
 
-                    <div class="space-y-4 px-4 w-full">
-                        <h2 id="dynamic-greeting"
-                            class="text-4xl md:text-5xl font-bold text-white mb-8 tracking-tight font-display">How can I
-                            help you today?</h2>
+                    <!-- Welcome Screen -->
+                    <div class="flex flex-col items-center justify-center w-full max-w-3xl mx-auto text-center space-y-6 pt-20"
+                        id="welcome-screen">
+                        <div class="welcome-icon-wrapper mb-2 animate-bounce-subtle"
+                            style="width: 64px; height: 64px; border-radius: 20px; background: linear-gradient(135deg, rgba(45, 212, 191, 0.2), rgba(15, 118, 110, 0.1)); border: 1px solid rgba(45, 212, 191, 0.2); display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+                            <i class="fa-solid fa-leaf text-3xl text-teal-400"></i>
+                        </div>
 
-                        <!-- Main Chat Input Centered Premium Style -->
-                        <div class="welcome-input-container group">
-                            <div class="center-input-glass">
-                                <textarea id="user-input-center" rows="1" placeholder="How can I help you today?"
-                                    class="center-textarea custom-scrollbar"
-                                    oninput="this.style.height = ''; this.style.height = Math.min(this.scrollHeight, 200) + 'px'; syncInputs(this.value);"></textarea>
+                        <div class="space-y-4 px-4 w-full">
+                            <h2 id="dynamic-greeting"
+                                class="text-4xl md:text-5xl font-bold text-white mb-8 tracking-tight font-display">How can I
+                                help you today?</h2>
 
-                                <input type="file" id="file-upload-center"
-                                    accept="image/*,.pdf,.txt,.md,.doc,.docx,.xls,.xlsx,.ppt,.pptx" class="hidden"
-                                    multiple onchange="handleFileSelect(this)">
+                            <!-- Main Chat Input Centered Premium Style -->
+                            <div class="welcome-input-container group">
+                                <div class="center-input-glass">
+                                    <textarea id="user-input-center" rows="1" placeholder="How can I help you today?"
+                                        class="center-textarea custom-scrollbar"
+                                        oninput="this.style.height = ''; this.style.height = Math.min(this.scrollHeight, 200) + 'px'; syncInputs(this.value);"></textarea>
 
-                                <div class="input-actions-bar">
-                                    <div class="action-group">
-                                        <button type="button"
-                                            onclick="document.getElementById('file-upload-center').click()"
-                                            class="input-action-btn" title="Dosya Ekle">
-                                            <i class="fa-solid fa-plus"></i>
-                                        </button>
-                                        <button type="button" onclick="toggleDeepSearch()" class="input-action-btn"
-                                            title="Deep Search">
-                                            <i class="fa-solid fa-bolt-lightning"></i>
-                                        </button>
-                                        <button type="button" onclick="toggleDictationCenter()" class="input-action-btn"
-                                            title="Sesli Yazma">
-                                            <i class="fa-solid fa-microphone"></i>
-                                        </button>
-                                    </div>
+                                    <input type="file" id="file-upload-center"
+                                        accept="image/*,.pdf,.txt,.md,.doc,.docx,.xls,.xlsx,.ppt,.pptx" class="hidden"
+                                        multiple onchange="handleFileSelect(this)">
 
-                                    <div class="action-group">
-                                        <button type="button" onclick="submitCenterChat()" class="send-btn-new"
-                                            title="Gönder">
-                                            <i class="fa-solid fa-arrow-up"></i>
-                                        </button>
+                                    <div class="input-actions-bar">
+                                        <div class="action-group">
+                                            <button type="button"
+                                                onclick="document.getElementById('file-upload-center').click()"
+                                                class="input-action-btn" title="Dosya Ekle">
+                                                <i class="fa-solid fa-plus"></i>
+                                            </button>
+                                            <button type="button" onclick="toggleDeepSearch()" class="input-action-btn"
+                                                title="Deep Search">
+                                                <i class="fa-solid fa-bolt-lightning"></i>
+                                            </button>
+                                            <button type="button" onclick="toggleDictationCenter()" class="input-action-btn"
+                                                title="Sesli Yazma">
+                                                <i class="fa-solid fa-microphone"></i>
+                                            </button>
+                                        </div>
+
+                                        <div class="action-group">
+                                            <button type="button" onclick="submitCenterChat()" class="send-btn-new"
+                                                title="Gönder">
+                                                <i class="fa-solid fa-arrow-up"></i>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- Action Chips Layout -->
-                        <div class="flex flex-wrap items-center justify-center gap-2.5 mt-4">
-                            <button
-                                onclick="document.getElementById('user-input-center').value='Help me write some code...'; document.getElementById('user-input-center').focus();"
-                                class="px-3.5 py-1.5 rounded-full border border-white/10 text-[#8a8b86] text-[13px] hover:bg-white/5 hover:text-[#eaddcf] transition-colors flex items-center gap-2">
-                                <i class="fa-solid fa-code text-[#d97757]"></i> Code
-                            </button>
-                            <button
-                                onclick="document.getElementById('user-input-center').value='Can you help me write...'; document.getElementById('user-input-center').focus();"
-                                class="px-3.5 py-1.5 rounded-full border border-white/10 text-[#8a8b86] text-[13px] hover:bg-white/5 hover:text-[#eaddcf] transition-colors flex items-center gap-2">
-                                <i class="fa-solid fa-pen text-[#8b9b82]"></i> Write
-                            </button>
-                            <button
-                                onclick="document.getElementById('user-input-center').value='I want to learn about...'; document.getElementById('user-input-center').focus();"
-                                class="px-3.5 py-1.5 rounded-full border border-white/10 text-[#8a8b86] text-[13px] hover:bg-white/5 hover:text-[#eaddcf] transition-colors flex items-center gap-2">
-                                <i class="fa-solid fa-graduation-cap text-[#c0a684]"></i> Learn
-                            </button>
-                            <button
-                                onclick="document.getElementById('user-input-center').value='Need some advice on...'; document.getElementById('user-input-center').focus();"
-                                class="px-3.5 py-1.5 rounded-full border border-white/10 text-[#8a8b86] text-[13px] hover:bg-white/5 hover:text-[#eaddcf] transition-colors flex items-center gap-2">
-                                <i class="fa-solid fa-mug-hot text-[#9e96b3]"></i> Life stuff
-                            </button>
+                            <!-- Action Chips Layout -->
+                            <div class="flex flex-wrap items-center justify-center gap-2.5 mt-4">
+                                <button
+                                    onclick="document.getElementById('user-input-center').value='Help me write some code...'; document.getElementById('user-input-center').focus();"
+                                    class="px-3.5 py-1.5 rounded-full border border-white/10 text-[#8a8b86] text-[13px] hover:bg-white/5 hover:text-[#eaddcf] transition-colors flex items-center gap-2">
+                                    <i class="fa-solid fa-code text-[#d97757]"></i> Code
+                                </button>
+                                <button
+                                    onclick="document.getElementById('user-input-center').value='Can you help me write...'; document.getElementById('user-input-center').focus();"
+                                    class="px-3.5 py-1.5 rounded-full border border-white/10 text-[#8a8b86] text-[13px] hover:bg-white/5 hover:text-[#eaddcf] transition-colors flex items-center gap-2">
+                                    <i class="fa-solid fa-pen text-[#8b9b82]"></i> Write
+                                </button>
+                                <button
+                                    onclick="document.getElementById('user-input-center').value='I want to learn about...'; document.getElementById('user-input-center').focus();"
+                                    class="px-3.5 py-1.5 rounded-full border border-white/10 text-[#8a8b86] text-[13px] hover:bg-white/5 hover:text-[#eaddcf] transition-colors flex items-center gap-2">
+                                    <i class="fa-solid fa-graduation-cap text-[#c0a684]"></i> Learn
+                                </button>
+                                <button
+                                    onclick="document.getElementById('user-input-center').value='Need some advice on...'; document.getElementById('user-input-center').focus();"
+                                    class="px-3.5 py-1.5 rounded-full border border-white/10 text-[#8a8b86] text-[13px] hover:bg-white/5 hover:text-[#eaddcf] transition-colors flex items-center gap-2">
+                                    <i class="fa-solid fa-mug-hot text-[#9e96b3]"></i> Life stuff
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
+
+                <!-- Chat History Sidebar (Right Side) -->
+                <aside id="chat-history-content" class="hidden lg:flex flex-col w-72 h-full bg-slate-900/40 border-l border-white/5 backdrop-blur-md">
+                    <div class="p-4 border-b border-white/5 space-y-4">
+                        <button onclick="startNewChat()" class="w-full py-2.5 px-4 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/20 text-teal-400 text-xs font-bold transition-all flex items-center justify-center gap-2 group">
+                            <i class="fa-solid fa-plus group-hover:rotate-90 transition-transform duration-300"></i>
+                            Yeni Sohbet Başlat
+                        </button>
+
+                        <div class="glow-divider opacity-30"></div>
+
+                        <h3 class="text-[11px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                            <i class="fa-solid fa-clock-rotate-left text-teal-500/50"></i>
+                            Sohbet Geçmişi
+                        </h3>
+                        <div class="relative">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                            <input type="text" id="history-search" onkeyup="filterHistory()" placeholder="Geçmişi ara..."
+                                class="search-input text-xs py-2 pl-9 bg-black/20 border-white/5 focus:border-teal-500/30">
+                        </div>
+                    </div>
+                    <div id="history-list" class="flex-1 overflow-y-auto px-2 py-4 space-y-0.5 scrollbar-thin">
+                        <div class="history-group-header">Geçmiş Oturumlar</div>
+                    </div>
+                </aside>
             </div>
         </div>
 
@@ -4369,9 +4415,28 @@
 
                 currentSessionId = session.id;
                 messageHistory = [];
-                chatContainer.innerHTML = '';
-                if (welcomeScreen) chatContainer.appendChild(welcomeScreen);
-                if (welcomeScreen) welcomeScreen.classList.add('hidden');
+                
+                const chatContainer = document.getElementById('chat-container');
+                const welcomeScreen = document.getElementById('welcome-screen');
+                const chatInputContainer = document.getElementById('chat-input-container');
+                const sectionChat = document.getElementById('section-chat');
+
+                if (chatContainer) {
+                    chatContainer.innerHTML = '';
+                    chatContainer.classList.remove('hidden');
+                    chatContainer.style.display = 'flex';
+                }
+                if (welcomeScreen) {
+                    welcomeScreen.classList.add('hidden');
+                    welcomeScreen.style.display = 'none';
+                }
+                if (sectionChat) {
+                    sectionChat.classList.remove('welcome-active');
+                }
+                if (chatInputContainer) {
+                    chatInputContainer.classList.remove('hidden');
+                    chatInputContainer.style.display = 'block';
+                }
 
                 (session.messages || []).forEach(msg => {
                     appendMessage(msg.content, msg.role === 'user' ? 'user' : 'ai');
@@ -4415,9 +4480,34 @@
         function startNewChat() {
             currentSessionId = null;
             messageHistory = [];
-            chatContainer.innerHTML = '';
-            chatContainer.appendChild(welcomeScreen);
-            welcomeScreen.classList.remove('hidden');
+            
+            const chatContainer = document.getElementById('chat-container');
+            const welcomeScreen = document.getElementById('welcome-screen');
+            const sectionChat = document.getElementById('section-chat');
+            const chatInputContainer = document.getElementById('chat-input-container');
+
+            if (chatContainer) {
+                chatContainer.innerHTML = '';
+                chatContainer.classList.add('hidden');
+                chatContainer.style.display = 'none';
+            }
+            if (welcomeScreen) {
+                welcomeScreen.classList.remove('hidden');
+                welcomeScreen.style.display = 'flex';
+            }
+            if (sectionChat) {
+                sectionChat.classList.add('welcome-active');
+            }
+            if (chatInputContainer) {
+                chatInputContainer.classList.add('hidden');
+                chatInputContainer.style.display = 'none';
+            }
+            
+            // Clear inputs
+            const centerInput = document.getElementById('user-input-center');
+            const bottomInput = document.getElementById('user-input');
+            if (centerInput) centerInput.value = '';
+            if (bottomInput) bottomInput.value = '';
         }
 
 
@@ -4546,17 +4636,22 @@
             const welcomeScrn = document.getElementById('welcome-screen');
             const chatInpContainer = document.getElementById('chat-input-container');
 
-            if (welcomeScrn && !welcomeScrn.classList.contains('hidden')) {
-                welcomeScrn.classList.add('hidden');
-                welcomeScrn.style.display = 'none';
-            }
-            if (chatContainer && chatContainer.classList.contains('hidden')) {
-                chatContainer.classList.remove('hidden');
-                chatContainer.style.display = 'flex';
-            }
-            if (chatInpContainer && chatInpContainer.classList.contains('hidden')) {
-                chatInpContainer.classList.remove('hidden');
-                chatInpContainer.style.display = 'block';
+            const sectionChat = document.getElementById('section-chat');
+            const isChatActive = sectionChat && !sectionChat.classList.contains('hidden');
+
+            if (isChatActive) {
+                if (welcomeScrn && !welcomeScrn.classList.contains('hidden')) {
+                    welcomeScrn.classList.add('hidden');
+                    welcomeScrn.style.display = 'none';
+                }
+                if (chatContainer && chatContainer.classList.contains('hidden')) {
+                    chatContainer.classList.remove('hidden');
+                    chatContainer.style.display = 'flex';
+                }
+                if (chatInpContainer && chatInpContainer.classList.contains('hidden')) {
+                    chatInpContainer.classList.remove('hidden');
+                    chatInpContainer.style.display = 'block';
+                }
             }
 
             const isUser = sender === 'user';
@@ -5017,6 +5112,7 @@
                     if (welcomeScreen && messageHistory.length === 0) {
                         welcomeScreen.classList.remove('hidden');
                     }
+                    loadHistory();
                 }
             }
 
