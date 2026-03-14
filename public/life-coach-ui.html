@@ -17,6 +17,8 @@
     <script src="https://cdn.jsdelivr.net/npm/dompurify@2.4.0/dist/purify.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.21/mammoth.browser.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+    <script src="https://unpkg.com/docx@8.2.2/build/index.js"></script>
     <script src="./lifeCoachServices.js"></script>
     <script>
         tailwind.config = {
@@ -717,6 +719,7 @@
 
         #section-chat.welcome-active {
             justify-content: center;
+            align-items: center;
         }
 
         #section-chat:not(.welcome-active) {
@@ -3449,7 +3452,7 @@
                     </div>
 
                     <!-- Welcome Screen -->
-                    <div class="flex flex-col items-center justify-center w-full max-w-3xl mx-auto text-center space-y-6 pt-20"
+                    <div class="flex flex-col items-center justify-center w-full max-w-3xl mx-auto text-center space-y-6"
                         id="welcome-screen">
                         <div class="welcome-icon-wrapper mb-2 animate-bounce-subtle"
                             style="width: 64px; height: 64px; border-radius: 20px; background: linear-gradient(135deg, rgba(45, 212, 191, 0.2), rgba(15, 118, 110, 0.1)); border: 1px solid rgba(45, 212, 191, 0.2); display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
@@ -3474,11 +3477,38 @@
 
                                     <div class="input-actions-bar">
                                         <div class="action-group">
-                                            <button type="button"
-                                                onclick="document.getElementById('file-upload-center').click()"
-                                                class="input-action-btn" title="Dosya Ekle">
-                                                <i class="fa-solid fa-plus"></i>
-                                            </button>
+                                            <div id="plus-menu-container" class="relative">
+                                                <button type="button" onclick="togglePlusMenu()"
+                                                    class="input-action-btn" title="Dosya Eylemleri">
+                                                    <i class="fa-solid fa-plus"></i>
+                                                </button>
+                                                <div id="plus-dropdown"
+                                                    class="absolute bottom-full left-0 mb-3 w-56 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl hidden flex-col overflow-hidden z-[60] animate-fade-up">
+                                                    <div class="px-4 py-2.5 text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-white/5">Hızlı İşlemler</div>
+                                                    <button type="button" onclick="document.getElementById('file-upload-center').click(); togglePlusMenu();"
+                                                        class="px-4 py-3 hover:bg-teal-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
+                                                        <i class="fa-solid fa-upload text-teal-400 w-4"></i> Dosya Yükle
+                                                    </button>
+                                                    <div class="h-[1px] bg-white/5"></div>
+                                                    <button type="button" onclick="createExcelFile(); togglePlusMenu();"
+                                                        class="px-4 py-3 hover:bg-green-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
+                                                        <i class="fa-solid fa-file-excel text-green-500 w-4"></i> Excel Dosyası Oluştur
+                                                    </button>
+                                                    <button type="button" onclick="createWordFile(); togglePlusMenu();"
+                                                        class="px-4 py-3 hover:bg-blue-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
+                                                        <i class="fa-solid fa-file-word text-blue-500 w-4"></i> Word Belgesi Oluştur
+                                                    </button>
+                                                    <button type="button" onclick="createPPTFile(); togglePlusMenu();"
+                                                        class="px-4 py-3 hover:bg-orange-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
+                                                        <i class="fa-solid fa-file-powerpoint text-orange-500 w-4"></i> PowerPoint Oluştur
+                                                    </button>
+                                                    <div class="h-[1px] bg-white/5"></div>
+                                                    <button type="button" onclick="createClassListExcel(); togglePlusMenu();"
+                                                        class="px-4 py-3 hover:bg-amber-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
+                                                        <i class="fa-solid fa-table-list text-amber-400 w-4"></i> Sınıf Listesi (Excel A4)
+                                                    </button>
+                                                </div>
+                                            </div>
                                             <button type="button" onclick="toggleDeepSearch()" class="input-action-btn"
                                                 title="Deep Search">
                                                 <i class="fa-solid fa-bolt-lightning"></i>
@@ -3541,10 +3571,38 @@
                             <!-- Actions Bar -->
                             <div class="input-actions-bar">
                                 <div class="action-group">
-                                    <button type="button" onclick="document.getElementById('file-upload').click()"
-                                        class="input-action-btn" title="Add files">
-                                        <i class="fa-solid fa-plus"></i>
-                                    </button>
+                                    <div id="plus-menu-container-bottom" class="relative">
+                                        <button type="button" onclick="togglePlusMenuBottom()"
+                                            class="input-action-btn" title="Dosya Eylemleri">
+                                            <i class="fa-solid fa-plus"></i>
+                                        </button>
+                                        <div id="plus-dropdown-bottom"
+                                            class="absolute bottom-full left-0 mb-3 w-56 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl hidden flex-col overflow-hidden z-[60] animate-fade-up">
+                                            <div class="px-4 py-2.5 text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-white/5">Hızlı İşlemler</div>
+                                            <button type="button" onclick="document.getElementById('file-upload').click(); togglePlusMenuBottom();"
+                                                class="px-4 py-3 hover:bg-teal-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
+                                                <i class="fa-solid fa-upload text-teal-400 w-4"></i> Dosya Yükle
+                                            </button>
+                                            <div class="h-[1px] bg-white/5"></div>
+                                            <button type="button" onclick="createExcelFile(); togglePlusMenuBottom();"
+                                                class="px-4 py-3 hover:bg-green-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
+                                                <i class="fa-solid fa-file-excel text-green-500 w-4"></i> Excel Dosyası Oluştur
+                                            </button>
+                                            <button type="button" onclick="createWordFile(); togglePlusMenuBottom();"
+                                                class="px-4 py-3 hover:bg-blue-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
+                                                <i class="fa-solid fa-file-word text-blue-500 w-4"></i> Word Belgesi Oluştur
+                                            </button>
+                                            <button type="button" onclick="createPPTFile(); togglePlusMenuBottom();"
+                                                class="px-4 py-3 hover:bg-orange-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
+                                                <i class="fa-solid fa-file-powerpoint text-orange-500 w-4"></i> PowerPoint Oluştur
+                                            </button>
+                                            <div class="h-[1px] bg-white/5"></div>
+                                            <button type="button" onclick="createClassListExcel(); togglePlusMenuBottom();"
+                                                class="px-4 py-3 hover:bg-amber-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
+                                                <i class="fa-solid fa-table-list text-amber-400 w-4"></i> Sınıf Listesi (Excel A4)
+                                            </button>
+                                        </div>
+                                    </div>
                                     <button type="button" id="deep-search-btn" onclick="toggleDeepSearch()" class="input-action-btn"
                                         title="Deep Search Mode">
                                         <i class="fa-solid fa-bolt-lightning"></i>
@@ -4627,6 +4685,76 @@
             document.body.removeChild(a);
         }
 
+        function exportMessageAsExcel(text) {
+            try {
+                const data = [
+                    ["LifeCoach AI - Mesaj Dışa Aktarımı"],
+                    ["Tarih", new Date().toLocaleString('tr-TR')],
+                    [""],
+                    ["Mesaj İçeriği:"],
+                    [text.replace(/<[^>]*>/g, '')]
+                ];
+                const ws = XLSX.utils.aoa_to_sheet(data);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Mesaj");
+                XLSX.writeFile(wb, "LifeCoach_Mesaj.xlsx");
+                showToast("Mesaj Excel olarak indirildi.", "success");
+            } catch (e) {
+                console.error(e);
+                showToast("Excel export hatası.", "error");
+            }
+        }
+
+        async function exportMessageAsWord(text) {
+            try {
+                if (!window.docx) {
+                    showToast("Word kütüphanesi yüklenemedi.", "error");
+                    return;
+                }
+                const { Document, Packer, Paragraph, TextRun } = window.docx;
+                const doc = new Document({
+                    sections: [{
+                        children: [
+                            new Paragraph({
+                                children: [new TextRun({ text: "LifeCoach AI Mesajı", bold: true, size: 28 })]
+                            }),
+                            new Paragraph({
+                                children: [new TextRun({ text: "\n" + text.replace(/<[^>]*>/g, ''), size: 24 })]
+                            })
+                        ]
+                    }]
+                });
+                const blob = await Packer.toBlob(doc);
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "LifeCoach_Mesaj.docx";
+                a.click();
+                showToast("Mesaj Word olarak indirildi.", "success");
+            } catch (e) {
+                console.error(e);
+                showToast("Word export hatası.", "error");
+            }
+        }
+
+        function exportMessageAsPPT(text) {
+            try {
+                if (typeof PptxGenJS === 'undefined') {
+                    showToast("PPT kütüphanesi yüklenemedi.", "error");
+                    return;
+                }
+                let pres = new PptxGenJS();
+                let slide = pres.addSlide();
+                slide.addText("LifeCoach AI", { x: 0.5, y: 0.5, fontSize: 24, bold: true, color: "0F766E" });
+                slide.addText(text.replace(/<[^>]*>/g, '').substring(0, 1000), { x: 0.5, y: 1.5, fontSize: 16, w: 9 });
+                pres.writeFile({ fileName: "LifeCoach_Mesaj.pptx" });
+                showToast("Mesaj PPT olarak indirildi.", "success");
+            } catch (e) {
+                console.error(e);
+                showToast("PPT export hatası.", "error");
+            }
+        }
+
         async function sendFeedback(btn, type, messageContent) {
             const token = storage.get('token');
             if (!token || !currentSessionId) return;
@@ -4725,10 +4853,23 @@
             const avatar = isUser ? userAvatar : aiAvatar;
 
             const actionBtns = !isUser ? `
-                <div class="msg-actions">
+                <div class="msg-actions flex items-center gap-1">
                     <button onclick="speakText('${escapeJS(text)}')" class="msg-action-btn" title="Sesli Oku"><i class="fa-solid fa-volume-high"></i></button>
                     <button onclick="copyToClipboard(this, '${escapeJS(text)}')" class="msg-action-btn" title="Kopyala"><i class="fa-regular fa-copy"></i></button>
-                    <button onclick="shareMessage('${escapeJS(text)}')" class="msg-action-btn" title="Paylaş"><i class="fa-solid fa-share-nodes"></i></button>
+                    <div class="relative group/export">
+                        <button class="msg-action-btn" title="Dosya Olarak İndir"><i class="fa-solid fa-file-export"></i></button>
+                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col bg-slate-900/95 backdrop-blur-md border border-white/10 rounded-xl shadow-2xl z-[100] w-36 overflow-hidden animate-fade-in">
+                            <button onclick="exportMessageAsExcel('${escapeJS(text)}')" class="px-3 py-2 hover:bg-green-500/10 text-left text-[11px] text-slate-300 flex items-center gap-2 transition-colors">
+                                <i class="fa-solid fa-file-excel text-green-500"></i> Excel (.xlsx)
+                            </button>
+                            <button onclick="exportMessageAsWord('${escapeJS(text)}')" class="px-3 py-2 hover:bg-blue-500/10 text-left text-[11px] text-slate-300 flex items-center gap-2 transition-colors">
+                                <i class="fa-solid fa-file-word text-blue-500"></i> Word (.docx)
+                            </button>
+                            <button onclick="exportMessageAsPPT('${escapeJS(text)}')" class="px-3 py-2 hover:bg-orange-500/10 text-left text-[11px] text-slate-300 flex items-center gap-2 transition-colors">
+                                <i class="fa-solid fa-file-powerpoint text-orange-500"></i> PPT (.pptx)
+                            </button>
+                        </div>
+                    </div>
                 </div>
             ` : '';
 
@@ -6823,6 +6964,113 @@
             const origChatFormHandler = window._origChatFormHandler;
 
             // ===== CLAUDE STYLE CHAT UI LOGIC =====
+            // ===== FILE GENERATION FUNCTIONS =====
+            function createExcelFile() {
+                try {
+                    const data = [
+                        ["ID", "Konu", "Tarih", "Not"],
+                        [1, "Örnek Veri", new Date().toLocaleDateString(), "Bu otomatik oluşturulmuş bir Excel dosyasıdır."]
+                    ];
+                    const ws = XLSX.utils.aoa_to_sheet(data);
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+                    XLSX.writeFile(wb, "LifeCoach_Excel_Rapor.xlsx");
+                    showToast("Excel dosyası başarıyla oluşturuldu!", "success");
+                } catch (e) {
+                    console.error(e);
+                    showToast("Excel oluşturulurken bir hata oluştu.", "error");
+                }
+            }
+
+            async function createWordFile() {
+                try {
+                    const { Document, Packer, Paragraph, TextRun } = docx;
+                    const doc = new Document({
+                        sections: [{
+                            properties: {},
+                            children: [
+                                new Paragraph({
+                                    children: [
+                                        new TextRun({
+                                            text: "LifeCoach AI - Otomatik Belge",
+                                            bold: true,
+                                            size: 32,
+                                        }),
+                                    ],
+                                }),
+                                new Paragraph({
+                                    children: [
+                                        new TextRun({
+                                            text: "\nBu belge LifeCoach AI tarafından otomatik olarak oluşturulmuştur.\n",
+                                            size: 24,
+                                        }),
+                                        new TextRun({
+                                            text: "Oluşturulma Tarihi: " + new Date().toLocaleString(),
+                                            italic: true,
+                                        }),
+                                    ],
+                                }),
+                            ],
+                        }],
+                    });
+
+                    const blob = await Packer.toBlob(doc);
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = "LifeCoach_Belge.docx";
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    showToast("Word belgesi başarıyla oluşturuldu!", "success");
+                } catch (e) {
+                    console.error(e);
+                    showToast("Word belgesi oluşturulurken hata oluştu.", "error");
+                }
+            }
+
+            function createPPTFile() {
+                try {
+                    let pres = new PptxGenJS();
+                    let slide = pres.addSlide();
+                    slide.addText("LifeCoach AI", { x: 1, y: 1, fontSize: 44, color: "0F766E", bold: true });
+                    slide.addText("Akıllı Sunum Sistemi", { x: 1, y: 2, fontSize: 24, color: "334155" });
+                    slide.addText("Tarih: " + new Date().toLocaleString(), { x: 1, y: 5, fontSize: 14, color: "64748b" });
+                    
+                    pres.writeFile({ fileName: "LifeCoach_Sunum.pptx" });
+                    showToast("PowerPoint sunumu başarıyla oluşturuldu!", "success");
+                } catch (e) {
+                    console.error(e);
+                    showToast("PPT oluşturulurken bir hata oluştu.", "error");
+                }
+            }
+
+            function createClassListExcel() {
+                try {
+                    const data = [
+                        ["", "T.C. MİLLİ EĞİTİM BAKANLIĞI", ""],
+                        ["", "Haftalık Sınıf Listesi / Yoklama Çizelgesi", ""],
+                        ["", "", ""],
+                        ["SIRA", "ÖĞRENCİ ADI SOYADI", "İMZA"],
+                    ];
+                    
+                    for(let i=1; i<=35; i++) {
+                        data.push([i, "", ""]);
+                    }
+
+                    const ws = XLSX.utils.aoa_to_sheet(data);
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, ws, "Sınıf Listesi");
+                    
+                    ws['!cols'] = [{ wch: 8 }, { wch: 45 }, { wch: 20 }];
+                    
+                    XLSX.writeFile(wb, "Sinif_Listesi_A4_Format.xlsx");
+                    showToast("A4 Sınıf Listesi başarıyla oluşturuldu!", "success");
+                } catch (e) {
+                    console.error(e);
+                    showToast("Sınıf listesi oluşturulurken hata oluştu.", "error");
+                }
+            }
+
             function togglePlusMenu() {
                 const dropdown = document.getElementById('plus-dropdown');
                 dropdown.classList.toggle('hidden');
@@ -6931,6 +7179,12 @@
             window.syncInputs = syncInputs;
             window.submitCenterChat = submitCenterChat;
             window.toggleDictationCenter = function () { toggleDictation(); };
+
+            // File Generation
+            window.createExcelFile = createExcelFile;
+            window.createWordFile = createWordFile;
+            window.createPPTFile = createPPTFile;
+            window.createClassListExcel = createClassListExcel;
 
             // Focus Mode
             window.startFocusSession = startFocusSession;
