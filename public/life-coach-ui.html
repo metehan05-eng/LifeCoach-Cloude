@@ -710,8 +710,9 @@
         #section-chat {
             height: 100vh;
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
             overflow: hidden;
+            width: 100%;
         }
 
         #section-chat.welcome-active {
@@ -738,18 +739,12 @@
 
         /* ===== INPUT AREA (Premium Glassmorphism) ===== */
         .input-area {
-            background: transparent;
-            margin: 0 auto;
+            position: relative;
             width: 100%;
-            max-width: 850px;
-            padding: 0 20px 30px 20px;
-            position: fixed;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(calc(-50% + 160px));
-            /* Adjusted for sidebar width (320px / 2 = 160px) */
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 20px 25px 20px;
             z-index: 40;
-            pointer-events: none;
             transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
@@ -3449,7 +3444,7 @@
                 <div class="flex-1 flex flex-col relative h-full">
                     <!-- Message Container -->
                     <div id="chat-container"
-                        class="w-full max-w-4xl mx-auto flex flex-col space-y-6 px-4 pb-32 pt-6 overflow-y-auto hidden">
+                        class="w-full max-w-4xl mx-auto flex flex-col space-y-6 px-4 pb-10 pt-6 overflow-y-auto hidden">
                         <!-- Messages will be appended here -->
                     </div>
 
@@ -3529,6 +3524,51 @@
                             </div>
                         </div>
                     </div>
+                    <!-- Input Area (Fixed Bottom) -->
+                    <div id="chat-input-container" class="input-area hidden">
+                        <form id="chat-form" class="input-container-glass">
+                            <!-- File Previews -->
+                            <div id="file-previews" class="file-previews"></div>
+
+                            <!-- Textarea -->
+                            <textarea id="user-input" rows="1" placeholder="Ask LifeCoach AI anything..."
+                                class="chat-textarea custom-scrollbar"
+                                oninput="this.style.height = ''; this.style.height = Math.min(this.scrollHeight, 250) + 'px';"></textarea>
+
+                            <input type="file" id="file-upload" accept="image/*,.pdf,.txt,.md,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+                                class="hidden" multiple onchange="handleFileSelect(this)">
+
+                            <!-- Actions Bar -->
+                            <div class="input-actions-bar">
+                                <div class="action-group">
+                                    <button type="button" onclick="document.getElementById('file-upload').click()"
+                                        class="input-action-btn" title="Add files">
+                                        <i class="fa-solid fa-plus"></i>
+                                    </button>
+                                    <button type="button" id="deep-search-btn" onclick="toggleDeepSearch()" class="input-action-btn"
+                                        title="Deep Search Mode">
+                                        <i class="fa-solid fa-bolt-lightning"></i>
+                                    </button>
+                                    <button type="button" id="mic-btn-new" onclick="toggleDictation()" class="input-action-btn"
+                                        title="Voice Mode">
+                                        <i class="fa-solid fa-microphone"></i>
+                                    </button>
+                                </div>
+
+                                <div class="action-group">
+                                    <div class="text-[10px] text-slate-500 font-medium mr-2 hidden sm:block">Press Shift + Enter for
+                                        new line</div>
+                                    <button type="submit" class="send-btn-new" id="send-btn" title="Send message">
+                                        <i class="fa-solid fa-arrow-up"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                        <div class="text-center mt-3">
+                            <p class="text-[11px] text-[#8a8b86]/50 font-medium">LifeCoach AI can make mistakes. Consider verifying
+                                critical information.</p>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Chat History Sidebar (Right Side) -->
@@ -3555,52 +3595,6 @@
                         <div class="history-group-header">Geçmiş Oturumlar</div>
                     </div>
                 </aside>
-            </div>
-        </div>
-
-        <!-- Input Area (Fixed Bottom) -->
-        <div id="chat-input-container" class="input-area hidden">
-            <form id="chat-form" class="input-container-glass">
-                <!-- File Previews -->
-                <div id="file-previews" class="file-previews"></div>
-
-                <!-- Textarea -->
-                <textarea id="user-input" rows="1" placeholder="Ask LifeCoach AI anything..."
-                    class="chat-textarea custom-scrollbar"
-                    oninput="this.style.height = ''; this.style.height = Math.min(this.scrollHeight, 250) + 'px';"></textarea>
-
-                <input type="file" id="file-upload" accept="image/*,.pdf,.txt,.md,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
-                    class="hidden" multiple onchange="handleFileSelect(this)">
-
-                <!-- Actions Bar -->
-                <div class="input-actions-bar">
-                    <div class="action-group">
-                        <button type="button" onclick="document.getElementById('file-upload').click()"
-                            class="input-action-btn" title="Add files">
-                            <i class="fa-solid fa-plus"></i>
-                        </button>
-                        <button type="button" id="deep-search-btn" onclick="toggleDeepSearch()" class="input-action-btn"
-                            title="Deep Search Mode">
-                            <i class="fa-solid fa-bolt-lightning"></i>
-                        </button>
-                        <button type="button" id="mic-btn-new" onclick="toggleDictation()" class="input-action-btn"
-                            title="Voice Mode">
-                            <i class="fa-solid fa-microphone"></i>
-                        </button>
-                    </div>
-
-                    <div class="action-group">
-                        <div class="text-[10px] text-slate-500 font-medium mr-2 hidden sm:block">Press Shift + Enter for
-                            new line</div>
-                        <button type="submit" class="send-btn-new" id="send-btn" title="Send message">
-                            <i class="fa-solid fa-arrow-up"></i>
-                        </button>
-                    </div>
-                </div>
-            </form>
-            <div class="text-center mt-3">
-                <p class="text-[11px] text-[#8a8b86]/50 font-medium">LifeCoach AI can make mistakes. Consider verifying
-                    critical information.</p>
             </div>
         </div>
     </main>
@@ -3842,6 +3836,7 @@
         let userInput;
         let welcomeScreen;
         let messageHistory = [];
+        let welcomeShown = false;
         let currentSessionId = null;
         let currentFile = null;
 
@@ -3905,27 +3900,80 @@
             }
         }
 
-        function showToast(message) {
+        function copyToClipboard(btn, text) {
+            const el = document.createElement('textarea');
+            el.value = text;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+
+            const icon = btn.querySelector('i');
+            const originalClass = icon.className;
+            icon.className = 'fa-solid fa-check text-emerald-400';
+            showToast('Panoya kopyalandı! 📋');
+
+            setTimeout(() => {
+                icon.className = originalClass;
+            }, 2000);
+        }
+
+        async function shareMessage(text, title = 'LifeCoach AI Paylaşımı') {
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: title,
+                        text: text,
+                        url: window.location.href
+                    });
+                    showToast('Paylaşıldı! 🚀');
+                } catch (err) {
+                    if (err.name !== 'AbortError') {
+                        console.error('Paylaşım hatası:', err);
+                        showToast('Paylaşım sırasında bir hata oluştu.');
+                    }
+                }
+            } else {
+                const encodedText = encodeURIComponent(text.substring(0, 200) + (text.length > 200 ? '...' : '') + '\n\nLifeCoach AI ✨');
+                const twitterUrl = `https://twitter.com/intent/tweet?text=${encodedText}`;
+                window.open(twitterUrl, '_blank');
+                showToast('Twitter/X paylaşım menüsü açılıyor... 🐦');
+            }
+        }
+
+        function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container');
+            if (!container) return;
+            
             const toast = document.createElement('div');
             toast.className = 'toast transform transition-all duration-500 translate-x-full opacity-0 pointer-events-auto';
+            
+            const icon = type === 'error' ? 'fa-circle-exclamation' : type === 'info' ? 'fa-circle-info' : 'fa-leaf';
+            const iconColor = type === 'error' ? '#ef4444' : type === 'info' ? '#3b82f6' : '#2DD4BF';
+            
             toast.innerHTML = `
                 <div class="flex items-center gap-3">
-                    <div class="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style="background: linear-gradient(135deg, rgba(15,118,110,0.3), rgba(45,212,191,0.1)); border: 1px solid rgba(45,212,191,0.2);">
-                        <i class="fa-solid fa-leaf text-xs" style="color: #2DD4BF;"></i>
+                    <div class="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style="background: rgba(45,212,191,0.1); border: 1px solid rgba(45,212,191,0.2);">
+                        <i class="fa-solid ${icon} text-xs" style="color: ${iconColor};"></i>
                     </div>
-                    <p class="text-sm font-medium">${message}</p>
+                    <p class="text-sm font-medium text-slate-200">${message}</p>
                 </div>
             `;
+            
             container.appendChild(toast);
+            
+            // Trigger animation
             requestAnimationFrame(() => {
                 toast.classList.remove('translate-x-full', 'opacity-0');
             });
+            
+            // Auto remove
             setTimeout(() => {
                 toast.classList.add('translate-x-full', 'opacity-0');
                 setTimeout(() => { toast.remove(); }, 500);
             }, 3500);
         }
+
 
         function getSafeUser() {
             try { return JSON.parse(storage.get('user')); } catch (e) { return null; }
@@ -4680,6 +4728,7 @@
                 <div class="msg-actions">
                     <button onclick="speakText('${escapeJS(text)}')" class="msg-action-btn" title="Sesli Oku"><i class="fa-solid fa-volume-high"></i></button>
                     <button onclick="copyToClipboard(this, '${escapeJS(text)}')" class="msg-action-btn" title="Kopyala"><i class="fa-regular fa-copy"></i></button>
+                    <button onclick="shareMessage('${escapeJS(text)}')" class="msg-action-btn" title="Paylaş"><i class="fa-solid fa-share-nodes"></i></button>
                 </div>
             ` : '';
 
@@ -5205,10 +5254,13 @@
                                     ${goal.description ? `<p class="text-sm text-slate-400 mt-1">${escapeHTML(goal.description)}</p>` : ''}
                                 </div>
                                 <div class="flex gap-1">
-                                    <button onclick="editGoal('${goal.id}')" class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10">
+                                    <button onclick="shareMessage('Hedefim: ${escapeJS(goal.title)} - İlerlemem: %${goal.progress}', 'LifeCoach AI Hedef Paylaşımı')" class="w-8 h-8 rounded-lg bg-teal-500/10 flex items-center justify-center text-teal-400 hover:text-white hover:bg-teal-500/20" title="Paylaş">
+                                        <i class="fa-solid fa-share-nodes text-xs"></i>
+                                    </button>
+                                    <button onclick="editGoal('${goal.id}')" class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10" title="Düzenle">
                                         <i class="fa-solid fa-pen text-xs"></i>
                                     </button>
-                                    <button onclick="deleteGoal('${goal.id}')" class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-400 hover:text-red-400 hover:bg-red-500/10">
+                                    <button onclick="deleteGoal('${goal.id}')" class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-400 hover:text-red-400 hover:bg-red-500/10" title="Sil">
                                         <i class="fa-solid fa-trash text-xs"></i>
                                     </button>
                                 </div>
@@ -5540,9 +5592,14 @@
                                     <h3 class="text-white font-semibold">${escapeHTML(plan.title)}</h3>
                                     ${plan.description ? `<p class="text-sm text-slate-400 mt-1">${escapeHTML(plan.description)}</p>` : ''}
                                 </div>
-                                <button onclick="deletePlan('${plan.id}')" class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-400 hover:text-red-400 hover:bg-red-500/10">
-                                    <i class="fa-solid fa-trash text-xs"></i>
-                                </button>
+                                <div class="flex gap-1">
+                                    <button onclick="shareMessage('Planım: ${escapeJS(plan.title)} - İlerlemem: %${progress}', 'LifeCoach AI Plan Paylaşımı')" class="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-400 hover:text-white hover:bg-purple-500/20" title="Paylaş">
+                                        <i class="fa-solid fa-share-nodes text-xs"></i>
+                                    </button>
+                                    <button onclick="deletePlan('${plan.id}')" class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-400 hover:text-red-400 hover:bg-red-500/10" title="Sil">
+                                        <i class="fa-solid fa-trash text-xs"></i>
+                                    </button>
+                                </div>
                             </div>
                             
                             ${plan.tasks && plan.tasks.length > 0 ? `
