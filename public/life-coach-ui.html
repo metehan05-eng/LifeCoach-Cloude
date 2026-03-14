@@ -3467,6 +3467,8 @@
                             <!-- Main Chat Input Centered Premium Style -->
                             <div class="welcome-input-container group">
                                 <div class="center-input-glass">
+                                    <!-- File Previews -->
+                                    <div id="file-previews-center" class="file-previews px-4 pt-2"></div>
                                     <textarea id="user-input-center" rows="1" placeholder="How can I help you today?"
                                         class="center-textarea custom-scrollbar"
                                         oninput="this.style.height = ''; this.style.height = Math.min(this.scrollHeight, 200) + 'px'; syncInputs(this.value);"></textarea>
@@ -5008,15 +5010,21 @@
                     // Handle different file types
                     if (file.type.startsWith('image/')) {
                         fileData.preview = URL.createObjectURL(file);
+                        // Convert to base64 for Vision (Waitable Promise)
+                        fileData.base64Promise = new Promise((resolve) => {
+                            const reader = new FileReader();
+                            reader.onload = (e) => {
+                                fileData.base64 = e.target.result;
+                                resolve(e.target.result);
+                            };
+                            reader.readAsDataURL(file);
+                        });
                     } else if (file.name.endsWith('.docx')) {
                         fileData.icon = 'fa-file-word';
-                        fileData.category = 'doc';
                     } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
                         fileData.icon = 'fa-file-excel';
-                        fileData.category = 'excel';
                     } else if (file.name.endsWith('.pptx') || file.name.endsWith('.ppt')) {
                         fileData.icon = 'fa-file-powerpoint';
-                        fileData.category = 'ppt';
                     } else {
                         fileData.icon = 'fa-file-lines';
                     }
@@ -5028,15 +5036,23 @@
             }
 
             function renderFilePreviews() {
-                const container = document.getElementById('file-previews');
-                container.innerHTML = attachedFiles.map((file, index) => `
+                const containers = [
+                    document.getElementById('file-previews'),
+                    document.getElementById('file-previews-center')
+                ];
+                
+                const html = attachedFiles.map((file, index) => `
                     <div class="file-preview-item animate-fade-in-up">
                         <div class="remove-file-btn" onclick="removeAttachedFile(${index})">
                             <i class="fa-solid fa-xmark"></i>
                         </div>
-                        ${file.preview ? `<img src="${file.preview}">` : `<div class="file-icon"><i class="fa-solid ${file.icon || 'fa-file'}"></i></div>`}
+                        ${file.preview ? `<img src="${file.preview}">` : `<div class="file-icon flex items-center justify-center h-full"><i class="fa-solid ${file.icon || 'fa-file'} text-teal-500"></i></div>`}
                     </div>
                 `).join('');
+
+                containers.forEach(container => {
+                    if (container) container.innerHTML = html;
+                });
             }
 
             function removeAttachedFile(index) {
@@ -5064,6 +5080,9 @@
                     return fullText;
                 } else if (file.name.endsWith('.pptx') || file.name.endsWith('.ppt')) {
                     return `[PowerPoint Dosyası: ${file.name}] (PPT analizi metin olarak yapılıyor...)`;
+                }
+                if (file.type.startsWith('image/')) {
+                    return ''; // Images are handled separately via base64 in the 'file' property
                 }
                 return `[Dosya: ${file.name}]`;
             }
@@ -5101,12 +5120,24 @@
                     let displayMessage = text;
 
                     // Handle files
+                    let firstFileForBackend = null;
                     if (attachedFiles.length > 0) {
                         showTyping();
                         const fileContents = [];
                         for (const file of attachedFiles) {
+                            // Ensure image is fully read
+                            if (file.base64Promise) await file.base64Promise;
+
+                            // Backend accepts one 'file' object. We prioritize images.
+                            if (!firstFileForBackend && file.type.startsWith('image/') && file.base64) {
+                                firstFileForBackend = {
+                                    name: file.name,
+                                    type: file.type,
+                                    data: file.base64
+                                };
+                            }
                             const content = await parseDocument(file);
-                            fileContents.push(content);
+                            if (content) fileContents.push(content);
                             displayMessage += `\n\n[Dosya: ${file.name}]`;
                         }
                         enrichedText = fileContents.join('\n\n') + '\n\n' + enrichedText;
@@ -5151,6 +5182,7 @@
                             headers: headers,
                             body: JSON.stringify({
                                 message: enrichedText,
+                                file: firstFileForBackend,
                                 history: messageHistory,
                                 sessionId: currentSessionId,
                                 userLanguage: userLang,
@@ -7096,7 +7128,7 @@
                 const centerInput = document.getElementById('user-input-center');
                 const bottomInput = document.getElementById('user-input');
 
-                if (centerInput && bottomInput && centerInput.value.trim() !== '') {
+                if (centerInput && bottomInput && (centerInput.value.trim() !== '' || attachedFiles.length > 0)) {
                     bottomInput.value = centerInput.value;
 
                     const welcomeScreen = document.getElementById('welcome-screen');
