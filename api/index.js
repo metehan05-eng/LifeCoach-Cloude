@@ -1359,7 +1359,7 @@ app.post('/api/goals', authenticateToken, async (req, res) => {
 app.put('/api/goals', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.id;
-        const { id, title, type, description, progress, status, targetDate } = req.body;
+        const { id, title, type, description, progress, status, targetDate, reflection } = req.body;
         const allGoals = await getKVData('goals');
         const userGoals = allGoals[userId] || [];
         const idx = userGoals.findIndex(g => g.id === id);
@@ -1367,7 +1367,8 @@ app.put('/api/goals', authenticateToken, async (req, res) => {
         userGoals[idx] = {
             ...userGoals[idx], title, type, description,
             progress: progress !== undefined ? progress : userGoals[idx].progress,
-            status, targetDate, updatedAt: new Date().toISOString()
+            status, targetDate, reflection: reflection || userGoals[idx].reflection, 
+            updatedAt: new Date().toISOString()
         };
         allGoals[userId] = userGoals;
         await setKVData('goals', allGoals);

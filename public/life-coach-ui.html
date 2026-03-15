@@ -88,6 +88,7 @@
             }
         }
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         /* ===== ROOT VARIABLES ===== */
         :root {
@@ -3758,6 +3759,29 @@
         </div>
     </div>
 
+    <!-- Goal Success (Celebration) Modal -->
+    <div id="goal-success-modal" class="fixed inset-0 modal-overlay hidden items-center justify-center z-[60] p-4">
+        <div class="modal-card w-full max-w-sm mx-auto p-8 text-center animate-bounce-in">
+            <div class="text-6xl mb-4">🏆</div>
+            <h3 class="text-2xl font-bold text-white font-display mb-2">Harika İş Çıkardın!</h3>
+            <p class="text-slate-400 text-sm mb-6">Bir hedefi daha fethettin. Bu anın tadını çıkar ve gelişiminle gurur duy.</p>
+            
+            <div class="text-left mb-6">
+                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Bu süreçten ne öğrendin?</label>
+                <textarea id="goal-reflection-input" class="modal-input text-sm" rows="3" placeholder="Örn: Disiplinli olmanın faydasını gördüm..."></textarea>
+            </div>
+
+            <div class="flex flex-col gap-3">
+                <button onclick="saveGoalSuccess()" class="btn-primary w-full py-3 font-bold">
+                    Başarıyı Kaydet
+                </button>
+                <button onclick="closeGoalSuccessModal()" class="text-slate-500 text-xs hover:text-slate-300 transition-colors">
+                    Sadece Kapat
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Habit Modal -->
     <div id="habit-modal" class="fixed inset-0 modal-overlay hidden items-center justify-center z-50 p-4">
         <div class="modal-card w-full max-w-md mx-auto p-6 max-h-[90vh] overflow-y-auto">
@@ -5543,11 +5567,57 @@
                 }
             }
 
+            let pendingGoalId = null;
+
             async function completeGoal(goalId) {
+                pendingGoalId = goalId;
+                
+                // Konfeti patlat!
+                const duration = 3 * 1000;
+                const end = Date.now() + duration;
+
+                (function frame() {
+                    confetti({
+                        particleCount: 3,
+                        angle: 60,
+                        spread: 55,
+                        origin: { x: 0 },
+                        colors: ['#2dd4bf', '#10b981', '#fbbf24']
+                    });
+                    confetti({
+                        particleCount: 3,
+                        angle: 120,
+                        spread: 55,
+                        origin: { x: 1 },
+                        colors: ['#2dd4bf', '#10b981', '#fbbf24']
+                    });
+
+                    if (Date.now() < end) {
+                        requestAnimationFrame(frame);
+                    }
+                }());
+
+                // Modalı aç
+                document.getElementById('goal-reflection-input').value = '';
+                document.getElementById('goal-success-modal').classList.remove('hidden');
+                document.getElementById('goal-success-modal').classList.add('flex');
+            }
+
+            function closeGoalSuccessModal() {
+                document.getElementById('goal-success-modal').classList.add('hidden');
+                document.getElementById('goal-success-modal').classList.remove('flex');
+                pendingGoalId = null;
+            }
+
+            async function saveGoalSuccess() {
+                if (!pendingGoalId) return;
+                
+                const reflection = document.getElementById('goal-reflection-input').value;
                 try {
-                    await GoalsService.completeGoal(goalId);
+                    await GoalsService.completeGoal(pendingGoalId, reflection);
                     loadGoals();
-                    showToast('Tebrikler! Hedef tamamlandı! 🎉');
+                    closeGoalSuccessModal();
+                    showToast('Hedef başarıyla tamamlandı ve notun kaydedildi! ✨');
                 } catch (err) {
                     showToast('Hata: ' + err.message);
                 }
