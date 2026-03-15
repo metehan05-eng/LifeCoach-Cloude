@@ -18,7 +18,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.21/mammoth.browser.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.2.2/docx.umd.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
     <script src="./lifeCoachServices.js"></script>
     <script>
         tailwind.config = {
@@ -5590,6 +5590,16 @@
             function closeGoalModal() {
                 document.getElementById('goal-modal').classList.add('hidden');
                 document.getElementById('goal-modal').classList.remove('flex');
+            }
+
+            async function updateGoalProgress(goalId, progress) {
+                try {
+                    await GoalsService.updateProgress(goalId, parseInt(progress));
+                    loadGoals();
+                    showToast('Hedef güncellendi!');
+                } catch (err) {
+                    showToast('Hata: ' + err.message);
+                }
             }
 
             async function toggleGoalDay(goalId) {
