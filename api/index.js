@@ -497,7 +497,8 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
         let usedModel;
         const primaryModel = "gemini-3.1-pro-preview";
         const primaryModel2 = "gemini-3.1-flash-image-preview";
-        const fallbackModel = "gemini-3-flash-preview";
+        const fallbackModel = "gemini-3.1-flash-lite-preview";
+        const lastResortModel = "gemini-1.5-flash";
 
         try {
             console.log(`Trying primary model: ${primaryModel}`);
@@ -508,8 +509,8 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
             usedModel = primaryModel;
         } catch (error) {
             // Eğer model bulunamadı hatası (404) alırsak, fallback modelini dene
-            if (error.message && (error.message.includes('is not found') || error.message.includes('404'))) {
-                console.warn(`Model '${primaryModel}' not found. Falling back to '${fallbackModel}'.`);
+            if (error.message && (error.message.includes('is not found') || error.message.includes('404') || error.message.includes('not supported'))) {
+                console.warn(`Model '${primaryModel}' failed. Trying fallback: '${fallbackModel}'`);
                 try {
                     const model = genAI.getGenerativeModel({ model: fallbackModel, systemInstruction: finalSystemPrompt });
                     const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } });
@@ -517,11 +518,20 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
                     aiResponse = result.response.text();
                     usedModel = fallbackModel;
                 } catch (fallbackError) {
-                    console.error(`Fallback model '${fallbackModel}' also failed.`);
-                    throw fallbackError; // Fallback de başarısız olursa hatayı fırlat
+                    console.warn(`Fallback model '${fallbackModel}' failed. Trying last resort: '${lastResortModel}'`);
+                    try {
+                        const model = genAI.getGenerativeModel({ model: lastResortModel, systemInstruction: finalSystemPrompt });
+                        const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 2000, temperature: 0.7 } });
+                        const result = await chat.sendMessage(userMessageParts);
+                        aiResponse = result.response.text();
+                        usedModel = lastResortModel;
+                    } catch (finalError) {
+                        console.error('All Gemini models failed.');
+                        throw finalError;
+                    }
                 }
             } else {
-                throw error; // Başka bir hata türü ise direkt fırlat
+                throw error;
             }
         }
 
@@ -584,10 +594,23 @@ app.post('/api/generate-image', authenticateToken, async (req, res) => {
         console.log(`Generating image for prompt: ${prompt}`);
 
         // Nano Banana 2 (Gemini 3.1 Flash Image)
-        const modelName = "gemini-3.1-flash-image-preview";
-        const model = genAI.getGenerativeModel({ model: modelName });
+        const primaryModelName = "gemini-3.1-flash-image-preview";
+        const fallbackModelName = "gemini-1.5-flash";
+        
+        let result;
+        let usedModelName = primaryModelName;
 
-        const result = await model.generateContent(prompt);
+        try {
+            console.log(`Generating image with primary model: ${primaryModelName}`);
+            const model = genAI.getGenerativeModel({ model: primaryModelName });
+            result = await model.generateContent(prompt);
+        } catch (error) {
+            console.warn(`Primary image model failed: ${error.message}. Trying fallback: ${fallbackModelName}`);
+            const model = genAI.getGenerativeModel({ model: fallbackModelName });
+            result = await model.generateContent(prompt);
+            usedModelName = fallbackModelName;
+        }
+
         const response = result.response;
 
         // Gemini image models usually return inlineData with image bytes
@@ -597,7 +620,7 @@ app.post('/api/generate-image', authenticateToken, async (req, res) => {
             return res.json({
                 success: true,
                 imageData: `data:${imagePart.inlineData.mimeType};base64,${imagePart.inlineData.data}`,
-                model: modelName
+                model: usedModelName
             });
         }
 
