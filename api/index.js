@@ -460,8 +460,8 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
         // Önce hızlı 'flash' modelini dene, 404 hatası verirse stabil 'pro' modeline geç.
         let aiResponse;
         let usedModel;
-        const primaryModel = "gemini-1.5-flash";
-        const fallbackModel = "gemini-1.5-pro";
+        const primaryModel = "gemini-3.1-pro-preview";
+        const fallbackModel = "gemini-3.1-pro";
 
         try {
             console.log(`Trying primary model: ${primaryModel}`);
