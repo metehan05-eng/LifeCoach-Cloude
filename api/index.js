@@ -24,13 +24,16 @@ app.use(express.json({ limit: '50mb' }));
 
 // --- AYARLAR ve SABİTLER ---
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY; // OpenRouter Desteği
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "GOOGLE_CLIENT_ID_BURAYA";
 
 let genAI;
 if (GEMINI_API_KEY) {
     genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-} else {
-    console.warn("UYARI: GEMINI_API_KEY ortam değişkeni ayarlanmamış. Sohbet işlevi çalışmayacak.");
+}
+
+if (!GEMINI_API_KEY && !OPENROUTER_API_KEY) {
+    console.warn("UYARI: Hiçbir AI API Anahtarı (Gemini veya OpenRouter) ayarlanmamış. Sohbet çalışmayabilir.");
 }
 
 const JWT_SECRET = process.env.JWT_SECRET || 'gizli-anahtar-degistir';
@@ -491,64 +494,91 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
             userMessageParts.unshift({ text: userTextMessage }); // Metni her zaman başa koy
         }
 
-        // --- Model Fallback Logic ---
-        // Önce hızlı 'flash' modelini dene, 404 hatası verirse stabil 'pro' modeline geç.
+        // --- AI Model Logic (OpenRouter & Gemini Fallback) ---
         let aiResponse;
         let usedModel;
+
+        const orModel = "google/gemini-2.0-pro-exp-02-05:free"; // OpenRouter öncelikli model
         const primary31 = "gemini-3.1-pro-preview";
         const pro20 = "gemini-2.0-pro";
-        const flash20 = "gemini-2.0-flash";
-        const pro15 = "gemini-1.5-pro-latest"; // En stabil güçlü model
-        const flash15 = "gemini-1.5-flash-latest"; // Her zaman çalışan yedek
+        const pro15 = "gemini-1.5-pro-latest";
+        const flash15 = "gemini-1.5-flash-latest";
 
         try {
-            // 1. Gemini 3.1 Pro
-            console.log(`[AI] Deneniyor: ${primary31}`);
-            const model = genAI.getGenerativeModel({ model: primary31, systemInstruction: finalSystemPrompt });
-            const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } });
-            const result = await chat.sendMessage(userMessageParts);
-            aiResponse = result.response.text();
-            usedModel = primary31;
-        } catch (error) {
-            console.warn(`[AI] ${primary31} başarısız. Sebep: ${error.message.substring(0, 100)}`);
+            // 1. Önce OpenRouter dene (Eğer anahtar varsa)
+            if (OPENROUTER_API_KEY) {
+                console.log(`[AI] OpenRouter deneniyor: ${orModel}`);
+                const orMessages = [
+                    { role: "system", content: finalSystemPrompt },
+                    ...chatHistory.map(h => ({
+                        role: h.role === 'model' ? 'assistant' : 'user',
+                        content: h.parts[0].text
+                    })),
+                    {
+                        role: "user",
+                        content: userMessageParts.map(p => {
+                            if (p.text) return { type: "text", text: p.text };
+                            if (p.inlineData) return { 
+                                type: "image_url", 
+                                image_url: { url: `data:${p.inlineData.mimeType};base64,${p.inlineData.data}` } 
+                            };
+                            return null;
+                        }).filter(Boolean)
+                    }
+                ];
+
+                const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+                        "HTTP-Referer": "https://han-ai.dev",
+                        "X-Title": "Han AI LifeCoach",
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        model: orModel,
+                        messages: orMessages,
+                        temperature: 0.7,
+                        max_tokens: 4000
+                    })
+                });
+
+                const data = await response.json();
+                if (data.choices && data.choices[0]) {
+                    aiResponse = data.choices[0].message.content;
+                    usedModel = "OpenRouter: " + orModel;
+                } else {
+                    throw new Error(data.error?.message || "OpenRouter response error");
+                }
+            } else {
+                throw new Error("OpenRouter Key Yok");
+            }
+        } catch (orError) {
+            console.warn(`[AI] OpenRouter başarısız veya ayarlanmamış. Gemini'ye geçiliyor... ${orError.message}`);
             
             try {
-                // 2. Gemini 2.0 Pro
-                console.log(`[AI] Yedek deneniyor: ${pro20}`);
-                const model = genAI.getGenerativeModel({ model: pro20, systemInstruction: finalSystemPrompt });
+                // Gemini Fallback Logic
+                console.log(`[AI] Gemini Deneniyor: ${primary31}`);
+                const model = genAI.getGenerativeModel({ model: primary31, systemInstruction: finalSystemPrompt });
                 const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } });
                 const result = await chat.sendMessage(userMessageParts);
                 aiResponse = result.response.text();
-                usedModel = pro20;
-            } catch (error2) {
-                console.warn(`[AI] ${pro20} başarısız. Deneniyor: ${flash20}`);
-                
+                usedModel = primary31;
+            } catch (error) {
+                console.warn(`[AI] ${primary31} başarısız. GÜÇLÜ YEDEK: ${pro15}`);
                 try {
-                    // 3. Gemini 2.0 Flash
-                    const model = genAI.getGenerativeModel({ model: flash20, systemInstruction: finalSystemPrompt });
+                    const model = genAI.getGenerativeModel({ model: pro15, systemInstruction: finalSystemPrompt });
                     const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } });
                     const result = await chat.sendMessage(userMessageParts);
                     aiResponse = result.response.text();
-                    usedModel = flash20;
-                } catch (error3) {
-                    console.warn(`[AI] ${flash20} başarısız. GÜÇLÜ YEDEK: ${pro15}`);
-                    
-                    try {
-                        // 4. Gemini 1.5 Pro - En Kararlı Güçlü Model
-                        const model = genAI.getGenerativeModel({ model: pro15, systemInstruction: finalSystemPrompt });
-                        const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } });
-                        const result = await chat.sendMessage(userMessageParts);
-                        aiResponse = result.response.text();
-                        usedModel = pro15;
-                    } catch (finalError) {
-                        // 5. En Son Çare - 1.5 Flash
-                        console.warn(`[AI] Tüm üst modeller kapalı. SON ÇARE: ${flash15}`);
-                        const model = genAI.getGenerativeModel({ model: flash15, systemInstruction: finalSystemPrompt });
-                        const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 3000, temperature: 0.7 } });
-                        const result = await chat.sendMessage(userMessageParts);
-                        aiResponse = result.response.text();
-                        usedModel = flash15;
-                    }
+                    usedModel = pro15;
+                } catch (finalError) {
+                    console.warn(`[AI] Son çare: ${flash15}`);
+                    const model = genAI.getGenerativeModel({ model: flash15, systemInstruction: finalSystemPrompt });
+                    const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 3000, temperature: 0.7 } });
+                    const result = await chat.sendMessage(userMessageParts);
+                    aiResponse = result.response.text();
+                    usedModel = flash15;
                 }
             }
         }
@@ -611,43 +641,30 @@ app.post('/api/generate-image', authenticateToken, async (req, res) => {
 
         console.log(`Generating image for prompt: ${prompt}`);
 
-        // Nano Banana 2 (Gemini 3.1 Flash Image)
-        const primaryModelName = "gemini-3.1-flash-image-preview";
-        const fallbackModelName = "gemini-1.5-flash";
-
-        let result;
-        let usedModelName = primaryModelName;
+        // Waffle Modu için Pollinations AI Entegrasyonu (Garantili Çalışır)
+        const seed = Math.floor(Math.random() * 1000000);
+        const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt + ", visually stunning, 8k, masterpiece, highly detailed")}?width=1024&height=1024&nologo=true&enhance=true&seed=${seed}`;
 
         try {
-            console.log(`Generating image with primary model: ${primaryModelName}`);
-            const model = genAI.getGenerativeModel({ model: primaryModelName });
-            result = await model.generateContent(prompt);
-        } catch (error) {
-            console.warn(`Primary image model failed: ${error.message}. Trying fallback: ${fallbackModelName}`);
-            const model = genAI.getGenerativeModel({ model: fallbackModelName });
-            result = await model.generateContent(prompt);
-            usedModelName = fallbackModelName;
-        }
+            const imageRes = await fetch(imageUrl);
+            if (!imageRes.ok) throw new Error("Pollinations error");
+            const buffer = await imageRes.arrayBuffer();
+            const base64Image = Buffer.from(buffer).toString('base64');
 
-        const response = result.response;
-
-        // Gemini image models usually return inlineData with image bytes
-        const imagePart = response.candidates[0].content.parts.find(p => p.inlineData);
-
-        if (imagePart && imagePart.inlineData) {
             return res.json({
                 success: true,
-                imageData: `data:${imagePart.inlineData.mimeType};base64,${imagePart.inlineData.data}`,
-                model: usedModelName
+                imageData: `data:image/jpeg;base64,${base64Image}`,
+                model: "Pollinations AI (Waffle Engine)"
+            });
+        } catch (error) {
+            console.error('Image Gen Error:', error);
+            // Fallback: URL olarak dön
+            return res.json({
+                success: true,
+                url: imageUrl,
+                model: "Pollinations AI (Direct Link)"
             });
         }
-
-        // Fallback for different response formats
-        if (response.text()) {
-            return res.json({ success: true, url: response.text(), model: modelName });
-        }
-
-        throw new Error('Görüntü oluşturulamadı');
 
     } catch (error) {
         console.error('Image Generation error:', error);
