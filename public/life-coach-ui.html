@@ -3599,6 +3599,11 @@
                                                 <i class="fa-solid fa-file-powerpoint text-orange-500 w-4"></i> PowerPoint Oluştur
                                             </button>
                                             <div class="h-[1px] bg-white/5"></div>
+                                            <button type="button" onclick="generateAIImage(); togglePlusMenuBottom();"
+                                                class="px-4 py-3 hover:bg-orange-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
+                                                <i class="fa-solid fa-palette text-orange-400 w-4"></i> Görüntü Oluştur (Nano Banana)
+                                            </button>
+                                            <div class="h-[1px] bg-white/5"></div>
                                             <button type="button" onclick="createClassListExcel(); togglePlusMenuBottom();"
                                                 class="px-4 py-3 hover:bg-amber-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
                                                 <i class="fa-solid fa-table-list text-amber-400 w-4"></i> Sınıf Listesi (Excel A4)
@@ -4943,6 +4948,10 @@
             `;
 
             chatContainer.appendChild(div);
+
+            if (!isUser) {
+                handleAIAction(text);
+            }
             chatContainer.scrollTop = chatContainer.scrollHeight;
 
             if (animate) {
@@ -7052,7 +7061,7 @@
                 }
             }
 
-            async function createWordFile() {
+            async function createWordFile(customContent = null, customFilename = null) {
                 try {
                     const { Document, Packer, Paragraph, TextRun } = docx;
                     const doc = new Document({
@@ -7071,7 +7080,7 @@
                                 new Paragraph({
                                     children: [
                                         new TextRun({
-                                            text: "\nBu belge LifeCoach AI tarafından otomatik olarak oluşturulmuştur.\n",
+                                            text: customContent || "\nBu belge LifeCoach AI tarafından otomatik olarak oluşturulmuştur.\n",
                                             size: 24,
                                         }),
                                         new TextRun({
@@ -7088,7 +7097,7 @@
                     const url = window.URL.createObjectURL(blob);
                     const a = document.createElement("a");
                     a.href = url;
-                    a.download = "LifeCoach_Belge.docx";
+                    a.download = customFilename || "LifeCoach_Belge.docx";
                     a.click();
                     window.URL.revokeObjectURL(url);
                     showToast("Word belgesi başarıyla oluşturuldu!", "success");
@@ -7098,19 +7107,57 @@
                 }
             }
 
-            function createPPTFile() {
+            function createPPTFile(customSlides = null) {
                 try {
                     let pres = new PptxGenJS();
-                    let slide = pres.addSlide();
-                    slide.addText("LifeCoach AI", { x: 1, y: 1, fontSize: 44, color: "0F766E", bold: true });
-                    slide.addText("Akıllı Sunum Sistemi", { x: 1, y: 2, fontSize: 24, color: "334155" });
-                    slide.addText("Tarih: " + new Date().toLocaleString(), { x: 1, y: 5, fontSize: 14, color: "64748b" });
+                    
+                    if (customSlides) {
+                        customSlides.forEach(s => {
+                            let slide = pres.addSlide();
+                            slide.addText(s.title, { x: 0.5, y: 0.5, fontSize: 32, color: "0F766E", bold: true });
+                            if (Array.isArray(s.content)) {
+                                slide.addText(s.content.join("\n"), { x: 0.5, y: 1.5, fontSize: 20, color: "334155" });
+                            } else {
+                                slide.addText(s.content, { x: 0.5, y: 1.5, fontSize: 20, color: "334155" });
+                            }
+                        });
+                    } else {
+                        let slide = pres.addSlide();
+                        slide.addText("LifeCoach AI", { x: 1, y: 1, fontSize: 44, color: "0F766E", bold: true });
+                        slide.addText("Akıllı Sunum Sistemi", { x: 1, y: 2, fontSize: 24, color: "334155" });
+                        slide.addText("Tarih: " + new Date().toLocaleString(), { x: 1, y: 5, fontSize: 14, color: "64748b" });
+                    }
                     
                     pres.writeFile({ fileName: "LifeCoach_Sunum.pptx" });
                     showToast("PowerPoint sunumu başarıyla oluşturuldu!", "success");
                 } catch (e) {
                     console.error(e);
                     showToast("PPT oluşturulurken bir hata oluştu.", "error");
+                }
+            }
+
+            function handleAIAction(text) {
+                const actionRegex = /```json-action\n([\s\S]*?)\n```/g;
+                let match;
+                while ((match = actionRegex.exec(text)) !== null) {
+                    try {
+                        const action = JSON.parse(match[1]);
+                        console.log("AI Action detected:", action);
+                        
+                        if (action.type === 'excel') {
+                            const ws = XLSX.utils.aoa_to_sheet(action.data);
+                            const wb = XLSX.utils.book_new();
+                            XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+                            XLSX.writeFile(wb, action.filename || "LifeCoach_Data.xlsx");
+                            showToast("Excel dosyası otomatik oluşturuldu! 📊");
+                        } else if (action.type === 'word') {
+                            createWordFile(action.content, action.filename);
+                        } else if (action.type === 'ppt') {
+                            createPPTFile(action.slides);
+                        }
+                    } catch (e) {
+                        console.error("Action parsing error:", e);
+                    }
                 }
             }
 
@@ -7254,6 +7301,55 @@
             window.createExcelFile = createExcelFile;
             window.createWordFile = createWordFile;
             window.createPPTFile = createPPTFile;
+            async function generateAIImage() {
+                const prompt = userInput.value.trim();
+                if (!prompt) {
+                    showToast('Lütfen oluşturulacak görüntü için bir açıklama yazın.', 'warning');
+                    return;
+                }
+
+                const token = storage.get('token');
+                if (!token) {
+                    showToast('Lütfen görüntü oluşturmak için giriş yapın.', 'info');
+                    return;
+                }
+
+                showToast('Görüntü oluşturuluyor... (Nano Banana 🍌)', 'info');
+                
+                try {
+                    const response = await fetch('/api/generate-image', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ prompt })
+                    });
+
+                    const data = await response.json();
+                    
+                    if (data.success && data.imageData) {
+                        appendMessage(`İşte promptunuz için oluşturulan görüntü:\n\n![Görüntü](${data.imageData})`, 'ai', true);
+                        userInput.value = '';
+                        userInput.style.height = 'auto';
+                        
+                        // Scroll to bottom
+                        const chatContainer = document.getElementById('chat-container');
+                        if (chatContainer) {
+                             setTimeout(() => {
+                                 chatContainer.scrollTop = chatContainer.scrollHeight;
+                             }, 100);
+                        }
+                    } else {
+                        showToast(data.error || 'Görüntü oluşturulamadı.', 'error');
+                    }
+                } catch (error) {
+                    console.error('Image Generation Error:', error);
+                    showToast('Görüntü oluşturma sırasında bir hata oluştu.', 'error');
+                }
+            }
+
+            window.generateAIImage = generateAIImage;
             window.createClassListExcel = createClassListExcel;
 
             // Focus Mode

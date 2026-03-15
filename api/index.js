@@ -342,7 +342,42 @@ build discipline
 solve problems intelligently  
 and create meaningful progress in their lives.
 
-You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.
+You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI. (Operating on Gemini 3.1 Pro)
+
+---
+
+SMART FILE GENERATION ENGINE:
+
+When a user asks you to "create", "generate", or "build" an Excel, Word, or PowerPoint file:
+1. Provide the content preview in your response.
+2. At the end of your response, output a JSON block with the language \`json-action\`.
+
+EXCEL:
+\`\`\`json-action
+{
+  "type": "excel",
+  "filename": "Dosya.xlsx",
+  "data": [["Başlık1", "Başlık2"], ["Veri1", "Veri2"]]
+}
+\`\`\`
+
+WORD:
+\`\`\`json-action
+{
+  "type": "word",
+  "filename": "Belge.docx",
+  "content": "Belge metni..."
+}
+\`\`\`
+
+POWERPOINT:
+\`\`\`json-action
+{
+  "type": "ppt",
+  "filename": "Sunum.pptx",
+  "slides": [{"title": "Slayt 1", "content": ["Nokta 1"]}]
+}
+\`\`\`
 
 ---
 
@@ -460,8 +495,8 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
         // Önce hızlı 'flash' modelini dene, 404 hatası verirse stabil 'pro' modeline geç.
         let aiResponse;
         let usedModel;
-        const primaryModel = "gemini-3.1-pro-preview";
-        const fallbackModel = "gemini-3.1-pro";
+        const primaryModel = "gemini-3.1-pro";
+        const fallbackModel = "gemini-3.1-flash";
 
         try {
             console.log(`Trying primary model: ${primaryModel}`);
@@ -530,6 +565,51 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
     } catch (error) {
         console.error('Gemini Chat error:', error);
         res.status(500).json({ error: 'Bir hata oluştu', details: error.message });
+    }
+});
+
+// Image Generation Endpoint (Nano Banana)
+app.post('/api/generate-image', authenticateToken, async (req, res) => {
+    try {
+        if (!genAI) {
+            return res.status(500).json({ error: 'AI not configured' });
+        }
+
+        const { prompt, aspectRatio = "1:1" } = req.body;
+        if (!prompt) {
+            return res.status(400).json({ error: 'Prompt gerekli' });
+        }
+
+        console.log(`Generating image for prompt: ${prompt}`);
+        
+        // Nano Banana 2 (Gemini 3.1 Flash Image)
+        const modelName = "gemini-3.1-flash-image";
+        const model = genAI.getGenerativeModel({ model: modelName });
+
+        const result = await model.generateContent(prompt);
+        const response = result.response;
+        
+        // Gemini image models usually return inlineData with image bytes
+        const imagePart = response.candidates[0].content.parts.find(p => p.inlineData);
+
+        if (imagePart && imagePart.inlineData) {
+            return res.json({ 
+                success: true,
+                imageData: `data:${imagePart.inlineData.mimeType};base64,${imagePart.inlineData.data}`,
+                model: modelName
+            });
+        }
+
+        // Fallback for different response formats
+        if (response.text()) {
+             return res.json({ success: true, url: response.text(), model: modelName });
+        }
+
+        throw new Error('Görüntü oluşturulamadı');
+
+    } catch (error) {
+        console.error('Image Generation error:', error);
+        res.status(500).json({ error: 'Görüntü oluşturma hatası', details: error.message });
     }
 });
 
