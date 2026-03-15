@@ -94,8 +94,8 @@ const GoalsService = {
         return this.update({ id: goalId, progress });
     },
 
-    async completeGoal(goalId) {
-        return this.update({ id: goalId, status: 'completed', progress: 100 });
+    async completeGoal(goalId, reflection = '') {
+        return this.update({ id: goalId, status: 'completed', progress: 100, reflection });
     }
 };
 
