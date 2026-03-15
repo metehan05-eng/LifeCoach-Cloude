@@ -1328,8 +1328,19 @@ app.get('/api/goals', authenticateToken, async (req, res) => {
         const userId = req.user.id;
         const allGoals = await getKVData('goals');
         const userGoals = allGoals[userId] || [];
-        userGoals.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        res.json(userGoals);
+        const today = new Date().toISOString().split('T')[0];
+        
+        const goalsWithStats = userGoals.map(goal => {
+            const completions = goal.completions || [];
+            return {
+                ...goal,
+                completedToday: completions.includes(today),
+                completions: completions
+            };
+        });
+
+        goalsWithStats.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        res.json(goalsWithStats);
     } catch (error) {
         res.status(500).json({ error: 'Hedefler yüklenirken hata oluştu' });
     }
@@ -1345,6 +1356,7 @@ app.post('/api/goals', authenticateToken, async (req, res) => {
         const newGoal = {
             id: Date.now().toString(), title, type, description: description || '',
             progress: 0, status: 'in-progress', targetDate: targetDate || null,
+            completions: [], // Günlük takipler için
             createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
         };
         userGoals.push(newGoal);
@@ -1375,6 +1387,36 @@ app.put('/api/goals', authenticateToken, async (req, res) => {
         res.json(userGoals[idx]);
     } catch (error) {
         res.status(500).json({ error: 'Güncelleme hatası' });
+    }
+});
+
+// --- GOAL TOGGLE DAY ---
+app.post('/api/goals/toggle', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { goalId } = req.body;
+        const allGoals = await getKVData('goals');
+        const userGoals = allGoals[userId] || [];
+        const idx = userGoals.findIndex(g => g.id === goalId);
+        
+        if (idx === -1) return res.status(404).json({ error: 'Hedef bulunamadı' });
+        
+        const today = new Date().toISOString().split('T')[0];
+        const completions = userGoals[idx].completions || [];
+        
+        let updatedCompletions;
+        if (completions.includes(today)) {
+            updatedCompletions = completions.filter(d => d !== today);
+        } else {
+            updatedCompletions = [...completions, today];
+        }
+        
+        userGoals[idx].completions = updatedCompletions;
+        allGoals[userId] = userGoals;
+        await setKVData('goals', allGoals);
+        res.json({ success: true, completedToday: updatedCompletions.includes(today), completions: updatedCompletions });
+    } catch (error) {
+        res.status(500).json({ error: 'Günlük işaretleme hatası' });
     }
 });
 
