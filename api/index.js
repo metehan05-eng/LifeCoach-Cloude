@@ -495,8 +495,9 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
         // Önce hızlı 'flash' modelini dene, 404 hatası verirse stabil 'pro' modeline geç.
         let aiResponse;
         let usedModel;
-        const primaryModel = "gemini-3.1-pro";
-        const fallbackModel = "gemini-3.1-flash";
+        const primaryModel = "gemini-3.1-pro-preview";
+        const primaryModel2 = "gemini-3.1-flash-image-preview";
+        const fallbackModel = "gemini-3-flash-preview";
 
         try {
             console.log(`Trying primary model: ${primaryModel}`);
@@ -581,19 +582,19 @@ app.post('/api/generate-image', authenticateToken, async (req, res) => {
         }
 
         console.log(`Generating image for prompt: ${prompt}`);
-        
+
         // Nano Banana 2 (Gemini 3.1 Flash Image)
-        const modelName = "gemini-3.1-flash-image";
+        const modelName = "gemini-3.1-flash-image-preview";
         const model = genAI.getGenerativeModel({ model: modelName });
 
         const result = await model.generateContent(prompt);
         const response = result.response;
-        
+
         // Gemini image models usually return inlineData with image bytes
         const imagePart = response.candidates[0].content.parts.find(p => p.inlineData);
 
         if (imagePart && imagePart.inlineData) {
-            return res.json({ 
+            return res.json({
                 success: true,
                 imageData: `data:${imagePart.inlineData.mimeType};base64,${imagePart.inlineData.data}`,
                 model: modelName
@@ -602,7 +603,7 @@ app.post('/api/generate-image', authenticateToken, async (req, res) => {
 
         // Fallback for different response formats
         if (response.text()) {
-             return res.json({ success: true, url: response.text(), model: modelName });
+            return res.json({ success: true, url: response.text(), model: modelName });
         }
 
         throw new Error('Görüntü oluşturulamadı');
@@ -1399,7 +1400,7 @@ app.post('/api/check-in', authenticateToken, async (req, res) => {
         const today = new Date().toDateString();
         const checkInHistory = await getKVData('checkin_history') || {};
         const userHistory = checkInHistory[userEmail] || [];
-        
+
         if (userHistory.includes(today)) {
             return res.json({ message: 'Zaten bugün check-in yaptınız! 🎉', alreadyCheckedIn: true });
         }
@@ -1436,7 +1437,7 @@ app.get('/api/badge-status', authenticateToken, async (req, res) => {
         const userEmail = req.user.email;
         const checkInHistory = await getKVData('checkin_history') || {};
         const userHistory = checkInHistory[userEmail] || [];
-        
+
         let streak = 0;
         if (userHistory.length > 0) {
             const sortedDates = [...userHistory].sort().reverse();
