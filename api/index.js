@@ -51,11 +51,11 @@ const messageStore = new Map();
 const optionalAuth = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
-    
+
     if (!token) {
         return next(); // Token yoksa devam et (anonim kullanıcı)
     }
-    
+
     jwt.verify(token, JWT_SECRET, (err, user) => {
         if (!err) {
             req.user = user; // Token geçerliyse kullanıcıyı ekle
@@ -68,11 +68,11 @@ const optionalAuth = (req, res, next) => {
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
-    
+
     if (!token) {
         return res.status(401).json({ error: 'Token gerekli' });
     }
-    
+
     jwt.verify(token, JWT_SECRET, (err, user) => {
         if (err) {
             return res.status(403).json({ error: 'Geçersiz token' });
@@ -85,26 +85,26 @@ const authenticateToken = (req, res, next) => {
 // Rate Limit: Kullanıcı bazlı mesaj limitini kontrol eder.
 const rateLimitMiddleware = async (req, res, next) => {
     if (!req.user) return next();
-    
+
     const userId = req.user.id;
     const userType = req.user.type || 'free';
     const config = RATE_LIMIT_CONFIG[userType];
-    
+
     const now = Date.now();
     const userData = messageStore.get(userId) || { count: 0, resetTime: now + config.windowMs };
-    
+
     if (now > userData.resetTime) {
         userData.count = 0;
         userData.resetTime = now + config.windowMs;
     }
-    
+
     if (userData.count >= config.messageLimit) {
-        return res.status(429).json({ 
-            error: 'Rate limit aşıldı', 
-            resetTime: userData.resetTime 
+        return res.status(429).json({
+            error: 'Rate limit aşıldı',
+            resetTime: userData.resetTime
         });
     }
-    
+
     userData.count++;
     messageStore.set(userId, userData);
     next();
@@ -135,7 +135,7 @@ app.post('/api/chat', optionalAuth, async (req, res) => {
         }
 
         const { message, file, history, systemPrompt, sessionId } = req.body;
-        
+
         // Default System Prompt - HAN 4.2 Ultra Core
         const defaultSystemPrompt = `You are HAN 4.2 Ultra Core, the central intelligence of LifeCoach AI.
 
@@ -394,14 +394,14 @@ Currently working on other AI products as well.
 ---
 
 You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
-        
+
         // Use provided systemPrompt or fallback to default
         const finalSystemPrompt = systemPrompt || defaultSystemPrompt;
-        
+
         if (!message && !file) {
             return res.status(400).json({ error: 'Mesaj veya dosya gerekli' });
         }
-        
+
         // Sohbet geçmişini Gemini formatına çevir
         const chatHistory = (history || []).slice(-10).map(msg => ({
             role: msg.role === 'assistant' ? 'model' : 'user',
@@ -410,7 +410,7 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
 
         const userMessageParts = [];
         let userTextMessage = message || ''; // Kullanıcının yazdığı mesajla başla
-        
+
         if (file && file.data) {
             const mimeType = file.type;
             const base64Data = file.data.split(',')[1];
@@ -519,14 +519,14 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
                 await setKVData(`user:${req.user.email}`, user);
             }
         }
-        
+
         return res.json({
             response: aiResponse,
             // Eğer yeni bir oturum oluşturulduysa, ID'sini ön yüze gönder
             sessionId: newSessionId,
             model: usedModel, // Çalışan modelin adını gönder
         });
-        
+
     } catch (error) {
         console.error('Gemini Chat error:', error);
         res.status(500).json({ error: 'Bir hata oluştu', details: error.message });
@@ -537,19 +537,19 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
 app.post('/api/register', async (req, res) => {
     try {
         const { email, password, name } = req.body;
-        
+
         if (!email || !password) {
             return res.status(400).json({ error: 'Email ve şifre gerekli' });
         }
-        
+
         const existingUser = await getKVData(`user:${email}`);
         if (existingUser) {
             return res.status(409).json({ error: 'Bu email zaten kayıtlı' });
         }
-        
+
         const hashedPassword = await bcrypt.hash(password, 10);
         const userId = crypto.randomUUID();
-        
+
         const user = {
             id: userId,
             email,
@@ -560,21 +560,21 @@ app.post('/api/register', async (req, res) => {
             createdAt: new Date().toISOString(),
             sessions: [] // Yeni kullanıcı için boş session dizisi
         };
-        
+
         await setKVData(`user:${email}`, user);
         await setKVData(`user:id:${userId}`, { email });
-        
+
         const token = jwt.sign(
             { id: userId, email, type: user.type },
             JWT_SECRET,
             { expiresIn: '7d' }
         );
-        
+
         res.json({
             token,
             user: { id: userId, email, name: user.name, type: user.type, avatar: user.avatar }
         });
-        
+
     } catch (error) {
         console.error('Register error:', error);
         res.status(500).json({ error: 'Kayıt başarısız' });
@@ -585,17 +585,17 @@ app.post('/api/register', async (req, res) => {
 app.post('/api/login', async (req, res) => {
     try {
         const { email, password } = req.body;
-        
+
         if (!email || !password) {
             return res.status(400).json({ error: 'Email ve şifre gerekli' });
         }
-        
+
         const user = await getKVData(`user:${email}`);
-        
+
         if (!user) {
             return res.status(401).json({ error: 'Kullanıcı bulunamadı' });
         }
-        
+
         // Eğer kullanıcı şifreyle değil, Google gibi bir sosyal medya hesabıyla
         // kayıt olduysa, 'password' alanı olmayacaktır. Bu durumu kontrol et.
         if (!user.password) {
@@ -607,24 +607,24 @@ app.post('/api/login', async (req, res) => {
             // Güvenlik açısından genel bir hata mesajı dönmek en iyisidir.
             return res.status(401).json({ error: 'Geçersiz şifre' });
         }
-        
+
         const validPassword = await bcrypt.compare(password, user.password);
-        
+
         if (!validPassword) {
             return res.status(401).json({ error: 'Geçersiz şifre' });
         }
-        
+
         const token = jwt.sign(
             { id: user.id, email, type: user.type },
             JWT_SECRET,
             { expiresIn: '7d' }
         );
-        
+
         res.json({
             token,
             user: { id: user.id, email, name: user.name, type: user.type, avatar: user.avatar }
         });
-        
+
     } catch (error) {
         console.error('Login error:', error);
         res.status(500).json({ error: 'Giriş başarısız' });
@@ -635,22 +635,22 @@ app.post('/api/login', async (req, res) => {
 app.post('/api/auth/google', async (req, res) => {
     try {
         const { credential } = req.body;
-        
+
         if (!credential) {
             return res.status(400).json({ error: 'Credential gerekli' });
         }
-        
+
         const ticket = await googleClient.verifyIdToken({
             idToken: credential,
             audience: GOOGLE_CLIENT_ID
         });
-        
+
         const payload = ticket.getPayload();
         const email = payload.email;
         const name = payload.name;
-        
+
         let user = await getKVData(`user:${email}`);
-        
+
         if (!user) {
             const userId = crypto.randomUUID();
             user = {
@@ -670,18 +670,18 @@ app.post('/api/auth/google', async (req, res) => {
             user.avatar = payload.picture;
             await setKVData(`user:${email}`, user);
         }
-        
+
         const token = jwt.sign(
             { id: user.id, email, type: user.type },
             JWT_SECRET,
             { expiresIn: '7d' }
         );
-        
+
         res.json({
             token,
             user: { id: user.id, email, name: user.name, type: user.type, avatar: user.avatar }
         });
-        
+
     } catch (error) {
         console.error('Google auth error:', error);
         res.status(500).json({ error: 'Google girişi başarısız' });
@@ -692,11 +692,11 @@ app.post('/api/auth/google', async (req, res) => {
 app.get('/api/profile', authenticateToken, async (req, res) => {
     try {
         const user = await getKVData(`user:${req.user.email}`);
-        
+
         if (!user) {
             return res.status(404).json({ error: 'Kullanıcı bulunamadı' });
         }
-        
+
         res.json({
             id: user.id,
             email: user.email,
@@ -705,7 +705,7 @@ app.get('/api/profile', authenticateToken, async (req, res) => {
             avatar: user.avatar,
             success: true
         });
-        
+
     } catch (error) {
         console.error('Profile error:', error);
         res.status(500).json({ error: 'Profil bilgisi alınamadı' });
@@ -717,16 +717,16 @@ app.post('/api/update-profile', authenticateToken, async (req, res) => {
     try {
         const { newName, newAvatar } = req.body;
         const user = await getKVData(`user:${req.user.email}`);
-        
+
         if (!user) {
             return res.status(404).json({ error: 'Kullanıcı bulunamadı' });
         }
-        
+
         user.name = newName || user.name;
         user.avatar = newAvatar; // Avatarı boş olsa bile ayarla (silme durumu için)
 
         await setKVData(`user:${req.user.email}`, user);
-        
+
         res.json({
             success: true,
             user: {
@@ -737,7 +737,7 @@ app.post('/api/update-profile', authenticateToken, async (req, res) => {
                 avatar: user.avatar
             }
         });
-        
+
     } catch (error) {
         console.error('Update profile error:', error);
         res.status(500).json({ error: 'Profil güncellenemedi' });
@@ -1241,10 +1241,10 @@ app.put('/api/goals', authenticateToken, async (req, res) => {
         const userGoals = allGoals[userId] || [];
         const idx = userGoals.findIndex(g => g.id === id);
         if (idx === -1) return res.status(404).json({ error: 'Hedef bulunamadı' });
-        userGoals[idx] = { 
-            ...userGoals[idx], title, type, description, 
-            progress: progress !== undefined ? progress : userGoals[idx].progress, 
-            status, targetDate, updatedAt: new Date().toISOString() 
+        userGoals[idx] = {
+            ...userGoals[idx], title, type, description,
+            progress: progress !== undefined ? progress : userGoals[idx].progress,
+            status, targetDate, updatedAt: new Date().toISOString()
         };
         allGoals[userId] = userGoals;
         await setKVData('goals', allGoals);
@@ -1308,6 +1308,76 @@ app.post('/api/delete-session', authenticateToken, async (req, res) => {
         res.status(404).json({ error: 'Bulunamadı' });
     } catch (error) {
         res.status(500).json({ error: 'Silme hatası' });
+    }
+});
+
+// --- USER ENGAGEMENT & BADGES ---
+
+app.post('/api/check-in', authenticateToken, async (req, res) => {
+    try {
+        const userEmail = req.user.email;
+        const today = new Date().toDateString();
+        const checkInHistory = await getKVData('checkin_history') || {};
+        const userHistory = checkInHistory[userEmail] || [];
+        
+        if (userHistory.includes(today)) {
+            return res.json({ message: 'Zaten bugün check-in yaptınız! 🎉', alreadyCheckedIn: true });
+        }
+
+        userHistory.push(today);
+        checkInHistory[userEmail] = userHistory;
+        await setKVData('checkin_history', checkInHistory);
+
+        // Calculate streak
+        let streak = 0;
+        const sortedDates = [...userHistory].sort().reverse();
+        const todayDate = new Date();
+        todayDate.setHours(0, 0, 0, 0);
+        let checkDate = new Date(todayDate);
+        for (let i = 0; i < sortedDates.length; i++) {
+            if (sortedDates[i] === checkDate.toDateString()) {
+                streak++;
+                checkDate.setDate(checkDate.getDate() - 1);
+            } else if (i === 0 && sortedDates[i] === new Date(todayDate.getTime() - 86400000).toDateString()) {
+                streak++;
+                checkDate.setDate(checkDate.getDate() - 1);
+            } else break;
+        }
+
+        let stars = streak >= 30 ? 4 : streak >= 14 ? 3 : streak >= 7 ? 2 : streak >= 3 ? 1 : 0;
+        res.json({ success: true, message: `Check-in başarılı! 🔥 ${streak} günlük seri`, streak, stars });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.get('/api/badge-status', authenticateToken, async (req, res) => {
+    try {
+        const userEmail = req.user.email;
+        const checkInHistory = await getKVData('checkin_history') || {};
+        const userHistory = checkInHistory[userEmail] || [];
+        
+        let streak = 0;
+        if (userHistory.length > 0) {
+            const sortedDates = [...userHistory].sort().reverse();
+            const todayDate = new Date();
+            todayDate.setHours(0, 0, 0, 0);
+            let checkDate = new Date(todayDate);
+            for (let i = 0; i < sortedDates.length; i++) {
+                if (sortedDates[i] === checkDate.toDateString()) {
+                    streak++;
+                    checkDate.setDate(checkDate.getDate() - 1);
+                } else if (i === 0 && sortedDates[i] === new Date(todayDate.getTime() - 86400000).toDateString()) {
+                    streak++;
+                    checkDate.setDate(checkDate.getDate() - 1);
+                } else break;
+            }
+        }
+
+        let stars = streak >= 30 ? 4 : streak >= 14 ? 3 : streak >= 7 ? 2 : streak >= 3 ? 1 : 0;
+        res.json({ streak, stars, totalDays: userHistory.length });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
     }
 });
 
