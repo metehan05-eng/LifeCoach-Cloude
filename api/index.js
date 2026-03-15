@@ -495,10 +495,10 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
         // Önce hızlı 'flash' modelini dene, 404 hatası verirse stabil 'pro' modeline geç.
         let aiResponse;
         let usedModel;
-        const primaryModel = "gemini-1.5-pro"; // En stabil Pro model
-        const primaryModel31 = "gemini-3.1-pro-preview"; // Kullanıcının istediği model
-        const fallbackModel = "gemini-1.5-flash"; // En hızlı ve stabil model
-        const lastResortModel = "gemini-2.0-flash-exp"; // Yeni ve hızlı alternatif
+        const primaryModel31 = "gemini-3.1-pro-preview"; // Kota (Billing) gerektirebilir
+        const fallback20 = "gemini-2.0-flash-exp"; // Yedek 1 (Yüksek olasılıkla çalışır)
+        const fallback15Pro = "gemini-1.5-pro-002"; // Yedek 2 (Stabil sürüm)
+        const fallback15Flash = "gemini-1.5-flash-002"; // Yedek 3 (Hızlı stabil sürüm)
 
         try {
             console.log(`[AI] Deneniyor: ${primaryModel31}`);
@@ -508,28 +508,44 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
             aiResponse = result.response.text();
             usedModel = primaryModel31;
         } catch (error) {
-            console.warn(`[AI] ${primaryModel31} hatası: ${error.message}`);
-            // Birinci yedek: gemini-1.5-pro
+            if (error.message && error.message.includes('429')) {
+                console.warn(`[AI] ${primaryModel31} için KOTA DOLU veya Ücretli Plan Gerekli. Yedeğe geçiliyor...`);
+            } else {
+                console.warn(`[AI] ${primaryModel31} hatası: ${error.message}`);
+            }
+
+            // Yedek 1: Gemini 2.0 Flash
             try {
-                console.log(`[AI] Yedek deneniyor: ${primaryModel}`);
-                const model = genAI.getGenerativeModel({ model: primaryModel, systemInstruction: finalSystemPrompt });
+                console.log(`[AI] Yedek deneniyor: ${fallback20}`);
+                const model = genAI.getGenerativeModel({ model: fallback20, systemInstruction: finalSystemPrompt });
                 const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } });
                 const result = await chat.sendMessage(userMessageParts);
                 aiResponse = result.response.text();
-                usedModel = primaryModel;
+                usedModel = fallback20;
             } catch (error2) {
-                console.warn(`[AI] ${primaryModel} hatası: ${error2.message}`);
-                // İkinci yedek: gemini-1.5-flash
+                console.warn(`[AI] ${fallback20} hatası: ${error2.message}`);
+                // Yedek 2: Gemini 1.5 Pro Stable
                 try {
-                    console.log(`[AI] İkinci yedek deneniyor: ${fallbackModel}`);
-                    const model = genAI.getGenerativeModel({ model: fallbackModel, systemInstruction: finalSystemPrompt });
+                    console.log(`[AI] İkinci yedek deneniyor: ${fallback15Pro}`);
+                    const model = genAI.getGenerativeModel({ model: fallback15Pro, systemInstruction: finalSystemPrompt });
                     const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } });
                     const result = await chat.sendMessage(userMessageParts);
                     aiResponse = result.response.text();
-                    usedModel = fallbackModel;
-                } catch (fallbackError) {
-                    console.error(`[AI] Tüm modeller başarısız oldu.`);
-                    throw fallbackError;
+                    usedModel = fallback15Pro;
+                } catch (error3) {
+                    console.warn(`[AI] ${fallback15Pro} hatası: ${error3.message}`);
+                    // Son Çare: Gemini 1.5 Flash Stable
+                    try {
+                        console.log(`[AI] Son çare deneniyor: ${fallback15Flash}`);
+                        const model = genAI.getGenerativeModel({ model: fallback15Flash, systemInstruction: finalSystemPrompt });
+                        const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } });
+                        const result = await chat.sendMessage(userMessageParts);
+                        aiResponse = result.response.text();
+                        usedModel = fallback15Flash;
+                    } catch (finalError) {
+                        console.error(`[AI] Tüm modeller başarısız oldu.`);
+                        throw finalError;
+                    }
                 }
             }
         }
