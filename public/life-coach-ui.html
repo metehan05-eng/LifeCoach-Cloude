@@ -5482,9 +5482,37 @@
                 }
 
                 container.innerHTML = filtered.map(goal => {
-                    const statusColor = goal.status === 'completed' ? 'text-emerald-400' :
+                const statusColor = goal.status === 'completed' ? 'text-emerald-400' :
                         goal.status === 'paused' ? 'text-amber-400' : 'text-teal-400';
                     const typeLabel = { daily: 'Günlük', weekly: 'Haftalık', monthly: 'Aylık', yearly: 'Yıllık' }[goal.type];
+
+                    // Haftalık görünüm hazırlığı
+                    const days = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
+                    const todayDate = new Date();
+                    const currentDayIdx = (todayDate.getDay() + 6) % 7; // 0: Pzt, ..., 6: Paz
+                    
+                    const dayBoxes = days.map((day, idx) => {
+                        const isToday = idx === currentDayIdx;
+                        const dateClone = new Date();
+                        dateClone.setDate(todayDate.getDate() - (currentDayIdx - idx));
+                        const dateStr = dateClone.toISOString().split('T')[0];
+                        const isCompleted = (goal.completions || []).includes(dateStr);
+                        
+                        return `
+                            <div class="flex flex-col items-center gap-1">
+                                <span class="text-[10px] text-slate-500 font-medium uppercase">${day}</span>
+                                <button 
+                                    ${isToday ? `onclick="toggleGoalDay('${goal.id}')"` : ''}
+                                    class="w-8 h-8 rounded-lg border transition-all flex items-center justify-center
+                                    ${isCompleted ? 'bg-teal-500 border-teal-500 text-white shadow-[0_0_10px_rgba(45,212,191,0.3)]' : 
+                                      isToday ? 'bg-white/5 border-teal-500/30 text-teal-500/50 hover:bg-white/10 hover:border-teal-500' : 
+                                      'bg-white/5 border-white/5 text-slate-600 cursor-not-allowed'}">
+                                    <i class="fa-solid ${isCompleted ? 'fa-check' : 'fa-circle-dot text-[8px]'}"></i>
+                                </button>
+                                ${isToday ? '<div class="w-1 h-1 bg-teal-500 rounded-full"></div>' : '<div class="w-1 h-1"></div>'}
+                            </div>
+                        `;
+                    }).join('');
 
                     return `
                         <div class="bg-white/5 border border-white/10 rounded-2xl p-5 animate-fade-in-up">
@@ -5514,6 +5542,13 @@
                                     <div class="h-full bg-gradient-to-r from-teal-500 to-emerald-500 rounded-full transition-all" style="width: ${goal.progress}%"></div>
                                 </div>
                                 <span class="text-sm font-bold text-teal-400">${goal.progress}%</span>
+                            </div>
+
+                            <!-- Weekly Check Grid -->
+                            <div class="mt-5 mb-2">
+                                <div class="flex justify-between items-center px-1">
+                                    ${dayBoxes}
+                                </div>
                             </div>
                             <div class="mt-3 flex gap-2">
                                 <input type="range" min="0" max="100" value="${goal.progress}" 
@@ -5557,11 +5592,20 @@
                 document.getElementById('goal-modal').classList.remove('flex');
             }
 
-            async function updateGoalProgress(goalId, progress) {
+            async function toggleGoalDay(goalId) {
                 try {
-                    await GoalsService.updateProgress(goalId, parseInt(progress));
+                    const result = await GoalsService.toggleDay(goalId);
+                    if (result.completedToday) {
+                        // Küçük bir konfeti patlat
+                        confetti({
+                            particleCount: 50,
+                            spread: 60,
+                            origin: { y: 0.8 },
+                            colors: ['#2dd4bf', '#10b981']
+                        });
+                        showToast('Bugünkü çalışma tamam! Harikasın. 🚀');
+                    }
                     loadGoals();
-                    showToast('Hedef güncellendi!');
                 } catch (err) {
                     showToast('Hata: ' + err.message);
                 }

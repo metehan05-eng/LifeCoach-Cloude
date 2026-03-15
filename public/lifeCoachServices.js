@@ -96,6 +96,21 @@ const GoalsService = {
 
     async completeGoal(goalId, reflection = '') {
         return this.update({ id: goalId, status: 'completed', progress: 100, reflection });
+    },
+
+    async toggleDay(goalId) {
+        try {
+            const res = await fetch('/api/goals/toggle', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ goalId })
+            });
+            if (!res.ok) throw new Error('Toggle failed');
+            return await res.json();
+        } catch (error) {
+            console.error('GoalsService.toggleDay error:', error);
+            throw error;
+        }
     }
 };
 
