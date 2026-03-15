@@ -496,10 +496,10 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
         let aiResponse;
         let usedModel;
         const primary31 = "gemini-3.1-pro-preview";
-        const pro20 = "gemini-2.0-pro";            
-        const lite31 = "gemini-3.1-flash-lite-preview"; 
-        const flash20 = "gemini-2.0-flash";          
-        const lastResort = "gemini-1.5-flash-002";
+        const pro20 = "gemini-2.0-pro";
+        const flash20 = "gemini-2.0-flash";
+        const pro15 = "gemini-1.5-pro-latest"; // En stabil güçlü model
+        const flash15 = "gemini-1.5-flash-latest"; // Her zaman çalışan yedek
 
         try {
             // 1. Gemini 3.1 Pro
@@ -510,7 +510,7 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
             aiResponse = result.response.text();
             usedModel = primary31;
         } catch (error) {
-            console.warn(`[AI] ${primary31} hatası: ${error.message.substring(0, 50)}...`);
+            console.warn(`[AI] ${primary31} başarısız. Sebep: ${error.message.substring(0, 100)}`);
             
             try {
                 // 2. Gemini 2.0 Pro
@@ -521,34 +521,33 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
                 aiResponse = result.response.text();
                 usedModel = pro20;
             } catch (error2) {
-                console.warn(`[AI] ${pro20} hatası: ${error2.message.substring(0, 50)}`);
+                console.warn(`[AI] ${pro20} başarısız. Deneniyor: ${flash20}`);
                 
                 try {
-                    // 3. Gemini 3.1 Flash Lite
-                    console.log(`[AI] Yedek deneniyor: ${lite31}`);
-                    const model = genAI.getGenerativeModel({ model: lite31, systemInstruction: finalSystemPrompt });
+                    // 3. Gemini 2.0 Flash
+                    const model = genAI.getGenerativeModel({ model: flash20, systemInstruction: finalSystemPrompt });
                     const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } });
                     const result = await chat.sendMessage(userMessageParts);
                     aiResponse = result.response.text();
-                    usedModel = lite31;
+                    usedModel = flash20;
                 } catch (error3) {
-                    console.warn(`[AI] ${lite31} hatası. Deneniyor: ${flash20}`);
+                    console.warn(`[AI] ${flash20} başarısız. GÜÇLÜ YEDEK: ${pro15}`);
                     
                     try {
-                        // 4. Gemini 2.0 Flash
-                        const model = genAI.getGenerativeModel({ model: flash20, systemInstruction: finalSystemPrompt });
+                        // 4. Gemini 1.5 Pro - En Kararlı Güçlü Model
+                        const model = genAI.getGenerativeModel({ model: pro15, systemInstruction: finalSystemPrompt });
                         const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } });
                         const result = await chat.sendMessage(userMessageParts);
                         aiResponse = result.response.text();
-                        usedModel = flash20;
+                        usedModel = pro15;
                     } catch (finalError) {
-                        // 5. Son Çare
-                        console.warn(`[AI] Tüm yeni modeller başarısız. Son çare: ${lastResort}`);
-                        const model = genAI.getGenerativeModel({ model: lastResort, systemInstruction: finalSystemPrompt });
-                        const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 2000, temperature: 0.7 } });
+                        // 5. En Son Çare - 1.5 Flash
+                        console.warn(`[AI] Tüm üst modeller kapalı. SON ÇARE: ${flash15}`);
+                        const model = genAI.getGenerativeModel({ model: flash15, systemInstruction: finalSystemPrompt });
+                        const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 3000, temperature: 0.7 } });
                         const result = await chat.sendMessage(userMessageParts);
                         aiResponse = result.response.text();
-                        usedModel = lastResort;
+                        usedModel = flash15;
                     }
                 }
             }
