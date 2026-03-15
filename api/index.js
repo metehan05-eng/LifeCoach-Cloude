@@ -495,43 +495,42 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
         // Önce hızlı 'flash' modelini dene, 404 hatası verirse stabil 'pro' modeline geç.
         let aiResponse;
         let usedModel;
-        const primaryModel = "gemini-3.1-pro-preview";
-        const primaryModel2 = "gemini-3.1-flash-image-preview";
-        const fallbackModel = "gemini-3.1-flash-lite-preview";
-        const lastResortModel = "gemini-1.5-flash";
+        const primaryModel = "gemini-1.5-pro"; // En stabil Pro model
+        const primaryModel31 = "gemini-3.1-pro-preview"; // Kullanıcının istediği model
+        const fallbackModel = "gemini-1.5-flash"; // En hızlı ve stabil model
+        const lastResortModel = "gemini-2.0-flash-exp"; // Yeni ve hızlı alternatif
 
         try {
-            console.log(`Trying primary model: ${primaryModel}`);
-            const model = genAI.getGenerativeModel({ model: primaryModel, systemInstruction: finalSystemPrompt });
+            console.log(`[AI] Deneniyor: ${primaryModel31}`);
+            const model = genAI.getGenerativeModel({ model: primaryModel31, systemInstruction: finalSystemPrompt });
             const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } });
             const result = await chat.sendMessage(userMessageParts);
             aiResponse = result.response.text();
-            usedModel = primaryModel;
+            usedModel = primaryModel31;
         } catch (error) {
-            // Eğer model bulunamadı hatası (404) alırsak, fallback modelini dene
-            if (error.message && (error.message.includes('is not found') || error.message.includes('404') || error.message.includes('not supported'))) {
-                console.warn(`Model '${primaryModel}' failed. Trying fallback: '${fallbackModel}'`);
+            console.warn(`[AI] ${primaryModel31} hatası: ${error.message}`);
+            // Birinci yedek: gemini-1.5-pro
+            try {
+                console.log(`[AI] Yedek deneniyor: ${primaryModel}`);
+                const model = genAI.getGenerativeModel({ model: primaryModel, systemInstruction: finalSystemPrompt });
+                const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } });
+                const result = await chat.sendMessage(userMessageParts);
+                aiResponse = result.response.text();
+                usedModel = primaryModel;
+            } catch (error2) {
+                console.warn(`[AI] ${primaryModel} hatası: ${error2.message}`);
+                // İkinci yedek: gemini-1.5-flash
                 try {
+                    console.log(`[AI] İkinci yedek deneniyor: ${fallbackModel}`);
                     const model = genAI.getGenerativeModel({ model: fallbackModel, systemInstruction: finalSystemPrompt });
                     const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } });
                     const result = await chat.sendMessage(userMessageParts);
                     aiResponse = result.response.text();
                     usedModel = fallbackModel;
                 } catch (fallbackError) {
-                    console.warn(`Fallback model '${fallbackModel}' failed. Trying last resort: '${lastResortModel}'`);
-                    try {
-                        const model = genAI.getGenerativeModel({ model: lastResortModel, systemInstruction: finalSystemPrompt });
-                        const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 2000, temperature: 0.7 } });
-                        const result = await chat.sendMessage(userMessageParts);
-                        aiResponse = result.response.text();
-                        usedModel = lastResortModel;
-                    } catch (finalError) {
-                        console.error('All Gemini models failed.');
-                        throw finalError;
-                    }
+                    console.error(`[AI] Tüm modeller başarısız oldu.`);
+                    throw fallbackError;
                 }
-            } else {
-                throw error;
             }
         }
 
