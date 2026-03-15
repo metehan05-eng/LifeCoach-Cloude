@@ -4689,18 +4689,56 @@
 
         function exportMessageAsExcel(text) {
             try {
-                const data = [
-                    ["LifeCoach AI - Mesaj Dışa Aktarımı"],
-                    ["Tarih", new Date().toLocaleString('tr-TR')],
-                    [""],
-                    ["Mesaj İçeriği:"],
-                    [text.replace(/<[^>]*>/g, '')]
-                ];
-                const ws = XLSX.utils.aoa_to_sheet(data);
+                // Remove HTML tags first
+                const cleanText = text.replace(/<[^>]*>/g, '');
+                
+                // Identify if there's a markdown table
+                const lines = cleanText.split('\n');
+                let tableData = [];
+                let inTable = false;
+
+                for (let line of lines) {
+                    const trimmedLine = line.trim();
+                    if (trimmedLine.startsWith('|') && trimmedLine.endsWith('|')) {
+                        // This is likely a table row
+                        const cells = trimmedLine.split('|')
+                            .filter((cell, index, arr) => index > 0 && index < arr.length - 1)
+                            .map(cell => cell.trim());
+                        
+                        // Ignore separator rows (e.g., |---|---|)
+                        if (cells.every(c => c.match(/^[- :]+$/))) continue;
+                        
+                        tableData.push(cells);
+                        inTable = true;
+                    } else if (inTable && trimmedLine === '') {
+                        // End of table
+                        inTable = false;
+                    }
+                }
+
+                let finalData = [];
+                if (tableData.length > 0) {
+                    finalData = [
+                        ["LifeCoach AI - Veri Aktarımı"],
+                        ["Tarih", new Date().toLocaleString('tr-TR')],
+                        [""],
+                        ...tableData
+                    ];
+                } else {
+                    finalData = [
+                        ["LifeCoach AI - Mesaj Dışa Aktarımı"],
+                        ["Tarih", new Date().toLocaleString('tr-TR')],
+                        [""],
+                        ["Mesaj İçeriği:"],
+                        [cleanText]
+                    ];
+                }
+                
+                const ws = XLSX.utils.aoa_to_sheet(finalData);
                 const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "Mesaj");
-                XLSX.writeFile(wb, "LifeCoach_Mesaj.xlsx");
-                showToast("Mesaj Excel olarak indirildi.", "success");
+                XLSX.utils.book_append_sheet(wb, ws, "Veri");
+                XLSX.writeFile(wb, "LifeCoach_Veri.xlsx");
+                showToast("Excel dosyası başarıyla indirildi.", "success");
             } catch (e) {
                 console.error(e);
                 showToast("Excel export hatası.", "error");
