@@ -495,56 +495,60 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
         // Önce hızlı 'flash' modelini dene, 404 hatası verirse stabil 'pro' modeline geç.
         let aiResponse;
         let usedModel;
-        const primaryModel31 = "gemini-3.1-pro-preview"; // Kota (Billing) gerektirebilir
-        const fallback20 = "gemini-2.0-flash-exp"; // Yedek 1 (Yüksek olasılıkla çalışır)
-        const fallback15Pro = "gemini-1.5-pro-002"; // Yedek 2 (Stabil sürüm)
-        const fallback15Flash = "gemini-1.5-flash-002"; // Yedek 3 (Hızlı stabil sürüm)
+        const primary31 = "gemini-3.1-pro-preview";
+        const pro20 = "gemini-2.0-pro";            
+        const lite31 = "gemini-3.1-flash-lite-preview"; 
+        const flash20 = "gemini-2.0-flash";          
+        const lastResort = "gemini-1.5-flash-002";
 
         try {
-            console.log(`[AI] Deneniyor: ${primaryModel31}`);
-            const model = genAI.getGenerativeModel({ model: primaryModel31, systemInstruction: finalSystemPrompt });
+            // 1. Gemini 3.1 Pro
+            console.log(`[AI] Deneniyor: ${primary31}`);
+            const model = genAI.getGenerativeModel({ model: primary31, systemInstruction: finalSystemPrompt });
             const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } });
             const result = await chat.sendMessage(userMessageParts);
             aiResponse = result.response.text();
-            usedModel = primaryModel31;
+            usedModel = primary31;
         } catch (error) {
-            if (error.message && error.message.includes('429')) {
-                console.warn(`[AI] ${primaryModel31} için KOTA DOLU veya Ücretli Plan Gerekli. Yedeğe geçiliyor...`);
-            } else {
-                console.warn(`[AI] ${primaryModel31} hatası: ${error.message}`);
-            }
-
-            // Yedek 1: Gemini 2.0 Flash
+            console.warn(`[AI] ${primary31} hatası: ${error.message.substring(0, 50)}...`);
+            
             try {
-                console.log(`[AI] Yedek deneniyor: ${fallback20}`);
-                const model = genAI.getGenerativeModel({ model: fallback20, systemInstruction: finalSystemPrompt });
+                // 2. Gemini 2.0 Pro
+                console.log(`[AI] Yedek deneniyor: ${pro20}`);
+                const model = genAI.getGenerativeModel({ model: pro20, systemInstruction: finalSystemPrompt });
                 const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } });
                 const result = await chat.sendMessage(userMessageParts);
                 aiResponse = result.response.text();
-                usedModel = fallback20;
+                usedModel = pro20;
             } catch (error2) {
-                console.warn(`[AI] ${fallback20} hatası: ${error2.message}`);
-                // Yedek 2: Gemini 1.5 Pro Stable
+                console.warn(`[AI] ${pro20} hatası: ${error2.message.substring(0, 50)}`);
+                
                 try {
-                    console.log(`[AI] İkinci yedek deneniyor: ${fallback15Pro}`);
-                    const model = genAI.getGenerativeModel({ model: fallback15Pro, systemInstruction: finalSystemPrompt });
+                    // 3. Gemini 3.1 Flash Lite
+                    console.log(`[AI] Yedek deneniyor: ${lite31}`);
+                    const model = genAI.getGenerativeModel({ model: lite31, systemInstruction: finalSystemPrompt });
                     const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } });
                     const result = await chat.sendMessage(userMessageParts);
                     aiResponse = result.response.text();
-                    usedModel = fallback15Pro;
+                    usedModel = lite31;
                 } catch (error3) {
-                    console.warn(`[AI] ${fallback15Pro} hatası: ${error3.message}`);
-                    // Son Çare: Gemini 1.5 Flash Stable
+                    console.warn(`[AI] ${lite31} hatası. Deneniyor: ${flash20}`);
+                    
                     try {
-                        console.log(`[AI] Son çare deneniyor: ${fallback15Flash}`);
-                        const model = genAI.getGenerativeModel({ model: fallback15Flash, systemInstruction: finalSystemPrompt });
+                        // 4. Gemini 2.0 Flash
+                        const model = genAI.getGenerativeModel({ model: flash20, systemInstruction: finalSystemPrompt });
                         const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } });
                         const result = await chat.sendMessage(userMessageParts);
                         aiResponse = result.response.text();
-                        usedModel = fallback15Flash;
+                        usedModel = flash20;
                     } catch (finalError) {
-                        console.error(`[AI] Tüm modeller başarısız oldu.`);
-                        throw finalError;
+                        // 5. Son Çare
+                        console.warn(`[AI] Tüm yeni modeller başarısız. Son çare: ${lastResort}`);
+                        const model = genAI.getGenerativeModel({ model: lastResort, systemInstruction: finalSystemPrompt });
+                        const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 2000, temperature: 0.7 } });
+                        const result = await chat.sendMessage(userMessageParts);
+                        aiResponse = result.response.text();
+                        usedModel = lastResort;
                     }
                 }
             }
@@ -611,7 +615,7 @@ app.post('/api/generate-image', authenticateToken, async (req, res) => {
         // Nano Banana 2 (Gemini 3.1 Flash Image)
         const primaryModelName = "gemini-3.1-flash-image-preview";
         const fallbackModelName = "gemini-1.5-flash";
-        
+
         let result;
         let usedModelName = primaryModelName;
 
