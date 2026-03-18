@@ -462,17 +462,17 @@
 
         /* ===== WELCOME SCREEN (Only for AI Asistan) ===== */
         #section-chat #welcome-screen {
+            flex: 1;              /* Fill all available height in the flex column */
+            min-height: 0;        /* Allow flex shrink */
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            flex: 1;
+            justify-content: center;  /* Center contents vertically */
             text-align: center;
-            padding: 60px 20px;
+            padding: 40px 20px;
             gap: 28px;
-            background: linear-gradient(135deg, rgba(15, 118, 110, 0.05) 0%, rgba(34, 211, 238, 0.03) 100%);
-            border-radius: 24px;
-            margin: 20px;
+            overflow-y: auto;
+            /* No margin:auto, no transform, no fixed width/height */
         }
 
         /* Hide welcome screen from other sections */
@@ -603,12 +603,12 @@
         }
 
         .msg-content-nobubble {
-            max-width: 85%;
+            max-width: 100%; /* Prevent blowout on the generic content wrapper */
+            width: fit-content;
             display: flex;
             flex-direction: column;
             gap: 8px;
             position: relative;
-            width: fit-content;
         }
 
         .msg-wrapper-nobubble.user .msg-content-nobubble {
@@ -681,12 +681,12 @@
             color: #f1f5f9;
             padding: 16px 24px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-            width: fit-content;
-            max-width: 100%;
+            width: auto;
+            max-width: 85%;
             margin-left: auto;
             border-left: 2px solid rgba(45, 212, 191, 0.3);
             overflow-wrap: break-word;
-            word-break: normal;
+            word-break: break-word;
         }
 
         .msg-wrapper-nobubble.user .msg-content-nobubble {
@@ -711,27 +711,20 @@
 
         /* ===== CHAT SECTION LAYOUT ===== */
         #section-chat {
-            height: 100vh;
+            height: calc(100vh - 0px); /* Adjust based on parent */
             display: flex;
             flex-direction: row;
-            overflow: hidden;
+            overflow: hidden; /* Prevent double scrollbars */
             width: 100%;
+            position: relative;
+            align-items: stretch;
         }
 
-        #section-chat.welcome-active {
-            justify-content: center;
-            align-items: center;
-        }
-
-        #section-chat:not(.welcome-active) {
-            justify-content: flex-start;
-            padding-top: 20px;
-        }
-
+        /* ===== CHAT CONTAINER ===== */
         #chat-container {
-            flex: 1;
+            flex: 1;          /* Grow to fill available space */
             overflow-y: auto;
-            padding: 20px;
+            padding: 40px 20px 20px 20px;
             scroll-behavior: smooth;
             width: 100%;
             max-width: 900px;
@@ -739,17 +732,21 @@
             display: flex;
             flex-direction: column;
             gap: 24px;
+            scrollbar-width: thin;
+            min-height: 0;    /* Critical for flex scroll to work */
         }
 
         /* ===== INPUT AREA (Premium Glassmorphism) ===== */
         .input-area {
-            position: relative;
+            /* No absolute/fixed positioning - let flexbox handle it */
+            flex-shrink: 0;  /* Never shrink - always visible */
             width: 100%;
             max-width: 900px;
             margin: 0 auto;
             padding: 0 20px 25px 20px;
             z-index: 40;
-            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: auto;  /* Fixed: was none which broke interaction */
+            transition: opacity 0.3s ease, transform 0.3s ease;
         }
 
         .input-container-glass {
@@ -924,8 +921,8 @@
         /* Input area responsive */
         @media (max-width: 1024px) {
             .input-area {
-                transform: translateX(-50%);
                 left: 50%;
+                transform: translateX(-50%);
                 padding: 0 16px 20px 16px;
                 max-width: 700px;
             }
@@ -933,16 +930,10 @@
 
         @media (max-width: 768px) {
             .input-area {
-                position: fixed;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                width: 100%;
+                /* On mobile: still in document flow but with extra padding */
                 max-width: 100%;
                 margin: 0;
                 padding: 12px 14px;
-                z-index: 100;
-                transform: none;
                 background: rgba(15, 23, 42, 0.95);
                 backdrop-filter: blur(10px);
                 border-top: 1px solid rgba(45, 212, 191, 0.2);
@@ -954,14 +945,32 @@
             padding-bottom: 80px;
         }
 
-        /* Chat container should account for fixed input */
+        /* Chat container should account for bottom padding only for content breathing room */
         #chat-container {
-            padding-bottom: 120px !important;
+            padding-bottom: 20px;
         }
 
-        /* Ensure section-chat has proper height on mobile */
+        /* ===== CRITICAL: Chat section needs its wrapper to NOT scroll ===== */
+        /* When chat section is shown, the wrapper must have no padding/overflow */
+        body.chat-active #sections-wrapper {
+            padding: 0 !important;
+            overflow: hidden !important;
+            display: flex !important;
+            flex-direction: column !important;
+        }
+
+        body.chat-active #sections-wrapper > .section-content:not(#section-chat) {
+            display: none !important;
+        }
+
         #section-chat {
-            min-height: calc(100vh - 160px);
+            /* No min-height with px - use 100% relative to flex parent */
+            flex: 1;
+        }
+
+        #sections-wrapper {
+            display: flex;
+            flex-direction: column;
         }
 
         .chat-textarea {
@@ -1834,6 +1843,8 @@
             margin: 0;
             display: none;
             flex-direction: column;
+            height: 100%;     /* KEY FIX: sections must fill parent height */
+            overflow: hidden;
         }
 
         .section-content:not(.hidden) {
@@ -1842,6 +1853,12 @@
 
         .section-content.hidden {
             display: none !important;
+        }
+
+        /* Override for chat section - needs row layout */
+        #section-chat {
+            flex-direction: row !important;
+            height: 100% !important;
         }
 
         .no-scrollbar::-webkit-scrollbar {
@@ -2158,6 +2175,8 @@
             background: rgba(15, 23, 42, 0.2);
             backdrop-filter: blur(20px);
             z-index: 10;
+            overflow: hidden; /* Prevent sidebar itself from overflowing chat */
+            height: 100%;
         }
 
         .scrollbar-thin::-webkit-scrollbar {
@@ -3444,17 +3463,17 @@
 
             <!-- Chat Section (Claude Style) -->
             <div id="section-chat" class="section-content flex flex-row min-h-full welcome-active w-full overflow-hidden">
-                <!-- Main Chat Area -->
-                <div class="flex-1 flex flex-col relative h-full">
-                    <!-- Message Container -->
+                <!-- Main Chat Area: flex column, chat-container grows when active, welcome fills space when idle -->
+                <div class="flex-1 flex flex-col h-full overflow-hidden min-w-0">
+                    <!-- Message Container: flex:1 via inline style, scrolls internally -->
                     <div id="chat-container"
-                        class="w-full max-w-4xl mx-auto flex flex-col space-y-6 px-4 pb-10 pt-6 overflow-y-auto hidden">
+                        class="max-w-4xl mx-auto w-full flex flex-col space-y-6 px-4 pt-6 overflow-y-auto hidden"
+                        style="flex:1; min-height:0; padding-bottom:20px;">
                         <!-- Messages will be appended here -->
                     </div>
 
-                    <!-- Welcome Screen -->
-                    <div class="flex flex-col items-center justify-center w-full max-w-3xl mx-auto text-center space-y-6"
-                        id="welcome-screen">
+                    <!-- Welcome Screen: fills the column when chat is idle -->
+                    <div id="welcome-screen">
                         <div class="welcome-icon-wrapper mb-2 animate-bounce-subtle"
                             style="width: 64px; height: 64px; border-radius: 20px; background: linear-gradient(135deg, rgba(45, 212, 191, 0.2), rgba(15, 118, 110, 0.1)); border: 1px solid rgba(45, 212, 191, 0.2); display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
                             <i class="fa-solid fa-leaf text-3xl text-teal-400"></i>
@@ -3557,7 +3576,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- Input Area (Fixed Bottom) -->
+                    <!-- Input Area: pinned at bottom of flex column -->
                     <div id="chat-input-container" class="input-area hidden">
                         <form id="chat-form" class="input-container-glass">
                             <!-- File Previews -->
@@ -4623,21 +4642,26 @@
             const sectionChat = document.getElementById('section-chat');
             const chatInputContainer = document.getElementById('chat-input-container');
 
-            if (chatContainer) {
-                chatContainer.innerHTML = '';
-                chatContainer.classList.add('hidden');
-                chatContainer.style.display = 'none';
-            }
-            if (welcomeScreen) {
-                welcomeScreen.classList.remove('hidden');
-                welcomeScreen.style.display = 'flex';
-            }
-            if (sectionChat) {
-                sectionChat.classList.add('welcome-active');
-            }
-            if (chatInputContainer) {
-                chatInputContainer.classList.add('hidden');
-                chatInputContainer.style.display = 'none';
+            const isChatActive = sectionChat && !sectionChat.classList.contains('hidden');
+
+            if (isChatActive) {
+                if (chatContainer) {
+                    chatContainer.innerHTML = '';
+                    chatContainer.classList.add('hidden');
+                    chatContainer.style.display = 'none';
+                }
+                if (welcomeScreen) {
+                    welcomeScreen.classList.remove('hidden');
+                    welcomeScreen.style.display = 'flex';
+                }
+                if (sectionChat) {
+                    sectionChat.classList.add('welcome-active');
+                    sectionChat.style.display = 'flex';
+                }
+                if (chatInputContainer) {
+                    chatInputContainer.classList.add('hidden');
+                    chatInputContainer.style.display = 'none';
+                }
             }
             
             // Clear inputs
@@ -4895,7 +4919,7 @@
                 }
                 if (chatInpContainer && chatInpContainer.classList.contains('hidden')) {
                     chatInpContainer.classList.remove('hidden');
-                    chatInpContainer.style.display = 'block';
+                    chatInpContainer.style.display = '';  // Let CSS control display type
                 }
             }
 
@@ -5333,6 +5357,13 @@
             function showSection(sectionName) {
                 // Hide all sections
                 document.querySelectorAll('.section-content').forEach(el => el.classList.add('hidden'));
+
+                // Toggle body class for chat to handle its fixed layout
+                if (sectionName === 'chat') {
+                    document.body.classList.add('chat-active');
+                } else {
+                    document.body.classList.remove('chat-active');
+                }
 
                 // Show selected section
                 const section = document.getElementById('section-' + sectionName);
