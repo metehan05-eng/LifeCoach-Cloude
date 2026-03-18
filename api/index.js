@@ -1454,8 +1454,8 @@ app.delete('/api/goals', authenticateToken, async (req, res) => {
 app.post('/api/history', authenticateToken, async (req, res) => {
     try {
         const email = req.user.email;
-        const allUsers = await getKVData('users');
-        const user = allUsers.find(u => u.email === email);
+        // Kullanıcı verisi user:email anahtarında saklanıyor
+        const user = await getKVData(`user:${email}`);
         res.json(user?.sessions ? user.sessions.map(s => ({ id: s.id, title: s.title })) : []);
     } catch (error) {
         res.status(500).json({ error: 'Geçmiş hatası' });
@@ -1466,8 +1466,8 @@ app.post('/api/get-session', authenticateToken, async (req, res) => {
     try {
         const { sessionId } = req.body;
         const email = req.user.email;
-        const allUsers = await getKVData('users');
-        const user = allUsers.find(u => u.email === email);
+        // Kullanıcı verisi user:email anahtarında saklanıyor
+        const user = await getKVData(`user:${email}`);
         const session = user?.sessions?.find(s => s.id == sessionId);
         if (session) res.json(session);
         else res.status(404).json({ error: 'Seans bulunamadı' });
@@ -1480,11 +1480,11 @@ app.post('/api/delete-session', authenticateToken, async (req, res) => {
     try {
         const { sessionId } = req.body;
         const email = req.user.email;
-        const allUsers = await getKVData('users');
-        const uIdx = allUsers.findIndex(u => u.email === email);
-        if (uIdx !== -1 && allUsers[uIdx].sessions) {
-            allUsers[uIdx].sessions = allUsers[uIdx].sessions.filter(s => s.id != sessionId);
-            await setKVData('users', allUsers);
+        // Kullanıcı verisi user:email anahtarında saklanıyor
+        const user = await getKVData(`user:${email}`);
+        if (user && user.sessions) {
+            user.sessions = user.sessions.filter(s => s.id != sessionId);
+            await setKVData(`user:${email}`, user);
             return res.json({ success: true });
         }
         res.status(404).json({ error: 'Bulunamadı' });
