@@ -3485,7 +3485,7 @@
                                 help you today?</h2>
 
                             <!-- Main Chat Input Centered Premium Style -->
-                            <div class="welcome-input-container group">
+                            <div class="welcome-input-container group hidden">
                                 <div class="center-input-glass">
                                     <!-- File Previews -->
                                     <div id="file-previews-center" class="file-previews px-4 pt-2"></div>
@@ -3554,22 +3554,22 @@
                             <!-- Action Chips Layout -->
                             <div class="flex flex-wrap items-center justify-center gap-2.5 mt-4">
                                 <button
-                                    onclick="document.getElementById('user-input-center').value='Help me write some code...'; document.getElementById('user-input-center').focus();"
+                                    onclick="document.getElementById('user-input').value='Help me write some code...'; document.getElementById('user-input').focus();"
                                     class="px-3.5 py-1.5 rounded-full border border-white/10 text-[#8a8b86] text-[13px] hover:bg-white/5 hover:text-[#eaddcf] transition-colors flex items-center gap-2">
                                     <i class="fa-solid fa-code text-[#d97757]"></i> Code
                                 </button>
                                 <button
-                                    onclick="document.getElementById('user-input-center').value='Can you help me write...'; document.getElementById('user-input-center').focus();"
+                                    onclick="document.getElementById('user-input').value='Can you help me write...'; document.getElementById('user-input').focus();"
                                     class="px-3.5 py-1.5 rounded-full border border-white/10 text-[#8a8b86] text-[13px] hover:bg-white/5 hover:text-[#eaddcf] transition-colors flex items-center gap-2">
                                     <i class="fa-solid fa-pen text-[#8b9b82]"></i> Write
                                 </button>
                                 <button
-                                    onclick="document.getElementById('user-input-center').value='I want to learn about...'; document.getElementById('user-input-center').focus();"
+                                    onclick="document.getElementById('user-input').value='I want to learn about...'; document.getElementById('user-input').focus();"
                                     class="px-3.5 py-1.5 rounded-full border border-white/10 text-[#8a8b86] text-[13px] hover:bg-white/5 hover:text-[#eaddcf] transition-colors flex items-center gap-2">
                                     <i class="fa-solid fa-graduation-cap text-[#c0a684]"></i> Learn
                                 </button>
                                 <button
-                                    onclick="document.getElementById('user-input-center').value='Need some advice on...'; document.getElementById('user-input-center').focus();"
+                                    onclick="document.getElementById('user-input').value='Need some advice on...'; document.getElementById('user-input').focus();"
                                     class="px-3.5 py-1.5 rounded-full border border-white/10 text-[#8a8b86] text-[13px] hover:bg-white/5 hover:text-[#eaddcf] transition-colors flex items-center gap-2">
                                     <i class="fa-solid fa-mug-hot text-[#9e96b3]"></i> Life stuff
                                 </button>
@@ -4659,8 +4659,8 @@
                     sectionChat.style.display = 'flex';
                 }
                 if (chatInputContainer) {
-                    chatInputContainer.classList.add('hidden');
-                    chatInputContainer.style.display = 'none';
+                    chatInputContainer.classList.remove('hidden');
+                    chatInputContainer.style.display = 'block';
                 }
             }
             
@@ -5397,15 +5397,14 @@
 
                 if (chatInputContainer) {
                     if (sectionName === 'chat') {
-                        // Only show bottom input if we're in chat and NOT showing welcome screen
+                        // Show bottom input always when in chat
+                        chatInputContainer.classList.remove('hidden');
+                        chatInputContainer.style.display = 'block';
+                        
                         if (messageHistory.length > 0) {
-                            chatInputContainer.classList.remove('hidden');
-                            chatInputContainer.style.display = 'block';
                             if (welcomeScreen) welcomeScreen.classList.add('hidden');
                             if (chatContainer) chatContainer.classList.remove('hidden');
                         } else {
-                            chatInputContainer.classList.add('hidden');
-                            chatInputContainer.style.display = 'none';
                             if (welcomeScreen) welcomeScreen.classList.remove('hidden');
                             if (chatContainer) chatContainer.classList.add('hidden');
                         }
