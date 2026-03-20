@@ -137,11 +137,24 @@ app.post('/api/chat', optionalAuth, async (req, res) => {
             return res.status(500).json({ error: 'Yapay zeka hizmeti yapılandırılmamış. Sunucu yöneticisi GEMINI_API_KEY değişkenini ayarlamalı.' });
         }
 
-        const { message, file, history, systemPrompt, sessionId, mode } = req.body;
+        const { message, file, history, systemPrompt, sessionId, mode, userLanguage } = req.body;
+        const countryCode = req.headers['x-vercel-ip-country'] || 'Unknown';
 
         let dbUser = null;
         let memoryInjection = "";
         let modeInjection = "";
+        let localizationInjection = "";
+
+        // Akıllı Dil ve Konum Tespiti
+        const detectedLang = userLanguage || 'tr-TR';
+        localizationInjection = `\n\n--- AKILLI YERELLEŞTİRME VE DİL ---\nSiz şu an küresel bir asistansınız. 
+Kullanıcının Tercih Ettiği Dil: ${detectedLang}
+Kullanıcı Konumu: ${countryCode} (ISO Ülke Kodu)
+
+KURALLAR:
+1. Her zaman kullanıcının yukarıdaki dil koduna (${detectedLang}) uygun bir dille yanıt verin. 
+2. Eğer kullanıcı farklı bir dilde soru sorsa bile yanıtınızı ona en uygun dilde verin. 
+3. Kullanıcının bulunduğu ülkenin (${countryCode}) kültürüne, saat dilimine ve sosyal normlarına uygun davranın.`;
 
         if (mode === 'emergency') {
             modeInjection = `\n\n--- ACİL DURUM / KRİZ MODU AKTİF ---\nŞu an kullanıcı panik, aşırı stres veya kriz durumunda olabilir. 
@@ -375,6 +388,7 @@ and create meaningful progress in their lives.
 You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI. (Operating on Gemini 3.1 Pro)
 ${memoryInjection}
 ${modeInjection}
+${localizationInjection}
 
 ---
 

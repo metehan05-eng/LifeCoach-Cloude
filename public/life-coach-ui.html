@@ -4,7 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="LifeCoach AI - Yapay Zeka Destekli Kişisel Yaşam Koçunuz. Hedeflerinizi belirleyin, alışkanlıklarınızı takip edin ve potansiyelinizi ortaya çıkarın.">
+    <meta name="description"
+        content="LifeCoach AI - Yapay Zeka Destekli Kişisel Yaşam Koçunuz. Hedeflerinizi belirleyin, alışkanlıklarınızı takip edin ve potansiyelinizi ortaya çıkarın.">
     <meta name="keywords" content="LifeCoach AI, Yapay Zeka Koç, Kişisel Gelişim, Hedef Takibi, Alışkanlık Takibi">
     <meta name="google-site-verification" content="GOOGLE_SEARCH_CONSOLE_VERIFICATION_CODE_HERE" />
     <title>LifeCoach AI</title>
@@ -128,7 +129,10 @@
         }
 
         /* Ensure no element exceeds viewport width - Restricted to relevant elements */
-        img, video, canvas, svg {
+        img,
+        video,
+        canvas,
+        svg {
             max-width: 100%;
         }
 
@@ -465,12 +469,15 @@
 
         /* ===== WELCOME SCREEN (Only for AI Asistan) ===== */
         #section-chat #welcome-screen {
-            flex: 1;              /* Fill all available height in the flex column */
-            min-height: 0;        /* Allow flex shrink */
+            flex: 1;
+            /* Fill all available height in the flex column */
+            min-height: 0;
+            /* Allow flex shrink */
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;  /* Center contents vertically */
+            justify-content: center;
+            /* Center contents vertically */
             text-align: center;
             padding: 40px 20px;
             gap: 28px;
@@ -606,7 +613,8 @@
         }
 
         .msg-content-nobubble {
-            max-width: 100%; /* Prevent blowout on the generic content wrapper */
+            max-width: 100%;
+            /* Prevent blowout on the generic content wrapper */
             width: fit-content;
             display: flex;
             flex-direction: column;
@@ -714,10 +722,12 @@
 
         /* ===== CHAT SECTION LAYOUT ===== */
         #section-chat {
-            height: calc(100vh - 0px); /* Adjust based on parent */
+            height: calc(100vh - 0px);
+            /* Adjust based on parent */
             display: flex;
             flex-direction: row;
-            overflow: hidden; /* Prevent double scrollbars */
+            overflow: hidden;
+            /* Prevent double scrollbars */
             width: 100%;
             position: relative;
             align-items: stretch;
@@ -725,7 +735,8 @@
 
         /* ===== CHAT CONTAINER ===== */
         #chat-container {
-            flex: 1;          /* Grow to fill available space */
+            flex: 1;
+            /* Grow to fill available space */
             overflow-y: auto;
             padding: 40px 20px 20px 20px;
             scroll-behavior: smooth;
@@ -736,19 +747,22 @@
             flex-direction: column;
             gap: 24px;
             scrollbar-width: thin;
-            min-height: 0;    /* Critical for flex scroll to work */
+            min-height: 0;
+            /* Critical for flex scroll to work */
         }
 
         /* ===== INPUT AREA (Premium Glassmorphism) ===== */
         .input-area {
             /* No absolute/fixed positioning - let flexbox handle it */
-            flex-shrink: 0;  /* Never shrink - always visible */
+            flex-shrink: 0;
+            /* Never shrink - always visible */
             width: 100%;
             max-width: 900px;
             margin: 0 auto;
             padding: 0 20px 25px 20px;
             z-index: 40;
-            pointer-events: auto;  /* Fixed: was none which broke interaction */
+            pointer-events: auto;
+            /* Fixed: was none which broke interaction */
             transition: opacity 0.3s ease, transform 0.3s ease;
         }
 
@@ -962,7 +976,7 @@
             flex-direction: column !important;
         }
 
-        body.chat-active #sections-wrapper > .section-content:not(#section-chat) {
+        body.chat-active #sections-wrapper>.section-content:not(#section-chat) {
             display: none !important;
         }
 
@@ -1369,14 +1383,17 @@
             border-color: rgba(239, 68, 68, 0.3) !important;
             color: #fca5a5 !important;
         }
+
         .mode-btn-emergency:hover {
             background: rgba(239, 68, 68, 0.2) !important;
         }
+
         .mode-btn-tough {
             background: rgba(168, 85, 247, 0.1) !important;
             border-color: rgba(168, 85, 247, 0.3) !important;
             color: #d8b4fe !important;
         }
+
         .mode-btn-tough:hover {
             background: rgba(168, 85, 247, 0.2) !important;
         }
@@ -1402,8 +1419,17 @@
         }
 
         @keyframes breathe {
-            0%, 100% { transform: scale(1); opacity: 0.5; }
-            50% { transform: scale(1.8); opacity: 1; }
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+
+            50% {
+                transform: scale(1.8);
+                opacity: 1;
+            }
         }
 
         /* ===== SON YENİ ÖZELLİK STİLLERİ ===== */
@@ -1889,7 +1915,8 @@
             margin: 0;
             display: none;
             flex-direction: column;
-            height: 100%;     /* KEY FIX: sections must fill parent height */
+            height: 100%;
+            /* KEY FIX: sections must fill parent height */
             overflow: hidden;
         }
 
@@ -2215,13 +2242,15 @@
                 font-size: 0.65rem;
             }
         }
+
         /* Chat History Sidebar Stylings */
         #chat-history-content {
             border-left: 1px solid rgba(255, 255, 255, 0.05);
             background: rgba(15, 23, 42, 0.2);
             backdrop-filter: blur(20px);
             z-index: 10;
-            overflow: hidden; /* Prevent sidebar itself from overflowing chat */
+            overflow: hidden;
+            /* Prevent sidebar itself from overflowing chat */
             height: 100%;
         }
 
@@ -2308,7 +2337,8 @@
                         <i
                             class="fa-solid fa-chart-pie text-teal-400 text-[13px] group-hover:scale-110 transition-transform duration-300"></i>
                     </div>
-                    <span class="text-sm font-medium group-hover:font-semibold transition-colors">Panel</span>
+                    <span class="text-sm font-medium group-hover:font-semibold transition-colors"
+                        data-i18n="nav_dashboard">Panel</span>
                 </button>
 
                 <!-- Hedefler -->
@@ -2320,7 +2350,8 @@
                         <i
                             class="fa-solid fa-bullseye text-rose-400 text-[13px] group-hover:scale-110 transition-transform duration-300"></i>
                     </div>
-                    <span class="text-sm font-medium group-hover:font-semibold transition-colors">Hedefler</span>
+                    <span class="text-sm font-medium group-hover:font-semibold transition-colors"
+                        data-i18n="nav_goals">Hedefler</span>
                 </button>
 
                 <!-- Alışkanlıklar -->
@@ -2332,7 +2363,8 @@
                         <i
                             class="fa-solid fa-heart-pulse text-emerald-400 text-[13px] group-hover:scale-110 transition-transform duration-300"></i>
                     </div>
-                    <span class="text-sm font-medium group-hover:font-semibold transition-colors">Alışkanlıklar</span>
+                    <span class="text-sm font-medium group-hover:font-semibold transition-colors"
+                        data-i18n="nav_habits">Alışkanlıklar</span>
                 </button>
 
                 <!-- Planlar -->
@@ -2344,7 +2376,8 @@
                         <i
                             class="fa-solid fa-calendar-days text-sky-400 text-[13px] group-hover:scale-110 transition-transform duration-300"></i>
                     </div>
-                    <span class="text-sm font-medium group-hover:font-semibold transition-colors">Planlar</span>
+                    <span class="text-sm font-medium group-hover:font-semibold transition-colors"
+                        data-i18n="nav_plans">Planlar</span>
                 </button>
 
                 <!-- İlerleme -->
@@ -2356,7 +2389,8 @@
                         <i
                             class="fa-solid fa-chart-line text-orange-400 text-[13px] group-hover:scale-110 transition-transform duration-300"></i>
                     </div>
-                    <span class="text-sm font-medium group-hover:font-semibold transition-colors">İlerleme</span>
+                    <span class="text-sm font-medium group-hover:font-semibold transition-colors"
+                        data-i18n="nav_progress">İlerleme</span>
                 </button>
 
                 <!-- AI Asistan -->
@@ -2368,7 +2402,8 @@
                         <i
                             class="fa-solid fa-robot text-indigo-400 text-[13px] group-hover:scale-110 transition-transform duration-300"></i>
                     </div>
-                    <span class="text-sm font-medium group-hover:font-semibold transition-colors">AI Asistan</span>
+                    <span class="text-sm font-medium group-hover:font-semibold transition-colors"
+                        data-i18n="nav_chat">AI Asistan</span>
                 </button>
 
                 <!-- Odak Modu -->
@@ -2380,7 +2415,8 @@
                         <i
                             class="fa-solid fa-stopwatch text-blue-400 text-[13px] group-hover:scale-110 transition-transform duration-300"></i>
                     </div>
-                    <span class="text-sm font-medium group-hover:font-semibold transition-colors">Odak Modu</span>
+                    <span class="text-sm font-medium group-hover:font-semibold transition-colors"
+                        data-i18n="nav_focus">Odak Modu</span>
                 </button>
 
                 <!-- Yansıma -->
@@ -2392,7 +2428,8 @@
                         <i
                             class="fa-solid fa-pen-fancy text-fuchsia-400 text-[13px] group-hover:scale-110 transition-transform duration-300"></i>
                     </div>
-                    <span class="text-sm font-medium group-hover:font-semibold transition-colors">Yansıma</span>
+                    <span class="text-sm font-medium group-hover:font-semibold transition-colors"
+                        data-i18n="nav_reflection">Yansıma</span>
                 </button>
 
                 <!-- Smart Coach -->
@@ -2404,7 +2441,8 @@
                         <i
                             class="fa-solid fa-brain text-violet-400 text-[13px] group-hover:scale-110 transition-transform duration-300"></i>
                     </div>
-                    <span class="text-sm font-medium group-hover:font-semibold transition-colors">Smart Coach</span>
+                    <span class="text-sm font-medium group-hover:font-semibold transition-colors"
+                        data-i18n="nav_coach">Smart Coach</span>
                 </button>
 
                 <!-- ===== YENİ ÖZELLİKLER ===== -->
@@ -2428,7 +2466,8 @@
                             class="absolute -top-1 -right-1 w-2 h-2 bg-purple-500 rounded-full animate-pulse shadow-[0_0_5px_rgba(168,85,247,0.8)]">
                         </div>
                     </div>
-                    <span class="text-sm font-medium group-hover:font-semibold transition-colors">Koç Karakteri</span>
+                    <span class="text-sm font-medium group-hover:font-semibold transition-colors"
+                        data-i18n="nav_persona">Koç Karakteri</span>
                     <span
                         class="ml-auto text-[9px] px-1.5 py-0.5 rounded-md bg-purple-500/20 text-purple-400 font-bold border border-purple-500/30 shadow-[0_0_8px_rgba(168,85,247,0.2)]">YENİ</span>
                 </button>
@@ -2445,7 +2484,8 @@
                             class="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 rounded-full animate-pulse shadow-[0_0_5px_rgba(245,158,11,0.8)]">
                         </div>
                     </div>
-                    <span class="text-sm font-medium group-hover:font-semibold transition-colors">Duygu Durumu</span>
+                    <span class="text-sm font-medium group-hover:font-semibold transition-colors"
+                        data-i18n="nav_mood">Duygu Durumu</span>
                     <span
                         class="ml-auto text-[9px] px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-400 font-bold border border-amber-500/30 shadow-[0_0_8px_rgba(245,158,11,0.2)]">YENİ</span>
                 </button>
@@ -2462,7 +2502,8 @@
                             class="absolute -top-1 -right-1 w-2 h-2 bg-cyan-500 rounded-full animate-pulse shadow-[0_0_5px_rgba(6,182,212,0.8)]">
                         </div>
                     </div>
-                    <span class="text-sm font-medium group-hover:font-semibold transition-colors">Görev Parçala</span>
+                    <span class="text-sm font-medium group-hover:font-semibold transition-colors"
+                        data-i18n="nav_taskbreak">Görev Parçala</span>
                     <span
                         class="ml-auto text-[9px] px-1.5 py-0.5 rounded-md bg-cyan-500/20 text-cyan-400 font-bold border border-cyan-500/30 shadow-[0_0_8px_rgba(6,182,212,0.2)]">YENİ</span>
                 </button>
@@ -2476,7 +2517,8 @@
                         <i
                             class="fa-solid fa-trophy text-yellow-400 text-[13px] group-hover:scale-110 transition-transform duration-300"></i>
                     </div>
-                    <span class="text-sm font-medium group-hover:font-semibold transition-colors">Başarılar</span>
+                    <span class="text-sm font-medium group-hover:font-semibold transition-colors"
+                        data-i18n="nav_achievements">Başarılar</span>
                     <span id="xp-badge-nav"
                         class="ml-auto text-[10px] px-2 py-0.5 rounded-md bg-yellow-500/20 text-yellow-400 font-bold border border-yellow-500/30 hidden shadow-[0_0_8px_rgba(234,179,8,0.2)]">Lv.1</span>
                 </button>
@@ -3090,7 +3132,8 @@
                             style="background: rgba(239,68,68,0.05); border-color: rgba(239,68,68,0.2);">
                             <div
                                 class="absolute top-3 right-3 w-6 h-6 rounded-full border-2 border-red-500/30 persona-check hidden items-center justify-center bg-red-500">
-                                <i class="fa-solid fa-check text-white text-xs"></i></div>
+                                <i class="fa-solid fa-check text-white text-xs"></i>
+                            </div>
                             <div class="text-4xl mb-4">⚡</div>
                             <h3 class="text-xl font-bold text-white mb-2">Sert Disiplin</h3>
                             <p class="text-sm text-slate-400 mb-4 leading-relaxed">Sıfır tolerans, doğrudan eylem
@@ -3110,7 +3153,8 @@
                             style="background: rgba(34,197,94,0.05); border-color: rgba(34,197,94,0.2);">
                             <div
                                 class="absolute top-3 right-3 w-6 h-6 rounded-full border-2 border-green-500/30 persona-check hidden items-center justify-center bg-green-500">
-                                <i class="fa-solid fa-check text-white text-xs"></i></div>
+                                <i class="fa-solid fa-check text-white text-xs"></i>
+                            </div>
                             <div class="text-4xl mb-4">🌱</div>
                             <h3 class="text-xl font-bold text-white mb-2">Empatik Rehber</h3>
                             <p class="text-sm text-slate-400 mb-4 leading-relaxed">Cesaretlendirici, anlayışlı ve
@@ -3130,7 +3174,8 @@
                             style="background: rgba(139,92,246,0.05); border-color: rgba(139,92,246,0.2);">
                             <div
                                 class="absolute top-3 right-3 w-6 h-6 rounded-full border-2 border-purple-500/30 persona-check hidden items-center justify-center bg-purple-500">
-                                <i class="fa-solid fa-check text-white text-xs"></i></div>
+                                <i class="fa-solid fa-check text-white text-xs"></i>
+                            </div>
                             <div class="text-4xl mb-4">🦉</div>
                             <h3 class="text-xl font-bold text-white mb-2">Sokratik Bilge</h3>
                             <p class="text-sm text-slate-400 mb-4 leading-relaxed">Sadece sorular sorar, cevabı sana
@@ -3508,7 +3553,8 @@
             </div>
 
             <!-- Chat Section (Claude Style) -->
-            <div id="section-chat" class="section-content flex flex-row min-h-full welcome-active w-full overflow-hidden">
+            <div id="section-chat"
+                class="section-content flex flex-row min-h-full welcome-active w-full overflow-hidden">
                 <!-- Main Chat Area: flex column, chat-container grows when active, welcome fills space when idle -->
                 <div class="flex-1 flex flex-col h-full overflow-hidden min-w-0">
                     <!-- Message Container: flex:1 via inline style, scrolls internally -->
@@ -3527,7 +3573,8 @@
 
                         <div class="space-y-4 px-4 w-full">
                             <h2 id="dynamic-greeting"
-                                class="text-4xl md:text-5xl font-bold text-white mb-8 tracking-tight font-display">How can I
+                                class="text-4xl md:text-5xl font-bold text-white mb-8 tracking-tight font-display">How
+                                can I
                                 help you today?</h2>
 
                             <!-- Main Chat Input Centered Premium Style -->
@@ -3552,28 +3599,36 @@
                                                 </button>
                                                 <div id="plus-dropdown"
                                                     class="absolute bottom-full left-0 mb-3 w-56 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl hidden flex-col overflow-hidden z-[60] animate-fade-up">
-                                                    <div class="px-4 py-2.5 text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-white/5">Hızlı İşlemler</div>
-                                                    <button type="button" onclick="document.getElementById('file-upload-center').click(); togglePlusMenu();"
+                                                    <div
+                                                        class="px-4 py-2.5 text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-white/5">
+                                                        Hızlı İşlemler</div>
+                                                    <button type="button"
+                                                        onclick="document.getElementById('file-upload-center').click(); togglePlusMenu();"
                                                         class="px-4 py-3 hover:bg-teal-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
                                                         <i class="fa-solid fa-upload text-teal-400 w-4"></i> Dosya Yükle
                                                     </button>
                                                     <div class="h-[1px] bg-white/5"></div>
                                                     <button type="button" onclick="createExcelFile(); togglePlusMenu();"
                                                         class="px-4 py-3 hover:bg-green-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
-                                                        <i class="fa-solid fa-file-excel text-green-500 w-4"></i> Excel Dosyası Oluştur
+                                                        <i class="fa-solid fa-file-excel text-green-500 w-4"></i> Excel
+                                                        Dosyası Oluştur
                                                     </button>
                                                     <button type="button" onclick="createWordFile(); togglePlusMenu();"
                                                         class="px-4 py-3 hover:bg-blue-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
-                                                        <i class="fa-solid fa-file-word text-blue-500 w-4"></i> Word Belgesi Oluştur
+                                                        <i class="fa-solid fa-file-word text-blue-500 w-4"></i> Word
+                                                        Belgesi Oluştur
                                                     </button>
                                                     <button type="button" onclick="createPPTFile(); togglePlusMenu();"
                                                         class="px-4 py-3 hover:bg-orange-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
-                                                        <i class="fa-solid fa-file-powerpoint text-orange-500 w-4"></i> PowerPoint Oluştur
+                                                        <i class="fa-solid fa-file-powerpoint text-orange-500 w-4"></i>
+                                                        PowerPoint Oluştur
                                                     </button>
                                                     <div class="h-[1px] bg-white/5"></div>
-                                                    <button type="button" onclick="createClassListExcel(); togglePlusMenu();"
+                                                    <button type="button"
+                                                        onclick="createClassListExcel(); togglePlusMenu();"
                                                         class="px-4 py-3 hover:bg-amber-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
-                                                        <i class="fa-solid fa-table-list text-amber-400 w-4"></i> Sınıf Listesi (Excel A4)
+                                                        <i class="fa-solid fa-table-list text-amber-400 w-4"></i> Sınıf
+                                                        Listesi (Excel A4)
                                                     </button>
                                                 </div>
                                             </div>
@@ -3581,17 +3636,17 @@
                                                 title="Deep Search">
                                                 <i class="fa-solid fa-bolt-lightning"></i>
                                             </button>
-                                            <button type="button" onclick="toggleDictationCenter()" class="input-action-btn"
-                                                title="Sesli Yazma">
+                                            <button type="button" onclick="toggleDictationCenter()"
+                                                class="input-action-btn" title="Sesli Yazma">
                                                 <i class="fa-solid fa-microphone"></i>
                                             </button>
                                             <div class="h-4 w-px bg-white/10 mx-1"></div>
-                                            <button type="button" onclick="startEmergencyMode()" class="input-action-btn mode-btn-emergency"
-                                                title="Acil Durum Modu">
+                                            <button type="button" onclick="startEmergencyMode()"
+                                                class="input-action-btn mode-btn-emergency" title="Acil Durum Modu">
                                                 <i class="fa-solid fa-heart-pulse"></i>
                                             </button>
-                                            <button type="button" onclick="startToughLoveMode()" class="input-action-btn mode-btn-tough"
-                                                title="Yüzleşme Modu">
+                                            <button type="button" onclick="startToughLoveMode()"
+                                                class="input-action-btn mode-btn-tough" title="Yüzleşme Modu">
                                                 <i class="fa-solid fa-hand-fist"></i>
                                             </button>
                                         </div>
@@ -3628,15 +3683,15 @@
                                     class="px-3.5 py-1.5 rounded-full border border-white/10 text-[#8a8b86] text-[13px] hover:bg-white/5 hover:text-[#eaddcf] transition-colors flex items-center gap-2">
                                     <i class="fa-solid fa-mug-hot text-[#9e96b3]"></i> Life stuff
                                 </button>
-                                <button
-                                    onclick="startEmergencyMode()"
+                                <button onclick="startEmergencyMode()"
                                     class="px-3.5 py-1.5 rounded-full border border-red-500/30 text-red-400 bg-red-500/5 text-[13px] hover:bg-red-500/10 transition-colors flex items-center gap-2">
-                                    <i class="fa-solid fa-heart-pulse"></i> Acil Durum
+                                    <i class="fa-solid fa-heart-pulse"></i> <span data-i18n="emergency_btn">Acil
+                                        Durum</span>
                                 </button>
-                                <button
-                                    onclick="startToughLoveMode()"
+                                <button onclick="startToughLoveMode()"
                                     class="px-3.5 py-1.5 rounded-full border border-purple-500/30 text-purple-400 bg-purple-500/5 text-[13px] hover:bg-purple-500/10 transition-colors flex items-center gap-2">
-                                    <i class="fa-solid fa-hand-fist"></i> Yüzleşme
+                                    <i class="fa-solid fa-hand-fist"></i> <span
+                                        data-i18n="tough_love_btn">Yüzleşme</span>
                                 </button>
                             </div>
                         </div>
@@ -3652,70 +3707,81 @@
                                 class="chat-textarea custom-scrollbar"
                                 oninput="this.style.height = ''; this.style.height = Math.min(this.scrollHeight, 250) + 'px';"></textarea>
 
-                            <input type="file" id="file-upload" accept="image/*,.pdf,.txt,.md,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
-                                class="hidden" multiple onchange="handleFileSelect(this)">
+                            <input type="file" id="file-upload"
+                                accept="image/*,.pdf,.txt,.md,.doc,.docx,.xls,.xlsx,.ppt,.pptx" class="hidden" multiple
+                                onchange="handleFileSelect(this)">
 
                             <!-- Actions Bar -->
                             <div class="input-actions-bar">
                                 <div class="action-group">
                                     <div id="plus-menu-container-bottom" class="relative">
-                                        <button type="button" onclick="togglePlusMenuBottom()"
-                                            class="input-action-btn" title="Dosya Eylemleri">
+                                        <button type="button" onclick="togglePlusMenuBottom()" class="input-action-btn"
+                                            title="Dosya Eylemleri">
                                             <i class="fa-solid fa-plus"></i>
                                         </button>
                                         <div id="plus-dropdown-bottom"
                                             class="absolute bottom-full left-0 mb-3 w-56 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl hidden flex-col overflow-hidden z-[60] animate-fade-up">
-                                            <div class="px-4 py-2.5 text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-white/5">Hızlı İşlemler</div>
-                                            <button type="button" onclick="document.getElementById('file-upload').click(); togglePlusMenuBottom();"
+                                            <div
+                                                class="px-4 py-2.5 text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-white/5">
+                                                Hızlı İşlemler</div>
+                                            <button type="button"
+                                                onclick="document.getElementById('file-upload').click(); togglePlusMenuBottom();"
                                                 class="px-4 py-3 hover:bg-teal-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
                                                 <i class="fa-solid fa-upload text-teal-400 w-4"></i> Dosya Yükle
                                             </button>
                                             <div class="h-[1px] bg-white/5"></div>
                                             <button type="button" onclick="createExcelFile(); togglePlusMenuBottom();"
                                                 class="px-4 py-3 hover:bg-green-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
-                                                <i class="fa-solid fa-file-excel text-green-500 w-4"></i> Excel Dosyası Oluştur
+                                                <i class="fa-solid fa-file-excel text-green-500 w-4"></i> Excel Dosyası
+                                                Oluştur
                                             </button>
                                             <button type="button" onclick="createWordFile(); togglePlusMenuBottom();"
                                                 class="px-4 py-3 hover:bg-blue-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
-                                                <i class="fa-solid fa-file-word text-blue-500 w-4"></i> Word Belgesi Oluştur
+                                                <i class="fa-solid fa-file-word text-blue-500 w-4"></i> Word Belgesi
+                                                Oluştur
                                             </button>
                                             <button type="button" onclick="createPPTFile(); togglePlusMenuBottom();"
                                                 class="px-4 py-3 hover:bg-orange-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
-                                                <i class="fa-solid fa-file-powerpoint text-orange-500 w-4"></i> PowerPoint Oluştur
+                                                <i class="fa-solid fa-file-powerpoint text-orange-500 w-4"></i>
+                                                PowerPoint Oluştur
                                             </button>
                                             <div class="h-[1px] bg-white/5"></div>
                                             <button type="button" onclick="generateAIImage(); togglePlusMenuBottom();"
                                                 class="px-4 py-3 hover:bg-orange-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
-                                                <i class="fa-solid fa-palette text-orange-400 w-4"></i> Görüntü Oluştur (Nano Banana)
+                                                <i class="fa-solid fa-palette text-orange-400 w-4"></i> Görüntü Oluştur
+                                                (Nano Banana)
                                             </button>
                                             <div class="h-[1px] bg-white/5"></div>
-                                            <button type="button" onclick="createClassListExcel(); togglePlusMenuBottom();"
+                                            <button type="button"
+                                                onclick="createClassListExcel(); togglePlusMenuBottom();"
                                                 class="px-4 py-3 hover:bg-amber-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
-                                                <i class="fa-solid fa-table-list text-amber-400 w-4"></i> Sınıf Listesi (Excel A4)
+                                                <i class="fa-solid fa-table-list text-amber-400 w-4"></i> Sınıf Listesi
+                                                (Excel A4)
                                             </button>
                                         </div>
                                     </div>
-                                    <button type="button" id="deep-search-btn" onclick="toggleDeepSearch()" class="input-action-btn"
-                                        title="Deep Search Mode">
+                                    <button type="button" id="deep-search-btn" onclick="toggleDeepSearch()"
+                                        class="input-action-btn" title="Deep Search Mode">
                                         <i class="fa-solid fa-bolt-lightning"></i>
                                     </button>
-                                    <button type="button" id="mic-btn-new" onclick="toggleDictation()" class="input-action-btn"
-                                        title="Voice Mode">
+                                    <button type="button" id="mic-btn-new" onclick="toggleDictation()"
+                                        class="input-action-btn" title="Voice Mode">
                                         <i class="fa-solid fa-microphone"></i>
                                     </button>
                                     <div class="h-4 w-px bg-white/10 mx-1"></div>
-                                    <button type="button" onclick="startEmergencyMode()" class="input-action-btn mode-btn-emergency"
-                                        title="Acil Durum Modu">
+                                    <button type="button" onclick="startEmergencyMode()"
+                                        class="input-action-btn mode-btn-emergency" title="Acil Durum Modu">
                                         <i class="fa-solid fa-heart-pulse"></i>
                                     </button>
-                                    <button type="button" onclick="startToughLoveMode()" class="input-action-btn mode-btn-tough"
-                                        title="Yüzleşme Modu">
+                                    <button type="button" onclick="startToughLoveMode()"
+                                        class="input-action-btn mode-btn-tough" title="Yüzleşme Modu">
                                         <i class="fa-solid fa-hand-fist"></i>
                                     </button>
                                 </div>
 
                                 <div class="action-group">
-                                    <div class="text-[10px] text-slate-500 font-medium mr-2 hidden sm:block">Press Shift + Enter for
+                                    <div class="text-[10px] text-slate-500 font-medium mr-2 hidden sm:block">Press Shift
+                                        + Enter for
                                         new line</div>
                                     <button type="submit" class="send-btn-new" id="send-btn" title="Send message">
                                         <i class="fa-solid fa-arrow-up"></i>
@@ -3724,29 +3790,35 @@
                             </div>
                         </form>
                         <div class="text-center mt-3">
-                            <p class="text-[11px] text-[#8a8b86]/50 font-medium">LifeCoach AI can make mistakes. Consider verifying
+                            <p class="text-[11px] text-[#8a8b86]/50 font-medium">LifeCoach AI can make mistakes.
+                                Consider verifying
                                 critical information.</p>
                         </div>
                     </div>
                 </div>
 
                 <!-- Chat History Sidebar (Right Side) -->
-                <aside id="chat-history-content" class="hidden lg:flex flex-col w-72 h-full bg-slate-900/40 border-l border-white/5 backdrop-blur-md">
+                <aside id="chat-history-content"
+                    class="hidden lg:flex flex-col w-72 h-full bg-slate-900/40 border-l border-white/5 backdrop-blur-md">
                     <div class="p-4 border-b border-white/5 space-y-4">
-                        <button onclick="startNewChat()" class="w-full py-2.5 px-4 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/20 text-teal-400 text-xs font-bold transition-all flex items-center justify-center gap-2 group">
+                        <button onclick="startNewChat()"
+                            class="w-full py-2.5 px-4 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/20 text-teal-400 text-xs font-bold transition-all flex items-center justify-center gap-2 group">
                             <i class="fa-solid fa-plus group-hover:rotate-90 transition-transform duration-300"></i>
                             Yeni Sohbet Başlat
                         </button>
 
                         <div class="glow-divider opacity-30"></div>
 
-                        <h3 class="text-[11px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                        <h3
+                            class="text-[11px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
                             <i class="fa-solid fa-clock-rotate-left text-teal-500/50"></i>
                             Sohbet Geçmişi
                         </h3>
                         <div class="relative">
-                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
-                            <input type="text" id="history-search" onkeyup="filterHistory()" placeholder="Geçmişi ara..."
+                            <i
+                                class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                            <input type="text" id="history-search" onkeyup="filterHistory()"
+                                placeholder="Geçmişi ara..."
                                 class="search-input text-xs py-2 pl-9 bg-black/20 border-white/5 focus:border-teal-500/30">
                         </div>
                     </div>
@@ -3857,18 +3929,22 @@
         <div class="modal-card w-full max-w-sm mx-auto p-8 text-center animate-bounce-in">
             <div class="text-6xl mb-4">🏆</div>
             <h3 class="text-2xl font-bold text-white font-display mb-2">Harika İş Çıkardın!</h3>
-            <p class="text-slate-400 text-sm mb-6">Bir hedefi daha fethettin. Bu anın tadını çıkar ve gelişiminle gurur duy.</p>
-            
+            <p class="text-slate-400 text-sm mb-6">Bir hedefi daha fethettin. Bu anın tadını çıkar ve gelişiminle gurur
+                duy.</p>
+
             <div class="text-left mb-6">
-                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Bu süreçten ne öğrendin?</label>
-                <textarea id="goal-reflection-input" class="modal-input text-sm" rows="3" placeholder="Örn: Disiplinli olmanın faydasını gördüm..."></textarea>
+                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Bu süreçten ne
+                    öğrendin?</label>
+                <textarea id="goal-reflection-input" class="modal-input text-sm" rows="3"
+                    placeholder="Örn: Disiplinli olmanın faydasını gördüm..."></textarea>
             </div>
 
             <div class="flex flex-col gap-3">
                 <button onclick="saveGoalSuccess()" class="btn-primary w-full py-3 font-bold">
                     Başarıyı Kaydet
                 </button>
-                <button onclick="closeGoalSuccessModal()" class="text-slate-500 text-xs hover:text-slate-300 transition-colors">
+                <button onclick="closeGoalSuccessModal()"
+                    class="text-slate-500 text-xs hover:text-slate-300 transition-colors">
                     Sadece Kapat
                 </button>
             </div>
@@ -4126,13 +4202,13 @@
         function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container');
             if (!container) return;
-            
+
             const toast = document.createElement('div');
             toast.className = 'toast transform transition-all duration-500 translate-x-full opacity-0 pointer-events-auto';
-            
+
             const icon = type === 'error' ? 'fa-circle-exclamation' : type === 'info' ? 'fa-circle-info' : 'fa-leaf';
             const iconColor = type === 'error' ? '#ef4444' : type === 'info' ? '#3b82f6' : '#2DD4BF';
-            
+
             toast.innerHTML = `
                 <div class="flex items-center gap-3">
                     <div class="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style="background: rgba(45,212,191,0.1); border: 1px solid rgba(45,212,191,0.2);">
@@ -4141,14 +4217,14 @@
                     <p class="text-sm font-medium text-slate-200">${message}</p>
                 </div>
             `;
-            
+
             container.appendChild(toast);
-            
+
             // Trigger animation
             requestAnimationFrame(() => {
                 toast.classList.remove('translate-x-full', 'opacity-0');
             });
-            
+
             // Auto remove
             setTimeout(() => {
                 toast.classList.add('translate-x-full', 'opacity-0');
@@ -4645,7 +4721,7 @@
 
                 currentSessionId = session.id;
                 messageHistory = [];
-                
+
                 const chatContainer = document.getElementById('chat-container');
                 const welcomeScreen = document.getElementById('welcome-screen');
                 const chatInputContainer = document.getElementById('chat-input-container');
@@ -4710,7 +4786,7 @@
         function startNewChat() {
             currentSessionId = null;
             messageHistory = [];
-            
+
             const chatContainer = document.getElementById('chat-container');
             const welcomeScreen = document.getElementById('welcome-screen');
             const sectionChat = document.getElementById('section-chat');
@@ -4737,7 +4813,7 @@
                     chatInputContainer.style.display = 'block';
                 }
             }
-            
+
             // Clear inputs
             const centerInput = document.getElementById('user-input-center');
             const bottomInput = document.getElementById('user-input');
@@ -4818,7 +4894,7 @@
             try {
                 // Remove HTML tags first
                 const cleanText = text.replace(/<[^>]*>/g, '');
-                
+
                 // Identify if there's a markdown table
                 const lines = cleanText.split('\n');
                 let tableData = [];
@@ -4831,10 +4907,10 @@
                         const cells = trimmedLine.split('|')
                             .filter((cell, index, arr) => index > 0 && index < arr.length - 1)
                             .map(cell => cell.trim());
-                        
+
                         // Ignore separator rows (e.g., |---|---|)
                         if (cells.every(c => c.match(/^[- :]+$/))) continue;
-                        
+
                         tableData.push(cells);
                         inTable = true;
                     } else if (inTable && trimmedLine === '') {
@@ -4860,7 +4936,7 @@
                         [cleanText]
                     ];
                 }
-                
+
                 const ws = XLSX.utils.aoa_to_sheet(finalData);
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, "Veri");
@@ -5142,8 +5218,596 @@
 
         const templateOptions = [];
 
+        // ===== TRANSLATION SYSTEM (I18N) =====
+        const TRANSLATIONS = {
+            'tr': {
+                'greeting': 'Bugün sana nasıl yardımcı olabilirim?',
+                'input_placeholder': 'LifeCoach AI\'a her şeyi sor...',
+                'emergency_btn': 'Acil Durum',
+                'tough_love_btn': 'Yüzleşme',
+                'new_chat': 'Yeni Sohbet Başlat',
+                'history': 'Sohbet Geçmişi',
+                'search_history': 'Geçmişi ara...',
+                'nav_dashboard': 'Panel',
+                'nav_goals': 'Hedefler',
+                'nav_habits': 'Alışkanlıklar',
+                'nav_plans': 'Planlar',
+                'nav_progress': 'İlerleme',
+                'nav_focus': 'Odaklanma',
+                'nav_reflection': 'Yansıma',
+                'nav_coach': 'Akıllı Koç',
+                'nav_chat': 'Asistan',
+                'nav_persona': 'Persona Değiştir',
+                'nav_mood': 'Duygu Günlüğü',
+                'nav_taskbreak': 'Görev Parçalayıcı',
+                'nav_achievements': 'Başarılar',
+                'nav_waffle': 'Waffle Modu',
+            },
+            'en': {
+                'greeting': 'How can I help you today?',
+                'input_placeholder': 'Ask LifeCoach AI anything...',
+                'emergency_btn': 'Emergency',
+                'tough_love_btn': 'Tough Love',
+                'new_chat': 'Start New Chat',
+                'history': 'Chat History',
+                'search_history': 'Search history...',
+                'nav_dashboard': 'Dashboard',
+                'nav_goals': 'Goals',
+                'nav_habits': 'Habits',
+                'nav_plans': 'Plans',
+                'nav_progress': 'Progress',
+                'nav_focus': 'Focus',
+                'nav_reflection': 'Reflection',
+                'nav_coach': 'Smart Coach',
+                'nav_chat': 'Assistant',
+                'nav_persona': 'Change Persona',
+                'nav_mood': 'Mood Journal',
+                'nav_taskbreak': 'Task Breaker',
+                'nav_achievements': 'Achievements',
+                'nav_waffle': 'Waffle Mode',
+            },
+            'ja': {
+                'greeting': '今日はどのようにお手伝いしましょうか？',
+                'input_placeholder': 'LifeCoach AIに何でも聞いてください...',
+                'emergency_btn': '緊急事態',
+                'tough_love_btn': 'タフラブ',
+                'new_chat': '新しくチャットを始める',
+                'history': 'チャット履歴',
+                'search_history': '履歴を検索...',
+                'nav_dashboard': 'ダッシュボード',
+                'nav_goals': '目標',
+                'nav_habits': '習慣',
+                'nav_plans': 'プラン',
+                'nav_progress': '進捗',
+                'nav_focus': '集中',
+                'nav_reflection': '振り返り',
+                'nav_coach': 'スマートコーチ',
+                'nav_chat': 'アシスタント',
+                'nav_persona': 'ペルソナ変更',
+                'nav_mood': '気分日記',
+                'nav_taskbreak': 'タスク分解',
+                'nav_achievements': '実績',
+                'nav_waffle': 'ワッフルモード',
+            },
+            'de': {
+                'greeting': 'Wie kann ich dir heute helfen?',
+                'input_placeholder': 'Frag LifeCoach AI alles...',
+                'emergency_btn': 'Notfall',
+                'tough_love_btn': 'Tough Love',
+                'new_chat': 'Neuen Chat starten',
+                'history': 'Chat-Verlauf',
+                'search_history': 'Verlauf suchen...',
+                'nav_dashboard': 'Dashboard',
+                'nav_goals': 'Ziele',
+                'nav_habits': 'Gewohnheiten',
+                'nav_plans': 'Pläne',
+                'nav_progress': 'Fortschritt',
+                'nav_focus': 'Fokus',
+                'nav_reflection': 'Reflektion',
+                'nav_coach': 'Smart Coach',
+                'nav_chat': 'Assistent',
+                'nav_persona': 'Persona ändern',
+                'nav_mood': 'Stimmungstagebuch',
+                'nav_taskbreak': 'Aufgabenplaner',
+                'nav_achievements': 'Erfolge',
+                'nav_waffle': 'Waffle-Modus',
+            },
+            'fr': {
+                'greeting': 'Comment puis-je vous aider aujourd\'hui ?',
+                'input_placeholder': 'Posez n\'importe quelle question à LifeCoach AI...',
+                'emergency_btn': 'Urgence',
+                'tough_love_btn': 'Tough Love',
+                'new_chat': 'Démarrer une nouvelle discussion',
+                'history': 'Historique des discussions',
+                'search_history': 'Rechercher dans l\'historique...',
+                'nav_dashboard': 'Tableau de bord',
+                'nav_goals': 'Objectifs',
+                'nav_habits': 'Habitudes',
+                'nav_plans': 'Plans',
+                'nav_progress': 'Progrès',
+                'nav_focus': 'Focus',
+                'nav_reflection': 'Réflexion',
+                'nav_coach': 'Coach Intelligent',
+                'nav_chat': 'Assistant',
+                'nav_persona': 'Changer de Persona',
+                'nav_mood': 'Journal d\'humeur',
+                'nav_taskbreak': 'Décomposeur de tâches',
+                'nav_achievements': 'Succès',
+                'nav_waffle': 'Mode Waffle',
+            },
+            'es': {
+                'greeting': '¿Cómo puedo ayudarte hoy?',
+                'input_placeholder': 'Pregunta lo que quieras a LifeCoach AI...',
+                'emergency_btn': 'Emergencia',
+                'tough_love_btn': 'Tough Love',
+                'new_chat': 'Iniciar nuevo chat',
+                'history': 'Historial de chat',
+                'search_history': 'Buscar historial...',
+                'nav_dashboard': 'Panel',
+                'nav_goals': 'Metas',
+                'nav_habits': 'Hábitos',
+                'nav_plans': 'Planes',
+                'nav_progress': 'Progreso',
+                'nav_focus': 'Enfoque',
+                'nav_reflection': 'Reflexión',
+                'nav_coach': 'Coach Inteligente',
+                'nav_chat': 'Asistente',
+                'nav_persona': 'Cambiar Persona',
+                'nav_mood': 'Diario de ánimo',
+                'nav_taskbreak': 'Desglosador de tareas',
+                'nav_achievements': 'Logros',
+                'nav_waffle': 'Modo Waffle',
+            },
+            'it': {
+                'greeting': 'Come posso aiutarti oggi?',
+                'input_placeholder': 'Chiedi qualsiasi cosa a LifeCoach AI...',
+                'emergency_btn': 'Emergenza',
+                'tough_love_btn': 'Tough Love',
+                'new_chat': 'Inizia una nuova chat',
+                'history': 'Cronologia chat',
+                'search_history': 'Cerca nella cronologia...',
+                'nav_dashboard': 'Dashboard',
+                'nav_goals': 'Obiettivi',
+                'nav_habits': 'Abitudini',
+                'nav_plans': 'Piani',
+                'nav_progress': 'Progresso',
+                'nav_focus': 'Focus',
+                'nav_reflection': 'Riflessione',
+                'nav_coach': 'Coach Intelligente',
+                'nav_chat': 'Assistente',
+                'nav_persona': 'Cambia Persona',
+                'nav_mood': 'Diario dell\'umore',
+                'nav_taskbreak': 'Scomposizione compiti',
+                'nav_achievements': 'Risultati',
+                'nav_waffle': 'Modalità Waffle',
+            },
+            'pt': {
+                'greeting': 'Como posso ajudar você hoje?',
+                'input_placeholder': 'Pergunte qualquer coisa ao LifeCoach AI...',
+                'emergency_btn': 'Emergência',
+                'tough_love_btn': 'Tough Love',
+                'new_chat': 'Iniciar novo chat',
+                'history': 'Histórico de chat',
+                'search_history': 'Pesquisar histórico...',
+                'nav_dashboard': 'Painel',
+                'nav_goals': 'Metas',
+                'nav_habits': 'Hábitos',
+                'nav_plans': 'Planos',
+                'nav_progress': 'Progresso',
+                'nav_focus': 'Foco',
+                'nav_reflection': 'Reflexão',
+                'nav_coach': 'Coach Inteligente',
+                'nav_chat': 'Assistente',
+                'nav_persona': 'Mudar Persona',
+                'nav_mood': 'Diário de humor',
+                'nav_taskbreak': 'Desmembrador de tarefas',
+                'nav_achievements': 'Conquistas',
+                'nav_waffle': 'Modo Waffle',
+            },
+            'ru': {
+                'greeting': 'Чем я могу помочь тебе сегодня?',
+                'input_placeholder': 'Спроси LifeCoach AI что угодно...',
+                'emergency_btn': 'Экстренная помощь',
+                'tough_love_btn': 'Tough Love',
+                'new_chat': 'Начать новый чат',
+                'history': 'История чатов',
+                'search_history': 'Поиск по истории...',
+                'nav_dashboard': 'Панель',
+                'nav_goals': 'Цели',
+                'nav_habits': 'Привычки',
+                'nav_plans': 'Планы',
+                'nav_progress': 'Прогресс',
+                'nav_focus': 'Фокус',
+                'nav_reflection': 'Рефлексия',
+                'nav_coach': 'Умный коуч',
+                'nav_chat': 'Ассистент',
+                'nav_persona': 'Сменить персону',
+                'nav_mood': 'Дневник настроения',
+                'nav_taskbreak': 'Разбивка задач',
+                'nav_achievements': 'Достижения',
+                'nav_waffle': 'Режим Waffle',
+            },
+            'zh-CN': {
+                'greeting': '今天我能帮你什么？',
+                'input_placeholder': '向 LifeCoach AI 提任何问题...',
+                'emergency_btn': '紧急情况',
+                'tough_love_btn': 'Tough Love',
+                'new_chat': '开始新对话',
+                'history': '聊天记录',
+                'search_history': '搜索历史...',
+                'nav_dashboard': '仪表盘',
+                'nav_goals': '目标',
+                'nav_habits': '习惯',
+                'nav_plans': '计划',
+                'nav_progress': '进度',
+                'nav_focus': '专注',
+                'nav_reflection': '反思',
+                'nav_coach': '智能教练',
+                'nav_chat': '助手',
+                'nav_persona': '更改角色',
+                'nav_mood': '情绪日记',
+                'nav_taskbreak': '任务分解',
+                'nav_achievements': '成就',
+                'nav_waffle': '华夫饼模式',
+            },
+            'zh-TW': {
+                'greeting': '今天我能幫你什麼？',
+                'input_placeholder': '向 LifeCoach AI 提任何問題...',
+                'emergency_btn': '緊急情況',
+                'tough_love_btn': 'Tough Love',
+                'new_chat': '開始新對話',
+                'history': '聊天記錄',
+                'search_history': '搜索歷史...',
+                'nav_dashboard': '儀表板',
+                'nav_goals': '目標',
+                'nav_habits': '習慣',
+                'nav_plans': '計劃',
+                'nav_progress': '進度',
+                'nav_focus': '專注',
+                'nav_reflection': '反思',
+                'nav_coach': '智能教練',
+                'nav_chat': '助手',
+                'nav_persona': '更改角色',
+                'nav_mood': '情緒日記',
+                'nav_taskbreak': '任務分解',
+                'nav_achievements': '成就',
+                'nav_waffle': '華夫餅模式',
+            },
+            'ar': {
+                'greeting': 'كيف يمكنني مساعدتك اليوم؟',
+                'input_placeholder': 'اسأل LifeCoach AI أي شيء...',
+                'emergency_btn': 'طوارئ',
+                'tough_love_btn': 'Tough Love',
+                'new_chat': 'بدء محادثة جديدة',
+                'history': 'سجل المحادثات',
+                'search_history': 'بحث في السجل...',
+                'nav_dashboard': 'لوحة التحكم',
+                'nav_goals': 'الأهداف',
+                'nav_habits': 'العادات',
+                'nav_plans': 'الخطط',
+                'nav_progress': 'التقدم',
+                'nav_focus': 'التركيز',
+                'nav_reflection': 'التفكير',
+                'nav_coach': 'مدرب ذكي',
+                'nav_chat': 'المساعد',
+                'nav_persona': 'تغيير الشخصية',
+                'nav_mood': 'يوميات المزاج',
+                'nav_taskbreak': 'تفكيك المهام',
+                'nav_achievements': 'الإنجازات',
+                'nav_waffle': 'وضع الوافل',
+            },
+            'nl': {
+                'greeting': 'Hoe kan ik je vandaag helpen?',
+                'input_placeholder': 'Vraag LifeCoach AI alles...',
+                'emergency_btn': 'Noodgeval',
+                'tough_love_btn': 'Tough Love',
+                'new_chat': 'Nieuwe chat starten',
+                'history': 'Chatgeschiedenis',
+                'search_history': 'Zoek in geschiedenis...',
+                'nav_dashboard': 'Dashboard',
+                'nav_goals': 'Doelen',
+                'nav_habits': 'Gewoontes',
+                'nav_plans': 'Plannen',
+                'nav_progress': 'Voortgang',
+                'nav_focus': 'Focus',
+                'nav_reflection': 'Reflectie',
+                'nav_coach': 'Slimme Coach',
+                'nav_chat': 'Assistent',
+                'nav_persona': 'Persona wijzigen',
+                'nav_mood': 'Stemming dagboek',
+                'nav_taskbreak': 'Taakplanner',
+                'nav_achievements': 'Prestaties',
+                'nav_waffle': 'Wafelmodus',
+            },
+            'de': {
+                'greeting': 'Wie kann ich dir heute helfen?',
+                'input_placeholder': 'Frage LifeCoach AI alles...',
+                'emergency_btn': 'Notfall',
+                'tough_love_btn': 'Tough Love',
+                'new_chat': 'Neuen Chat starten',
+                'history': 'Chatverlauf',
+                'search_history': 'Suche im Verlauf...',
+                'nav_dashboard': 'Dashboard',
+                'nav_goals': 'Ziele',
+                'nav_habits': 'Gewohnheiten',
+                'nav_plans': 'Pläne',
+                'nav_progress': 'Fortschritt',
+                'nav_focus': 'Fokus',
+                'nav_reflection': 'Reflexion',
+                'nav_coach': 'Intelligenter Coach',
+                'nav_chat': 'Assistent',
+                'nav_persona': 'Persona wechseln',
+                'nav_mood': 'Stimmungstagebuch',
+                'nav_taskbreak': 'Aufgabenzerlegung',
+                'nav_achievements': 'Erfolge',
+                'nav_waffle': 'Waffelmodus',
+            },
+            'fr': {
+                'greeting': 'Comment puis-je vous aider aujourd\'hui ?',
+                'input_placeholder': 'Demandez n\'importe quoi à LifeCoach AI...',
+                'emergency_btn': 'Urgence',
+                'tough_love_btn': 'Tough Love',
+                'new_chat': 'Démarrer une nouvelle conversation',
+                'history': 'Historique des conversations',
+                'search_history': 'Rechercher dans l\'historique...',
+                'nav_dashboard': 'Tableau de bord',
+                'nav_goals': 'Objectifs',
+                'nav_habits': 'Habitudes',
+                'nav_plans': 'Plans',
+                'nav_progress': 'Progression',
+                'nav_focus': 'Focus',
+                'nav_reflection': 'Réflexion',
+                'nav_coach': 'Coach intelligent',
+                'nav_chat': 'Assistant',
+                'nav_persona': 'Changer de persona',
+                'nav_mood': 'Journal d\'humeur',
+                'nav_taskbreak': 'Décomposition des tâches',
+                'nav_achievements': 'Réalisations',
+                'nav_waffle': 'Mode Waffle',
+            },
+            'es': {
+                'greeting': '¿Cómo puedo ayudarte hoy?',
+                'input_placeholder': 'Pregunta cualquier cosa a LifeCoach AI...',
+                'emergency_btn': 'Emergencia',
+                'tough_love_btn': 'Tough Love',
+                'new_chat': 'Iniciar nuevo chat',
+                'history': 'Historial de conversaciones',
+                'search_history': 'Buscar en el historial...',
+                'nav_dashboard': 'Panel de control',
+                'nav_goals': 'Metas',
+                'nav_habits': 'Hábitos',
+                'nav_plans': 'Planes',
+                'nav_progress': 'Progreso',
+                'nav_focus': 'Enfoque',
+                'nav_reflection': 'Reflexión',
+                'nav_coach': 'Coach inteligente',
+                'nav_chat': 'Asistente',
+                'nav_persona': 'Cambiar de persona',
+                'nav_mood': 'Diario de estado de ánimo',
+                'nav_taskbreak': 'Desglose de tareas',
+                'nav_achievements': 'Logros',
+                'nav_waffle': 'Modo Waffle',
+            },
+            'it': {
+                'greeting': 'Come posso aiutarti oggi?',
+                'input_placeholder': 'Chiedi qualsiasi cosa a LifeCoach AI...',
+                'emergency_btn': 'Emergenza',
+                'tough_love_btn': 'Tough Love',
+                'new_chat': 'Iniziare una nuova chat',
+                'history': 'Cronologia delle conversazioni',
+                'search_history': 'Cerca nella cronologia...',
+                'nav_dashboard': 'Dashboard',
+                'nav_goals': 'Obiettivi',
+                'nav_habits': 'Abitudini',
+                'nav_plans': 'Piani',
+                'nav_progress': 'Progresso',
+                'nav_focus': 'Focus',
+                'nav_reflection': 'Riflessione',
+                'nav_coach': 'Coach intelligente',
+                'nav_chat': 'Assistente',
+                'nav_persona': 'Cambia persona',
+                'nav_mood': 'Diario dell\'umore',
+                'nav_taskbreak': 'Scomposizione delle attività',
+                'nav_achievements': 'Risultati',
+                'nav_waffle': 'Modalità Waffle',
+            },
+            'pt-BR': {
+                'greeting': 'Como posso te ajudar hoje?',
+                'input_placeholder': 'Pergunte qualquer coisa ao LifeCoach AI...',
+                'emergency_btn': 'Emergência',
+                'tough_love_btn': 'Tough Love',
+                'new_chat': 'Iniciar novo chat',
+                'history': 'Histórico de conversas',
+                'search_history': 'Buscar no histórico...',
+                'nav_dashboard': 'Painel',
+                'nav_goals': 'Objetivos',
+                'nav_habits': 'Hábitos',
+                'nav_plans': 'Planos',
+                'nav_progress': 'Progresso',
+                'nav_focus': 'Foco',
+                'nav_reflection': 'Reflexão',
+                'nav_coach': 'Coach inteligente',
+                'nav_chat': 'Assistente',
+                'nav_persona': 'Mudar persona',
+                'nav_mood': 'Diário de humor',
+                'nav_taskbreak': 'Divisão de tarefas',
+                'nav_achievements': 'Conquistas',
+                'nav_waffle': 'Modo Waffle',
+            },
+            'it': {
+                'greeting': 'Come posso aiutarti oggi?',
+                'input_placeholder': 'Chiedi qualsiasi cosa a LifeCoach AI...',
+                'emergency_btn': 'Emergenza',
+                'tough_love_btn': 'Tough Love',
+                'new_chat': 'Inizia una nuova chat',
+                'history': 'Cronologia chat',
+                'search_history': 'Cerca nella cronologia...',
+                'nav_dashboard': 'Dashboard',
+                'nav_goals': 'Obiettivi',
+                'nav_habits': 'Abitudini',
+                'nav_plans': 'Piani',
+                'nav_progress': 'Progresso',
+                'nav_focus': 'Focus',
+                'nav_reflection': 'Riflessione',
+                'nav_coach': 'Coach Intelligente',
+                'nav_chat': 'Assistente',
+                'nav_persona': 'Cambia Persona',
+                'nav_mood': 'Diario dell\'umore',
+                'nav_taskbreak': 'Scomposizione compiti',
+                'nav_achievements': 'Risultati',
+                'nav_waffle': 'Modalità Waffle',
+            },
+            'pt': {
+                'greeting': 'Como posso ajudar você hoje?',
+                'input_placeholder': 'Pergunte qualquer coisa ao LifeCoach AI...',
+                'emergency_btn': 'Emergência',
+                'tough_love_btn': 'Tough Love',
+                'new_chat': 'Iniciar novo chat',
+                'history': 'Histórico de chat',
+                'search_history': 'Pesquisar histórico...',
+                'nav_dashboard': 'Painel',
+                'nav_goals': 'Metas',
+                'nav_habits': 'Hábitos',
+                'nav_plans': 'Planos',
+                'nav_progress': 'Progresso',
+                'nav_focus': 'Foco',
+                'nav_reflection': 'Reflexão',
+                'nav_coach': 'Coach Inteligente',
+                'nav_chat': 'Assistente',
+                'nav_persona': 'Mudar Persona',
+                'nav_mood': 'Diário de humor',
+                'nav_taskbreak': 'Desmembrador de tarefas',
+                'nav_achievements': 'Conquistas',
+                'nav_waffle': 'Modo Waffle',
+            },
+            'ru': {
+                'greeting': 'Чем я могу помочь тебе сегодня?',
+                'input_placeholder': 'Спроси LifeCoach AI что угодно...',
+                'emergency_btn': 'Экстренная помощь',
+                'tough_love_btn': 'Tough Love',
+                'new_chat': 'Начать новый чат',
+                'history': 'История чатов',
+                'search_history': 'Поиск по истории...',
+                'nav_dashboard': 'Панель',
+                'nav_goals': 'Цели',
+                'nav_habits': 'Привычки',
+                'nav_plans': 'Планы',
+                'nav_progress': 'Прогресс',
+                'nav_focus': 'Фокус',
+                'nav_reflection': 'Рефлексия',
+                'nav_coach': 'Умный коуч',
+                'nav_chat': 'Ассистент',
+                'nav_persona': 'Сменить персону',
+                'nav_mood': 'Дневник настроения',
+                'nav_taskbreak': 'Разбивка задач',
+                'nav_achievements': 'Достижения',
+                'nav_waffle': 'Режим Waffle',
+            },
+            'zh': {
+                'greeting': '今天我能帮你什么？',
+                'input_placeholder': '向 LifeCoach AI 提任何问题...',
+                'emergency_btn': '紧急情况',
+                'tough_love_btn': 'Tough Love',
+                'new_chat': '开始新对话',
+                'history': '聊天记录',
+                'search_history': '搜索历史...',
+                'nav_dashboard': '仪表盘',
+                'nav_goals': '目标',
+                'nav_habits': '习惯',
+                'nav_plans': '计划',
+                'nav_progress': '进度',
+                'nav_focus': '专注',
+                'nav_reflection': '反思',
+                'nav_coach': '智能教练',
+                'nav_chat': '助手',
+                'nav_persona': '更改角色',
+                'nav_mood': '情绪日记',
+                'nav_taskbreak': '任务分解',
+                'nav_achievements': '成就',
+                'nav_waffle': '华夫饼模式',
+            },
+            'ar': {
+                'greeting': 'كيف يمكنني مساعدتك اليوم؟',
+                'input_placeholder': 'اسأل LifeCoach AI أي شيء...',
+                'emergency_btn': 'طوارئ',
+                'tough_love_btn': 'Tough Love',
+                'new_chat': 'بدء محادثة جديدة',
+                'history': 'سجل المحادثات',
+                'search_history': 'بحث في السجل...',
+                'nav_dashboard': 'لوحة التحكم',
+                'nav_goals': 'الأهداف',
+                'nav_habits': 'العادات',
+                'nav_plans': 'الخطط',
+                'nav_progress': 'التقدم',
+                'nav_focus': 'التركيز',
+                'nav_reflection': 'التفكير',
+                'nav_coach': 'مدرب ذكي',
+                'nav_chat': 'المساعد',
+                'nav_persona': 'تغيير الشخصية',
+                'nav_mood': 'يوميات المزاج',
+                'nav_taskbreak': 'تفكيك المهام',
+                'nav_achievements': 'الإنجازات',
+                'nav_waffle': 'وضع الوافل',
+            },
+            'nl': {
+                'greeting': 'Hoe kan ik je vandaag helpen?',
+                'input_placeholder': 'Vraag LifeCoach AI alles...', 
+                'emergency_btn': 'Noodgeval',
+                'tough_love_btn': 'Tough Love',
+                'new_chat': 'Nieuwe chat starten',
+                'history': 'Chatgeschiedenis',
+                'search_history': 'Zoek in geschiedenis...',
+                'nav_dashboard': 'Dashboard',
+                'nav_goals': 'Doelen',
+                'nav_habits': 'Gewoontes',
+                'nav_plans': 'Plannen',
+                'nav_progress': 'Voortgang',
+                'nav_focus': 'Focus',
+                'nav_reflection': 'Reflectie',
+                'nav_coach': 'Slimme Coach',
+                'nav_chat': 'Assistent',
+                'nav_persona': 'Persona wijzigen',
+                'nav_mood': 'Stemming dagboek',
+                'nav_taskbreak': 'Taakplanner',
+                'nav_achievements': 'Prestaties',
+                'nav_waffle': 'Wafelmodus',
+            }
+        };
+
+        let userLanguage = navigator.language.split('-')[0] || 'en';
+        // Özel dil eşleşmeleri
+        if (navigator.language === 'zh-TW') userLanguage = 'zh'; 
+        if (!TRANSLATIONS[userLanguage]) userLanguage = 'en'; 
+
+        function applyTranslations() {
+            const lang = TRANSLATIONS[userLanguage];
+            if (!lang) return;
+
+            // UI Metinlerini Güncelle
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (lang[key]) {
+                    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                        el.placeholder = lang[key];
+                    } else {
+                        el.innerText = lang[key];
+                    }
+                }
+            });
+
+            // Özel güncellemeler (Greeting gibi dinamik alanlar)
+            const greetingEl = document.getElementById('dynamic-greeting');
+            if (greetingEl) greetingEl.innerText = lang['greeting'];
+
+            const inputEl = document.getElementById('user-input');
+            if (inputEl) inputEl.placeholder = lang['input_placeholder'];
+        }
+
+        window.userLanguageCode = navigator.language; // AI'ya tam kodu gönder (en-US, tr-TR gibi)
+        window.applyTranslations = applyTranslations;
+
         let currentMode = null; // 'emergency', 'tough_love'
-        
+
         function startEmergencyMode() {
             currentMode = 'emergency';
             showToast('🚨 Acil Durum Modu Aktif');
@@ -5151,7 +5815,7 @@
             document.body.classList.add('emergency-active-bg');
             document.getElementById('section-chat').classList.add('emergency-active-bg');
             document.getElementById('dynamic-greeting').innerText = "Sakin ol, yanındayım. Ne hissediyorsun?";
-            
+
             // Eğer nefes egzersizi dairesi yoksa oluştur
             if (!document.getElementById('breathing-circle')) {
                 const circle = document.createElement('div');
@@ -5161,14 +5825,14 @@
                 document.getElementById('welcome-screen').appendChild(circle);
             }
             document.getElementById('breathing-circle').style.display = 'flex';
-            
+
             // Input'a odaklan
             const input = document.getElementById('user-input');
             if (input) {
                 input.placeholder = "Şu an ne hissediyorsun? Anlatabilirsin...";
                 input.focus();
             }
-            
+
             // Sesli uyarı (Bip sesi veya benzeri sembolik)
             const synth = window.speechSynthesis;
             const utter = new SpeechSynthesisUtterance("Acil durum modu aktif. Lütfen derin bir nefes al.");
@@ -5203,6 +5867,7 @@
         window.resetModes = resetModes;
 
         document.addEventListener('DOMContentLoaded', () => {
+            applyTranslations(); // Dil ayarlarını uygula
             let isDeepSearch = false;
             let attachedFiles = [];
 
@@ -5269,7 +5934,7 @@
                     document.getElementById('file-previews'),
                     document.getElementById('file-previews-center')
                 ];
-                
+
                 const html = attachedFiles.map((file, index) => `
                     <div class="file-preview-item animate-fade-in-up">
                         <div class="remove-file-btn" onclick="removeAttachedFile(${index})">
@@ -5414,8 +6079,7 @@
                                 file: firstFileForBackend,
                                 history: messageHistory,
                                 sessionId: currentSessionId,
-                                userLanguage: userLang,
-                                systemPrompt: systemPrompt,
+                                userLanguage: window.userLanguageCode, // Akıllı dil kodunu gönder
                                 mode: currentMode
                             })
                         });
@@ -5545,7 +6209,7 @@
                         // Show bottom input always when in chat
                         chatInputContainer.classList.remove('hidden');
                         chatInputContainer.style.display = 'block';
-                        
+
                         if (messageHistory.length > 0) {
                             if (welcomeScreen) welcomeScreen.classList.add('hidden');
                             if (chatContainer) chatContainer.classList.remove('hidden');
@@ -5658,7 +6322,7 @@
                 }
 
                 container.innerHTML = filtered.map(goal => {
-                const statusColor = goal.status === 'completed' ? 'text-emerald-400' :
+                    const statusColor = goal.status === 'completed' ? 'text-emerald-400' :
                         goal.status === 'paused' ? 'text-amber-400' : 'text-teal-400';
                     const typeLabel = { daily: 'Günlük', weekly: 'Haftalık', monthly: 'Aylık', yearly: 'Yıllık' }[goal.type];
 
@@ -5666,23 +6330,23 @@
                     const days = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
                     const todayDate = new Date();
                     const currentDayIdx = (todayDate.getDay() + 6) % 7; // 0: Pzt, ..., 6: Paz
-                    
+
                     const dayBoxes = days.map((day, idx) => {
                         const isToday = idx === currentDayIdx;
                         const dateClone = new Date();
                         dateClone.setDate(todayDate.getDate() - (currentDayIdx - idx));
                         const dateStr = dateClone.toISOString().split('T')[0];
                         const isCompleted = (goal.completions || []).includes(dateStr);
-                        
+
                         return `
                             <div class="flex flex-col items-center gap-1">
                                 <span class="text-[10px] text-slate-500 font-medium uppercase">${day}</span>
                                 <button 
                                     ${isToday ? `onclick="toggleGoalDay('${goal.id}')"` : ''}
                                     class="w-8 h-8 rounded-lg border transition-all flex items-center justify-center
-                                    ${isCompleted ? 'bg-teal-500 border-teal-500 text-white shadow-[0_0_10px_rgba(45,212,191,0.3)]' : 
-                                      isToday ? 'bg-white/5 border-teal-500/30 text-teal-500/50 hover:bg-white/10 hover:border-teal-500' : 
-                                      'bg-white/5 border-white/5 text-slate-600 cursor-not-allowed'}">
+                                    ${isCompleted ? 'bg-teal-500 border-teal-500 text-white shadow-[0_0_10px_rgba(45,212,191,0.3)]' :
+                                isToday ? 'bg-white/5 border-teal-500/30 text-teal-500/50 hover:bg-white/10 hover:border-teal-500' :
+                                    'bg-white/5 border-white/5 text-slate-600 cursor-not-allowed'}">
                                     <i class="fa-solid ${isCompleted ? 'fa-check' : 'fa-circle-dot text-[8px]'}"></i>
                                 </button>
                                 ${isToday ? '<div class="w-1 h-1 bg-teal-500 rounded-full"></div>' : '<div class="w-1 h-1"></div>'}
@@ -5801,7 +6465,7 @@
 
             async function completeGoal(goalId) {
                 pendingGoalId = goalId;
-                
+
                 // Konfeti patlat!
                 const duration = 3 * 1000;
                 const end = Date.now() + duration;
@@ -5841,7 +6505,7 @@
 
             async function saveGoalSuccess() {
                 if (!pendingGoalId) return;
-                
+
                 const reflection = document.getElementById('goal-reflection-input').value;
                 try {
                     await GoalsService.completeGoal(pendingGoalId, reflection);
@@ -6843,13 +7507,13 @@
                 const p = PERSONAS[persona];
                 const mem = getMemory();
                 let prompt = p ? p.prompt : '';
-                
+
                 // Extra knowledge from DB (goals/habits)
                 if (window.currentGoals && window.currentGoals.length > 0) {
                     prompt += "\n\nKULLANICI HEDEFLERİ:\n";
                     window.currentGoals.forEach(g => { prompt += `- ${g.title} (%${g.progress})\n`; });
                 }
-                
+
                 if (mem.name || mem.job || mem.goal || mem.notes) {
                     prompt += '\n\nKullanıcı hakkında bildiklerin:\n';
                     if (mem.name) prompt += `- Adı: ${mem.name}\n`;
@@ -7418,7 +8082,7 @@
             function createPPTFile(customSlides = null) {
                 try {
                     let pres = new PptxGenJS();
-                    
+
                     if (customSlides) {
                         customSlides.forEach(s => {
                             let slide = pres.addSlide();
@@ -7435,7 +8099,7 @@
                         slide.addText("Akıllı Sunum Sistemi", { x: 1, y: 2, fontSize: 24, color: "334155" });
                         slide.addText("Tarih: " + new Date().toLocaleString(), { x: 1, y: 5, fontSize: 14, color: "64748b" });
                     }
-                    
+
                     pres.writeFile({ fileName: "LifeCoach_Sunum.pptx" });
                     showToast("PowerPoint sunumu başarıyla oluşturuldu!", "success");
                 } catch (e) {
@@ -7451,7 +8115,7 @@
                     try {
                         const action = JSON.parse(match[1]);
                         console.log("AI Action detected:", action);
-                        
+
                         if (action.type === 'excel') {
                             const ws = XLSX.utils.aoa_to_sheet(action.data);
                             const wb = XLSX.utils.book_new();
@@ -7477,17 +8141,17 @@
                         ["", "", ""],
                         ["SIRA", "ÖĞRENCİ ADI SOYADI", "İMZA"],
                     ];
-                    
-                    for(let i=1; i<=35; i++) {
+
+                    for (let i = 1; i <= 35; i++) {
                         data.push([i, "", ""]);
                     }
 
                     const ws = XLSX.utils.aoa_to_sheet(data);
                     const wb = XLSX.utils.book_new();
                     XLSX.utils.book_append_sheet(wb, ws, "Sınıf Listesi");
-                    
+
                     ws['!cols'] = [{ wch: 8 }, { wch: 45 }, { wch: 20 }];
-                    
+
                     XLSX.writeFile(wb, "Sinif_Listesi_A4_Format.xlsx");
                     showToast("A4 Sınıf Listesi başarıyla oluşturuldu!", "success");
                 } catch (e) {
@@ -7623,7 +8287,7 @@
                 }
 
                 showToast('Görüntü oluşturuluyor... (Nano Banana 🍌)', 'info');
-                
+
                 try {
                     const response = await fetch('/api/generate-image', {
                         method: 'POST',
@@ -7635,18 +8299,18 @@
                     });
 
                     const data = await response.json();
-                    
+
                     if (data.success && data.imageData) {
                         appendMessage(`İşte promptunuz için oluşturulan görüntü:\n\n![Görüntü](${data.imageData})`, 'ai', true);
                         userInput.value = '';
                         userInput.style.height = 'auto';
-                        
+
                         // Scroll to bottom
                         const chatContainer = document.getElementById('chat-container');
                         if (chatContainer) {
-                             setTimeout(() => {
-                                 chatContainer.scrollTop = chatContainer.scrollHeight;
-                             }, 100);
+                            setTimeout(() => {
+                                chatContainer.scrollTop = chatContainer.scrollHeight;
+                            }, 100);
                         }
                     } else {
                         showToast(data.error || 'Görüntü oluşturulamadı.', 'error');
