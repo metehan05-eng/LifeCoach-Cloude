@@ -139,6 +139,15 @@ app.post('/api/chat', optionalAuth, async (req, res) => {
 
         const { message, file, history, systemPrompt, sessionId } = req.body;
 
+        let dbUser = null;
+        let memoryInjection = "";
+        if (req.user && req.user.email) {
+            dbUser = await getKVData(`user:${req.user.email}`);
+            if (dbUser && dbUser.memory) {
+                memoryInjection = `\n\n--- KULLANICI UZUN VADELİ HAFIZA (BİLDİKLERİNİZ) ---\n${dbUser.memory}\n----------------------------------------------------\nKullanıcı hakkında bu bilgileri hatırlayarak kişiselleştirilmiş cevap verin.`;
+            }
+        }
+
         // Default System Prompt - HAN 4.2 Ultra Core
         const defaultSystemPrompt = `You are HAN 4.2 Ultra Core, the central intelligence of LifeCoach AI.
 
@@ -346,6 +355,17 @@ solve problems intelligently
 and create meaningful progress in their lives.
 
 You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI. (Operating on Gemini 3.1 Pro)
+${memoryInjection}
+
+---
+
+LONG-TERM MEMORY ENGINE:
+If the user shares personal, permanent, or important information about themselves (e.g., goals, health, job, fears, habits, likes/dislikes), you MUST save it to your long-term memory.
+To do this, add a JSON block at the VERY END of your response:
+\`\`\`json-memory
+{ "memory_update": "Kullanıcı bilgisayar mühendisliği öğrencisi ve sabah erken uyanmakta zorlanıyor." }
+\`\`\`
+Use this ONLY for new and important information that a Life Coach should remember for future sessions.
 
 ---
 
@@ -584,38 +604,54 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
         }
 
         let newSessionId = sessionId;
+        let finalAiResponse = aiResponse;
+
+        // Hafıza (Memory) bloklarını işle
+        if (dbUser && aiResponse.includes('```json-memory')) {
+            const memoryMatch = aiResponse.match(/```json-memory\n([\s\S]*?)\n```/);
+            if (memoryMatch && memoryMatch[1]) {
+                try {
+                    const parsedMemory = JSON.parse(memoryMatch[1]);
+                    if (parsedMemory.memory_update) {
+                        const timestamp = new Date().toLocaleDateString('tr-TR');
+                        dbUser.memory = (dbUser.memory || "") + `\n- [${timestamp}]: ${parsedMemory.memory_update}`;
+                    }
+                } catch (e) {
+                    console.error("Memory parse error:", e);
+                }
+            }
+            // Sadece block olan kısmı sil, gizli kalsın
+            finalAiResponse = aiResponse.replace(/```json-memory\n[\s\S]*?\n```/g, '').trim();
+        }
 
         // Oturum açmış kullanıcılar için sohbeti kaydet
-        if (req.user && req.user.email) {
-            const user = await getKVData(`user:${req.user.email}`);
-            if (user) {
-                if (!user.sessions) user.sessions = [];
+        if (req.user && req.user.email && dbUser) {
+            if (!dbUser.sessions) dbUser.sessions = [];
 
-                let session;
-                if (sessionId) {
-                    session = user.sessions.find(s => s.id == sessionId);
-                }
-
-                if (!session) {
-                    newSessionId = Date.now().toString();
-                    const title = message.substring(0, 30) + (message.length > 30 ? '...' : '');
-                    session = { id: newSessionId, title: title, messages: [] };
-                    user.sessions.push(session);
-                }
-
-                session.messages.push({ role: 'user', content: message });
-                session.messages.push({ role: 'assistant', content: aiResponse });
-
-                // En son 20 oturumu sakla
-                user.sessions.sort((a, b) => Number(b.id) - Number(a.id));
-                user.sessions = user.sessions.slice(0, 20);
-
-                await setKVData(`user:${req.user.email}`, user);
+            let session;
+            if (sessionId) {
+                session = dbUser.sessions.find(s => s.id == sessionId);
             }
+
+            if (!session) {
+                newSessionId = Date.now().toString();
+                const title = message.substring(0, 30) + (message.length > 30 ? '...' : '');
+                session = { id: newSessionId, title: title, messages: [] };
+                dbUser.sessions.push(session);
+            }
+
+            session.messages.push({ role: 'user', content: message });
+            session.messages.push({ role: 'assistant', content: finalAiResponse });
+
+            // En son 20 oturumu sakla
+            dbUser.sessions.sort((a, b) => Number(b.id) - Number(a.id));
+            dbUser.sessions = dbUser.sessions.slice(0, 20);
+
+            await setKVData(`user:${req.user.email}`, dbUser);
         }
 
         return res.json({
-            response: aiResponse,
+            response: finalAiResponse,
             // Eğer yeni bir oturum oluşturulduysa, ID'sini ön yüze gönder
             sessionId: newSessionId,
             model: usedModel, // Çalışan modelin adını gönder
