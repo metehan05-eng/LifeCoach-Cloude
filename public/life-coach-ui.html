@@ -1363,6 +1363,49 @@
             box-shadow: 0 5px 10px rgba(0, 0, 0, 0.5), inset 0 -2px 5px rgba(255, 255, 255, 0.1);
         }
 
+        /* ===== SPECIAL MODES ===== */
+        .mode-btn-emergency {
+            background: rgba(239, 68, 68, 0.1) !important;
+            border-color: rgba(239, 68, 68, 0.3) !important;
+            color: #fca5a5 !important;
+        }
+        .mode-btn-emergency:hover {
+            background: rgba(239, 68, 68, 0.2) !important;
+        }
+        .mode-btn-tough {
+            background: rgba(168, 85, 247, 0.1) !important;
+            border-color: rgba(168, 85, 247, 0.3) !important;
+            color: #d8b4fe !important;
+        }
+        .mode-btn-tough:hover {
+            background: rgba(168, 85, 247, 0.2) !important;
+        }
+
+        .emergency-active-bg {
+            background-color: #0c0a09 !important;
+            background-image: radial-gradient(circle at center, #1c1917 0%, #0c0a09 100%) !important;
+        }
+
+        .breathing-circle {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: rgba(45, 212, 191, 0.1);
+            border: 2px solid rgba(45, 212, 191, 0.3);
+            margin: 20px auto;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            color: #2dd4bf;
+            animation: breathe 8s ease-in-out infinite;
+        }
+
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.8); opacity: 1; }
+        }
+
         /* ===== SON YENİ ÖZELLİK STİLLERİ ===== */
 
         .file-preview {
@@ -3542,6 +3585,15 @@
                                                 title="Sesli Yazma">
                                                 <i class="fa-solid fa-microphone"></i>
                                             </button>
+                                            <div class="h-4 w-px bg-white/10 mx-1"></div>
+                                            <button type="button" onclick="startEmergencyMode()" class="input-action-btn mode-btn-emergency"
+                                                title="Acil Durum Modu">
+                                                <i class="fa-solid fa-heart-pulse"></i>
+                                            </button>
+                                            <button type="button" onclick="startToughLoveMode()" class="input-action-btn mode-btn-tough"
+                                                title="Yüzleşme Modu">
+                                                <i class="fa-solid fa-hand-fist"></i>
+                                            </button>
                                         </div>
 
                                         <div class="action-group">
@@ -3575,6 +3627,16 @@
                                     onclick="document.getElementById('user-input').value='Need some advice on...'; document.getElementById('user-input').focus();"
                                     class="px-3.5 py-1.5 rounded-full border border-white/10 text-[#8a8b86] text-[13px] hover:bg-white/5 hover:text-[#eaddcf] transition-colors flex items-center gap-2">
                                     <i class="fa-solid fa-mug-hot text-[#9e96b3]"></i> Life stuff
+                                </button>
+                                <button
+                                    onclick="startEmergencyMode()"
+                                    class="px-3.5 py-1.5 rounded-full border border-red-500/30 text-red-400 bg-red-500/5 text-[13px] hover:bg-red-500/10 transition-colors flex items-center gap-2">
+                                    <i class="fa-solid fa-heart-pulse"></i> Acil Durum
+                                </button>
+                                <button
+                                    onclick="startToughLoveMode()"
+                                    class="px-3.5 py-1.5 rounded-full border border-purple-500/30 text-purple-400 bg-purple-500/5 text-[13px] hover:bg-purple-500/10 transition-colors flex items-center gap-2">
+                                    <i class="fa-solid fa-hand-fist"></i> Yüzleşme
                                 </button>
                             </div>
                         </div>
@@ -3640,6 +3702,15 @@
                                     <button type="button" id="mic-btn-new" onclick="toggleDictation()" class="input-action-btn"
                                         title="Voice Mode">
                                         <i class="fa-solid fa-microphone"></i>
+                                    </button>
+                                    <div class="h-4 w-px bg-white/10 mx-1"></div>
+                                    <button type="button" onclick="startEmergencyMode()" class="input-action-btn mode-btn-emergency"
+                                        title="Acil Durum Modu">
+                                        <i class="fa-solid fa-heart-pulse"></i>
+                                    </button>
+                                    <button type="button" onclick="startToughLoveMode()" class="input-action-btn mode-btn-tough"
+                                        title="Yüzleşme Modu">
+                                        <i class="fa-solid fa-hand-fist"></i>
                                     </button>
                                 </div>
 
@@ -5071,6 +5142,66 @@
 
         const templateOptions = [];
 
+        let currentMode = null; // 'emergency', 'tough_love'
+        
+        function startEmergencyMode() {
+            currentMode = 'emergency';
+            showToast('🚨 Acil Durum Modu Aktif');
+            // UI Değişiklikleri
+            document.body.classList.add('emergency-active-bg');
+            document.getElementById('section-chat').classList.add('emergency-active-bg');
+            document.getElementById('dynamic-greeting').innerText = "Sakin ol, yanındayım. Ne hissediyorsun?";
+            
+            // Eğer nefes egzersizi dairesi yoksa oluştur
+            if (!document.getElementById('breathing-circle')) {
+                const circle = document.createElement('div');
+                circle.id = 'breathing-circle';
+                circle.className = 'breathing-circle';
+                circle.innerHTML = 'Nefes Al...';
+                document.getElementById('welcome-screen').appendChild(circle);
+            }
+            document.getElementById('breathing-circle').style.display = 'flex';
+            
+            // Input'a odaklan
+            const input = document.getElementById('user-input');
+            if (input) {
+                input.placeholder = "Şu an ne hissediyorsun? Anlatabilirsin...";
+                input.focus();
+            }
+            
+            // Sesli uyarı (Bip sesi veya benzeri sembolik)
+            const synth = window.speechSynthesis;
+            const utter = new SpeechSynthesisUtterance("Acil durum modu aktif. Lütfen derin bir nefes al.");
+            utter.lang = 'tr-TR';
+            synth.speak(utter);
+        }
+
+        function startToughLoveMode() {
+            currentMode = 'tough_love';
+            showToast('👊 Yüzleşme Modu Aktif');
+            document.getElementById('dynamic-greeting').innerText = "Bahaneleri bırakma vakti geldi.";
+            const input = document.getElementById('user-input');
+            if (input) {
+                input.placeholder = "Bahaneni söyle ya da eylemi anlat...";
+                input.focus();
+            }
+        }
+
+        function resetModes() {
+            currentMode = null;
+            document.body.classList.remove('emergency-active-bg');
+            document.getElementById('section-chat').classList.remove('emergency-active-bg');
+            if (document.getElementById('breathing-circle')) {
+                document.getElementById('breathing-circle').style.display = 'none';
+            }
+            document.getElementById('dynamic-greeting').innerText = "How can I help you today?";
+            document.getElementById('user-input').placeholder = "Ask LifeCoach AI anything...";
+        }
+
+        window.startEmergencyMode = startEmergencyMode;
+        window.startToughLoveMode = startToughLoveMode;
+        window.resetModes = resetModes;
+
         document.addEventListener('DOMContentLoaded', () => {
             let isDeepSearch = false;
             let attachedFiles = [];
@@ -5284,7 +5415,8 @@
                                 history: messageHistory,
                                 sessionId: currentSessionId,
                                 userLanguage: userLang,
-                                systemPrompt: systemPrompt
+                                systemPrompt: systemPrompt,
+                                mode: currentMode
                             })
                         });
 
@@ -5301,9 +5433,19 @@
                                 loadHistory();
                             }
 
-                            // Giriş yapmış kullanıcı için streak güncelle
+                            // Streak güncelle
                             if (storage.get('token')) {
                                 loadBadgeStatus();
+                            }
+
+                            // Trigger Kontrolü
+                            if (data.trigger) {
+                                if (data.trigger.type === 'emergency_active') {
+                                    // Zaten aktifse bir şey yapma, değilse UI'ı koru
+                                }
+                            } else {
+                                // Eğer mod aktifse ve AI artık tetikleyici göndermiyorsa (normalleşme)
+                                // İsteğe bağlı olarak modu kapatabiliriz ama kullanıcı kendisi kapatmalı
                             }
                         } else if (data.error) {
                             appendMessage(`Hata: ${data.error}`, 'ai');
@@ -5489,6 +5631,7 @@
 
                 try {
                     currentGoals = await GoalsService.getAll();
+                    window.currentGoals = currentGoals;
                     renderGoals();
                 } catch (err) {
                     console.error('Load goals error:', err);
@@ -5767,6 +5910,7 @@
 
                 try {
                     currentHabits = await HabitsService.getAll();
+                    window.currentHabits = currentHabits;
                     renderHabits();
                 } catch (err) {
                     console.error('Load habits error:', err);
@@ -6699,6 +6843,13 @@
                 const p = PERSONAS[persona];
                 const mem = getMemory();
                 let prompt = p ? p.prompt : '';
+                
+                // Extra knowledge from DB (goals/habits)
+                if (window.currentGoals && window.currentGoals.length > 0) {
+                    prompt += "\n\nKULLANICI HEDEFLERİ:\n";
+                    window.currentGoals.forEach(g => { prompt += `- ${g.title} (%${g.progress})\n`; });
+                }
+                
                 if (mem.name || mem.job || mem.goal || mem.notes) {
                     prompt += '\n\nKullanıcı hakkında bildiklerin:\n';
                     if (mem.name) prompt += `- Adı: ${mem.name}\n`;

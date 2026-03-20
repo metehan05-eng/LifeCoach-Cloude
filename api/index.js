@@ -137,10 +137,28 @@ app.post('/api/chat', optionalAuth, async (req, res) => {
             return res.status(500).json({ error: 'Yapay zeka hizmeti yapılandırılmamış. Sunucu yöneticisi GEMINI_API_KEY değişkenini ayarlamalı.' });
         }
 
-        const { message, file, history, systemPrompt, sessionId } = req.body;
+        const { message, file, history, systemPrompt, sessionId, mode } = req.body;
 
         let dbUser = null;
         let memoryInjection = "";
+        let modeInjection = "";
+
+        if (mode === 'emergency') {
+            modeInjection = `\n\n--- ACİL DURUM / KRİZ MODU AKTİF ---\nŞu an kullanıcı panik, aşırı stres veya kriz durumunda olabilir. 
+- Sakin, kısa ve rehberlik edici cümleler kurun. 
+- Uzun paragraflardan kaçının. 
+- Kullanıcıyı ana odaklayın (topraklama egzersizleri: 5-4-3-2-1 tekniği gibi). 
+- Eğer tehlikeli bir durum sezerseniz profesyonel yardım almasını önerin.
+- Cevabınızın sonuna şu bloğu ekleyin: \`\`\`json-trigger {"type": "emergency_active"} \`\`\``;
+        } else if (mode === 'tough_love') {
+            modeInjection = `\n\n--- YÜZLEŞME (TOUGH LOVE) MODU AKTİF ---\nŞu an kullanıcının uyanmaya ve bahaneleri bırakmaya ihtiyacı var. 
+- Kibar olmayı bırakın, dürüst ve sert olun. 
+- Bahane kabul etmeyin. 
+- Kullanıcının geçmiş hedeflerini hatırlatarak ona sorumluluklarını hatırlatın. 
+- Onu eyleme geçmeye zorlayın.
+- Cevabınızın sonuna şu bloğu ekleyin: \`\`\`json-trigger {"type": "tough_love_active"} \`\`\``;
+        }
+
         if (req.user && req.user.email) {
             dbUser = await getKVData(`user:${req.user.email}`);
             if (dbUser && dbUser.memory) {
@@ -356,6 +374,7 @@ and create meaningful progress in their lives.
 
 You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI. (Operating on Gemini 3.1 Pro)
 ${memoryInjection}
+${modeInjection}
 
 ---
 
@@ -605,6 +624,20 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
 
         let newSessionId = sessionId;
         let finalAiResponse = aiResponse;
+        let triggerData = null;
+
+        // Trigger (json-trigger) bloklarını işle
+        if (aiResponse.includes('```json-trigger')) {
+            const triggerMatch = aiResponse.match(/```json-trigger\n([\s\S]*?)\n```/);
+            if (triggerMatch && triggerMatch[1]) {
+                try {
+                    triggerData = JSON.parse(triggerMatch[1]);
+                } catch (e) {
+                    console.error("Trigger parse error:", e);
+                }
+            }
+            finalAiResponse = finalAiResponse.replace(/```json-trigger\n[\s\S]*?\n```/g, '').trim();
+        }
 
         // Hafıza (Memory) bloklarını işle
         if (dbUser && aiResponse.includes('```json-memory')) {
@@ -655,6 +688,7 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
             // Eğer yeni bir oturum oluşturulduysa, ID'sini ön yüze gönder
             sessionId: newSessionId,
             model: usedModel, // Çalışan modelin adını gönder
+            trigger: triggerData // Tetikleyici verisini gönder
         });
 
     } catch (error) {
