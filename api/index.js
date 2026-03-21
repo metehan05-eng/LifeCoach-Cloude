@@ -251,6 +251,18 @@ Java
 Node.js
 PHP
 HolyC
+GoLang
+Ruby
+Kotlin
+Swift
+Dart
+Rust
+TypeScript
+HTML5 / CSS3 / Modern JavaScript
+React / Next.js / Vue.js / Svelte
+Tailwind CSS / Sass / UI Design
+SQL / NoSQL Database Design
+Full Stack Architecture
 
 When writing code:
 
@@ -265,8 +277,12 @@ You can help:
 * design system architecture
 * generate algorithms
 * optimize performance
-* build backend systems
-* design APIs
+* build robust backend systems
+* design RESTful and GraphQL APIs
+* Develop high-performance Frontend applications
+* Design responsive and aesthetically pleasing UI/UX
+* Expert in state management and web performance
+* Senior-level architectural decision making
 
 SCIENTIFIC RESEARCH MODE
 
@@ -571,9 +587,9 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
                         role: "user",
                         content: userMessageParts.map(p => {
                             if (p.text) return { type: "text", text: p.text };
-                            if (p.inlineData) return { 
-                                type: "image_url", 
-                                image_url: { url: `data:${p.inlineData.mimeType};base64,${p.inlineData.data}` } 
+                            if (p.inlineData) return {
+                                type: "image_url",
+                                image_url: { url: `data:${p.inlineData.mimeType};base64,${p.inlineData.data}` }
                             };
                             return null;
                         }).filter(Boolean)
@@ -608,7 +624,7 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
             }
         } catch (orError) {
             console.warn(`[AI] OpenRouter başarısız veya ayarlanmamış. Gemini'ye geçiliyor... ${orError.message}`);
-            
+
             try {
                 // Gemini Fallback Logic
                 console.log(`[AI] Gemini Deneniyor: ${primary31}`);
@@ -1429,7 +1445,7 @@ app.get('/api/goals', authenticateToken, async (req, res) => {
         const allGoals = await getKVData('goals');
         const userGoals = allGoals[userId] || [];
         const today = new Date().toISOString().split('T')[0];
-        
+
         const goalsWithStats = userGoals.map(goal => {
             const completions = goal.completions || [];
             return {
@@ -1479,7 +1495,7 @@ app.put('/api/goals', authenticateToken, async (req, res) => {
         userGoals[idx] = {
             ...userGoals[idx], title, type, description,
             progress: progress !== undefined ? progress : userGoals[idx].progress,
-            status, targetDate, reflection: reflection || userGoals[idx].reflection, 
+            status, targetDate, reflection: reflection || userGoals[idx].reflection,
             updatedAt: new Date().toISOString()
         };
         allGoals[userId] = userGoals;
@@ -1498,19 +1514,19 @@ app.post('/api/goals/toggle', authenticateToken, async (req, res) => {
         const allGoals = await getKVData('goals');
         const userGoals = allGoals[userId] || [];
         const idx = userGoals.findIndex(g => g.id === goalId);
-        
+
         if (idx === -1) return res.status(404).json({ error: 'Hedef bulunamadı' });
-        
+
         const today = new Date().toISOString().split('T')[0];
         const completions = userGoals[idx].completions || [];
-        
+
         let updatedCompletions;
         if (completions.includes(today)) {
             updatedCompletions = completions.filter(d => d !== today);
         } else {
             updatedCompletions = [...completions, today];
         }
-        
+
         userGoals[idx].completions = updatedCompletions;
         allGoals[userId] = userGoals;
         await setKVData('goals', allGoals);
