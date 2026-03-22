@@ -111,6 +111,22 @@ const GoalsService = {
             console.error('GoalsService.toggleDay error:', error);
             throw error;
         }
+    },
+
+    async getBriefing(title, description) {
+        try {
+            const res = await fetch('/api/goals/briefing', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ title, description })
+            });
+            if (!res.ok) throw new Error('Failed to fetch briefing');
+            const data = await res.json();
+            return data.briefing;
+        } catch (error) {
+            console.error('GoalsService.getBriefing error:', error);
+            return 'AI önerisi alınamadı.';
+        }
     }
 };
 
