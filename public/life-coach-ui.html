@@ -15,7 +15,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=Birthstone+Bounce:wght@400;500&display=swap"
         rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dompurify@2.4.0/dist/purify.min.js"></script>
@@ -2409,6 +2409,7 @@
         }
         .arena-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .arena-card:hover { transform: translateY(-5px); border-color: rgba(45, 212, 191, 0.4); box-shadow: 0 10px 30px -10px rgba(45, 212, 191, 0.2); }
+        .signature-font { font-family: 'Birthstone Bounce', cursive; }
     </style>
 </head>
 
@@ -4142,7 +4143,11 @@
                 </div>
                 <div class="text-right">
                     <p class="text-xs text-slate-500 uppercase tracking-widest mb-1">Onaylayan</p>
-                    <p class="text-white font-bold italic">LifeCoach AI Senior Coach</p>
+                    <div class="flex flex-col items-end">
+                        <span class="signature-font text-3xl text-teal-400 leading-none">Metehan Haydar Erbaş</span>
+                        <div class="h-px w-32 bg-gradient-to-l from-teal-500/50 to-transparent mt-0.5"></div>
+                        <p class="text-[10px] text-white/50 font-bold uppercase tracking-tighter mt-1">LifeCoach AI Senior Coach</p>
+                    </div>
                 </div>
             </div>
             <div class="flex gap-4">
