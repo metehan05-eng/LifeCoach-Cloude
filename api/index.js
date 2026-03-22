@@ -1466,7 +1466,8 @@ app.post('/api/goals', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.id;
         const { title, type, description, targetDate } = req.body;
-        if (!title || !type) return res.status(400).json({ error: 'Başlık ve tür gereklidir' });
+        if (!title || !type || !description) return res.status(400).json({ error: 'Başlık, tür ve açıklama gereklidir' });
+        
         const allGoals = await getKVData('goals');
         const userGoals = allGoals[userId] || [];
         const newGoal = {
@@ -1492,10 +1493,16 @@ app.put('/api/goals', authenticateToken, async (req, res) => {
         const userGoals = allGoals[userId] || [];
         const idx = userGoals.findIndex(g => g.id === id);
         if (idx === -1) return res.status(404).json({ error: 'Hedef bulunamadı' });
+        
         userGoals[idx] = {
-            ...userGoals[idx], title, type, description,
+            ...userGoals[idx],
+            title: title !== undefined ? title : userGoals[idx].title,
+            type: type !== undefined ? type : userGoals[idx].type,
+            description: description !== undefined ? description : userGoals[idx].description,
             progress: progress !== undefined ? progress : userGoals[idx].progress,
-            status, targetDate, reflection: reflection || userGoals[idx].reflection,
+            status: status !== undefined ? status : userGoals[idx].status,
+            targetDate: targetDate !== undefined ? targetDate : userGoals[idx].targetDate,
+            reflection: reflection !== undefined ? reflection : userGoals[idx].reflection,
             updatedAt: new Date().toISOString()
         };
         allGoals[userId] = userGoals;
@@ -1503,6 +1510,20 @@ app.put('/api/goals', authenticateToken, async (req, res) => {
         res.json(userGoals[idx]);
     } catch (error) {
         res.status(500).json({ error: 'Güncelleme hatası' });
+    }
+});
+
+app.post('/api/goals/briefing', authenticateToken, async (req, res) => {
+    try {
+        const { title, description } = req.body;
+        if (!title || !description) return res.status(400).json({ error: 'Title and description required' });
+
+        const prompt = `Goal: ${title}\nDescription: ${description}\n\nTask: Based on this goal, generate a single, short, and motivating action sentence (max 10 words) starting with "Bugün şunu yapmalısın: ". It should be in Turkish.`;
+        
+        const result = await generateAIResponse(prompt, [{ role: 'system', content: 'You are a goal coaching assistant.' }]);
+        res.json({ briefing: result.trim() });
+    } catch (error) {
+        res.status(500).json({ error: 'Briefing generation failed' });
     }
 });
 
