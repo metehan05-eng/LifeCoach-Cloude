@@ -4349,15 +4349,20 @@
             }
         }
 
-        let currentShareData = { title: '', progress: 0 };
+        let currentShareData = { title: '', value: 0, type: 'goal' };
 
-        function openShareGoalModal(title, progress) {
-            currentShareData = { title, progress };
+        function openShareItemModal(title, value, type = 'goal') {
+            currentShareData = { title, value, type };
             
             // Popüleri doldur
             document.getElementById('share-display-title').textContent = title;
-            document.getElementById('share-display-progress').textContent = `%${progress}`;
+            document.getElementById('share-display-progress').textContent = type === 'habit' ? `${value} Gün` : `%${value}`;
             
+            const tagEl = document.querySelector('.share-tag');
+            if (tagEl) {
+                tagEl.textContent = type === 'habit' ? 'LifeCoach AI Streak' : 'LifeCoach AI Progress';
+            }
+
             // Modalı aç
             const modal = document.getElementById('goal-share-modal');
             modal.classList.remove('hidden');
@@ -4371,8 +4376,15 @@
         }
 
         function platformShare(platform) {
-            const { title, progress } = currentShareData;
-            const shareText = `LifeCoach AI ile hedefime ilerliyorum! 🎯\n\nHedef: ${title}\nİlerleme: %${progress}\n\nSen de potansiyelini keşfetmek için katıl! ✨\n#LifeCoachAI #Hedeflerim`;
+            const { title, value, type } = currentShareData;
+            
+            let shareText = '';
+            if (type === 'habit') {
+                shareText = `LifeCoach AI ile gelişimim tam gaz! 🔥\n\nAlışkanlık: ${title}\nSeri: ${value} Gündür Kesintisiz!\n\nSen de alışkanlıklarını disipline etmek için katıl! ✨\n#LifeCoachAI #Alışkanlıklar`;
+            } else {
+                shareText = `LifeCoach AI ile hedefime ilerliyorum! 🎯\n\nHedef: ${title}\nİlerleme: %${value}\n\nSen de potansiyelini keşfetmek için katıl! ✨\n#LifeCoachAI #Hedeflerim`;
+            }
+            
             const shareUrl = window.location.origin;
 
             switch(platform) {
@@ -6597,7 +6609,7 @@
                                     </div>
                                 </div>
                                 <div class="flex gap-1">
-                                    <button onclick="openShareGoalModal('${escapeJS(goal.title)}', '${goal.progress}')" class="w-8 h-8 rounded-lg bg-teal-500/10 flex items-center justify-center text-teal-400 hover:text-white hover:bg-teal-500/20" title="Paylaş">
+                                    <button onclick="openShareItemModal('${escapeJS(goal.title)}', '${goal.progress}', 'goal')" class="w-8 h-8 rounded-lg bg-teal-500/10 flex items-center justify-center text-teal-400 hover:text-white hover:bg-teal-500/20" title="Paylaş">
                                         <i class="fa-solid fa-share-nodes text-xs"></i>
                                     </button>
                                     <button onclick="editGoal('${goal.id}')" class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10" title="Düzenle">
@@ -6867,13 +6879,18 @@
                                         ${habit.description ? `<p class="text-xs text-slate-400">${escapeHTML(habit.description)}</p>` : ''}
                                     </div>
                                 </div>
-                                <div class="flex items-center gap-2">
+                                <div class="flex items-center gap-1.5">
                                     <span class="text-amber-400 text-sm font-bold">
                                         <i class="fa-solid fa-fire mr-1"></i>${habit.streak || 0}
                                     </span>
-                                    <button onclick="deleteHabit('${habit.id}')" class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-400 hover:text-red-400 hover:bg-red-500/10">
-                                        <i class="fa-solid fa-trash text-xs"></i>
-                                    </button>
+                                    <div class="flex gap-1 ml-1">
+                                        <button onclick="openShareItemModal('${escapeJS(habit.name)}', '${habit.streak || 0}', 'habit')" class="w-8 h-8 rounded-lg bg-teal-500/10 flex items-center justify-center text-teal-400 hover:text-white hover:bg-teal-500/20" title="Paylaş">
+                                            <i class="fa-solid fa-share-nodes text-xs"></i>
+                                        </button>
+                                        <button onclick="deleteHabit('${habit.id}')" class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-400 hover:text-red-400 hover:bg-red-500/10" title="Sil">
+                                            <i class="fa-solid fa-trash text-xs"></i>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
