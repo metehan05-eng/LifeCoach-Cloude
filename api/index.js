@@ -11,6 +11,8 @@ import xlsx from 'xlsx';
 import * as pdf from 'pdf-parse';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { OAuth2Client } from 'google-auth-library';
+import { spawn } from 'child_process';
+import fs from 'fs';
 
 // __dirname ES Module çözümü
 const __filename = fileURLToPath(import.meta.url);
@@ -401,6 +403,43 @@ build discipline
 solve problems intelligently  
 and create meaningful progress in their lives.
 
+DEEP SEARCH & WEB ACCESS:
+If the user asks for real-time information, research, or anything requiring internet access, you can mention that you are performing a 'Deep Search'.
+The system will provide search results as context.
+
+VISUAL MIND MAPS (MERMAID):
+When explaining complex plans, structures, or brainstorming, you MUST output a Mermaid Mind Map.
+Example:
+\`\`\`mermaid
+mindmap
+  root((Proje Planı))
+    Adım 1
+      Alt Görev A
+      Alt Görev B
+    Adım 2
+      Alt Görev C
+\`\`\`
+Using mindmaps improves clarity and user engagement.
+
+EMOTIONAL INTELLIGENCE (EQ) ANALYTICS:
+If the user asks for their mental health report or EQ analysis, tell them you are preparing a 'Deep EQ Report'.
+This report includes historical mood analysis, stress level tracking, and actionable wellness steps.
+You must output a json-action for it:
+\`\`\`json-action
+{
+  "type": "word",
+  "filename": "EQ_Analiz_Raporu.docx",
+  "content": [
+    {"type": "heading", "text": "Haftalık Analiz", "level": 1},
+    {"type": "paragraph", "text": "Gözlemlerime göre..."}
+  ],
+  "eq_data": [
+    {"date": "2024-03-17", "score": 65},
+    {"date": "2024-03-23", "score": 85}
+  ]
+}
+\`\`\`
+The Python engine will automatically generate charts based on the 'eq_data' provided.
 You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI. (Operating on Gemini 3.1 Pro)
 ${memoryInjection}
 ${modeInjection}
@@ -420,16 +459,15 @@ Use this ONLY for new and important information that a Life Coach should remembe
 
 SMART FILE GENERATION ENGINE:
 
-When a user asks you to "create", "generate", or "build" an Excel, Word, or PowerPoint file:
-1. Provide the content preview in your response.
-2. At the end of your response, output a JSON block with the language \`json-action\`.
-
-EXCEL:
+When a user asks you to "create", "generate", or "build" an EXCEL:
 \`\`\`json-action
 {
   "type": "excel",
   "filename": "Dosya.xlsx",
-  "data": [["Başlık1", "Başlık2"], ["Veri1", "Veri2"]]
+  "data": {
+    "columns": ["Sıra", "İsim", "Not"],
+    "rows": [["1", "Ahmet", "90"], ["2", "Ayşe", "95"]]
+  }
 }
 \`\`\`
 
@@ -438,18 +476,35 @@ WORD:
 {
   "type": "word",
   "filename": "Belge.docx",
-  "content": "Belge metni..."
+  "content": [
+    {"type": "heading", "text": "Proje Planı", "level": 0},
+    {"type": "paragraph", "text": "Bu proje LifeCoach AI tarafından hazırlandı."},
+    {"type": "heading", "text": "Adım 1", "level": 1},
+    {"type": "paragraph", "text": "İlk yapılması gereken..."}
+  ]
 }
 \`\`\`
 
-POWERPOINT:
+POWERPOINT (CANVA-STİLİ GÖRSEL DESTEKLİ):
 \`\`\`json-action
 {
   "type": "ppt",
   "filename": "Sunum.pptx",
-  "slides": [{"title": "Slayt 1", "content": ["Nokta 1"]}]
+  "slides": [
+    {
+      "title": "Gelecek Vizyonu", 
+      "content": ["Yapay zeka devrimi", "İnsan-makine işbirliği"],
+      "image_prompt": "Futuristic city with AI robots and humans coexist, 8k, cinematic lighting"
+    },
+    {
+      "title": "Verimlilik",
+      "content": ["Zaman yönetimi", "Otomasyon avantajları"],
+      "image_prompt": "Beautiful zen office with sunlight, minimal design, productivity theme"
+    }
+  ]
 }
 \`\`\`
+Not: PowerPoint slaytlarına 'image_prompt' eklerseniz, sistem her slayt için yapay zeka ile profesyonel görseller oluşturup slayta otomatik yerleştirecektir.
 
 ---
 
@@ -684,7 +739,22 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
                 }
             }
             // Sadece block olan kısmı sil, gizli kalsın
-            finalAiResponse = aiResponse.replace(/```json-memory\n[\s\S]*?\n```/g, '').trim();
+            finalAiResponse = finalAiResponse.replace(/```json-memory\n[\s\S]*?\n```/g, '').trim();
+        }
+
+        // Action (json-action) bloklarını işle
+        let actionData = null;
+        if (aiResponse.includes('```json-action')) {
+            const actionMatch = aiResponse.match(/```json-action\n([\s\S]*?)\n```/);
+            if (actionMatch && actionMatch[1]) {
+                try {
+                    actionData = JSON.parse(actionMatch[1]);
+                } catch (e) {
+                    console.error("Action parse error:", e);
+                }
+            }
+            // Block olan kısmı sil, frontend'de trigger olarak ele alacağız
+            finalAiResponse = finalAiResponse.replace(/```json-action\n[\s\S]*?\n```/g, '').trim();
         }
 
         // Oturum açmış kullanıcılar için sohbeti kaydet
@@ -718,7 +788,8 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
             // Eğer yeni bir oturum oluşturulduysa, ID'sini ön yüze gönder
             sessionId: newSessionId,
             model: usedModel, // Çalışan modelin adını gönder
-            trigger: triggerData // Tetikleyici verisini gönder
+            trigger: triggerData, // Tetikleyici verisini gönder
+            action: actionData // Dosya aksiyon verisini gönder
         });
 
     } catch (error) {
@@ -1518,9 +1589,22 @@ app.post('/api/goals/briefing', authenticateToken, async (req, res) => {
         const { title, description } = req.body;
         if (!title || !description) return res.status(400).json({ error: 'Title and description required' });
 
-        const prompt = `Goal: ${title}\nDescription: ${description}\n\nTask: Based on this goal, generate a single, short, and motivating action sentence (max 10 words) starting with "Bugün şunu yapmalısın: ". It should be in Turkish.`;
+        const prompt = `Hedef: ${title}
+Açıklama: ${description}
+
+Görev: Bu hedefe ulaşmak için bugün neler yapılabileceğini detaylandırın. 
+Lütfen şunları içer:
+1. Bugün çalışılması gereken ana konu (Örn: PHP Temelleri - Değişkenler).
+2. Bu konunun kısa açıklaması.
+3. Bir kod örneği (Eğer hedefe uygunsa, Markdown formatında).
+4. Bu kod örneğinin açıklaması.
+5. "Bugün tamamlama süren dolana kadar şunları başar" gibi bir motivasyon cümlesi.
+
+Yanıt dili Türkçe olmalı. Yanıt Markdown formatında olabilir.`;
         
-        const result = await generateAIResponse(prompt, [{ role: 'system', content: 'You are a goal coaching assistant.' }]);
+        const result = await generateAIResponse(prompt, [
+            { role: 'system', content: 'Sen profesyonel ve teknik bir yaşam koçusun. Kullanıcıya hedefleri doğrultusunda adım adım, teknik detaylar ve kod örnekleri içeren günlük rehberlik sağlarsın.' }
+        ]);
         res.json({ briefing: result.trim() });
     } catch (error) {
         res.status(500).json({ error: 'Briefing generation failed' });
@@ -1681,6 +1765,331 @@ app.get('/api/badge-status', authenticateToken, async (req, res) => {
         res.json({ streak, stars, totalDays: userHistory.length });
     } catch (error) {
         res.status(500).json({ error: error.message });
+    }
+});
+
+// --- PREMIUM FILE EXPORT (Python Driven) ---
+app.post('/api/export-plus', authenticateToken, async (req, res) => {
+    try {
+        const payload = req.body;
+        const pyPath = path.join(process.cwd(), 'venv/bin/python3');
+        const scriptPath = path.join(process.cwd(), 'api/py_generator.py');
+        
+        const pythonProcess = spawn(pyPath, [scriptPath]);
+        
+        pythonProcess.stdin.write(JSON.stringify(payload));
+        pythonProcess.stdin.end();
+
+        let output = '';
+        let errorOutput = '';
+
+        pythonProcess.stdout.on('data', (data) => { output += data.toString(); });
+        pythonProcess.stderr.on('data', (data) => { errorOutput += data.toString(); });
+
+        pythonProcess.on('close', (code) => {
+            if (code !== 0) {
+                console.error("Python error:", errorOutput);
+                return res.status(500).json({ error: 'Python Execution Failed', details: errorOutput });
+            }
+            
+            try {
+                const result = JSON.parse(output);
+                if (result.error) return res.status(500).json({ error: result.error });
+                
+                const filePath = result.path;
+                if (!fs.existsSync(filePath)) {
+                    return res.status(404).json({ error: 'Generated file not found' });
+                }
+
+                res.download(filePath, payload.filename || 'export.file', (err) => {
+                    if (err) console.error("Download error:", err);
+                    // Temizlik
+                    try { if (fs.existsSync(filePath)) fs.unlinkSync(filePath); } catch (e) {}
+                });
+            } catch (pErr) {
+                console.error("Parse Error:", pErr, output);
+                res.status(500).json({ error: 'Output parsing error' });
+            }
+        });
+    } catch (error) {
+        console.error("Export Plus Main Error:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// --- DEEP SEARCH API (Python Driven) ---
+app.post('/api/deep-search', authenticateToken, async (req, res) => {
+    try {
+        const { query } = req.body;
+        if (!query) return res.status(400).json({ error: 'Query required' });
+
+        const pyPath = path.join(process.cwd(), 'venv/bin/python3');
+        const scriptPath = path.join(process.cwd(), 'api/py_generator.py');
+        
+        const pythonProcess = spawn(pyPath, [scriptPath]);
+        pythonProcess.stdin.write(JSON.stringify({ mode: 'search', query }));
+        pythonProcess.stdin.end();
+
+        let output = '';
+        pythonProcess.stdout.on('data', (data) => { output += data.toString(); });
+        pythonProcess.on('close', (code) => {
+            if (code !== 0) return res.status(500).json({ error: 'Search failed' });
+            try {
+                const result = JSON.parse(output);
+                res.json(result);
+            } catch (e) { res.status(500).json({ error: 'Parse error' }); }
+        });
+    } catch (error) { res.status(500).json({ error: error.message }); }
+});
+
+// --- EQ DASHBOARD API (Emotional Intelligence Analysis) ---
+app.get('/api/eq-dashboard', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const userEmail = req.user.email;
+        
+        // Get all user data for analysis
+        const allReflections = await getKVData('reflections') || {};
+        const userReflections = allReflections[userId] || [];
+        
+        const allFocus = await getKVData('focus') || {};
+        const userFocus = allFocus[userId] || [];
+        
+        const allHabits = await getKVData('habits') || {};
+        const userHabits = allHabits[userId] || [];
+        
+        // Calculate mood trends from reflections
+        const moodScores = { 'terrible': 20, 'bad': 40, 'neutral': 60, 'good': 80, 'excellent': 100 };
+        const moodHistory = userReflections.map(r => ({
+            date: r.date,
+            score: moodScores[r.mood] || 60,
+            mood: r.mood,
+            content: r.content
+        })).sort((a, b) => new Date(a.date) - new Date(b.date));
+        
+        // Calculate stress indicators
+        const stressIndicators = {
+            negativeWords: ['stressed', 'anxious', 'worried', 'overwhelmed', 'tired', 'exhausted', 'frustrated', 'upset', 'angry', 'sad'],
+            positiveWords: ['happy', 'excited', 'grateful', 'peaceful', 'calm', 'energized', 'motivated', 'confident', 'joyful', 'content']
+        };
+        
+        let stressScore = 50; // base
+        let positivityScore = 50; // base
+        
+        userReflections.forEach(r => {
+            const content = (r.content || '').toLowerCase();
+            stressIndicators.negativeWords.forEach(word => {
+                if (content.includes(word)) stressScore += 5;
+            });
+            stressIndicators.positiveWords.forEach(word => {
+                if (content.includes(word)) positivityScore += 5;
+            });
+        });
+        
+        stressScore = Math.min(100, stressScore);
+        positivityScore = Math.min(100, positivityScore);
+        
+        // Calculate productivity metrics
+        const totalFocusMinutes = userFocus.reduce((sum, s) => sum + (s.duration || 0), 0);
+        const completedSessions = userFocus.filter(s => s.status === 'completed').length;
+        const habitCompletionRate = userHabits.length > 0 
+            ? Math.round((userHabits.reduce((acc, h) => acc + (h.completions?.length || 0), 0) / (userHabits.length * 30)) * 100)
+            : 0;
+        
+        // Weekly and monthly summaries
+        const now = new Date();
+        const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        
+        const weeklyData = moodHistory.filter(m => new Date(m.date) >= oneWeekAgo);
+        const monthlyData = moodHistory.filter(m => new Date(m.date) >= oneMonthAgo);
+        
+        const weeklyAvg = weeklyData.length > 0 
+            ? Math.round(weeklyData.reduce((sum, m) => sum + m.score, 0) / weeklyData.length)
+            : 60;
+        const monthlyAvg = monthlyData.length > 0 
+            ? Math.round(monthlyData.reduce((sum, m) => sum + m.score, 0) / monthlyData.length)
+            : 60;
+        
+        // EQ Score calculation (0-100)
+        const eqScore = Math.round(
+            (weeklyAvg * 0.3) + 
+            ((100 - stressScore) * 0.25) + 
+            (positivityScore * 0.25) + 
+            (Math.min(100, habitCompletionRate * 2) * 0.2)
+        );
+        
+        // Generate insights
+        const insights = [];
+        if (stressScore > 70) {
+            insights.push({ type: 'warning', message: 'Stres seviyeniz yüksek görünüyor. Rahatlama egzersizleri yapmayı deneyin.' });
+        }
+        if (weeklyAvg < monthlyAvg - 10) {
+            insights.push({ type: 'info', message: 'Bu hafta ruh haliniz geçen aya göre daha düşük. Bir şeyler mi rahatsız ediyor?' });
+        }
+        if (habitCompletionRate > 80) {
+            insights.push({ type: 'success', message: 'Harika! Alışkanlıklarınıza sadık kalıyorsunuz.' });
+        }
+        if (totalFocusMinutes > 300) {
+            insights.push({ type: 'success', message: 'Odaklanma seanslarınız verimli görünüyor!' });
+        }
+        
+        res.json({
+            eqScore,
+            moodHistory: moodHistory.slice(-30), // Last 30 days
+            stressScore,
+            positivityScore,
+            weeklyAvg,
+            monthlyAvg,
+            totalFocusMinutes,
+            completedSessions,
+            habitCompletionRate,
+            insights,
+            totalReflections: userReflections.length,
+            generatedAt: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error('EQ Dashboard error:', error);
+        res.status(500).json({ error: 'EQ analizi oluşturulurken hata oluştu' });
+    }
+});
+
+// --- EQ DASHBOARD EXPORT (Generate PDF/Word Report) ---
+app.post('/api/eq-dashboard/export', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { format = 'word' } = req.body;
+        
+        // Get EQ data
+        const allReflections = await getKVData('reflections') || {};
+        const userReflections = allReflections[userId] || [];
+        const allFocus = await getKVData('focus') || {};
+        const userFocus = allFocus[userId] || [];
+        const allHabits = await getKVData('habits') || {};
+        const userHabits = allHabits[userId] || [];
+        
+        // Calculate metrics (same as GET endpoint)
+        const moodScores = { 'terrible': 20, 'bad': 40, 'neutral': 60, 'good': 80, 'excellent': 100 };
+        const moodHistory = userReflections.map(r => ({
+            date: r.date,
+            score: moodScores[r.mood] || 60
+        })).sort((a, b) => new Date(a.date) - new Date(b.date));
+        
+        let stressScore = 50;
+        let positivityScore = 50;
+        const stressIndicators = {
+            negativeWords: ['stressed', 'anxious', 'worried', 'overwhelmed', 'tired', 'exhausted'],
+            positiveWords: ['happy', 'excited', 'grateful', 'peaceful', 'calm', 'energized']
+        };
+        
+        userReflections.forEach(r => {
+            const content = (r.content || '').toLowerCase();
+            stressIndicators.negativeWords.forEach(word => {
+                if (content.includes(word)) stressScore += 5;
+            });
+            stressIndicators.positiveWords.forEach(word => {
+                if (content.includes(word)) positivityScore += 5;
+            });
+        });
+        
+        const totalFocusMinutes = userFocus.reduce((sum, s) => sum + (s.duration || 0), 0);
+        const habitCompletionRate = userHabits.length > 0 
+            ? Math.round((userHabits.reduce((acc, h) => acc + (h.completions?.length || 0), 0) / (userHabits.length * 30)) * 100)
+            : 0;
+        
+        const now = new Date();
+        const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        const weeklyData = moodHistory.filter(m => new Date(m.date) >= oneWeekAgo);
+        const weeklyAvg = weeklyData.length > 0 
+            ? Math.round(weeklyData.reduce((sum, m) => sum + m.score, 0) / weeklyData.length)
+            : 60;
+        
+        const eqScore = Math.round(
+            (weeklyAvg * 0.3) + 
+            ((100 - Math.min(100, stressScore)) * 0.25) + 
+            (Math.min(100, positivityScore) * 0.25) + 
+            (Math.min(100, habitCompletionRate * 2) * 0.2)
+        );
+        
+        // Prepare content for export
+        const reportContent = [
+            { type: "heading", text: "Duygusal Zeka (EQ) Analiz Raporu", level: 0 },
+            { type: "paragraph", text: `Rapor Tarihi: ${new Date().toLocaleDateString('tr-TR')}` },
+            { type: "paragraph", text: `` },
+            { type: "heading", text: "Genel EQ Puanı", level: 1 },
+            { type: "paragraph", text: `Sizin EQ Puanınız: ${eqScore}/100` },
+            { type: "paragraph", text: eqScore >= 80 ? 'Mükemmel! Duygusal zekanız çok yüksek seviyede.' : 
+                eqScore >= 60 ? 'İyi gidiyorsunuz. Duygusal farkındalığınız gelişmekte.' : 
+                'Gelişim alanları mevcut. Kendinizi tanımaya devam edin.' },
+            { type: "heading", text: "Haftalık Ruh Hali Özeti", level: 1 },
+            { type: "paragraph", text: `Haftalık Ortalama: ${weeklyAvg}/100` },
+            { type: "heading", text: "Stres ve Pozitivite Analizi", level: 1 },
+            { type: "paragraph", text: `Stres Seviyesi: ${Math.min(100, stressScore)}/100` },
+            { type: "paragraph", text: `Pozitivite Seviyesi: ${Math.min(100, positivityScore)}/100` },
+            { type: "heading", text: "Üretkenlik Metrikleri", level: 1 },
+            { type: "paragraph", text: `Toplam Odaklanma Süresi: ${totalFocusMinutes} dakika` },
+            { type: "paragraph", text: `Alışkanlık Tamamlama Oranı: %${habitCompletionRate}` },
+            { type: "heading", text: "Tavsiyeler", level: 1 }
+        ];
+        
+        if (stressScore > 70) {
+            reportContent.push({ type: "paragraph", text: "• Stres seviyeniz yüksek. Günlük meditasyon ve nefes egzersizleri yapmayı deneyin." });
+        }
+        if (habitCompletionRate < 50) {
+            reportContent.push({ type: "paragraph", text: "• Alışkanlıklarınızı güçlendirmek için küçük adımlarla başlayın." });
+        }
+        if (totalFocusMinutes < 100) {
+            reportContent.push({ type: "paragraph", text: "• Odaklanma seanslarınızı artırmayı hedefleyin. Pomodoro tekniği deneyebilirsiniz." });
+        }
+        reportContent.push({ type: "paragraph", text: "• Düzenli günlük tutmaya devam edin. Bu farkındalığınızı artırır." });
+        
+        // Call Python generator for Word export with EQ chart
+        const pyPath = path.join(process.cwd(), 'venv/bin/python3');
+        const scriptPath = path.join(process.cwd(), 'api/py_generator.py');
+        
+        const pythonProcess = spawn(pyPath, [scriptPath]);
+        pythonProcess.stdin.write(JSON.stringify({
+            mode: 'export',
+            type: 'word',
+            filename: `EQ_Rapor_${new Date().toISOString().split('T')[0]}.docx`,
+            content: reportContent,
+            eq_data: moodHistory.slice(-14) // Last 14 days for chart
+        }));
+        pythonProcess.stdin.end();
+
+        let output = '';
+        let errorOutput = '';
+
+        pythonProcess.stdout.on('data', (data) => { output += data.toString(); });
+        pythonProcess.stderr.on('data', (data) => { errorOutput += data.toString(); });
+
+        pythonProcess.on('close', (code) => {
+            if (code !== 0) {
+                console.error("Python error:", errorOutput);
+                return res.status(500).json({ error: 'Report generation failed', details: errorOutput });
+            }
+            
+            try {
+                const result = JSON.parse(output);
+                if (result.error) return res.status(500).json({ error: result.error });
+                
+                const filePath = result.path;
+                if (!fs.existsSync(filePath)) {
+                    return res.status(404).json({ error: 'Generated file not found' });
+                }
+
+                res.download(filePath, `EQ_Rapor_${new Date().toISOString().split('T')[0]}.docx`, (err) => {
+                    if (err) console.error("Download error:", err);
+                    try { if (fs.existsSync(filePath)) fs.unlinkSync(filePath); } catch (e) {}
+                });
+            } catch (pErr) {
+                console.error("Parse Error:", pErr, output);
+                res.status(500).json({ error: 'Output parsing error' });
+            }
+        });
+    } catch (error) {
+        console.error('EQ Export error:', error);
+        res.status(500).json({ error: 'Rapor oluşturulurken hata oluştu' });
     }
 });
 
