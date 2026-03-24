@@ -13,7 +13,7 @@ export const authOptions = {
     }),
     GithubProvider({
       clientId: process.env.NEXT_PUBLIC_GITHUB_ID,
-      clientSecret: process.env.NEXT_PUBLIC_GITHUB_SECRET,
+      clientSecret: process.env.GITHUB_SECRET,
     }),
   ],
   pages: {

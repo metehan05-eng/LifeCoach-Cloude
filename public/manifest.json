@@ -1,25 +1,94 @@
 {
-  "name": "LifeCoach AI",
-  "short_name": "LifeCoach",
-  "description": "Kişisel gelişim için yapay zeka destekli koçluk uygulaması",
-  "start_url": "/",
+  "id": "/",
+  "name": "LifeCoach AI - Kişisel Gelişim Koçunuz",
+  "short_name": "LifeCoach AI",
+  "description": "Yapay zeka destekli kişisel gelişim, hedef takibi ve yaşam koçluğu uygulaması",
+  "start_url": "/?utm_source=pwa",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
   "background_color": "#030712",
   "theme_color": "#0F766E",
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  },
   "orientation": "portrait-primary",
+  "scope": "/",
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/lifecoach-favicon.svg",
-      "sizes": "192x192",
-      "type": "image/svg+xml"
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     },
     {
-      "src": "/lifecoach-logo-splash.svg",
+      "src": "/lifecoach-logo-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/lifecoach-logo-512.png",
       "sizes": "512x512",
-      "type": "image/svg+xml"
+      "type": "image/png",
+      "purpose": "any"
     }
   ],
-  "categories": ["lifestyle", "productivity", "education"],
+  "screenshots": [
+    {
+      "src": "/screenshot-desktop.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "LifeCoach AI Desktop - Ana Panel"
+    },
+    {
+      "src": "/screenshot-mobile.png",
+      "sizes": "375x667",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "LifeCoach AI Mobile - Hedefler"
+    }
+  ],
+  "categories": ["lifestyle", "productivity", "education", "health"],
   "lang": "tr",
-  "dir": "ltr"
+  "dir": "ltr",
+  "shortcuts": [
+    {
+      "name": "AI Sohbet",
+      "short_name": "Sohbet",
+      "description": "AI asistanınızla konuşun",
+      "url": "/?section=chat",
+      "icons": [
+        {
+          "src": "/shortcut-chat.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Hedefler",
+      "short_name": "Hedefler",
+      "description": "Hedeflerinizi yönetin",
+      "url": "/?section=goals",
+      "icons": [
+        {
+          "src": "/shortcut-goals.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "AI Arena",
+      "short_name": "Arena",
+      "description": "XP kazanın ve yarışın",
+      "url": "/?section=arena",
+      "icons": [
+        {
+          "src": "/shortcut-arena.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ]
 }
