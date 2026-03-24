@@ -2,6 +2,7 @@ import express from 'express';
 import path from 'path';
 import cors from 'cors';
 import crypto from 'crypto';
+import { createClient } from '@supabase/supabase-js';
 import { fileURLToPath } from 'url';
 import { getKVData, setKVData } from '../lib/db.js';
 import jwt from 'jsonwebtoken';
@@ -28,6 +29,13 @@ app.use(express.json({ limit: '50mb' }));
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY; // OpenRouter Desteği
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "GOOGLE_CLIENT_ID_BURAYA";
+const JWT_SECRET = process.env.JWT_SECRET || 'gizli-anahtar-degistir';
+
+// Supabase Client
+const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 let genAI;
 if (GEMINI_API_KEY) {
@@ -38,7 +46,6 @@ if (!GEMINI_API_KEY && !OPENROUTER_API_KEY) {
     console.warn("UYARI: Hiçbir AI API Anahtarı (Gemini veya OpenRouter) ayarlanmamış. Sohbet çalışmayabilir.");
 }
 
-const JWT_SECRET = process.env.JWT_SECRET || 'gizli-anahtar-degistir';
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 // Rate Limit Config
@@ -1840,6 +1847,280 @@ app.post('/api/deep-search', authenticateToken, async (req, res) => {
             } catch (e) { res.status(500).json({ error: 'Parse error' }); }
         });
     } catch (error) { res.status(500).json({ error: error.message }); }
+});
+
+// --- AI ARENA API (Supabase Integration) ---
+
+// Get user XP and level from database
+app.get('/api/arena/user-stats', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        
+        // Get user stats from Supabase
+        const { data: userStats, error } = await supabase
+            .from('user_stats')
+            .select('*')
+            .eq('user_id', userId)
+            .single();
+            
+        if (error && error.code !== 'PGRST116') { // Not found error
+            console.error('Supabase error:', error);
+            return res.status(500).json({ error: 'Veritabanı hatası' });
+        }
+        
+        // If no stats exist, create default stats
+        if (!userStats) {
+            const defaultStats = {
+                user_id: userId,
+                total_xp: 0,
+                level: 1,
+                arena_wins: 0,
+                arena_losses: 0,
+                streak: 0,
+                last_activity: new Date().toISOString()
+            };
+            
+            const { data: newStats, error: insertError } = await supabase
+                .from('user_stats')
+                .insert(defaultStats)
+                .select()
+                .single();
+                
+            if (insertError) {
+                console.error('Insert error:', insertError);
+                return res.status(500).json({ error: 'İstatistikler oluşturulamadı' });
+            }
+            
+            return res.json(newStats);
+        }
+        
+        res.json(userStats);
+    } catch (error) {
+        console.error('Arena stats error:', error);
+        res.status(500).json({ error: 'İstatistikler alınamadı' });
+    }
+});
+
+// Update user XP and level
+app.post('/api/arena/update-xp', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { xpGained, reason } = req.body;
+        
+        if (!xpGained || xpGained <= 0) {
+            return res.status(400).json({ error: 'Geçersiz XP miktarı' });
+        }
+        
+        // Get current stats
+        const { data: currentStats, error: fetchError } = await supabase
+            .from('user_stats')
+            .select('*')
+            .eq('user_id', userId)
+            .single();
+            
+        if (fetchError) {
+            console.error('Fetch error:', fetchError);
+            return res.status(500).json({ error: 'Mevcut istatistikler alınamadı' });
+        }
+        
+        // Calculate new level based on XP
+        const newTotalXp = currentStats.total_xp + xpGained;
+        const newLevel = Math.floor(newTotalXp / 100) + 1; // Her 100 XP'de 1 level
+        
+        // Update stats
+        const { data: updatedStats, error: updateError } = await supabase
+            .from('user_stats')
+            .update({
+                total_xp: newTotalXp,
+                level: newLevel,
+                last_activity: new Date().toISOString()
+            })
+            .eq('user_id', userId)
+            .select()
+            .single();
+            
+        if (updateError) {
+            console.error('Update error:', updateError);
+            return res.status(500).json({ error: 'XP güncellenemedi' });
+        }
+        
+        // Log XP history
+        const { error: historyError } = await supabase
+            .from('xp_history')
+            .insert({
+                user_id: userId,
+                xp_amount: xpGained,
+                reason: reason || 'XP Kazanımı',
+                created_at: new Date().toISOString()
+            });
+            
+        if (historyError) {
+            console.error('History error:', historyError);
+            // Continue even if history fails
+        }
+        
+        res.json({
+            success: true,
+            updatedStats,
+            xpGained,
+            levelUp: newLevel > currentStats.level
+        });
+    } catch (error) {
+        console.error('XP update error:', error);
+        res.status(500).json({ error: 'XP güncellenirken hata oluştu' });
+    }
+});
+
+// Get arena leaderboard based on user level
+app.get('/api/arena/leaderboard', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const userLevel = req.query.level || 1;
+        
+        // Get user's current level for filtering
+        const { data: currentUser, error: userError } = await supabase
+            .from('user_stats')
+            .select('level')
+            .eq('user_id', userId)
+            .single();
+            
+        if (userError || !currentUser) {
+            return res.status(500).json({ error: 'Kullanıcı seviyesi alınamadı' });
+        }
+        
+        // Get leaderboard with level-based filtering
+        const levelRange = 5; // Show users within 5 levels
+        const minLevel = Math.max(1, currentUser.level - levelRange);
+        const maxLevel = currentUser.level + levelRange;
+        
+        const { data: leaderboard, error } = await supabase
+            .from('user_stats')
+            .select('user_id, total_xp, level, arena_wins, arena_losses')
+            .gte('level', minLevel)
+            .lte('level', maxLevel)
+            .order('total_xp', { ascending: false })
+            .limit(50);
+            
+        if (error) {
+            console.error('Leaderboard error:', error);
+            return res.status(500).json({ error: 'Liderlik tablosu alınamadı' });
+        }
+        
+        // Get user emails for display
+        const userIds = leaderboard.map(entry => entry.user_id);
+        const { data: users, error: usersError } = await supabase
+            .from('users')
+            .select('id, email')
+            .in('id', userIds);
+            
+        if (usersError) {
+            console.error('Users error:', usersError);
+            // Continue without user names
+        }
+        
+        // Combine data
+        const leaderboardWithNames = leaderboard.map((entry, index) => {
+            const user = users?.find(u => u.id === entry.user_id);
+            const isCurrentUser = entry.user_id === userId;
+            
+            return {
+                rank: index + 1,
+                userId: entry.user_id,
+                name: isCurrentUser ? 'Sen' : (user?.email?.split('@')[0] || 'Bilinmeyen'),
+                xp: entry.total_xp,
+                level: entry.level,
+                wins: entry.arena_wins || 0,
+                losses: entry.arena_losses || 0,
+                winRate: entry.arena_wins > 0 ? 
+                    Math.round((entry.arena_wins / (entry.arena_wins + entry.arena_losses)) * 100) : 0,
+                me: isCurrentUser
+            };
+        });
+        
+        res.json(leaderboardWithNames);
+    } catch (error) {
+        console.error('Leaderboard error:', error);
+        res.status(500).json({ error: 'Liderlik tablosu yüklenemedi' });
+    }
+});
+
+// Get arena challenges based on user level
+app.get('/api/arena/challenges', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        
+        // Get user level
+        const { data: userStats, error: userError } = await supabase
+            .from('user_stats')
+            .select('level')
+            .eq('user_id', userId)
+            .single();
+            
+        if (userError || !userStats) {
+            return res.status(500).json({ error: 'Kullanıcı seviyesi alınamadı' });
+        }
+        
+        // Generate challenges based on level
+        const baseChallenges = [
+            {
+                id: 1,
+                title: "AI Sohbet Ustası",
+                description: "AI ile 10 mesajlaş",
+                xp_reward: 50,
+                difficulty: "Kolay",
+                icon: "fa-comments",
+                requirement: 10,
+                category: "chat"
+            },
+            {
+                id: 2,
+                title: "Duygu Dedektifi",
+                description: "5 gün üst üste duygu kaydet",
+                xp_reward: 100,
+                difficulty: "Orta",
+                icon: "fa-heart",
+                requirement: 5,
+                category: "mood"
+            },
+            {
+                id: 3,
+                title: "Alışkanlık Kahramanı",
+                description: "7 gün üst üste alışkanlık tamamla",
+                xp_reward: 150,
+                difficulty: "Zor",
+                icon: "fa-fire",
+                requirement: 7,
+                category: "habits"
+            },
+            {
+                id: 4,
+                title: "Hedef Avcısı",
+                description: "3 hedef tamamla",
+                xp_reward: 200,
+                difficulty: "Orta",
+                icon: "fa-bullseye",
+                requirement: 3,
+                category: "goals"
+            }
+        ];
+        
+        // Scale challenges based on user level
+        const levelMultiplier = Math.max(1, Math.floor(userStats.level / 5));
+        const scaledChallenges = baseChallenges.map(challenge => ({
+            ...challenge,
+            requirement: challenge.requirement * (levelMultiplier > 1 ? levelMultiplier : 1),
+            xp_reward: challenge.xp_reward * (1 + (userStats.level * 0.1))
+        }));
+        
+        res.json({
+            user_level: userStats.level,
+            challenges: scaledChallenges,
+            level_multiplier: levelMultiplier
+        });
+    } catch (error) {
+        console.error('Challenges error:', error);
+        res.status(500).json({ error: 'Meydan okumalar yüklenemedi' });
+    }
 });
 
 // --- EQ DASHBOARD API (Emotional Intelligence Analysis) ---
