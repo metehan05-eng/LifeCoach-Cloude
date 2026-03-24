@@ -179,6 +179,18 @@ KURALLAR:
 - Kullanıcının geçmiş hedeflerini hatırlatarak ona sorumluluklarını hatırlatın. 
 - Onu eyleme geçmeye zorlayın.
 - Cevabınızın sonuna şu bloğu ekleyin: \`\`\`json-trigger {"type": "tough_love_active"} \`\`\``;
+        } else if (mode === 'focus_sprint') {
+            modeInjection = `\n\n--- FOCUS SPRINT MODU AKTİF ---\nKullanıcı kısa, yüksek etkili bir odak seansı istiyor.
+- Yanıtını 3 bölümde ver: (1) 25 dakikalık mini plan, (2) dikkat dağıtıcıları engelleme, (3) seans sonrası hızlı ödül.
+- Somut ve eyleme geçirilebilir ol.
+- Cevabın sonunda "Sprint başlasın!" gibi motive edici bir kapanış yap.
+- Cevabınızın sonuna şu bloğu ekleyin: \`\`\`json-trigger {"type": "focus_sprint_active"} \`\`\``;
+        } else if (mode === 'creative_boost') {
+            modeInjection = `\n\n--- CREATIVE BOOST MODU AKTİF ---\nKullanıcı yaratıcı düşünme ve keyifli üretim akışına geçmek istiyor.
+- Kısa bir yaratıcı ısınma (30-90 sn) öner.
+- En az 3 yaratıcı fikir alternatifi üret.
+- Oyunlaştırılmış, enerjik ama net bir ton kullan.
+- Cevabınızın sonuna şu bloğu ekleyin: \`\`\`json-trigger {"type": "creative_boost_active"} \`\`\``;
         }
 
         if (req.user && req.user.email) {

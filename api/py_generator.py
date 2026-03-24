@@ -7,7 +7,8 @@ from pptx.util import Inches, Pt
 from pptx.enum.text import PP_ALIGN
 from pptx.dml.color import RGBColor
 from docx import Document
-from docx.shared import Pt as WordPt
+from docx.shared import Pt as WordPt, Inches as WordInches, RGBColor as WordRGBColor
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 import pandas as pd
 from io import BytesIO
 import tempfile
@@ -69,6 +70,133 @@ def generate_word(content, filename):
                         doc.add_picture(img_path, width=Inches(5))
                 else:
                     doc.add_paragraph(section.get("text", ""))
+        output_path = os.path.join("/tmp", filename)
+        doc.save(output_path)
+        return output_path
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+def _existing_file(paths):
+    for p in paths:
+        if p and os.path.exists(p):
+            return p
+    return None
+
+def generate_certificate(data, filename):
+    try:
+        user_name = (data.get("userName") or "Değerli Kullanıcı").strip()
+        goal_title = (data.get("goalTitle") or "Belirlenen hedef").strip()
+        issue_date = (data.get("date") or "").strip()
+        issuer_name = (data.get("issuerName") or "METEHAN HAYDAR ERBAŞ").strip()
+        issuer_title = (data.get("issuerTitle") or "Founder, HAN AI").strip()
+
+        if not issue_date:
+            from datetime import datetime
+            issue_date = datetime.now().strftime("%d.%m.%Y")
+
+        # Signature & logo inputs (optional, fallback friendly)
+        provided_signature = data.get("signaturePath")
+        provided_logo = data.get("logoPath")
+        signature_path = _existing_file([
+            provided_signature,
+            "/home/spectre05/.cursor/projects/home-spectre05-Masa-st-LifeCoach-Cloude/assets/WhatsApp_Image_2026-03-22_at_22.25.40-4e96b3ad-6e64-4581-8977-a98945d0266a.png",
+            os.path.join(os.getcwd(), "public", "han-signature.png"),
+            os.path.join(os.getcwd(), "public", "signature.png"),
+        ])
+        logo_path = _existing_file([
+            provided_logo,
+            os.path.join(os.getcwd(), "public", "lifecoach_logo.png"),
+            os.path.join(os.getcwd(), "public", "lifecoach-logo-splash.png"),
+        ])
+
+        doc = Document()
+        section = doc.sections[0]
+        section.top_margin = WordInches(0.6)
+        section.bottom_margin = WordInches(0.6)
+        section.left_margin = WordInches(0.7)
+        section.right_margin = WordInches(0.7)
+
+        # Top branding area
+        if logo_path:
+            p_logo = doc.add_paragraph()
+            p_logo.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            p_logo.add_run().add_picture(logo_path, width=WordInches(1.2))
+
+        p_brand = doc.add_paragraph("HAN AI | LIFECOACH")
+        p_brand.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        r_brand = p_brand.runs[0]
+        r_brand.bold = True
+        r_brand.font.size = WordPt(13)
+        r_brand.font.color.rgb = WordRGBColor(15, 118, 110)
+
+        p_title = doc.add_paragraph("CERTIFICATE OF ACHIEVEMENT")
+        p_title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        r_title = p_title.runs[0]
+        r_title.bold = True
+        r_title.font.size = WordPt(28)
+        r_title.font.color.rgb = WordRGBColor(17, 24, 39)
+
+        p_sub = doc.add_paragraph("This certificate is proudly presented to")
+        p_sub.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p_sub.runs[0].font.size = WordPt(12)
+
+        p_name = doc.add_paragraph(user_name.upper())
+        p_name.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        r_name = p_name.runs[0]
+        r_name.bold = True
+        r_name.font.size = WordPt(24)
+        r_name.font.color.rgb = WordRGBColor(5, 150, 105)
+
+        p_goal = doc.add_paragraph("for successfully completing the goal below:")
+        p_goal.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p_goal.runs[0].font.size = WordPt(11)
+
+        p_goal_title = doc.add_paragraph(f"\"{goal_title}\"")
+        p_goal_title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        r_goal = p_goal_title.runs[0]
+        r_goal.bold = True
+        r_goal.font.size = WordPt(18)
+        r_goal.font.color.rgb = WordRGBColor(3, 105, 161)
+
+        p_stamp = doc.add_paragraph("HAN AI VERIFIED")
+        p_stamp.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        r_stamp = p_stamp.runs[0]
+        r_stamp.bold = True
+        r_stamp.font.size = WordPt(14)
+        r_stamp.font.color.rgb = WordRGBColor(185, 28, 28)
+
+        doc.add_paragraph("")
+
+        table = doc.add_table(rows=1, cols=2)
+        table.autofit = True
+        left_cell = table.rows[0].cells[0]
+        right_cell = table.rows[0].cells[1]
+
+        p_date_label = left_cell.paragraphs[0]
+        p_date_label.alignment = WD_ALIGN_PARAGRAPH.LEFT
+        run_date_label = p_date_label.add_run("Date\n")
+        run_date_label.bold = True
+        run_date_label.font.size = WordPt(10)
+        run_date = p_date_label.add_run(issue_date)
+        run_date.font.size = WordPt(12)
+
+        p_sign = right_cell.paragraphs[0]
+        p_sign.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+        p_sign.add_run("Authorized by\n").bold = True
+        if signature_path:
+            p_sign.add_run().add_picture(signature_path, width=WordInches(1.8))
+            p_sign.add_run("\n")
+        r_issuer = p_sign.add_run(issuer_name)
+        r_issuer.bold = True
+        r_issuer.font.size = WordPt(11)
+        p_sign.add_run(f"\n{issuer_title}").font.size = WordPt(9)
+
+        footer = doc.add_paragraph("Official digital certificate generated by HAN AI LifeCoach.")
+        footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        footer.runs[0].italic = True
+        footer.runs[0].font.size = WordPt(9)
+        footer.runs[0].font.color.rgb = WordRGBColor(100, 116, 139)
+
         output_path = os.path.join("/tmp", filename)
         doc.save(output_path)
         return output_path
@@ -171,6 +299,8 @@ def main():
             result = generate_word(content, filename)
         elif file_type == "ppt":
             result = generate_ppt(payload.get("slides", []), filename)
+        elif file_type == "certificate":
+            result = generate_certificate(payload.get("data", {}), filename)
         else: result = "Error: Invalid file type"
         
         if result.startswith("Error:"): print(json.dumps({"error": result}))

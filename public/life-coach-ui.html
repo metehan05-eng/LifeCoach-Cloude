@@ -1447,6 +1447,26 @@
             background: rgba(168, 85, 247, 0.2) !important;
         }
 
+        .mode-btn-focus {
+            background: rgba(59, 130, 246, 0.1) !important;
+            border-color: rgba(59, 130, 246, 0.35) !important;
+            color: #93c5fd !important;
+        }
+
+        .mode-btn-focus:hover {
+            background: rgba(59, 130, 246, 0.2) !important;
+        }
+
+        .mode-btn-creative {
+            background: rgba(245, 158, 11, 0.12) !important;
+            border-color: rgba(245, 158, 11, 0.35) !important;
+            color: #fcd34d !important;
+        }
+
+        .mode-btn-creative:hover {
+            background: rgba(245, 158, 11, 0.22) !important;
+        }
+
         .emergency-active-bg {
             background-color: #0c0a09 !important;
             background-image: radial-gradient(circle at center, #1c1917 0%, #0c0a09 100%) !important;
@@ -3874,6 +3894,14 @@
                                         class="input-action-btn mode-btn-tough" title="Yüzleşme Modu">
                                         <i class="fa-solid fa-hand-fist"></i>
                                     </button>
+                                    <button type="button" onclick="startFocusSprintMode()"
+                                        class="input-action-btn mode-btn-focus" title="Focus Sprint Modu">
+                                        <i class="fa-solid fa-bullseye"></i>
+                                    </button>
+                                    <button type="button" onclick="startCreativeBoostMode()"
+                                        class="input-action-btn mode-btn-creative" title="Creative Boost Modu">
+                                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                    </button>
                                 </div>
 
                                 <div class="action-group">
@@ -4515,7 +4543,30 @@
         }
 
         function downloadCertificate() {
-            showToast('Sertifikan yüksek çözünürlükte hazırlanıyor... 📄', 'info');
+            const goalTitle = (document.getElementById('cert-goal-title')?.textContent || 'Başarı Hedefi').trim();
+            const user = JSON.parse(storage.get('user') || '{}');
+            const userName = (user.name || user.email?.split('@')[0] || 'Değerli Kullanıcı').trim();
+            const date = new Date().toLocaleDateString('tr-TR');
+
+            const certificateData = {
+                userName,
+                goalTitle,
+                date,
+                issuerName: 'METEHAN HAYDAR ERBAŞ',
+                issuerTitle: 'Founder, HAN AI',
+                logoPath: '/home/spectre05/Masaüstü/LifeCoach-Cloude/public/lifecoach_logo.png'
+            };
+
+            const safeGoal = goalTitle
+                .replace(/[^a-zA-Z0-9ğüşöçıİĞÜŞÖÇ\s-]/g, '')
+                .replace(/\s+/g, '_')
+                .slice(0, 40) || 'hedef';
+
+            exportToOffice(
+                'certificate',
+                certificateData,
+                `HAN_AI_Sertifika_${safeGoal}.docx`
+            );
         }
 
         /* ===== VOICE COACHING LOGIC ===== */
@@ -5266,7 +5317,11 @@
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement("a");
                 a.href = url;
-                a.download = filename || `LifeCoach_Export.${type === 'excel' ? 'xlsx' : type === 'word' ? 'docx' : 'pptx'}`;
+                a.download = filename || `LifeCoach_Export.${
+                    type === 'excel' ? 'xlsx' :
+                    type === 'word' || type === 'certificate' ? 'docx' :
+                    'pptx'
+                }`;
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
@@ -6187,7 +6242,7 @@
         window.userLanguageCode = navigator.language; // AI'ya tam kodu gönder (en-US, tr-TR gibi)
         window.applyTranslations = applyTranslations;
 
-        let currentMode = null; // 'emergency', 'tough_love'
+        let currentMode = null; // 'emergency', 'tough_love', 'focus_sprint', 'creative_boost'
 
         function startEmergencyMode() {
             currentMode = 'emergency';
@@ -6232,6 +6287,28 @@
             }
         }
 
+        function startFocusSprintMode() {
+            currentMode = 'focus_sprint';
+            showToast('🎯 Focus Sprint Modu Aktif');
+            document.getElementById('dynamic-greeting').innerText = "25 dakikalık odak sprintine hazır mısın?";
+            const input = document.getElementById('user-input');
+            if (input) {
+                input.placeholder = "Sprint hedefini yaz (örn: 20 soru çözeceğim)...";
+                input.focus();
+            }
+        }
+
+        function startCreativeBoostMode() {
+            currentMode = 'creative_boost';
+            showToast('✨ Creative Boost Modu Aktif');
+            document.getElementById('dynamic-greeting').innerText = "Yaratıcı moda geçtik. Bir fikir tohumu ver.";
+            const input = document.getElementById('user-input');
+            if (input) {
+                input.placeholder = "Ne üretmek istiyorsun? (içerik, proje, fikir...)";
+                input.focus();
+            }
+        }
+
         function resetModes() {
             currentMode = null;
             document.body.classList.remove('emergency-active-bg');
@@ -6245,6 +6322,8 @@
 
         window.startEmergencyMode = startEmergencyMode;
         window.startToughLoveMode = startToughLoveMode;
+        window.startFocusSprintMode = startFocusSprintMode;
+        window.startCreativeBoostMode = startCreativeBoostMode;
         window.resetModes = resetModes;
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -6504,6 +6583,14 @@
                             if (data.trigger) {
                                 if (data.trigger.type === 'emergency_active') {
                                     // Zaten aktifse bir şey yapma, değilse UI'ı koru
+                                } else if (data.trigger.type === 'focus_sprint_active') {
+                                    showToast('🎯 Sprint aktif: 25 dakika odak zamanı!');
+                                    try { confetti({ particleCount: 40, spread: 60, origin: { y: 0.8 } }); } catch (e) {}
+                                } else if (data.trigger.type === 'creative_boost_active') {
+                                    showToast('✨ Creative Boost: fikir akışı başladı!');
+                                    try { confetti({ particleCount: 70, spread: 85, origin: { y: 0.78 } }); } catch (e) {}
+                                } else if (data.trigger.type === 'tough_love_active') {
+                                    showToast('👊 Tough Love aktif: odaklan ve uygula!');
                                 }
                             } else {
                                 // Eğer mod aktifse ve AI artık tetikleyici göndermiyorsa (normalleşme)
