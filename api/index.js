@@ -30,12 +30,16 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY; // OpenRouter Desteği
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "GOOGLE_CLIENT_ID_BURAYA";
 const JWT_SECRET = process.env.JWT_SECRET || 'gizli-anahtar-degistir';
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// Supabase Client
-const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+// Supabase Client (optional - use local storage if not configured)
+let supabase = null;
+if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY && !SUPABASE_URL.includes('YOUR_')) {
+    supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+} else {
+    console.log("📁 Supabase yapılandırılmamış - yerel depolama kullanılıyor");
+}
 
 let genAI;
 if (GEMINI_API_KEY) {
@@ -2400,3 +2404,13 @@ app.use((err, req, res, next) => {
 
 // Vercel Serverless Handler
 export default app;
+
+// Local development server (if not on Vercel)
+const isProduction = process.env.VERCEL || process.env.NODE_ENV === 'production';
+if (!isProduction) {
+    const PORT = process.env.PORT || 3004;
+    app.listen(PORT, () => {
+        console.log(`\n✅ API Sunucusu http://localhost:${PORT} adresinde çalışıyor`);
+        console.log(`📁 Yerel Depolama: ./data/\n`);
+    });
+}
