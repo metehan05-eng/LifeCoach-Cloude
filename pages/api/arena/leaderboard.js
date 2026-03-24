@@ -20,32 +20,52 @@ export default async function handler(req, res) {
             currentUserId = 'user_' + token.slice(0, 10);
         }
 
-        // Get all user profiles from KV store
-        // For simplicity, we'll get a predefined list of users
-        const usersData = await getKVData('all_users');
-        const userIds = usersData?.userIds || [currentUserId];
-
-        // Fetch all user profiles and sort by XP
-        const leaderboard = [];
-        
-        for (const userId of userIds) {
-            const profile = await getKVData(`user_profile:${userId}`);
-            if (profile) {
-                leaderboard.push({
-                    user_id: userId,
-                    name: profile.name || `User ${userId.slice(-6)}`,
-                    total_xp: profile.total_xp || 0,
-                    level: profile.level || 1,
-                    current_xp: profile.current_xp || 0,
-                    me: userId === currentUserId
-                });
-            }
+        // Get current user profile first
+        let currentProfile = await getKVData(`user_profile:${currentUserId}`);
+        if (!currentProfile) {
+            currentProfile = {
+                user_id: currentUserId,
+                total_xp: 0,
+                level: 1,
+                current_xp: 0,
+                created_at: new Date().toISOString()
+            };
+            await setKVData(`user_profile:${currentUserId}`, currentProfile);
         }
 
-        // Sort by XP (descending)
-        leaderboard.sort((a, b) => b.total_xp - a.total_xp);
+        // Mock leaderboard with current user and sample users
+        const leaderboard = [
+            {
+                user_id: currentUserId,
+                name: `You`,
+                total_xp: currentProfile.total_xp || 0,
+                level: currentProfile.level || 1,
+                current_xp: currentProfile.current_xp || 0,
+                me: true,
+                rank: 1
+            },
+            {
+                user_id: 'user_2',
+                name: 'Başarılı Koçu',
+                total_xp: 2500,
+                level: 5,
+                current_xp: 250,
+                me: false,
+                rank: 2
+            },
+            {
+                user_id: 'user_3',
+                name: 'Meditasyon Ustası',
+                total_xp: 1800,
+                level: 4,
+                current_xp: 300,
+                me: false,
+                rank: 3
+            }
+        ];
 
-        // Add rank
+        // Sort by XP (descending) and update ranks
+        leaderboard.sort((a, b) => b.total_xp - a.total_xp);
         const leaderboardWithRank = leaderboard.map((entry, index) => ({
             ...entry,
             rank: index + 1
