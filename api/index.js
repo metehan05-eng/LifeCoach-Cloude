@@ -1,9 +1,18 @@
-import express from 'express';
+// ⚠️ MUST BE FIRST - Load environment variables BEFORE any other imports
+import dotenv from 'dotenv';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.join(__dirname, '../.env.local') });
+dotenv.config(); // Also load .env if it exists
+
+// Now import everything else
+import express from 'express';
 import cors from 'cors';
 import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
-import { fileURLToPath } from 'url';
 import { getKVData, setKVData } from '../lib/db.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
@@ -14,10 +23,6 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { OAuth2Client } from 'google-auth-library';
 import { spawn } from 'child_process';
 import fs from 'fs';
-
-// __dirname ES Module çözümü
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const app = express();
 
