@@ -9330,6 +9330,10 @@
             ];
 
             const handleClick = (id) => {
+                if (id === 'chat') {
+                    window.location.href = 'assistant.html';
+                    return;
+                }
                 setActive(id);
                 if (window.showSection) { window.showSection(id); }
             };
