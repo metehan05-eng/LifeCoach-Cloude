@@ -3793,11 +3793,21 @@
                             </div>
 
                             <div class="flex justify-between items-center mt-6">
-                                <div class="text-xs text-amber-500/60 font-medium">Ucu bucağı olmayan yapay zeka
-                                    fırını...</div>
-                                <button onclick="generateWaffle()"
+                                <!-- Media Type Selector -->
+                                <div class="flex gap-2">
+                                    <button type="button" onclick="setWaffleType('image')" id="waffle-type-image" class="waffle-type-btn active px-3 py-2 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-300 text-sm font-medium transition-all">
+                                        <i class="fa-solid fa-image mr-1"></i> Resim
+                                    </button>
+                                    <button type="button" onclick="setWaffleType('video')" id="waffle-type-video" class="waffle-type-btn px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-slate-400 text-sm font-medium hover:bg-white/10 transition-all">
+                                        <i class="fa-solid fa-video mr-1"></i> Video
+                                    </button>
+                                    <button type="button" onclick="setWaffleType('audio')" id="waffle-type-audio" class="waffle-type-btn px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-slate-400 text-sm font-medium hover:bg-white/10 transition-all">
+                                        <i class="fa-solid fa-microphone mr-1"></i> Ses
+                                    </button>
+                                </div>
+                                <button onclick="generateWaffle()" id="waffle-generate-btn"
                                     class="waffle-btn text-white font-bold py-3 px-8 rounded-xl shadow-[0_0_15px_rgba(245,158,11,0.4)] flex items-center gap-3 transform hover:scale-105 transition-all text-lg">
-                                    <i class="fa-solid fa-fire text-amber-200"></i> Görsel Üret (Waffle'la)
+                                    <i class="fa-solid fa-fire text-amber-200"></i> <span id="waffle-btn-text">Görsel Üret (Waffle'la)</span>
                                 </button>
                             </div>
                         </div>
