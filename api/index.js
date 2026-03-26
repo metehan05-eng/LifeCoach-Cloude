@@ -651,10 +651,9 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
         let usedModel;
 
         const orModel = "google/gemini-2.0-pro-exp-02-05:free"; // OpenRouter öncelikli model
-        const primary31 = "gemini-3.1-pro-preview";
-        const pro20 = "gemini-2.0-pro";
-        const pro15 = "gemini-1.5-pro-latest";
-        const flash15 = "gemini-1.5-flash-latest";
+        const gemini15Pro = "gemini-1.5-pro-latest";      // Ana model: Gemini 1.5 Pro
+        const gemini15Flash = "gemini-1.5-flash-latest";    // Yedek: Gemini 1.5 Flash
+        const pro20 = "gemini-2.0-pro";                     // Son çare: Gemini 2.0 Pro
 
         try {
             // 1. Önce OpenRouter dene (Eğer anahtar varsa)
@@ -706,31 +705,32 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
                 throw new Error("OpenRouter Key Yok");
             }
         } catch (orError) {
-            console.warn(`[AI] OpenRouter başarısız veya ayarlanmamış. Gemini'ye geçiliyor... ${orError.message}`);
+            console.warn(`[AI] OpenRouter başarısız veya ayarlanmamış. Gemini 1.5'ye geçiliyor... ${orError.message}`);
 
             try {
-                // Gemini Fallback Logic
-                console.log(`[AI] Gemini Deneniyor: ${primary31}`);
-                const model = genAI.getGenerativeModel({ model: primary31, systemInstruction: finalSystemPrompt });
+                // 1. Gemini 1.5 Pro (Ana model)
+                console.log(`[AI] Gemini Deneniyor: ${gemini15Pro}`);
+                const model = genAI.getGenerativeModel({ model: gemini15Pro, systemInstruction: finalSystemPrompt });
                 const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } });
                 const result = await chat.sendMessage(userMessageParts);
                 aiResponse = result.response.text();
-                usedModel = primary31;
+                usedModel = gemini15Pro;
             } catch (error) {
-                console.warn(`[AI] ${primary31} başarısız. GÜÇLÜ YEDEK: ${pro15}`);
+                console.warn(`[AI] ${gemini15Pro} başarısız. YEDEK: ${gemini15Flash}`);
                 try {
-                    const model = genAI.getGenerativeModel({ model: pro15, systemInstruction: finalSystemPrompt });
-                    const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } });
-                    const result = await chat.sendMessage(userMessageParts);
-                    aiResponse = result.response.text();
-                    usedModel = pro15;
-                } catch (finalError) {
-                    console.warn(`[AI] Son çare: ${flash15}`);
-                    const model = genAI.getGenerativeModel({ model: flash15, systemInstruction: finalSystemPrompt });
+                    // 2. Gemini 1.5 Flash (Hızlı yedek)
+                    const model = genAI.getGenerativeModel({ model: gemini15Flash, systemInstruction: finalSystemPrompt });
                     const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 3000, temperature: 0.7 } });
                     const result = await chat.sendMessage(userMessageParts);
                     aiResponse = result.response.text();
-                    usedModel = flash15;
+                    usedModel = gemini15Flash;
+                } catch (finalError) {
+                    console.warn(`[AI] Son çare: ${pro20}`);
+                    const model = genAI.getGenerativeModel({ model: pro20, systemInstruction: finalSystemPrompt });
+                    const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 3000, temperature: 0.7 } });
+                    const result = await chat.sendMessage(userMessageParts);
+                    aiResponse = result.response.text();
+                    usedModel = pro20;
                 }
             }
         }
@@ -2392,6 +2392,161 @@ app.post('/api/eq-dashboard/export', authenticateToken, async (req, res) => {
     } catch (error) {
         console.error('EQ Export error:', error);
         res.status(500).json({ error: 'Rapor oluşturulurken hata oluştu' });
+    }
+});
+
+// === DOSYA OLUŞTURMA VE ANALİZ ENDPOINTLERİ ===
+
+// Dosya oluşturma (Excel, Word, PowerPoint)
+app.post('/api/generate-file', optionalAuth, async (req, res) => {
+    try {
+        const { type, data, filename } = req.body;
+        
+        if (!type || !filename) {
+            return res.status(400).json({ error: 'Dosya tipi ve isim gerekli' });
+        }
+
+        const pyPath = path.join(process.cwd(), 'venv/bin/python3');
+        const scriptPath = path.join(process.cwd(), 'api/py_generator.py');
+        
+        const pythonProcess = spawn(pyPath, [scriptPath]);
+        
+        const payload = {
+            mode: 'export',
+            type: type,
+            filename: filename,
+            ...data
+        };
+        
+        pythonProcess.stdin.write(JSON.stringify(payload));
+        pythonProcess.stdin.end();
+
+        let output = '';
+        let errorOutput = '';
+
+        pythonProcess.stdout.on('data', (data) => { output += data.toString(); });
+        pythonProcess.stderr.on('data', (data) => { errorOutput += data.toString(); });
+
+        pythonProcess.on('close', (code) => {
+            if (code !== 0) {
+                console.error("Python error:", errorOutput);
+                return res.status(500).json({ error: 'Dosya oluşturma hatası', details: errorOutput });
+            }
+            
+            try {
+                const result = JSON.parse(output);
+                if (result.error) return res.status(500).json({ error: result.error });
+                
+                res.json({ success: true, path: result.path, filename: filename });
+            } catch (pErr) {
+                console.error("Parse Error:", pErr, output);
+                res.status(500).json({ error: 'Output parsing error' });
+            }
+        });
+    } catch (error) {
+        console.error('Generate file error:', error);
+        res.status(500).json({ error: 'Dosya oluşturulurken hata oluştu' });
+    }
+});
+
+// Dosya analizi (Word, Excel, PowerPoint okuma)
+app.post('/api/py_generator', optionalAuth, async (req, res) => {
+    try {
+        // Multipart form data için multer kullanılmalı, ancak şimdilik basit analiz
+        const { action } = req.body;
+        
+        if (action === 'analyze') {
+            // Dosya analizi mantığı buraya eklenecek
+            // Şimdilik basit bir yanıt döndürüyoruz
+            res.json({ success: true, message: 'Dosya analiz edildi' });
+        } else {
+            res.status(400).json({ error: 'Geçersiz action' });
+        }
+    } catch (error) {
+        console.error('File analysis error:', error);
+        res.status(500).json({ error: 'Dosya analizinde hata oluştu' });
+    }
+});
+
+// Dosya indirme
+app.get('/api/download', optionalAuth, async (req, res) => {
+    try {
+        const filePath = req.query.path;
+        
+        if (!filePath) {
+            return res.status(400).json({ error: 'Dosya yolu gerekli' });
+        }
+
+        // Güvenlik kontrolü - sadece /tmp dizinine izin ver
+        if (!filePath.startsWith('/tmp/')) {
+            return res.status(403).json({ error: 'Geçersiz dosya yolu' });
+        }
+
+        if (!fs.existsSync(filePath)) {
+            return res.status(404).json({ error: 'Dosya bulunamadı' });
+        }
+
+        res.download(filePath, (err) => {
+            if (err) {
+                console.error('Download error:', err);
+            }
+            // Dosyayı temizle
+            try { fs.unlinkSync(filePath); } catch (e) {}
+        });
+    } catch (error) {
+        console.error('Download error:', error);
+        res.status(500).json({ error: 'İndirme hatası' });
+    }
+});
+
+// === DEEP SEARCH ENDPOINT ===
+app.post('/api/deep-search', optionalAuth, async (req, res) => {
+    try {
+        const { query, max_results = 5 } = req.body;
+        
+        if (!query) {
+            return res.status(400).json({ error: 'Arama sorgusu gerekli' });
+        }
+
+        const pyPath = path.join(process.cwd(), 'venv/bin/python3');
+        const scriptPath = path.join(process.cwd(), 'api/py_generator.py');
+        
+        const pythonProcess = spawn(pyPath, [scriptPath]);
+        
+        const payload = {
+            mode: 'search',
+            query: query,
+            max_results: max_results
+        };
+        
+        pythonProcess.stdin.write(JSON.stringify(payload));
+        pythonProcess.stdin.end();
+
+        let output = '';
+        let errorOutput = '';
+
+        pythonProcess.stdout.on('data', (data) => { output += data.toString(); });
+        pythonProcess.stderr.on('data', (data) => { errorOutput += data.toString(); });
+
+        pythonProcess.on('close', (code) => {
+            if (code !== 0) {
+                console.error("Python error:", errorOutput);
+                return res.status(500).json({ error: 'Arama hatası', details: errorOutput });
+            }
+            
+            try {
+                const result = JSON.parse(output);
+                if (result.error) return res.status(500).json({ error: result.error });
+                
+                res.json({ success: true, results: result.results || [] });
+            } catch (pErr) {
+                console.error("Parse Error:", pErr, output);
+                res.status(500).json({ error: 'Output parsing error' });
+            }
+        });
+    } catch (error) {
+        console.error('Deep search error:', error);
+        res.status(500).json({ error: 'Arama sırasında hata oluştu' });
     }
 });
 
