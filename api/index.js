@@ -651,9 +651,9 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
         let usedModel;
 
         const orModel = "google/gemini-2.0-pro-exp-02-05:free"; // OpenRouter öncelikli model
-        const gemini15Pro = "gemini-1.5-pro-latest";      // Ana model: Gemini 1.5 Pro
-        const gemini15Flash = "gemini-1.5-flash-latest";    // Yedek: Gemini 1.5 Flash
-        const pro20 = "gemini-2.0-pro";                     // Son çare: Gemini 2.0 Pro
+        const gemini31FlashLite = "gemini-3.1-flash-lite-preview";  // En yeni: Gemini 3.1 Flash Lite Preview
+        const gemini15Pro = "gemini-1.5-pro-latest";                // Yedek: Gemini 1.5 Pro
+        const gemini15Flash = "gemini-1.5-flash-latest";           // Son çare: Gemini 1.5 Flash
 
         try {
             // 1. Önce OpenRouter dene (Eğer anahtar varsa)
@@ -705,32 +705,33 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
                 throw new Error("OpenRouter Key Yok");
             }
         } catch (orError) {
-            console.warn(`[AI] OpenRouter başarısız veya ayarlanmamış. Gemini 1.5'ye geçiliyor... ${orError.message}`);
+            console.warn(`[AI] OpenRouter başarısız veya ayarlanmamış. Gemini 3.1'e geçiliyor... ${orError.message}`);
 
             try {
-                // 1. Gemini 1.5 Pro (Ana model)
-                console.log(`[AI] Gemini Deneniyor: ${gemini15Pro}`);
-                const model = genAI.getGenerativeModel({ model: gemini15Pro, systemInstruction: finalSystemPrompt });
+                // 1. Gemini 3.1 Flash Lite Preview (En yeni)
+                console.log(`[AI] Gemini Deneniyor: ${gemini31FlashLite}`);
+                const model = genAI.getGenerativeModel({ model: gemini31FlashLite, systemInstruction: finalSystemPrompt });
                 const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } });
                 const result = await chat.sendMessage(userMessageParts);
                 aiResponse = result.response.text();
-                usedModel = gemini15Pro;
+                usedModel = gemini31FlashLite;
             } catch (error) {
-                console.warn(`[AI] ${gemini15Pro} başarısız. YEDEK: ${gemini15Flash}`);
+                console.warn(`[AI] ${gemini31FlashLite} başarısız. YEDEK: ${gemini15Pro}`);
                 try {
-                    // 2. Gemini 1.5 Flash (Hızlı yedek)
+                    // 2. Gemini 1.5 Pro (Yedek)
+                    const model = genAI.getGenerativeModel({ model: gemini15Pro, systemInstruction: finalSystemPrompt });
+                    const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } });
+                    const result = await chat.sendMessage(userMessageParts);
+                    aiResponse = result.response.text();
+                    usedModel = gemini15Pro;
+                } catch (finalError) {
+                    console.warn(`[AI] Son çare: ${gemini15Flash}`);
+                    // 3. Gemini 1.5 Flash (Son çare)
                     const model = genAI.getGenerativeModel({ model: gemini15Flash, systemInstruction: finalSystemPrompt });
                     const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 3000, temperature: 0.7 } });
                     const result = await chat.sendMessage(userMessageParts);
                     aiResponse = result.response.text();
                     usedModel = gemini15Flash;
-                } catch (finalError) {
-                    console.warn(`[AI] Son çare: ${pro20}`);
-                    const model = genAI.getGenerativeModel({ model: pro20, systemInstruction: finalSystemPrompt });
-                    const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 3000, temperature: 0.7 } });
-                    const result = await chat.sendMessage(userMessageParts);
-                    aiResponse = result.response.text();
-                    usedModel = pro20;
                 }
             }
         }
@@ -2496,6 +2497,167 @@ app.get('/api/download', optionalAuth, async (req, res) => {
     } catch (error) {
         console.error('Download error:', error);
         res.status(500).json({ error: 'İndirme hatası' });
+    }
+});
+
+// === MEDIA GENERATION ENDPOINTS (Imagen 4.0, Veo 3.1, Gemini Audio) ===
+
+// Unified media generation endpoint
+app.post('/api/generate-media', authenticateToken, async (req, res) => {
+    try {
+        if (!genAI) {
+            return res.status(500).json({ error: 'AI not configured' });
+        }
+
+        const { prompt, type = 'image', aspectRatio = "1:1" } = req.body;
+        if (!prompt) {
+            return res.status(400).json({ error: 'Prompt gerekli' });
+        }
+
+        console.log(`[Media] Generating ${type} for prompt: ${prompt}`);
+
+        // IMAGE GENERATION - Imagen 4.0
+        if (type === 'image') {
+            try {
+                const imageModel = genAI.getGenerativeModel({ model: "imagen-4.0-fast-generate-001" });
+                
+                const result = await imageModel.generateContent({
+                    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+                    generationConfig: {
+                        responseModalities: ['IMAGE'],
+                    },
+                });
+
+                const response = result.response;
+                const imagePart = response.candidates[0].content.parts.find(part => part.inlineData);
+                
+                if (imagePart && imagePart.inlineData) {
+                    return res.json({
+                        success: true,
+                        type: 'image',
+                        imageData: `data:${imagePart.inlineData.mimeType};base64,${imagePart.inlineData.data}`,
+                        model: "imagen-4.0-fast-generate-001"
+                    });
+                } else {
+                    throw new Error('No image data received');
+                }
+            } catch (imagenError) {
+                console.warn('[Media] Imagen 4.0 failed, falling back to Pollinations:', imagenError.message);
+                // Fallback to Pollinations
+                const seed = Math.floor(Math.random() * 1000000);
+                const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt + ", visually stunning, 8k, masterpiece, highly detailed")}?width=1024&height=1024&nologo=true&enhance=true&seed=${seed}`;
+                
+                const imageRes = await fetch(imageUrl);
+                if (!imageRes.ok) throw new Error("Pollinations error");
+                const buffer = await imageRes.arrayBuffer();
+                const base64Image = Buffer.from(buffer).toString('base64');
+
+                return res.json({
+                    success: true,
+                    type: 'image',
+                    imageData: `data:image/jpeg;base64,${base64Image}`,
+                    model: "Pollinations AI (Fallback)",
+                    fallback: true
+                });
+            }
+        }
+
+        // VIDEO GENERATION - Veo 3.1
+        if (type === 'video') {
+            try {
+                const videoModel = genAI.getGenerativeModel({ model: "veo-3.1-fast-generate-preview" });
+                
+                const result = await videoModel.generateContent({
+                    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+                    generationConfig: {
+                        responseModalities: ['VIDEO'],
+                    },
+                });
+
+                const response = result.response;
+                const videoPart = response.candidates[0].content.parts.find(part => part.inlineData);
+                
+                if (videoPart && videoPart.inlineData) {
+                    return res.json({
+                        success: true,
+                        type: 'video',
+                        videoData: `data:${videoPart.inlineData.mimeType};base64,${videoPart.inlineData.data}`,
+                        model: "veo-3.1-fast-generate-preview"
+                    });
+                } else {
+                    throw new Error('No video data received');
+                }
+            } catch (veoError) {
+                console.error('[Media] Veo 3.1 error:', veoError);
+                return res.status(500).json({ 
+                    error: 'Video oluşturma hatası', 
+                    details: veoError.message,
+                    type: 'video'
+                });
+            }
+        }
+
+        return res.status(400).json({ error: 'Geçersiz medya tipi. image veya video olmalı.' });
+
+    } catch (error) {
+        console.error('[Media] Generation error:', error);
+        res.status(500).json({ error: 'Medya oluşturma hatası', details: error.message });
+    }
+});
+
+// AUDIO GENERATION - Gemini 2.5 Flash Native Audio
+app.post('/api/generate-audio', authenticateToken, async (req, res) => {
+    try {
+        if (!genAI) {
+            return res.status(500).json({ error: 'AI not configured' });
+        }
+
+        const { text, voice = 'default' } = req.body;
+        if (!text) {
+            return res.status(400).json({ error: 'Metin gerekli' });
+        }
+
+        console.log(`[Audio] Generating audio for text: ${text.substring(0, 50)}...`);
+
+        try {
+            const audioModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash-native-audio-latest" });
+            
+            const result = await audioModel.generateContent({
+                contents: [{ 
+                    role: 'user', 
+                    parts: [
+                        { text: `Convert this text to natural speech: ${text}` }
+                    ] 
+                }],
+                generationConfig: {
+                    responseModalities: ['AUDIO'],
+                },
+            });
+
+            const response = result.response;
+            const audioPart = response.candidates[0].content.parts.find(part => part.inlineData);
+            
+            if (audioPart && audioPart.inlineData) {
+                return res.json({
+                    success: true,
+                    audioData: `data:${audioPart.inlineData.mimeType};base64,${audioPart.inlineData.data}`,
+                    model: "gemini-2.5-flash-native-audio-latest",
+                    text: text
+                });
+            } else {
+                throw new Error('No audio data received');
+            }
+        } catch (audioError) {
+            console.error('[Audio] Gemini audio error:', audioError);
+            return res.status(500).json({ 
+                error: 'Ses oluşturma hatası', 
+                details: audioError.message
+            });
+        }
+
+    } catch (error) {
+        console.error('[Audio] Generation error:', error);
+        res.status(500).json({ error: 'Ses oluşturma hatası', details: error.message });
     }
 });
 

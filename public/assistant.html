@@ -984,8 +984,8 @@
                         <button class="msg-act-btn" title="Kopyala" onclick="copyMsg(this, \`${escapeHtml(text)}\`)">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                         </button>
-                        <button class="msg-act-btn" title="Beğen">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+                        <button class="msg-act-btn" title="Sesli Dinle" onclick="playAudio(this, \`${escapeHtml(text)}\`)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
                         </button>
                         <button class="msg-act-btn" title="Yeniden üret" onclick="regenerateMsg('${div.dataset.id}')">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
@@ -1345,7 +1345,118 @@
         }
     }
 
-    // ── Copy ──────────────────────────────────────────
+    let currentAudio = null;
+    let currentAudioBtn = null;
+
+    // ── Audio Playback (Gemini 2.5 Flash Native Audio) ────────────────────────
+    async function playAudio(btn, text) {
+        // Eğer zaten çalıyorsa durdur
+        if (currentAudio && !currentAudio.paused && currentAudioBtn === btn) {
+            currentAudio.pause();
+            currentAudio.currentTime = 0;
+            resetAudioBtn(btn);
+            currentAudio = null;
+            currentAudioBtn = null;
+            return;
+        }
+
+        // Önceki sesi durdur
+        if (currentAudio) {
+            currentAudio.pause();
+            if (currentAudioBtn) resetAudioBtn(currentAudioBtn);
+        }
+
+        // Buton durumunu güncelle
+        setAudioBtnLoading(btn);
+
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch('/api/generate-audio', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ text: text })
+            });
+
+            if (!response.ok) {
+                throw new Error('Ses oluşturulamadı');
+            }
+
+            const data = await response.json();
+
+            if (data.success && data.audioData) {
+                // Audio element oluştur
+                const audio = new Audio(data.audioData);
+                
+                audio.onplay = () => {
+                    setAudioBtnPlaying(btn);
+                };
+                
+                audio.onended = () => {
+                    resetAudioBtn(btn);
+                    currentAudio = null;
+                    currentAudioBtn = null;
+                };
+                
+                audio.onerror = () => {
+                    resetAudioBtn(btn);
+                    alert('Ses çalınırken bir hata oluştu');
+                    currentAudio = null;
+                    currentAudioBtn = null;
+                };
+
+                currentAudio = audio;
+                currentAudioBtn = btn;
+                await audio.play();
+            } else {
+                throw new Error(data.error || 'Ses verisi alınamadı');
+            }
+        } catch (error) {
+            console.error('Audio playback error:', error);
+            resetAudioBtn(btn);
+            
+            // Fallback: Tarayıcının TTS'ini kullan
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'tr-TR';
+                utterance.rate = 1;
+                utterance.pitch = 1;
+                
+                utterance.onstart = () => setAudioBtnPlaying(btn);
+                utterance.onend = () => {
+                    resetAudioBtn(btn);
+                    currentAudio = null;
+                    currentAudioBtn = null;
+                };
+                utterance.onerror = () => {
+                    resetAudioBtn(btn);
+                    currentAudio = null;
+                    currentAudioBtn = null;
+                };
+                
+                window.speechSynthesis.speak(utterance);
+            } else {
+                alert('Sesli okuma desteklenmiyor');
+            }
+        }
+    }
+
+    function setAudioBtnLoading(btn) {
+        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2" class="animate-spin"><circle cx="12" cy="12" r="10" stroke-dasharray="60" stroke-dashoffset="20"/></svg>`;
+        btn.style.color = 'var(--teal)';
+    }
+
+    function setAudioBtnPlaying(btn) {
+        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`;
+        btn.style.color = 'var(--teal)';
+    }
+
+    function resetAudioBtn(btn) {
+        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>`;
+        btn.style.color = '';
+    }
     function copyMsg(btn, text) {
         navigator.clipboard.writeText(text).then(() => {
             const orig = btn.innerHTML;
