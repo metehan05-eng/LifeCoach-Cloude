@@ -32,7 +32,6 @@ app.use(express.json({ limit: '50mb' }));
 
 // --- AYARLAR ve SABİTLER ---
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY; // OpenRouter Desteği
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "GOOGLE_CLIENT_ID_BURAYA";
 const JWT_SECRET = process.env.JWT_SECRET || 'gizli-anahtar-degistir';
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -51,8 +50,8 @@ if (GEMINI_API_KEY) {
     genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 }
 
-if (!GEMINI_API_KEY && !OPENROUTER_API_KEY) {
-    console.warn("UYARI: Hiçbir AI API Anahtarı (Gemini veya OpenRouter) ayarlanmamış. Sohbet çalışmayabilir.");
+if (!GEMINI_API_KEY) {
+    console.warn("UYARI: GEMINI_API_KEY ayarlanmamış. Sohbet çalışmayabilir.");
 }
 
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
@@ -646,94 +645,40 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
             userMessageParts.unshift({ text: userTextMessage }); // Metni her zaman başa koy
         }
 
-        // --- AI Model Logic (OpenRouter & Gemini Fallback) ---
+        // --- AI Model Logic (Gemini Only) ---
         let aiResponse;
         let usedModel;
 
-        const orModel = "google/gemini-2.0-pro-exp-02-05:free"; // OpenRouter öncelikli model
         const gemini31Pro = "gemini-3.1-pro-preview-customtools";  // En güçlü: Gemini 3.1 Pro (dosya oluşturma için optimize)
         const gemini31FlashLite = "gemini-3.1-flash-lite-preview";  // Hızlı: Gemini 3.1 Flash Lite
         const gemini15Pro = "gemini-1.5-pro-latest";                // Yedek: Gemini 1.5 Pro
         const gemini15Flash = "gemini-1.5-flash-latest";           // Son çare: Gemini 1.5 Flash
 
         try {
-            // 1. Önce OpenRouter dene (Eğer anahtar varsa)
-            if (OPENROUTER_API_KEY) {
-                console.log(`[AI] OpenRouter deneniyor: ${orModel}`);
-                const orMessages = [
-                    { role: "system", content: finalSystemPrompt },
-                    ...chatHistory.map(h => ({
-                        role: h.role === 'model' ? 'assistant' : 'user',
-                        content: h.parts[0].text
-                    })),
-                    {
-                        role: "user",
-                        content: userMessageParts.map(p => {
-                            if (p.text) return { type: "text", text: p.text };
-                            if (p.inlineData) return {
-                                type: "image_url",
-                                image_url: { url: `data:${p.inlineData.mimeType};base64,${p.inlineData.data}` }
-                            };
-                            return null;
-                        }).filter(Boolean)
-                    }
-                ];
-
-                const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-                    method: "POST",
-                    headers: {
-                        "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
-                        "HTTP-Referer": "https://han-ai.dev",
-                        "X-Title": "Han AI LifeCoach",
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        model: orModel,
-                        messages: orMessages,
-                        temperature: 0.7,
-                        max_tokens: 4000
-                    })
-                });
-
-                const data = await response.json();
-                if (data.choices && data.choices[0]) {
-                    aiResponse = data.choices[0].message.content;
-                    usedModel = "OpenRouter: " + orModel;
-                } else {
-                    throw new Error(data.error?.message || "OpenRouter response error");
-                }
-            } else {
-                throw new Error("OpenRouter Key Yok");
-            }
-        } catch (orError) {
-            console.warn(`[AI] OpenRouter başarısız veya ayarlanmamış. Gemini 3.1 Pro'ya geçiliyor... ${orError.message}`);
-
+            // 1. Gemini 3.1 Pro Preview (En güçlü - dosya oluşturma için optimize)
+            console.log(`[AI] Gemini Deneniyor: ${gemini31Pro}`);
+            const model = genAI.getGenerativeModel({ model: gemini31Pro, systemInstruction: finalSystemPrompt });
+            const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } });
+            const result = await chat.sendMessage(userMessageParts);
+            aiResponse = result.response.text();
+            usedModel = gemini31Pro;
+        } catch (error) {
+            console.warn(`[AI] ${gemini31Pro} başarısız. YEDEK: ${gemini31FlashLite}`);
             try {
-                // 1. Gemini 3.1 Pro Preview (En güçlü - dosya oluşturma için optimize)
-                console.log(`[AI] Gemini Deneniyor: ${gemini31Pro}`);
-                const model = genAI.getGenerativeModel({ model: gemini31Pro, systemInstruction: finalSystemPrompt });
+                // 2. Gemini 3.1 Flash Lite (Hızlı yedek)
+                const model = genAI.getGenerativeModel({ model: gemini31FlashLite, systemInstruction: finalSystemPrompt });
                 const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } });
                 const result = await chat.sendMessage(userMessageParts);
                 aiResponse = result.response.text();
-                usedModel = gemini31Pro;
-            } catch (error) {
-                console.warn(`[AI] ${gemini31Pro} başarısız. YEDEK: ${gemini31FlashLite}`);
-                try {
-                    // 2. Gemini 3.1 Flash Lite (Hızlı yedek)
-                    const model = genAI.getGenerativeModel({ model: gemini31FlashLite, systemInstruction: finalSystemPrompt });
-                    const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } });
-                    const result = await chat.sendMessage(userMessageParts);
-                    aiResponse = result.response.text();
-                    usedModel = gemini31FlashLite;
-                } catch (finalError) {
-                    console.warn(`[AI] Son çare: ${gemini15Pro}`);
-                    // 3. Gemini 1.5 Pro (Son çare)
-                    const model = genAI.getGenerativeModel({ model: gemini15Pro, systemInstruction: finalSystemPrompt });
-                    const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } });
-                    const result = await chat.sendMessage(userMessageParts);
-                    aiResponse = result.response.text();
-                    usedModel = gemini15Pro;
-                }
+                usedModel = gemini31FlashLite;
+            } catch (finalError) {
+                console.warn(`[AI] Son çare: ${gemini15Pro}`);
+                // 3. Gemini 1.5 Pro (Son çare)
+                const model = genAI.getGenerativeModel({ model: gemini15Pro, systemInstruction: finalSystemPrompt });
+                const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } });
+                const result = await chat.sendMessage(userMessageParts);
+                aiResponse = result.response.text();
+                usedModel = gemini15Pro;
             }
         }
 
