@@ -787,29 +787,55 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
         }
 
         // Oturum açmış kullanıcılar için sohbeti kaydet
-        if (req.user && req.user.email && dbUser) {
-            if (!dbUser.sessions) dbUser.sessions = [];
+        if (req.user && req.user.id) {
+            if (supabase) {
+                let session;
+                if (sessionId) {
+                    const { data } = await supabase.from('chat_history').select('*').eq('id', sessionId).eq('user_id', req.user.id).single();
+                    if (data) session = data;
+                }
+                
+                if (!session) {
+                    newSessionId = sessionId || crypto.randomUUID();
+                    const title = message.substring(0, 30) + (message.length > 30 ? '...' : '');
+                    session = { id: newSessionId, user_id: req.user.id, title: title, messages: [] };
+                }
 
-            let session;
-            if (sessionId) {
-                session = dbUser.sessions.find(s => s.id == sessionId);
+                session.messages.push({ role: 'user', content: message });
+                session.messages.push({ role: 'assistant', content: finalAiResponse });
+                
+                await supabase.from('chat_history').upsert({
+                    id: session.id,
+                    user_id: session.user_id,
+                    title: session.title,
+                    messages: session.messages,
+                    updated_at: new Date().toISOString()
+                }, { onConflict: 'id' });
+                
+            } else if (dbUser && req.user.email) {
+                if (!dbUser.sessions) dbUser.sessions = [];
+    
+                let session;
+                if (sessionId) {
+                    session = dbUser.sessions.find(s => s.id == sessionId);
+                }
+    
+                if (!session) {
+                    newSessionId = Date.now().toString();
+                    const title = message.substring(0, 30) + (message.length > 30 ? '...' : '');
+                    session = { id: newSessionId, title: title, messages: [] };
+                    dbUser.sessions.push(session);
+                }
+    
+                session.messages.push({ role: 'user', content: message });
+                session.messages.push({ role: 'assistant', content: finalAiResponse });
+    
+                // En son 20 oturumu sakla
+                dbUser.sessions.sort((a, b) => Number(b.id) - Number(a.id));
+                dbUser.sessions = dbUser.sessions.slice(0, 20);
+    
+                await setKVData(`user:${req.user.email}`, dbUser);
             }
-
-            if (!session) {
-                newSessionId = Date.now().toString();
-                const title = message.substring(0, 30) + (message.length > 30 ? '...' : '');
-                session = { id: newSessionId, title: title, messages: [] };
-                dbUser.sessions.push(session);
-            }
-
-            session.messages.push({ role: 'user', content: message });
-            session.messages.push({ role: 'assistant', content: finalAiResponse });
-
-            // En son 20 oturumu sakla
-            dbUser.sessions.sort((a, b) => Number(b.id) - Number(a.id));
-            dbUser.sessions = dbUser.sessions.slice(0, 20);
-
-            await setKVData(`user:${req.user.email}`, dbUser);
         }
 
         return res.json({
@@ -1687,10 +1713,20 @@ app.delete('/api/goals', authenticateToken, async (req, res) => {
 
 app.post('/api/history', authenticateToken, async (req, res) => {
     try {
-        const email = req.user.email;
-        // Kullanıcı verisi user:email anahtarında saklanıyor
-        const user = await getKVData(`user:${email}`);
-        res.json(user?.sessions ? user.sessions.map(s => ({ id: s.id, title: s.title })) : []);
+        if (supabase) {
+            const { data, error } = await supabase.from('chat_history')
+                .select('id, title, updated_at')
+                .eq('user_id', req.user.id)
+                .order('updated_at', { ascending: false })
+                .limit(20);
+            if (error) throw error;
+            res.json(data.map(s => ({ id: s.id, title: s.title, date: s.updated_at })));
+        } else {
+            const email = req.user.email;
+            // Kullanıcı verisi user:email anahtarında saklanıyor
+            const user = await getKVData(`user:${email}`);
+            res.json(user?.sessions ? user.sessions.map(s => ({ id: s.id, title: s.title })) : []);
+        }
     } catch (error) {
         res.status(500).json({ error: 'Geçmiş hatası' });
     }
@@ -1699,12 +1735,25 @@ app.post('/api/history', authenticateToken, async (req, res) => {
 app.post('/api/get-session', authenticateToken, async (req, res) => {
     try {
         const { sessionId } = req.body;
-        const email = req.user.email;
-        // Kullanıcı verisi user:email anahtarında saklanıyor
-        const user = await getKVData(`user:${email}`);
-        const session = user?.sessions?.find(s => s.id == sessionId);
-        if (session) res.json(session);
-        else res.status(404).json({ error: 'Seans bulunamadı' });
+        if (supabase) {
+            const { data, error } = await supabase.from('chat_history')
+                .select('*')
+                .eq('id', sessionId)
+                .eq('user_id', req.user.id)
+                .single();
+            if (data) {
+                res.json({ id: data.id, title: data.title, messages: data.messages });
+            } else {
+                res.status(404).json({ error: 'Seans bulunamadı' });
+            }
+        } else {
+            const email = req.user.email;
+            // Kullanıcı verisi user:email anahtarında saklanıyor
+            const user = await getKVData(`user:${email}`);
+            const session = user?.sessions?.find(s => s.id == sessionId);
+            if (session) res.json(session);
+            else res.status(404).json({ error: 'Seans bulunamadı' });
+        }
     } catch (error) {
         res.status(500).json({ error: 'Seans hatası' });
     }
@@ -1713,15 +1762,23 @@ app.post('/api/get-session', authenticateToken, async (req, res) => {
 app.post('/api/delete-session', authenticateToken, async (req, res) => {
     try {
         const { sessionId } = req.body;
-        const email = req.user.email;
-        // Kullanıcı verisi user:email anahtarında saklanıyor
-        const user = await getKVData(`user:${email}`);
-        if (user && user.sessions) {
-            user.sessions = user.sessions.filter(s => s.id != sessionId);
-            await setKVData(`user:${email}`, user);
+        if (supabase) {
+            const { error } = await supabase.from('chat_history')
+                .delete()
+                .eq('id', sessionId)
+                .eq('user_id', req.user.id);
+            if (error) throw error;
             return res.json({ success: true });
+        } else {
+            const email = req.user.email;
+            const user = await getKVData(`user:${email}`);
+            if (user && user.sessions) {
+                user.sessions = user.sessions.filter(s => s.id != sessionId);
+                await setKVData(`user:${email}`, user);
+                return res.json({ success: true });
+            }
+            res.status(404).json({ error: 'Bulunamadı' });
         }
-        res.status(404).json({ error: 'Bulunamadı' });
     } catch (error) {
         res.status(500).json({ error: 'Silme hatası' });
     }
