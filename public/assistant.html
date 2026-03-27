@@ -907,7 +907,48 @@
     let isTyping  = false;
     let attachedFiles = [];
     let currentConversationId = null;
-    let conversationHistory = JSON.parse(localStorage.getItem('assistant_conversations') || '[]');
+    let currentUserEmail = null; // Track current user
+    
+    // Helper: Get user-specific localStorage key
+    function getUserStorageKey(baseKey) {
+        const user = localStorage.getItem('user');
+        if (user) {
+            try {
+                const userData = JSON.parse(user);
+                if (userData.email) {
+                    return `${baseKey}_${userData.email}`;
+                }
+            } catch(e) {}
+        }
+        return `${baseKey}_guest`;
+    }
+    
+    // Helper: Get user-specific conversation history
+    function getConversationHistory() {
+        const key = getUserStorageKey('assistant_conversations');
+        return JSON.parse(localStorage.getItem(key) || '[]');
+    }
+    
+    // Helper: Set user-specific conversation history
+    function setConversationHistory(history) {
+        const key = getUserStorageKey('assistant_conversations');
+        localStorage.setItem(key, JSON.stringify(history));
+    }
+    
+    // Helper: Get user-specific last conversation
+    function getLastConversation() {
+        const key = getUserStorageKey('assistant_last_conversation');
+        const data = localStorage.getItem(key);
+        return data ? JSON.parse(data) : null;
+    }
+    
+    // Helper: Set user-specific last conversation
+    function setLastConversation(conv) {
+        const key = getUserStorageKey('assistant_last_conversation');
+        localStorage.setItem(key, JSON.stringify(conv));
+    }
+    
+    let conversationHistory = getConversationHistory();
 
     const chatScroll   = document.getElementById('chatScroll');
     const msgWrap      = document.getElementById('msgWrap');
@@ -920,12 +961,23 @@
 
     // ── Init ─────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', () => {
+        // Check if user changed (for clearing previous user's data)
+        const user = localStorage.getItem('user');
+        if (user) {
+            try {
+                const userData = JSON.parse(user);
+                currentUserEmail = userData.email || null;
+            } catch(e) {}
+        }
+        
+        // Reload conversation history for current user
+        conversationHistory = getConversationHistory();
+        
         loadHistoryList();
-        const lastConv = localStorage.getItem('assistant_last_conversation');
+        const lastConv = getLastConversation();
         if (lastConv) {
-            const conv = JSON.parse(lastConv);
-            if (conv.messages && conv.messages.length > 0) {
-                loadConversation(conv);
+            if (lastConv.messages && lastConv.messages.length > 0) {
+                loadConversation(lastConv);
             }
         }
     });
@@ -1514,6 +1566,9 @@
             messages: messages
         };
         
+        // Reload history for current user (in case user changed)
+        conversationHistory = getConversationHistory();
+        
         // Mevcut konuşmayı güncelle veya ekle
         const existingIndex = conversationHistory.findIndex(c => c.id === conversation.id);
         if (existingIndex >= 0) {
@@ -1525,8 +1580,9 @@
         // Son 20 konuşmayı tut
         conversationHistory = conversationHistory.slice(0, 20);
         
-        localStorage.setItem('assistant_conversations', JSON.stringify(conversationHistory));
-        localStorage.setItem('assistant_last_conversation', JSON.stringify(conversation));
+        // Kullanıcıya özel kaydet
+        setConversationHistory(conversationHistory);
+        setLastConversation(conversation);
         
         loadHistoryList();
     }
