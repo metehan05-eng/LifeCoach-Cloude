@@ -1072,7 +1072,7 @@
             } else {
                 const reply = data.response || 'Üzgünüm, yanıt alınamadı.';
                 messages.push({ role: 'assistant', content: reply });
-                renderMsg('assistant', reply);
+                const currentMsgEl = renderMsg('assistant', reply);
                 
                 // Session ID'yi güncelle
                 if (data.sessionId) {
@@ -1081,7 +1081,7 @@
                 
                 // Action varsa dosya oluştur
                 if (data.action) {
-                    handleAction(data.action);
+                    handleAction(data.action, currentMsgEl);
                 }
                 
                 // Konuşmayı kaydet
@@ -1112,13 +1112,17 @@
     }
 
     // ── Handle Action (File Generation) ──────────────
-    async function handleAction(action) {
+    async function handleAction(action, targetMsgEl) {
         if (!action.type || !action.filename) return;
         
         try {
+            const token = localStorage.getItem('token');
             const response = await fetch('/api/generate-file', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify(action)
             });
             
@@ -1131,17 +1135,26 @@
                     <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:rgba(0,229,192,0.08);border:1px solid rgba(0,229,192,0.2);border-radius:12px;margin-top:12px;">
                         <span style="font-size:24px;">📄</span>
                         <div style="flex:1;">
-                            <div style="font-weight:600;color:var(--teal);font-size:13px;">${action.filename}</div>
+                            <div style="font-weight:600;color:var(--teal);font-size:13px;">${escapeHtml(action.filename)}</div>
                             <div style="font-size:11px;color:var(--ink-mid);">Oluşturuldu ve hazır</div>
                         </div>
                         <a href="/api/download?path=${encodeURIComponent(data.path)}" 
                            style="padding:8px 16px;background:linear-gradient(135deg,var(--teal),var(--aqua));color:#03050d;text-decoration:none;border-radius:8px;font-weight:600;font-size:12px;"
-                           download="${action.filename}">
+                           download="${escapeHtml(action.filename)}">
                             İndir
                         </a>
                     </div>
                 `;
-                msgWrap.lastElementChild?.querySelector('.msg-body')?.appendChild(downloadLink);
+                
+                if (targetMsgEl) {
+                    const msgBody = targetMsgEl.querySelector('.msg-body') || targetMsgEl;
+                    msgBody.appendChild(downloadLink);
+                } else {
+                    msgWrap.lastElementChild?.querySelector('.msg-body')?.appendChild(downloadLink);
+                }
+                scrollBottom();
+            } else {
+                console.error("Yaratma hatası:", data.error);
             }
         } catch (err) {
             console.error('File generation error:', err);
