@@ -65,9 +65,9 @@ async function callGemini(messages, systemPrompt) {
         throw new Error("GEMINI_API_KEY ayarlanmamış");
     }
     
-    const gemini31Pro = "gemini-3.1-pro-preview-customtools";
+    const gemini31Pro = "gemini-3.1-pro-preview";
     const gemini31FlashLite = "gemini-3.1-flash-lite-preview";
-    const gemini15Pro = "gemini-1.5-pro-latest";
+    const geminiProLatest = "gemini-pro-latest";
     
     // Mesajları Gemini formatına çevir
     const chatHistory = messages
@@ -106,10 +106,10 @@ async function callGemini(messages, systemPrompt) {
             const result = await chat.sendMessage(userMessage?.content || '');
             return result.response.text();
         } catch (finalError) {
-            console.warn(`[AI] Son çare: ${gemini15Pro}`);
-            // 3. Gemini 1.5 Pro
+            console.warn(`[AI] Son çare: ${geminiProLatest}`);
+            // 3. Gemini Pro Latest
             const model = genAI.getGenerativeModel({ 
-                model: gemini15Pro, 
+                model: geminiProLatest, 
                 systemInstruction: systemPrompt 
             });
             const chat = model.startChat({ 
