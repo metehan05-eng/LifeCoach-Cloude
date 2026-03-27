@@ -649,10 +649,9 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
         let aiResponse;
         let usedModel;
 
-        const gemini31Pro = "gemini-3.1-pro-preview-customtools";  // En güçlü: Gemini 3.1 Pro (dosya oluşturma için optimize)
+        const gemini31Pro = "gemini-3.1-pro-preview";  // En güçlü: Gemini 3.1 Pro (dosya oluşturma için optimize)
         const gemini31FlashLite = "gemini-3.1-flash-lite-preview";  // Hızlı: Gemini 3.1 Flash Lite
-        const gemini15Pro = "gemini-1.5-pro-latest";                // Yedek: Gemini 1.5 Pro
-        const gemini15Flash = "gemini-1.5-flash-latest";           // Son çare: Gemini 1.5 Flash
+        const geminiProLatest = "gemini-pro-latest";                // Yedek: Gemini Pro
 
         try {
             // 1. Gemini 3.1 Pro Preview (En güçlü - dosya oluşturma için optimize)
@@ -672,13 +671,13 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
                 aiResponse = result.response.text();
                 usedModel = gemini31FlashLite;
             } catch (finalError) {
-                console.warn(`[AI] Son çare: ${gemini15Pro}`);
-                // 3. Gemini 1.5 Pro (Son çare)
-                const model = genAI.getGenerativeModel({ model: gemini15Pro, systemInstruction: finalSystemPrompt });
+                console.warn(`[AI] Son çare: ${geminiProLatest}`);
+                // 3. Gemini Pro Latest (Son çare)
+                const model = genAI.getGenerativeModel({ model: geminiProLatest, systemInstruction: finalSystemPrompt });
                 const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } });
                 const result = await chat.sendMessage(userMessageParts);
                 aiResponse = result.response.text();
-                usedModel = gemini15Pro;
+                usedModel = geminiProLatest;
             }
         }
 
