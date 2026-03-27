@@ -1111,12 +1111,54 @@
         });
     }
 
-    // ── Handle Action (File Generation) ──────────────
+    // ── Handle Action (File Generation with ChatGPT-style Preview) ──────────────
     async function handleAction(action, targetMsgEl) {
-        if (!action.type || !action.filename) return;
+        console.log('[handleAction] Starting with action:', action);
+        
+        if (!action || !action.type || !action.filename) {
+            console.error('[handleAction] Invalid action - missing type or filename:', action);
+            return;
+        }
+        
+        // Benzersiz ID oluştur
+        const fileId = 'file-' + Date.now();
+        const isExcel = action.type === 'excel' || action.filename.endsWith('.xlsx') || action.filename.endsWith('.xls');
+        const isPowerPoint = action.type === 'ppt' || action.filename.endsWith('.pptx') || action.filename.endsWith('.ppt');
+        
+        // Yükleme göstergesi ekle
+        const loadingDiv = document.createElement('div');
+        loadingDiv.id = fileId + '-loading';
+        loadingDiv.innerHTML = `
+            <div style="margin-top:16px;border:1px solid rgba(0,229,192,0.2);border-radius:12px;overflow:hidden;background:#0F172A;">
+                <div style="padding:16px;display:flex;align-items:center;gap:12px;">
+                    <span style="font-size:24px;" class="animate-spin">⏳</span>
+                    <div style="flex:1;">
+                        <div style="font-weight:600;color:var(--teal);font-size:14px;">${escapeHtml(action.filename)}</div>
+                        <div style="font-size:12px;color:var(--ink-mid);">Excel dosyası oluşturuluyor...</div>
+                    </div>
+                </div>
+                <div style="padding:12px 16px;background:rgba(0,0,0,0.3);border-top:1px solid rgba(0,229,192,0.1);">
+                    <div style="font-family:monospace;font-size:11px;color:#94A3B8;white-space:pre-wrap;">import pandas as pd
+# Veriler hazırlanıyor...</div>
+                </div>
+            </div>
+        `;
+        
+        if (targetMsgEl) {
+            const msgBody = targetMsgEl.querySelector('.msg-body') || targetMsgEl;
+            msgBody.appendChild(loadingDiv);
+        } else {
+            msgWrap.lastElementChild?.querySelector('.msg-body')?.appendChild(loadingDiv);
+        }
+        scrollBottom();
         
         try {
             const token = localStorage.getItem('token');
+            if (!token) {
+                throw new Error('Oturum bulunamadı. Lütfen giriş yapın.');
+            }
+            
+            console.log('[handleAction] Sending request to /api/generate-file');
             const response = await fetch('/api/generate-file', {
                 method: 'POST',
                 headers: { 
@@ -1126,38 +1168,295 @@
                 body: JSON.stringify(action)
             });
             
+            console.log('[handleAction] Response status:', response.status);
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`HTTP ${response.status}: ${errorText}`);
+            }
+            
             const data = await response.json();
+            console.log('[handleAction] Response data:', data);
+            
+            // Yükleme göstergesini kaldır
+            loadingDiv.remove();
+            
             if (data.success && data.path) {
-                // İndirme linkini mesaja ekle
-                const downloadLink = document.createElement('div');
-                downloadLink.className = 'file-download-card';
-                downloadLink.innerHTML = `
-                    <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:rgba(0,229,192,0.08);border:1px solid rgba(0,229,192,0.2);border-radius:12px;margin-top:12px;">
-                        <span style="font-size:24px;">📄</span>
-                        <div style="flex:1;">
-                            <div style="font-weight:600;color:var(--teal);font-size:13px;">${escapeHtml(action.filename)}</div>
-                            <div style="font-size:11px;color:var(--ink-mid);">Oluşturuldu ve hazır</div>
+                // ChatGPT tarzı önizleme kartı
+                const previewCard = document.createElement('div');
+                previewCard.id = fileId;
+                previewCard.style.cssText = 'margin-top:16px;border:1px solid rgba(0,229,192,0.2);border-radius:12px;overflow:hidden;background:#0F172A;';
+                
+                // Excel için özel önizleme (kod + görsel)
+                if (isExcel && data.preview_image) {
+                    const ext = action.filename.split('.').pop().toLowerCase();
+                    
+                    previewCard.innerHTML = `
+                        <!-- Başlık Barı -->
+                        <div style="padding:12px 16px;background:linear-gradient(135deg,rgba(0,229,192,0.1),rgba(0,229,192,0.05));border-bottom:1px solid rgba(0,229,192,0.1);display:flex;align-items:center;gap:10px;">
+                            <span style="font-size:20px;">📊</span>
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-weight:600;color:var(--teal);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(action.filename)}</div>
+                                <div style="font-size:11px;color:var(--ink-mid);">${data.rows || '?'} satır · ${data.columns || '?'} sütun</div>
+                            </div>
+                            <button onclick="downloadFile('${encodeURIComponent(data.path)}', '${escapeHtml(action.filename)}', '${fileId}')" 
+                                    style="padding:8px 16px;background:linear-gradient(135deg,var(--teal),var(--aqua));color:#03050d;border:none;border-radius:8px;font-weight:600;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px;"
+                                    id="${fileId}-btn">
+                                <span>⬇️</span>
+                                <span>İndir</span>
+                            </button>
                         </div>
-                        <a href="/api/download?path=${encodeURIComponent(data.path)}" 
-                           style="padding:8px 16px;background:linear-gradient(135deg,var(--teal),var(--aqua));color:#03050d;text-decoration:none;border-radius:8px;font-weight:600;font-size:12px;"
-                           download="${escapeHtml(action.filename)}">
-                            İndir
-                        </a>
-                    </div>
-                `;
+                        
+                        <!-- Python Kod Önizlemesi -->
+                        ${data.code_snippet ? `
+                        <div style="border-bottom:1px solid rgba(0,229,192,0.1);">
+                            <div style="padding:8px 16px;background:rgba(0,0,0,0.3);display:flex;align-items:center;gap:8px;">
+                                <span style="font-size:12px;color:#94A3B8;">🐍 Python</span>
+                                <span style="font-size:11px;color:#64748B;">· pandas · openpyxl</span>
+                            </div>
+                            <div style="padding:12px 16px;background:#1E293B;overflow-x:auto;">
+                                <pre style="margin:0;font-family:'JetBrains Mono','Fira Code',monospace;font-size:11px;line-height:1.5;color:#E2E8F0;white-space:pre;">${escapeHtml(data.code_snippet.substring(0, 400))}${data.code_snippet.length > 400 ? '...' : ''}</pre>
+                            </div>
+                        </div>
+                        ` : ''}
+                        
+                        <!-- Excel Görsel Önizlemesi -->
+                        <div style="padding:16px;background:#0F172A;">
+                            <div style="border:1px solid rgba(0,229,192,0.15);border-radius:8px;overflow:hidden;background:#0F172A;box-shadow:0 4px 20px rgba(0,0,0,0.3);">
+                                <img src="data:image/png;base64,${data.preview_image}" 
+                                     alt="Excel Preview" 
+                                     style="width:100%;max-height:400px;object-fit:contain;display:block;"
+                                     onclick="this.style.maxHeight=this.style.maxHeight==='none'?'400px':'none';this.style.cursor=this.style.maxHeight==='none'?'zoom-out':'zoom-in'"
+                                     onmouseover="this.style.cursor='zoom-in'">
+                            </div>
+                            <div style="margin-top:10px;display:flex;align-items:center;gap:8px;font-size:11px;color:#64748B;">
+                                <span>💡 Görseli tam boyut için tıklayın</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Alt Bilgi -->
+                        <div style="padding:12px 16px;background:rgba(0,229,192,0.05);border-top:1px solid rgba(0,229,192,0.1);display:flex;align-items:center;justify-content:space-between;">
+                            <div style="font-size:11px;color:#94A3B8;">
+                                ✅ Dosya başarıyla oluşturuldu
+                            </div>
+                            <div style="font-size:11px;color:#64748B;">
+                                📁 .${ext} · 💾 ${fileId}-size
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Dosya boyutunu hesapla ve göster
+                    try {
+                        const headRes = await fetch(`/api/download?path=${encodeURIComponent(data.path)}`, { method: 'HEAD' });
+                        const size = headRes.headers.get('content-length');
+                        if (size) {
+                            const sizeMB = (parseInt(size) / 1024 / 1024).toFixed(2);
+                            setTimeout(() => {
+                                const sizeEl = document.querySelector(`#${fileId} [id$="-size"]`);
+                                if (sizeEl) sizeEl.textContent = `📁 .${ext} · 💾 ${sizeMB} MB`;
+                            }, 100);
+                        }
+                    } catch(e) {}
+                
+                // PowerPoint için özel önizleme (kod + görsel)
+                } else if (isPowerPoint && data.preview_image) {
+                    const ext = action.filename.split('.').pop().toLowerCase();
+                    
+                    previewCard.innerHTML = `
+                        <!-- Başlık Barı -->
+                        <div style="padding:12px 16px;background:linear-gradient(135deg,rgba(234,88,12,0.1),rgba(234,88,12,0.05));border-bottom:1px solid rgba(234,88,12,0.1);display:flex;align-items:center;gap:10px;">
+                            <span style="font-size:20px;">📊</span>
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-weight:600;color:#EA580C;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(action.filename)}</div>
+                                <div style="font-size:11px;color:var(--ink-mid);">${data.slides || '?'} slayt</div>
+                            </div>
+                            <button onclick="downloadFile('${encodeURIComponent(data.path)}', '${escapeHtml(action.filename)}', '${fileId}')" 
+                                    style="padding:8px 16px;background:linear-gradient(135deg,#EA580C,#C2410C);color:#fff;border:none;border-radius:8px;font-weight:600;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px;"
+                                    id="${fileId}-btn">
+                                <span>⬇️</span>
+                                <span>İndir</span>
+                            </button>
+                        </div>
+                        
+                        <!-- Python Kod Önizlemesi -->
+                        ${data.code_snippet ? `
+                        <div style="border-bottom:1px solid rgba(234,88,12,0.1);">
+                            <div style="padding:8px 16px;background:rgba(0,0,0,0.3);display:flex;align-items:center;gap:8px;">
+                                <span style="font-size:12px;color:#94A3B8;">🐍 Python</span>
+                                <span style="font-size:11px;color:#64748B;">· python-pptx</span>
+                            </div>
+                            <div style="padding:12px 16px;background:#1E293B;overflow-x:auto;">
+                                <pre style="margin:0;font-family:'JetBrains Mono','Fira Code',monospace;font-size:11px;line-height:1.5;color:#E2E8F0;white-space:pre;">${escapeHtml(data.code_snippet.substring(0, 400))}${data.code_snippet.length > 400 ? '...' : ''}</pre>
+                            </div>
+                        </div>
+                        ` : ''}
+                        
+                        <!-- PowerPoint Görsel Önizlemesi -->
+                        <div style="padding:16px;background:#0F172A;">
+                            <div style="border:1px solid rgba(234,88,12,0.15);border-radius:8px;overflow:hidden;background:#0F172A;box-shadow:0 4px 20px rgba(0,0,0,0.3);">
+                                <img src="data:image/png;base64,${data.preview_image}" 
+                                     alt="PowerPoint Preview" 
+                                     style="width:100%;max-height:500px;object-fit:contain;display:block;"
+                                     onclick="this.style.maxHeight=this.style.maxHeight==='none'?'500px':'none';this.style.cursor=this.style.maxHeight==='none'?'zoom-out':'zoom-in'"
+                                     onmouseover="this.style.cursor='zoom-in'">
+                            </div>
+                            <div style="margin-top:10px;display:flex;align-items:center;gap:8px;font-size:11px;color:#64748B;">
+                                <span>💡 Görseli tam boyut için tıklayın · İlk 3 slayt gösteriliyor</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Alt Bilgi -->
+                        <div style="padding:12px 16px;background:rgba(234,88,12,0.05);border-top:1px solid rgba(234,88,12,0.1);display:flex;align-items:center;justify-content:space-between;">
+                            <div style="font-size:11px;color:#94A3B8;">
+                                ✅ PowerPoint başarıyla oluşturuldu
+                            </div>
+                            <div style="font-size:11px;color:#64748B;">
+                                📁 .${ext} · 💾 ${fileId}-size
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Dosya boyutunu hesapla ve göster
+                    try {
+                        const headRes = await fetch(`/api/download?path=${encodeURIComponent(data.path)}`, { method: 'HEAD' });
+                        const size = headRes.headers.get('content-length');
+                        if (size) {
+                            const sizeMB = (parseInt(size) / 1024 / 1024).toFixed(2);
+                            setTimeout(() => {
+                                const sizeEl = document.querySelector(`#${fileId} [id$="-size"]`);
+                                if (sizeEl) sizeEl.textContent = `📁 .${ext} · 💾 ${sizeMB} MB`;
+                            }, 100);
+                        }
+                    } catch(e) {}
+                    
+                } else {
+                    // Diğer dosya tipleri için basit önizleme
+                    const ext = action.filename.split('.').pop().toLowerCase();
+                    const fileIcons = {
+                        'xlsx': '📊', 'xls': '📊',
+                        'docx': '📝', 'doc': '📝',
+                        'pptx': '📊', 'ppt': '📊',
+                        'pdf': '📕'
+                    };
+                    const fileIcon = fileIcons[ext] || '📄';
+                    
+                    previewCard.innerHTML = `
+                        <div style="padding:16px;display:flex;align-items:center;gap:12px;background:rgba(0,229,192,0.05);">
+                            <span style="font-size:28px;">${fileIcon}</span>
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-weight:600;color:var(--teal);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(action.filename)}</div>
+                                <div style="font-size:12px;color:var(--ink-mid);">✅ Oluşturuldu ve indirmeye hazır</div>
+                            </div>
+                            <button onclick="downloadFile('${encodeURIComponent(data.path)}', '${escapeHtml(action.filename)}', '${fileId}')" 
+                                    style="padding:10px 20px;background:linear-gradient(135deg,var(--teal),var(--aqua));color:#03050d;border:none;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;"
+                                    id="${fileId}-btn">
+                                ⬇️ İndir
+                            </button>
+                        </div>
+                    `;
+                }
                 
                 if (targetMsgEl) {
                     const msgBody = targetMsgEl.querySelector('.msg-body') || targetMsgEl;
-                    msgBody.appendChild(downloadLink);
+                    msgBody.appendChild(previewCard);
                 } else {
-                    msgWrap.lastElementChild?.querySelector('.msg-body')?.appendChild(downloadLink);
+                    msgWrap.lastElementChild?.querySelector('.msg-body')?.appendChild(previewCard);
                 }
                 scrollBottom();
+                console.log('[handleAction] Preview card added successfully');
+                
             } else {
-                console.error("Yaratma hatası:", data.error);
+                console.error("[handleAction] File generation error:", data.error);
+                const errorDiv = document.createElement('div');
+                errorDiv.innerHTML = `
+                    <div style="margin-top:12px;padding:12px 16px;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);border-radius:12px;">
+                        <div style="font-size:13px;color:#ff6464;">❌ Dosya oluşturulurken hata: ${escapeHtml(data.error || 'Bilinmeyen hata')}</div>
+                    </div>
+                `;
+                if (targetMsgEl) {
+                    const msgBody = targetMsgEl.querySelector('.msg-body') || targetMsgEl;
+                    msgBody.appendChild(errorDiv);
+                }
             }
         } catch (err) {
-            console.error('File generation error:', err);
+            console.error('[handleAction] File generation error:', err);
+            loadingDiv.remove();
+            
+            const errorDiv = document.createElement('div');
+            errorDiv.innerHTML = `
+                <div style="margin-top:12px;padding:12px 16px;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);border-radius:12px;">
+                    <div style="font-size:13px;color:#ff6464;">❌ Bağlantı hatası: ${escapeHtml(err.message)}</div>
+                </div>
+            `;
+            if (targetMsgEl) {
+                const msgBody = targetMsgEl.querySelector('.msg-body') || targetMsgEl;
+                msgBody.appendChild(errorDiv);
+            }
+        }
+    }
+    
+    // ── File Download with Real Browser Download ──────────────
+    async function downloadFile(encodedPath, filename, cardId) {
+        const btn = document.getElementById(cardId + '-btn');
+        const originalText = btn.innerHTML;
+        
+        try {
+            btn.innerHTML = '<span class="animate-spin">⏳</span> <span>İndiriliyor...</span>';
+            btn.disabled = true;
+            
+            const path = decodeURIComponent(encodedPath);
+            console.log('[downloadFile] Downloading:', filename, 'from:', path);
+            
+            // Fetch dosyayı binary olarak al
+            const response = await fetch(`/api/download?path=${encodeURIComponent(path)}`, {
+                method: 'GET'
+            });
+            
+            if (!response.ok) {
+                throw new Error(`İndirme hatası: ${response.status}`);
+            }
+            
+            // Blob olarak al ve gerçek indirme yap
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            
+            // Gizli a etiketi oluştur ve indir
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = downloadUrl;
+            a.download = filename; // Gerçek dosya adı
+            document.body.appendChild(a);
+            a.click();
+            
+            // Temizlik
+            setTimeout(() => {
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(downloadUrl);
+            }, 100);
+            
+            btn.innerHTML = '✅ İndirildi';
+            btn.style.background = 'linear-gradient(135deg,#10B981,#059669)';
+            
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.style.background = '';
+                btn.disabled = false;
+            }, 2000);
+            
+            console.log('[downloadFile] Successfully downloaded:', filename);
+            
+        } catch (error) {
+            console.error('[downloadFile] Error:', error);
+            btn.innerHTML = '❌ Hata';
+            btn.style.background = 'linear-gradient(135deg,#EF4444,#DC2626)';
+            
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.style.background = '';
+                btn.disabled = false;
+            }, 3000);
+            
+            alert('Dosya indirilirken bir hata oluştu: ' + error.message);
         }
     }
 

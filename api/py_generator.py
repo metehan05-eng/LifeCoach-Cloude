@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from duckduckgo_search import DDGS
 from bs4 import BeautifulSoup
+import base64
 
 def web_search(query, max_results=5):
     try:
@@ -48,9 +49,150 @@ def generate_excel(data, filename):
         for col_num, value in enumerate(df.columns.values):
             worksheet.write(0, col_num, value, header_format)
         writer.close()
-        return output_path
+        
+        # Preview ve kod snippet oluştur
+        code_snippet = generate_code_snippet(data, filename)
+        preview_image = generate_excel_preview_image(data, filename)
+        
+        return {
+            "path": output_path,
+            "code_snippet": code_snippet,
+            "preview_image": preview_image,
+            "rows": len(df),
+            "columns": len(df.columns)
+        }
     except Exception as e:
         return f"Error: {str(e)}"
+
+def generate_code_snippet(data, filename):
+    """Excel oluşturmak için kullanılan Python kodunu döndür"""
+    cols = data.get("columns", [])
+    rows = data.get("rows", [])
+    
+    code = f"""import pandas as pd
+
+# Veri hazırlama
+columns = {repr(cols)}
+rows = {repr(rows[:5] if len(rows) > 5 else rows)}...
+
+# DataFrame oluşturma
+df = pd.DataFrame(rows, columns=columns)
+
+# Excel dosyasına kaydetme
+output_path = "/tmp/{filename}"
+writer = pd.ExcelWriter(output_path, engine='xlsxwriter')
+df.to_excel(writer, index=False, sheet_name='Veri')
+
+# Formatlama
+workbook = writer.book
+worksheet = writer.sheets['Veri']
+header_format = workbook.add_format({
+    'bold': True, 'fg_color': '#2DD4BF',
+    'font_color': '#FFFFFF', 'border': 1
+})
+writer.close()
+print(f"✅ {{len(df)}} satır, {{len(columns)}} sütun oluşturuldu")
+"""
+    return code
+
+def generate_excel_preview_image(data, filename):
+    """Excel dosyasının görsel önizlemesini oluştur"""
+    try:
+        import matplotlib
+        matplotlib.use('Agg')
+        from matplotlib import font_manager as fm
+        import matplotlib.pyplot as plt
+        from matplotlib.patches import Rectangle
+        
+        cols = data.get("columns", [])
+        rows = data.get("rows", [])
+        
+        if not cols and not rows:
+            return None
+            
+        # DataFrame oluştur
+        df = pd.DataFrame(rows, columns=cols if cols else None)
+        
+        # Görsel boyutları
+        n_rows = min(len(df), 15)  # Maksimum 15 satır göster
+        n_cols = len(df.columns)
+        
+        fig_height = max(4, n_rows * 0.4 + 1.5)
+        fig_width = max(8, n_cols * 1.5)
+        
+        fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+        ax.axis('off')
+        
+        # Başlık
+        fig.suptitle(f'📊 {filename}', fontsize=14, fontweight='bold', 
+                     color='#2DD4BF', y=0.98)
+        
+        # Tablo oluştur
+        cell_height = 0.08
+        cell_width = 1.5
+        start_y = 0.88
+        
+        # Header arka planı
+        header_rect = Rectangle((0.05, start_y - cell_height), 
+                                min(n_cols, 8) * cell_width + 0.1, 
+                                cell_height, 
+                                facecolor='#2DD4BF', edgecolor='none', 
+                                transform=fig.transFigure)
+        ax.add_patch(header_rect)
+        
+        # Sütun başlıkları
+        for i, col in enumerate(df.columns[:8]):  # Maksimum 8 sütun
+            x = 0.1 + i * cell_width
+            ax.text(x, start_y - cell_height/2, str(col)[:20], 
+                   fontsize=9, fontweight='bold', color='white',
+                   transform=fig.transFigure, va='center')
+        
+        # Veri satırları
+        for row_idx in range(n_rows):
+            y = start_y - (row_idx + 1) * cell_height - 0.02
+            bg_color = '#1E293B' if row_idx % 2 == 0 else '#0F172A'
+            
+            # Satır arka planı
+            row_rect = Rectangle((0.05, y - cell_height/2), 
+                                min(n_cols, 8) * cell_width + 0.1, 
+                                cell_height, 
+                                facecolor=bg_color, edgecolor='#334155', 
+                                linewidth=0.5,
+                                transform=fig.transFigure)
+            ax.add_patch(row_rect)
+            
+            # Hücre verileri
+            for col_idx in range(min(n_cols, 8)):
+                x = 0.1 + col_idx * cell_width
+                val = str(df.iloc[row_idx, col_idx])[:25]
+                ax.text(x, y, val, fontsize=8, color='#E2E8F0',
+                       transform=fig.transFigure, va='center')
+        
+        # Alt bilgi
+        footer_text = f"Toplam {len(df)} satır | {len(df.columns)} sütun | 💾 İndirmeye hazır"
+        ax.text(0.5, 0.05, footer_text, fontsize=9, color='#94A3B8',
+               transform=fig.transFigure, ha='center')
+        
+        # Kenar boşlukları
+        fig.patch.set_facecolor('#0F172A')
+        ax.set_facecolor('#0F172A')
+        
+        # Görseli kaydet
+        preview_path = os.path.join("/tmp", f"preview_{filename}.png")
+        plt.savefig(preview_path, dpi=150, bbox_inches='tight', 
+                   facecolor='#0F172A', edgecolor='none')
+        plt.close()
+        
+        # Base64'e çevir
+        with open(preview_path, 'rb') as f:
+            img_data = base64.b64encode(f.read()).decode('utf-8')
+        
+        os.remove(preview_path)
+        return img_data
+        
+    except Exception as e:
+        print(f"Preview image error: {e}", file=sys.stderr)
+        return None
 
 def generate_word(content, filename):
     try:
@@ -221,6 +363,131 @@ def generate_eq_chart(mood_history, filename="eq_chart.png"):
     except Exception as e:
         return f"Chart Error: {str(e)}"
 
+def generate_ppt_code_snippet(slides, filename):
+    """PowerPoint oluşturmak için kullanılan Python kodunu döndür"""
+    num_slides = len(slides)
+    
+    code = f"""from pptx import Presentation
+from pptx.util import Inches, Pt
+from pptx.dml.color import RGBColor
+
+# Sunucu oluşturma
+prs = Presentation()
+prs.slide_width = Inches(13.333)
+prs.slide_height = Inches(7.5)
+
+# {num_slides} slayt ekleme
+slides_data = {repr([s.get('title', 'Başlık') for s in slides[:3]])}
+...
+
+for slide_data in slides_data:
+    slide_layout = prs.slide_layouts[1]
+    slide = prs.slides.add_slide(slide_layout)
+    
+    # Arka plan
+    background = slide.background
+    fill = background.fill
+    fill.solid()
+    fill.fore_color.rgb = RGBColor(15, 23, 42)
+    
+    # Başlık
+    title = slide.shapes.title
+    title.text = slide_data['title']
+    title.text_frame.paragraphs[0].font.color.rgb = RGBColor(45, 212, 191)
+
+# Kaydet
+prs.save("/tmp/{filename}")
+print(f"✅ {{len(prs.slides)}} slayt oluşturuldu")
+"""
+    return code
+
+def generate_ppt_preview_image(slides, filename):
+    """PowerPoint slaytlarının görsel önizlemesini oluştur"""
+    try:
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        from matplotlib.patches import Rectangle, FancyBboxPatch
+        
+        if not slides:
+            return None
+        
+        # Gösterilecek slayt sayısı (max 3)
+        n_slides = min(len(slides), 3)
+        
+        # Figür boyutları
+        fig_width = 14
+        fig_height = 3.5 * n_slides + 1
+        
+        fig, axes = plt.subplots(n_slides, 1, figsize=(fig_width, fig_height))
+        if n_slides == 1:
+            axes = [axes]
+        
+        for idx, (ax, slide_data) in enumerate(zip(axes, slides[:3])):
+            ax.set_xlim(0, 10)
+            ax.set_ylim(0, 5.625)  # 16:9 ratio
+            ax.axis('off')
+            
+            # Slayt arka planı
+            bg = FancyBboxPatch((0, 0), 10, 5.625, boxstyle="round,pad=0.02",
+                                facecolor='#0F172A', edgecolor='#334155', linewidth=2)
+            ax.add_patch(bg)
+            
+            # Başlık alanı
+            title_bg = FancyBboxPatch((0.2, 4.5), 9.6, 0.8, boxstyle="round,pad=0.02",
+                                       facecolor='#1E293B', edgecolor='#2DD4BF', linewidth=1, alpha=0.8)
+            ax.add_patch(title_bg)
+            
+            # Başlık metni
+            title_text = slide_data.get('title', 'Başlıksız')[:40]
+            ax.text(5, 4.9, title_text, fontsize=11, fontweight='bold', 
+                   color='#2DD4BF', ha='center', va='center')
+            
+            # İçerik alanı
+            content = slide_data.get('content', [])
+            y_pos = 3.8
+            for point in content[:5]:  # Max 5 bullet
+                # Bullet point
+                circle = plt.Circle((0.5, y_pos), 0.08, color='#2DD4BF', alpha=0.6)
+                ax.add_patch(circle)
+                # Metin
+                text = str(point)[:50] + ('...' if len(str(point)) > 50 else '')
+                ax.text(0.8, y_pos, text, fontsize=8, color='#E2E8F0', 
+                       va='center', ha='left')
+                y_pos -= 0.6
+            
+            # Görsel placeholder (varsa)
+            if slide_data.get('image_prompt') or slide_data.get('image_url'):
+                img_rect = FancyBboxPatch((6.5, 1), 3, 3, boxstyle="round,pad=0.02",
+                                          facecolor='#1E293B', edgecolor='#475569', 
+                                          linewidth=1, linestyle='--')
+                ax.add_patch(img_rect)
+                ax.text(8, 2.5, '🖼️ Görsel', fontsize=9, color='#64748B', ha='center', va='center')
+            
+            # Slayt numarası
+            ax.text(9.8, 0.2, f'{idx + 1}', fontsize=9, color='#64748B', ha='right', va='bottom')
+        
+        # Ana başlık
+        fig.suptitle(f'📊 {filename} · {len(slides)} slayt', fontsize=14, 
+                     fontweight='bold', color='#2DD4BF', y=0.98)
+        
+        # Görseli kaydet
+        preview_path = os.path.join("/tmp", f"preview_{filename}.png")
+        plt.savefig(preview_path, dpi=150, bbox_inches='tight', 
+                   facecolor='#0F172A', edgecolor='none')
+        plt.close()
+        
+        # Base64'e çevir
+        with open(preview_path, 'rb') as f:
+            img_data = base64.b64encode(f.read()).decode('utf-8')
+        
+        os.remove(preview_path)
+        return img_data
+        
+    except Exception as e:
+        print(f"PPT Preview image error: {e}", file=sys.stderr)
+        return None
+
 def generate_ppt(slides, filename):
     try:
         prs = Presentation()
@@ -265,7 +532,17 @@ def generate_ppt(slides, filename):
                 except: pass
         output_path = os.path.join("/tmp", filename)
         prs.save(output_path)
-        return output_path
+        
+        # Preview ve kod snippet oluştur
+        code_snippet = generate_ppt_code_snippet(slides, filename)
+        preview_image = generate_ppt_preview_image(slides, filename)
+        
+        return {
+            "path": output_path,
+            "code_snippet": code_snippet,
+            "preview_image": preview_image,
+            "slides": len(slides)
+        }
     except Exception as e:
         return f"Error: {str(e)}"
 
@@ -286,6 +563,20 @@ def main():
         
         if file_type == "excel":
             result = generate_excel(payload.get("data", {}), filename)
+            # Yeni format: result bir dict (path, code_snippet, preview_image, rows, columns)
+            if isinstance(result, dict):
+                print(json.dumps({
+                    "success": True,
+                    "path": result["path"],
+                    "code_snippet": result.get("code_snippet"),
+                    "preview_image": result.get("preview_image"),
+                    "rows": result.get("rows"),
+                    "columns": result.get("columns")
+                }))
+            elif isinstance(result, str) and result.startswith("Error:"):
+                print(json.dumps({"error": result}))
+            else:
+                print(json.dumps({"success": True, "path": result}))
         elif file_type == "word":
             content = payload.get("content", "")
             # If EQ Analysis, generate chart first
@@ -297,15 +588,36 @@ def main():
                           [{"type": "heading", "text": "Haftalık İlerleme Grafiği", "level": 1},
                            {"type": "image", "path": chart_path}]
             result = generate_word(content, filename)
+            if isinstance(result, str) and result.startswith("Error:"):
+                print(json.dumps({"error": result}))
+            else:
+                print(json.dumps({"success": True, "path": result}))
         elif file_type == "ppt":
             result = generate_ppt(payload.get("slides", []), filename)
+            # Yeni format: result bir dict (path, code_snippet, preview_image, slides)
+            if isinstance(result, dict):
+                print(json.dumps({
+                    "success": True,
+                    "path": result["path"],
+                    "code_snippet": result.get("code_snippet"),
+                    "preview_image": result.get("preview_image"),
+                    "slides": result.get("slides")
+                }))
+            elif isinstance(result, str) and result.startswith("Error:"):
+                print(json.dumps({"error": result}))
+            else:
+                print(json.dumps({"success": True, "path": result}))
         elif file_type == "certificate":
             result = generate_certificate(payload.get("data", {}), filename)
-        else: result = "Error: Invalid file type"
+            if isinstance(result, str) and result.startswith("Error:"):
+                print(json.dumps({"error": result}))
+            else:
+                print(json.dumps({"success": True, "path": result}))
+        else: 
+            print(json.dumps({"error": "Error: Invalid file type"}))
         
-        if result.startswith("Error:"): print(json.dumps({"error": result}))
-        else: print(json.dumps({"success": True, "path": result}))
-    except Exception as e: print(json.dumps({"error": str(e)}))
+    except Exception as e: 
+        print(json.dumps({"error": str(e)}))
 
 if __name__ == "__main__":
     main()

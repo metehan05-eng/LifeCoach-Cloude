@@ -651,7 +651,8 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
         let usedModel;
 
         const orModel = "google/gemini-2.0-pro-exp-02-05:free"; // OpenRouter öncelikli model
-        const gemini31FlashLite = "gemini-3.1-flash-lite-preview";  // En yeni: Gemini 3.1 Flash Lite Preview
+        const gemini31Pro = "gemini-3.1-pro-preview-customtools";  // En güçlü: Gemini 3.1 Pro (dosya oluşturma için optimize)
+        const gemini31FlashLite = "gemini-3.1-flash-lite-preview";  // Hızlı: Gemini 3.1 Flash Lite
         const gemini15Pro = "gemini-1.5-pro-latest";                // Yedek: Gemini 1.5 Pro
         const gemini15Flash = "gemini-1.5-flash-latest";           // Son çare: Gemini 1.5 Flash
 
@@ -705,33 +706,33 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
                 throw new Error("OpenRouter Key Yok");
             }
         } catch (orError) {
-            console.warn(`[AI] OpenRouter başarısız veya ayarlanmamış. Gemini 3.1'e geçiliyor... ${orError.message}`);
+            console.warn(`[AI] OpenRouter başarısız veya ayarlanmamış. Gemini 3.1 Pro'ya geçiliyor... ${orError.message}`);
 
             try {
-                // 1. Gemini 3.1 Flash Lite Preview (En yeni)
-                console.log(`[AI] Gemini Deneniyor: ${gemini31FlashLite}`);
-                const model = genAI.getGenerativeModel({ model: gemini31FlashLite, systemInstruction: finalSystemPrompt });
+                // 1. Gemini 3.1 Pro Preview (En güçlü - dosya oluşturma için optimize)
+                console.log(`[AI] Gemini Deneniyor: ${gemini31Pro}`);
+                const model = genAI.getGenerativeModel({ model: gemini31Pro, systemInstruction: finalSystemPrompt });
                 const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } });
                 const result = await chat.sendMessage(userMessageParts);
                 aiResponse = result.response.text();
-                usedModel = gemini31FlashLite;
+                usedModel = gemini31Pro;
             } catch (error) {
-                console.warn(`[AI] ${gemini31FlashLite} başarısız. YEDEK: ${gemini15Pro}`);
+                console.warn(`[AI] ${gemini31Pro} başarısız. YEDEK: ${gemini31FlashLite}`);
                 try {
-                    // 2. Gemini 1.5 Pro (Yedek)
+                    // 2. Gemini 3.1 Flash Lite (Hızlı yedek)
+                    const model = genAI.getGenerativeModel({ model: gemini31FlashLite, systemInstruction: finalSystemPrompt });
+                    const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } });
+                    const result = await chat.sendMessage(userMessageParts);
+                    aiResponse = result.response.text();
+                    usedModel = gemini31FlashLite;
+                } catch (finalError) {
+                    console.warn(`[AI] Son çare: ${gemini15Pro}`);
+                    // 3. Gemini 1.5 Pro (Son çare)
                     const model = genAI.getGenerativeModel({ model: gemini15Pro, systemInstruction: finalSystemPrompt });
                     const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } });
                     const result = await chat.sendMessage(userMessageParts);
                     aiResponse = result.response.text();
                     usedModel = gemini15Pro;
-                } catch (finalError) {
-                    console.warn(`[AI] Son çare: ${gemini15Flash}`);
-                    // 3. Gemini 1.5 Flash (Son çare)
-                    const model = genAI.getGenerativeModel({ model: gemini15Flash, systemInstruction: finalSystemPrompt });
-                    const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 3000, temperature: 0.7 } });
-                    const result = await chat.sendMessage(userMessageParts);
-                    aiResponse = result.response.text();
-                    usedModel = gemini15Flash;
                 }
             }
         }
