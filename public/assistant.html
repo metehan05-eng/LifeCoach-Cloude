@@ -1232,19 +1232,74 @@
         }
     }
 
-    function loadHistoryList() {
+    async function loadHistoryList() {
         const historyList = document.getElementById('historyList');
-        if (!historyList || conversationHistory.length === 0) return;
+        if (!historyList) return;
         
-        historyList.innerHTML = conversationHistory.map(conv => `
-            <div class="history-item" onclick="loadConversationFromHistory('${conv.id}')">
-                <div class="history-item-title">${escapeHtml(conv.title)}</div>
-                <div class="history-item-date">${formatDate(conv.date)}</div>
-            </div>
-        `).join('');
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch('/api/history', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            const dbSessions = await response.json();
+            
+            if (dbSessions && dbSessions.length > 0) {
+                historyList.innerHTML = dbSessions.map(conv => `
+                    <div class="history-item" onclick="loadConversationFromHistory('${conv.id}')">
+                        <div class="history-item-title">${escapeHtml(conv.title || 'Sohbet')}</div>
+                        <div class="history-item-date">${conv.date ? formatDate(conv.date) : 'Kayıtlı Sohbet'}</div>
+                    </div>
+                `).join('');
+                return;
+            }
+        } catch (error) {
+            console.error('History API error:', error);
+        }
+
+        // Fallback to local storage if API fails or is empty and local has items
+        if (conversationHistory && conversationHistory.length > 0) {
+            historyList.innerHTML = conversationHistory.map(conv => `
+                <div class="history-item" onclick="loadConversationFromHistory('${conv.id}')">
+                    <div class="history-item-title">${escapeHtml(conv.title)}</div>
+                    <div class="history-item-date">${formatDate(conv.date)}</div>
+                </div>
+            `).join('');
+        } else {
+            historyList.innerHTML = '<div style="padding: 10px; color: var(--ink-dim); text-align: center;">Konuşma geçmişi bulunmuyor.</div>';
+        }
     }
 
-    function loadConversationFromHistory(id) {
+    async function loadConversationFromHistory(id) {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch('/api/get-session', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ sessionId: id })
+            });
+            const sessionData = await response.json();
+            
+            if (sessionData && !sessionData.error && sessionData.messages) {
+                const conv = {
+                    id: sessionData.id,
+                    messages: sessionData.messages 
+                };
+                loadConversation(conv);
+                closePanels();
+                return;
+            }
+        } catch (error) {
+            console.error('Get Session API error:', error);
+        }
+        
+        // Fallback to local storage
         const conv = conversationHistory.find(c => c.id === id);
         if (conv) {
             loadConversation(conv);

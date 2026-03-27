@@ -435,15 +435,44 @@
         fileInput.type = 'file';
         fileInput.id = 'fileInput';
         fileInput.style.display = 'none';
-        fileInput.accept = '.docx,.xlsx,.xls,.pptx,.ppt,.pdf,.txt';
+        fileInput.accept = '.docx,.xlsx,.xls,.pptx,.ppt,.pdf,.txt,image/*';
         fileInput.multiple = true;
         document.body.appendChild(fileInput);
         fileInput.addEventListener('change', async (e) => {
             const files = Array.from(e.target.files);
-            for (const file of files) await handleFileUpload(file);
+            await processFiles(files);
             fileInput.value = '';
         });
+
+        const chatContainer = document.getElementById('chatContainer');
+        if (chatContainer) {
+            chatContainer.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            });
+            
+            chatContainer.addEventListener('drop', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                    const files = Array.from(e.dataTransfer.files);
+                    await processFiles(files);
+                }
+            });
+        }
     }
+
+    async function processFiles(files) {
+        const MAX_SIZE = 500 * 1024 * 1024; // 500 MB
+        for (const file of files) {
+            if (file.size > MAX_SIZE) {
+                showToast(file.name + ' boyutu çok büyük. Maksimum 500MB yükleyebilirsiniz.');
+                continue;
+            }
+            await handleFileUpload(file);
+        }
+    }
+
 
     async function handleFileUpload(file) {
         const fileData = { id: Date.now() + Math.random(), name: file.name, type: file.type, size: file.size, file: file };
@@ -474,10 +503,12 @@
     }
 
     function getFileIcon(filename) {
-        if (filename.endsWith('.docx') || filename.endsWith('.doc')) return '📄';
-        if (filename.endsWith('.xlsx') || filename.endsWith('.xls')) return '📊';
-        if (filename.endsWith('.pptx') || filename.endsWith('.ppt')) return '📽️';
-        if (filename.endsWith('.pdf')) return '📑';
+        const lowerName = filename.toLowerCase();
+        if (lowerName.endsWith('.docx') || lowerName.endsWith('.doc')) return '📄';
+        if (lowerName.endsWith('.xlsx') || lowerName.endsWith('.xls')) return '📊';
+        if (lowerName.endsWith('.pptx') || lowerName.endsWith('.ppt')) return '📽️';
+        if (lowerName.endsWith('.pdf')) return '📑';
+        if (lowerName.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)) return '🖼️';
         return '📎';
     }
 
