@@ -7141,6 +7141,7 @@
                     };
 
                     // Briefing çekme tetikleyicisi (render sonrası için)
+                    const briefingId = `briefing-${goal.id}`;
                     setTimeout(() => {
                         if (!goalBriefings[goal.id] && goal.status !== 'completed') {
                             GoalsService.getBriefing(goal.title, goal.description).then(brief => {
