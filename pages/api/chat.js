@@ -1,13 +1,12 @@
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { getKVData, setKVData } from '../../lib/db';
 
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
-const OPENROUTER_MODELS = [
-    "arcee-ai/trinity-large-preview:free",
-    "deepseek/deepseek-r1-0528:free",
-    "qwen/qwen3-next-80b-a3b-instruct:free",
-    "google/gemma-3-27b-it:free",
-    "openrouter/free"
-];
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+
+let genAI;
+if (GEMINI_API_KEY) {
+    genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+}
 
 // --- LİMİT SİSTEMİ (KV Tabanlı) ---
 
@@ -59,31 +58,68 @@ async function checkRateLimit(req, ip, fingerprint) {
     return { allowed: true };
 }
 
-// --- OPENROUTER ÇAĞRISI ---
+// --- GEMINI ÇAĞRISI ---
 
-async function callOpenRouter(messages) {
-    for (const model of OPENROUTER_MODELS) {
+async function callGemini(messages, systemPrompt) {
+    if (!genAI) {
+        throw new Error("GEMINI_API_KEY ayarlanmamış");
+    }
+    
+    const gemini31Pro = "gemini-3.1-pro-preview-customtools";
+    const gemini31FlashLite = "gemini-3.1-flash-lite-preview";
+    const gemini15Pro = "gemini-1.5-pro-latest";
+    
+    // Mesajları Gemini formatına çevir
+    const chatHistory = messages
+        .filter(m => m.role !== 'system')
+        .map(msg => ({
+            role: msg.role === 'assistant' ? 'model' : 'user',
+            parts: [{ text: msg.content }]
+        }));
+    
+    const userMessage = messages.filter(m => m.role === 'user').pop();
+    
+    try {
+        // 1. Gemini 3.1 Pro
+        const model = genAI.getGenerativeModel({ 
+            model: gemini31Pro, 
+            systemInstruction: systemPrompt 
+        });
+        const chat = model.startChat({ 
+            history: chatHistory.slice(0, -1), 
+            generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } 
+        });
+        const result = await chat.sendMessage(userMessage?.content || '');
+        return result.response.text();
+    } catch (error) {
+        console.warn(`[AI] ${gemini31Pro} başarısız. YEDEK: ${gemini31FlashLite}`);
         try {
-            const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
-                    "Content-Type": "application/json",
-                    "HTTP-Referer": "https://lifecoach-ai.pages.dev",
-                    "X-Title": "LifeCoach AI"
-                },
-                body: JSON.stringify({ model, messages })
+            // 2. Gemini 3.1 Flash Lite
+            const model = genAI.getGenerativeModel({ 
+                model: gemini31FlashLite, 
+                systemInstruction: systemPrompt 
             });
-
-            if (response.ok) {
-                const data = await response.json();
-                return data.choices[0].message.content;
-            }
-        } catch (e) {
-            console.warn(`Model ${model} error:`, e);
+            const chat = model.startChat({ 
+                history: chatHistory.slice(0, -1), 
+                generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } 
+            });
+            const result = await chat.sendMessage(userMessage?.content || '');
+            return result.response.text();
+        } catch (finalError) {
+            console.warn(`[AI] Son çare: ${gemini15Pro}`);
+            // 3. Gemini 1.5 Pro
+            const model = genAI.getGenerativeModel({ 
+                model: gemini15Pro, 
+                systemInstruction: systemPrompt 
+            });
+            const chat = model.startChat({ 
+                history: chatHistory.slice(0, -1), 
+                generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } 
+            });
+            const result = await chat.sendMessage(userMessage?.content || '');
+            return result.response.text();
         }
     }
-    throw new Error("All AI models failed.");
 }
 
 // --- HELPER: ÖZETLEME ---
@@ -91,10 +127,10 @@ async function summarizeConversation(messages) {
     if (!messages || messages.length === 0) return "";
     const conversationText = messages.map(m => `${m.role}: ${m.content}`).join('\n');
     try {
-        const summary = await callOpenRouter([
+        const summary = await callGemini([
             { "role": "system", "content": "Summarize the following conversation very briefly (1-2 sentences). Only provide the summary, nothing else." },
             { "role": "user", "content": `Conversation to summarize:\n\n${conversationText}` }
-        ]);
+        ], "You are a helpful assistant that summarizes conversations.");
         return (summary || "").trim();
     } catch (e) {
         console.error("Summarization error:", e);
@@ -379,11 +415,11 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
         const finalSystemPrompt = memoryContext + systemPrompt;
         
         // 4. AI Cevabı
-        const aiResponse = await callOpenRouter([
+        const aiResponse = await callGemini([
             { "role": "system", "content": finalSystemPrompt },
             ...(history || []),
             { "role": "user", "content": message }
-        ]);
+        ], finalSystemPrompt);
 
         // 5. Veritabanı Güncelleme (Kullanıcı varsa)
         let newSessionId = sessionId;
@@ -405,10 +441,10 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
                     };
                     // Başlık oluşturma (Opsiyonel, basit tutuldu)
                     try {
-                        const titleText = await callOpenRouter([
+                        const titleText = await callGemini([
                             { "role": "system", "content": "Write a very short title (3-5 words). No quotes." },
                             { "role": "user", "content": `User: ${message}\nAI: ${aiResponse}` }
-                        ]);
+                        ], "You are a helpful assistant that creates short titles.");
                         if (titleText) session.title = titleText.trim().replace(/^["']|["']$/g, '');
                     } catch(e) {}
 
