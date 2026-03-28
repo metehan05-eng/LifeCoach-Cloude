@@ -4822,8 +4822,10 @@
             }
         }
 
-        async function platformShare(platform) {
+        async function platformShare() {
             const { title, value, type } = currentShareData;
+            
+            console.log('[SHARE] Başlıyor:', { title, value, type });
             
             try {
                 showToast('📤 Paylaşım hazırlanıyor...', 'success');
@@ -4840,64 +4842,74 @@
                     shareTitle = `${title} Hedefim`;
                 }
                 
-                // Görseli oluştur
+                console.log('[SHARE] Metin hazırlandı');
+                
+                // Görseli oluştur (optional)
                 let imageFile = null;
                 try {
+                    console.log('[SHARE] Görsel oluşturuluyor...');
                     const dataUrl = await generateGoalImage(title, value);
                     const response = await fetch(dataUrl);
                     const blob = await response.blob();
                     imageFile = new File([blob], `${title}.png`, { type: 'image/png' });
+                    console.log('[SHARE] Görsel başarılı');
                 } catch (imgErr) {
-                    console.warn('[SHARE] Görsel oluşturulamadı, sadece metinle paylaş:', imgErr);
+                    console.warn('[SHARE] Görsel oluşturulamadı (sorun değil):', imgErr.message);
                 }
                 
-                // Web Share API hangisini kullancağımızı belirle
+                // Share Data oluştur
                 let shareData = {
                     title: shareTitle,
                     text: shareText,
                     url: window.location.origin
                 };
                 
-                // Eğer görsel varsa ve tarayıcı destekliyorsa ekle
-                if (imageFile && navigator.share && 'files' in (new ClipboardItem({ 'image/png': Promise.resolve(new Blob()) }))) {
+                // Görsel ekle (eğer mümkünseyse)
+                if (imageFile) {
                     try {
                         shareData.files = [imageFile];
+                        console.log('[SHARE] Görsel eklendi');
                     } catch (e) {
-                        console.log('[SHARE] Görsel eklenemedi, sadece metin gönderilecek');
+                        console.warn('[SHARE] Görsel eklenemedi, sadece metin:', e.message);
                     }
                 }
                 
+                console.log('[SHARE] Web Share API var mı?', !!navigator.share);
+                
                 // Web Share API çağır
                 if (navigator.share) {
-                    console.log('[SHARE] Web Share API kullanılıyor:', shareData);
+                    console.log('[SHARE] Web Share API çağrılıyor...');
                     
                     try {
                         await navigator.share(shareData);
                         showToast('✅ Paylaşım başarılı! 🎉', 'success');
-                        console.log('[SHARE] Paylaşım tamamlandı');
+                        console.log('[SHARE] Paylaşım başarılı!');
                     } catch (shareErr) {
                         if (shareErr.name === 'AbortError') {
-                            console.log('[SHARE] Paylaşım iptal edildi');
-                            // User iptal etti, sadece bilgi ver
+                            console.log('[SHARE] Kullanıcı iptal etti');
+                            showToast('Paylaşım iptal edildi', 'info');
                         } else {
-                            console.error('[SHARE] Share API hatası:', shareErr);
-                            showToast(`❌ Paylaşım hatası: ${shareErr.message}`, 'error');
+                            console.error('[SHARE] Share API hatası:', shareErr.message);
+                            showToast(`❌ Hata: ${shareErr.message}`, 'error');
                         }
                     }
                 } else {
                     // Fallback: Web Share API desteklenmiyor
-                    console.log('[SHARE] Web Share API desteklenmiyor, fallback kullanılıyor');
-                    showToast('⚠️ Bu tarayıcı gelişmiş paylaşımı desteklemiyor. Metni manuel kopyala.', 'info');
+                    console.log('[SHARE] Web Share API desteklenmiyor, fallback...');
+                    showToast('💻 Bu tarayıcıda gelişmiş paylaşım desteklenmiyor', 'info');
                     
                     // Metni kopyala
-                    navigator.clipboard.writeText(shareText).then(() => {
+                    try {
+                        await navigator.clipboard.writeText(shareText);
                         showToast('✅ Metni kopyaladık! Panoya yapıştır', 'success');
-                    });
+                    } catch (e) {
+                        showToast('❌ Clipboard erişimi başarısız', 'error');
+                    }
                 }
                 
             } catch (error) {
-                console.error('[SHARE] Fatal error:', error);
-                showToast(`❌ Hata: ${error.message}`, 'error');
+                console.error('[SHARE] FATAL ERROR:', error);
+                showToast(`❌ Kritik hata: ${error.message}`, 'error');
             }
             
             closeShareModal();
