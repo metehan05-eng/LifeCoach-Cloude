@@ -101,7 +101,7 @@ export default async function handler(req, res) {
     // POST - Create new habit
     if (req.method === 'POST') {
         try {
-            const { name, description, frequency, icon, color } = req.body;
+            const { name, description, frequency, icon, color, reminder, dailyTarget } = req.body;
             
             if (!name) {
                 return res.status(400).json({ error: 'Alışkanlık adı gereklidir' });
@@ -117,8 +117,11 @@ export default async function handler(req, res) {
                 frequency: frequency || 'daily', // daily, weekly
                 icon: icon || 'star',
                 color: color || '#2DD4BF',
+                dailyTarget: dailyTarget || 1, // How many times should be done daily (NEW)
                 completions: [], // Array of date strings (YYYY-MM-DD)
                 streak: 0,
+                reminder: reminder || null, // Reminder configuration: {enabled, time, frequency, specificDays}
+                lastNotificationAt: null, // Last notification timestamp
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString()
             };

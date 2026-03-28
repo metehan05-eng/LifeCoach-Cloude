@@ -508,6 +508,71 @@ const SmartCoachService = {
     }
 };
 
+// ==================== NOTIFICATIONS API ====================
+
+const NotificationsService = {
+    async getPendingNotifications() {
+        try {
+            const res = await fetch('/api/notifications', {
+                method: 'GET',
+                headers: getAuthHeaders()
+            });
+            if (!res.ok) throw new Error('Failed to fetch notifications');
+            return await res.json();
+        } catch (error) {
+            console.error('NotificationsService.getPendingNotifications error:', error);
+            return { notifications: [] };
+        }
+    },
+
+    async subscribeToPushNotifications(subscription) {
+        try {
+            const res = await fetch('/api/notifications', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ subscription })
+            });
+            if (!res.ok) throw new Error('Failed to subscribe');
+            return await res.json();
+        } catch (error) {
+            console.error('NotificationsService.subscribeToPushNotifications error:', error);
+            throw error;
+        }
+    },
+
+    async requestNotificationPermission() {
+        if (!('Notification' in window)) {
+            console.log('This browser does not support notifications');
+            return false;
+        }
+
+        if (Notification.permission === 'granted') {
+            return true;
+        }
+
+        if (Notification.permission !== 'denied') {
+            const permission = await Notification.requestPermission();
+            return permission === 'granted';
+        }
+
+        return false;
+    },
+
+    showLocalNotification(title, message, options = {}) {
+        if (!('Notification' in window)) return;
+        
+        if (Notification.permission === 'granted') {
+            new Notification(title, {
+                icon: '/logo-preview.html',
+                body: message,
+                tag: 'habit-reminder',
+                requireInteraction: false,
+                ...options
+            });
+        }
+    }
+};
+
 // Export for global use
 window.GoalsService = GoalsService;
 window.HabitsService = HabitsService;
@@ -517,3 +582,4 @@ window.FocusService = FocusService;
 window.ReflectionsService = ReflectionsService;
 window.RecommendationsService = RecommendationsService;
 window.SmartCoachService = SmartCoachService;
+window.NotificationsService = NotificationsService;

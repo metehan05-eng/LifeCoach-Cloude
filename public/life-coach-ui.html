@@ -208,6 +208,7 @@
                 left: 0 !important;
                 min-width: 0 !important;
                 overflow-x: hidden !important;
+                overflow-y: auto !important;
             }
             .section-content:not(.hidden) {
                 display: flex !important;
@@ -2120,13 +2121,14 @@
             animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
             width: 100%;
             max-width: 100%;
-            padding: 0;
+            padding: 2rem;
             margin: 0;
             display: none;
             flex-direction: column;
             height: 100%;
             /* KEY FIX: sections must fill parent height */
-            overflow: hidden;
+            overflow-y: auto;
+            overflow-x: hidden;
         }
 
         .section-content:not(.hidden) {
@@ -4467,6 +4469,67 @@
                     </div>
                     <input type="hidden" id="habit-icon" value="heart">
                 </div>
+
+                <!-- Daily Target -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Günlük Hedef Sayısı</label>
+                    <div class="flex gap-2 items-center">
+                        <button type="button" onclick="decrementDailyTarget()" class="w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:bg-white/10"><i class="fa-solid fa-minus text-sm"></i></button>
+                        <input type="number" id="habit-daily-target" class="modal-input flex-1 text-center" min="1" max="100" value="1" required>
+                        <button type="button" onclick="incrementDailyTarget()" class="w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:bg-white/10"><i class="fa-solid fa-plus text-sm"></i></button>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-1">Bu alışkanlığı günde kaç kez tamamlamalısın?</p>
+                </div>
+                
+                <!-- Reminder Settings -->
+                <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-4 space-y-3">
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="habit-reminder-enabled" class="w-4 h-4 rounded">
+                        <label for="habit-reminder-enabled" class="text-sm font-medium text-slate-300">Bildirim Al</label>
+                    </div>
+                    
+                    <div id="habit-reminder-options" class="hidden space-y-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Saat</label>
+                            <input type="time" id="habit-reminder-time" class="modal-input" value="09:00">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Tekrar</label>
+                            <select id="habit-reminder-frequency" class="modal-input">
+                                <option value="daily">Her Gün</option>
+                                <option value="weekdays">Hafta İçi (Pazartesi-Cuma)</option>
+                                <option value="weekends">Hafta Sonu (Cumartesi-Pazar)</option>
+                                <option value="specific">Belirli Günler</option>
+                            </select>
+                        </div>
+                        <div id="habit-specific-days" class="hidden">
+                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Günler</label>
+                            <div class="grid grid-cols-4 gap-2">
+                                <label class="flex items-center gap-2 text-sm">
+                                    <input type="checkbox" class="habit-day-checkbox" value="1"> Pzt
+                                </label>
+                                <label class="flex items-center gap-2 text-sm">
+                                    <input type="checkbox" class="habit-day-checkbox" value="2"> Sal
+                                </label>
+                                <label class="flex items-center gap-2 text-sm">
+                                    <input type="checkbox" class="habit-day-checkbox" value="3"> Çarş
+                                </label>
+                                <label class="flex items-center gap-2 text-sm">
+                                    <input type="checkbox" class="habit-day-checkbox" value="4"> Perş
+                                </label>
+                                <label class="flex items-center gap-2 text-sm">
+                                    <input type="checkbox" class="habit-day-checkbox" value="5"> Cum
+                                </label>
+                                <label class="flex items-center gap-2 text-sm">
+                                    <input type="checkbox" class="habit-day-checkbox" value="6"> Cmt
+                                </label>
+                                <label class="flex items-center gap-2 text-sm">
+                                    <input type="checkbox" class="habit-day-checkbox" value="0"> Paz
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div id="habit-error"
                     class="text-red-400 text-sm hidden bg-red-500/10 border border-red-500/20 rounded-xl p-3"></div>
                 <div class="flex gap-3 pt-1">
@@ -4913,6 +4976,43 @@
             }
             
             closeShareModal();
+        }
+
+        // ==================== NOTIFICATIONS ====================
+        function initializeNotifications() {
+            // Request notification permission on first visit
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        console.log('Notifications enabled');
+                    }
+                });
+            }
+
+            // Check for pending notifications every minute
+            setInterval(async () => {
+                const token = storage.get('token');
+                if (!token) return; // Only check if user is logged in
+
+                try {
+                    const result = await NotificationsService.getPendingNotifications();
+                    if (result.notifications && result.notifications.length > 0) {
+                        result.notifications.forEach(notif => {
+                            NotificationsService.showLocalNotification(
+                                notif.title,
+                                notif.message,
+                                {
+                                    tag: `habit-${notif.habitId}`,
+                                    badge: '/manifest.json',
+                                    data: { habitId: notif.habitId }
+                                }
+                            );
+                        });
+                    }
+                } catch (error) {
+                    console.error('Notification check error:', error);
+                }
+            }, 60000); // Check every 60 seconds
         }
 
         function showToast(message, type = 'success') {
@@ -6852,6 +6952,9 @@
                 }
             });
             
+            // Initialize Notifications
+            initializeNotifications();
+            
             applyTranslations(); // Dil ayarlarını uygula
             let isDeepSearch = false;
             let attachedFiles = [];
@@ -7715,6 +7818,8 @@
                                     <div>
                                         <h3 class="text-white font-semibold">${escapeHTML(habit.name)}</h3>
                                         ${habit.description ? `<p class="text-xs text-slate-400">${escapeHTML(habit.description)}</p>` : ''}
+                                        ${habit.reminder && habit.reminder.enabled ? `<p class="text-xs text-teal-400 mt-1"><i class="fa-solid fa-bell mr-1"></i>Bildirim: ${habit.reminder.time}</p>` : ''}
+                                        ${habit.dailyTarget ? `<p class="text-xs text-purple-400 mt-1"><i class="fa-solid fa-target mr-1"></i>Günlük: ${habit.dailyTarget}x</p>` : ''}
                                     </div>
                                 </div>
                                 <div class="flex items-center gap-1.5">
@@ -7740,6 +7845,7 @@
                 document.getElementById('habit-form').reset();
                 document.getElementById('habit-error').classList.add('hidden');
                 document.getElementById('habit-icon').value = 'heart';
+                document.getElementById('habit-daily-target').value = '1';
                 document.querySelectorAll('.icon-btn').forEach(btn => {
                     btn.classList.remove('border-red-400/50', 'border-blue-400/50', 'border-amber-400/50', 'border-cyan-400/50', 'border-purple-400/50', 'border-yellow-400/50');
                     btn.classList.add('border-white/10');
@@ -7788,6 +7894,43 @@
                 }
             }
 
+            // Daily target increment/decrement
+            function incrementDailyTarget() {
+                const input = document.getElementById('habit-daily-target');
+                const value = parseInt(input.value) || 1;
+                if (value < 100) {
+                    input.value = value + 1;
+                }
+            }
+
+            function decrementDailyTarget() {
+                const input = document.getElementById('habit-daily-target');
+                const value = parseInt(input.value) || 1;
+                if (value > 1) {
+                    input.value = value - 1;
+                }
+            }
+
+            // Habit reminder checkbox toggle
+            document.getElementById('habit-reminder-enabled')?.addEventListener('change', (e) => {
+                const options = document.getElementById('habit-reminder-options');
+                if (e.target.checked) {
+                    options.classList.remove('hidden');
+                } else {
+                    options.classList.add('hidden');
+                }
+            });
+
+            // Habit reminder frequency change
+            document.getElementById('habit-reminder-frequency')?.addEventListener('change', (e) => {
+                const specificDays = document.getElementById('habit-specific-days');
+                if (e.target.value === 'specific') {
+                    specificDays.classList.remove('hidden');
+                } else {
+                    specificDays.classList.add('hidden');
+                }
+            });
+
             // Habit form submit
             document.getElementById('habit-form')?.addEventListener('submit', async (e) => {
                 e.preventDefault();
@@ -7795,9 +7938,27 @@
                 const name = document.getElementById('habit-name').value.trim();
                 const description = document.getElementById('habit-description').value.trim();
                 const icon = document.getElementById('habit-icon').value;
+                const dailyTarget = parseInt(document.getElementById('habit-daily-target').value) || 1;
+                const reminderEnabled = document.getElementById('habit-reminder-enabled').checked;
+                
+                let reminder = null;
+                if (reminderEnabled) {
+                    const reminderTime = document.getElementById('habit-reminder-time').value;
+                    const frequency = document.getElementById('habit-reminder-frequency').value;
+                    
+                    reminder = {
+                        enabled: true,
+                        time: reminderTime, // HH:MM format
+                        frequency: frequency, // daily, weekdays, weekends, specific
+                        specificDays: frequency === 'specific' 
+                            ? Array.from(document.querySelectorAll('.habit-day-checkbox:checked'))
+                                .map(cb => parseInt(cb.value))
+                            : []
+                    };
+                }
 
                 try {
-                    await HabitsService.create({ name, description, icon });
+                    await HabitsService.create({ name, description, icon, dailyTarget, reminder });
                     closeHabitModal();
                     loadHabits();
                     showToast('Alışkanlık oluşturuldu! ❤️');
