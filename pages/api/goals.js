@@ -116,6 +116,56 @@ export default async function handler(req, res) {
             
             if (status === 'completed' && !userGoals[goalIndex].completedAt) {
                 updatedGoal.completedAt = new Date().toISOString();
+                
+                // Add XP and Flame level reward based on goal type
+                const rewardMap = {
+                    'daily': 'goal_daily',
+                    'weekly': 'goal_weekly',
+                    'monthly': 'goal_monthly',
+                    'yearly': 'goal_yearly'
+                };
+                const rewardType = rewardMap[type || userGoals[goalIndex].type] || 'goal_daily';
+                
+                try {
+                    // Add reward to user stats
+                    const allStats = await getKVData('user-stats') || {};
+                    const userStats = allStats[userId] || {
+                        userId,
+                        xp: 0,
+                        flameLevel: 0,
+                        level: 1,
+                        history: []
+                    };
+
+                    // Reward mapping
+                    const rewards = {
+                        goal_daily: { xp: 5, flame: 5 },
+                        goal_weekly: { xp: 20, flame: 20 },
+                        goal_monthly: { xp: 50, flame: 50 },
+                        goal_yearly: { xp: 50, flame: 20 }
+                    };
+
+                    const reward = rewards[rewardType];
+                    userStats.xp += reward.xp;
+                    userStats.flameLevel += reward.flame;
+                    userStats.level = Math.floor(userStats.xp / 100) + 1;
+
+                    userStats.history.push({
+                        type: rewardType,
+                        xp: reward.xp,
+                        flame: reward.flame,
+                        timestamp: new Date().toISOString()
+                    });
+
+                    if (userStats.history.length > 100) {
+                        userStats.history = userStats.history.slice(-100);
+                    }
+
+                    allStats[userId] = userStats;
+                    await setKVData('user-stats', allStats);
+                } catch (error) {
+                    console.error('Failed to add reward for completed goal:', error);
+                }
             }
             
             userGoals[goalIndex] = updatedGoal;

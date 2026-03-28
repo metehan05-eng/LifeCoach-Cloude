@@ -38,6 +38,76 @@ function getAuthHeaders() {
     return headers;
 }
 
+// ==================== REWARD NOTIFICATIONS ====================
+
+function showRewardNotification(xp, flame, type = 'reward') {
+    // Create a floating notification element
+    const notification = document.createElement('div');
+    notification.className = 'fixed top-4 right-4 z-50 animate-fade-up';
+    
+    const rewardMessage = {
+        goal_daily: '🎯 Günlük Hedef Tamamlandı!',
+        goal_weekly: '🎯 Haftalık Hedef Tamamlandı!',
+        goal_monthly: '🎯 Aylık Hedef Tamamlandı!',
+        goal_yearly: '🎯 Yıllık Hedef Tamamlandı!',
+        focus_session: '🔥 Odaklanma Seansı Tamamlandı!',
+        reflection: '💭 Yansıma Kaydedildi!',
+        journal: '📓 Günlük Yazıldı!',
+        plan_daily: '📝 Günlük Plan Tamamlandı!',
+        plan_weekly: '📝 Haftalık Plan Tamamlandı!',
+        plan_monthly: '📝 Aylık Plan Tamamlandı!',
+        plan_project: '🏆 Proje Tamamlandı!',
+        task_7day: '✅ 7 Günlük Plan Başarıldı!',
+        task_14day: '✅ 14 Günlük Plan Başarıldı!',
+        task_30day: '✅ 30 Günlük Plan Başarıldı!',
+        task_90day: '✅ 90 Günlük Plan Başarıldı!',
+        'default': '⭐ Başarı Elde Edildi!'
+    };
+    
+    const title = rewardMessage[type] || rewardMessage['default'];
+    
+    notification.innerHTML = `
+        <div class="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 rounded-xl p-4 shadow-xl backdrop-blur-md max-w-xs">
+            <div class="flex items-center gap-3">
+                <div class="text-2xl">🎁</div>
+                <div class="flex-1">
+                    <div class="font-semibold text-white text-sm mb-1">${title}</div>
+                    <div class="flex gap-4 text-xs">
+                        <span class="text-blue-400">+${xp} XP</span>
+                        <span class="text-orange-400">+${flame} 🔥</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateY(-20px)';
+        notification.style.transition = 'all 0.3s ease-out';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+// Update stats in dashboard after reward
+async function updateStatsDisplay() {
+    try {
+        const stats = await StatsService.getStats();
+        if (window.dashboardStats) {
+            window.dashboardStats.xp = stats.xp;
+            window.dashboardStats.flameLevel = stats.flameLevel;
+            window.dashboardStats.level = stats.level;
+        }
+        loadDashboard?.();  // Trigger dashboard refresh if function exists
+    } catch (error) {
+        console.error('Error updating stats display:', error);
+    }
+}
+
+
 // ==================== GOALS API ====================
 
 const GoalsService = {
@@ -592,13 +662,166 @@ const NotificationsService = {
     }
 };
 
+// ==================== USER STATS API (XP & Flame Level) ====================
+
+const StatsService = {
+    async getStats() {
+        try {
+            const res = await fetch('/api/user-stats', {
+                method: 'GET',
+                headers: getAuthHeaders()
+            });
+            if (!res.ok) throw new Error('Failed to fetch stats');
+            return await res.json();
+        } catch (error) {
+            console.error('StatsService.getStats error:', error);
+            return { xp: 0, flameLevel: 0, level: 1, history: [] };
+        }
+    },
+
+    async addReward(rewardType) {
+        try {
+            const res = await fetch('/api/user-stats', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ rewardType })
+            });
+            if (!res.ok) throw new Error('Failed to add reward');
+            return await res.json();
+        } catch (error) {
+            console.error('StatsService.addReward error:', error);
+            return null;
+        }
+    },
+
+    async consumeFlame(consumeType) {
+        try {
+            const res = await fetch('/api/user-stats', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ action: 'consume', consumeType })
+            });
+            if (!res.ok) {
+                const error = await res.json();
+                throw new Error(error.error || 'Failed to consume flame');
+            }
+            return await res.json();
+        } catch (error) {
+            console.error('StatsService.consumeFlame error:', error);
+            throw error;
+        }
+    }
+};
+
+// ==================== TASK BREAKDOWN API ====================
+
+const TaskBreakdownService = {
+    async getAll() {
+        try {
+            const res = await fetch('/api/task-breakdown', {
+                method: 'GET',
+                headers: getAuthHeaders()
+            });
+            if (!res.ok) throw new Error('Failed to fetch task breakdowns');
+            return await res.json();
+        } catch (error) {
+            console.error('TaskBreakdownService.getAll error:', error);
+            return [];
+        }
+    },
+
+    async create(title, days, description = '', tasks = []) {
+        try {
+            const res = await fetch('/api/task-breakdown', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ title, days, description, tasks })
+            });
+            if (!res.ok) throw new Error('Failed to create task breakdown');
+            return await res.json();
+        } catch (error) {
+            console.error('TaskBreakdownService.create error:', error);
+            throw error;
+        }
+    },
+
+    async update(id, updates) {
+        try {
+            const res = await fetch('/api/task-breakdown', {
+                method: 'PUT',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ id, ...updates })
+            });
+            if (!res.ok) throw new Error('Failed to update task breakdown');
+            return await res.json();
+        } catch (error) {
+            console.error('TaskBreakdownService.update error:', error);
+            throw error;
+        }
+    },
+
+    async delete(id) {
+        try {
+            const res = await fetch('/api/task-breakdown', {
+                method: 'DELETE',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ id })
+            });
+            if (!res.ok) throw new Error('Failed to delete task breakdown');
+            return await res.json();
+        } catch (error) {
+            console.error('TaskBreakdownService.delete error:', error);
+            throw error;
+        }
+    }
+};
+
+// ==================== WAFFLE (AI Image Generation) API ====================
+
+const WaffleService = {
+    async generateImage(prompt, style = 'realistic') {
+        try {
+            const res = await fetch('/api/waffle', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ prompt, style })
+            });
+            if (!res.ok) {
+                const error = await res.json();
+                throw new Error(error.error || 'Failed to generate image');
+            }
+            return await res.json();
+        } catch (error) {
+            console.error('WaffleService.generateImage error:', error);
+            throw error;
+        }
+    },
+
+    async getGenerations() {
+        try {
+            const res = await fetch('/api/waffle', {
+                method: 'GET',
+                headers: getAuthHeaders()
+            });
+            if (!res.ok) throw new Error('Failed to fetch generations');
+            return await res.json();
+        } catch (error) {
+            console.error('WaffleService.getGenerations error:', error);
+            return { generations: [], totalGenerated: 0 };
+        }
+    }
+};
+
 // Export for global use
 window.GoalsService = GoalsService;
 window.HabitsService = HabitsService;
 window.PlansService = PlansService;
 window.ProgressService = ProgressService;
 window.FocusService = FocusService;
+window.StatsService = StatsService;
+window.TaskBreakdownService = TaskBreakdownService;
 window.ReflectionsService = ReflectionsService;
 window.RecommendationsService = RecommendationsService;
 window.SmartCoachService = SmartCoachService;
 window.NotificationsService = NotificationsService;
+window.WaffleService = WaffleService;
