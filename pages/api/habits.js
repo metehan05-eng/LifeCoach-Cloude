@@ -59,13 +59,21 @@ function calculateStreak(completions) {
 
 // GET /api/habits - Get all habits for user
 export default async function handler(req, res) {
-    const user = authenticateToken(req);
+    // Get user ID from token OR session header OR generate one
+    let userId = null;
     
-    if (!user) {
-        return res.status(401).json({ error: 'Oturum açmanız gerekiyor' });
+    // Try to get from token first
+    const user = authenticateToken(req);
+    if (user) {
+        userId = user.id;
+    } else {
+        // For free users, use session ID from header or generate one
+        userId = req.headers['x-session-id'] || 'free-user';
     }
     
-    const userId = user.id;
+    if (!userId) {
+        return res.status(400).json({ error: 'Kullanıcı ID belirlenemedi' });
+    }
     
     // GET - Fetch habits
     if (req.method === 'GET') {
