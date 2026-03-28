@@ -4903,47 +4903,28 @@
                     
                     // Adım 1: Metni panoya kopyala
                     navigator.clipboard.writeText(instagramText).then(() => {
-                        showToast('✅ Metni kopyaladık! Şimdi Instagram açılıyor...', 'success');
+                        showToast('✅ Metni kopyaladık! Instagram açılıyor... 📸', 'success');
                         
                         // Adım 2: Görseli kopyala (async, arka planda)
                         setTimeout(() => {
                             copyGoalImageToClipboard(title, value).then((success) => {
-                                if (!success) {
-                                    showToast('Görsel kopyalanamadı, ancak metni yapıştırabilirsin', 'info');
+                                if (success) {
+                                    showToast('Görsel de kopyalandı! Yapıştır (Ctrl+V) 🖼️', 'success');
                                 }
                             });
-                        }, 300);
+                        }, 200);
                         
-                        // Adım 3: Instagram'ı aç
+                        // Adım 3: Instagram'ı KAYNAĞA aç (direkt, şarlatan share kartı yok)
                         setTimeout(() => {
-                            if (isMobile) {
-                                // Mobil: Share Intent
-                                if (navigator.share) {
-                                    navigator.share({
-                                        title: 'LifeCoach AI - Hedefim',
-                                        text: instagramText,
-                                        url: window.location.origin
-                                    }).catch(() => {
-                                        // User iptal ettiyse ya da desteklenmiyor
-                                        window.open('https://instagram.com', '_blank');
-                                    });
-                                } else {
-                                    // Fallback: Instagram açılır
-                                    window.open('https://instagram.com', '_blank');
-                                }
-                            } else {
-                                // Desktop: Instagram web
-                                window.open('https://instagram.com', '_blank');
-                            }
-                        }, 700);
+                            window.open('https://instagram.com', '_blank');
+                        }, 500);
                         
-                    }).catch(() => {
-                        showToast('⚠️ Panoya yazma izni veriniz. Instagram açılıyor...', 'error');
-                        if (isMobile) {
+                    }).catch((err) => {
+                        console.error('Clipboard write error:', err);
+                        showToast('❌ Panoya yazma başarısız. Instagram açılıyor...', 'error');
+                        setTimeout(() => {
                             window.open('https://instagram.com', '_blank');
-                        } else {
-                            window.open('https://instagram.com', '_blank');
-                        }
+                        }, 100);
                     });
                     break;
 
@@ -4953,43 +4934,28 @@
                     
                     // Adım 1: Metni panoya kopyala
                     navigator.clipboard.writeText(tiktokText).then(() => {
-                        showToast('✅ Metni kopyaladık! Şimdi TikTok açılıyor...', 'success');
+                        showToast('✅ Metni kopyaladık! TikTok açılıyor... 🎵', 'success');
                         
                         // Adım 2: Görseli kopyala (async, arka planda)
                         setTimeout(() => {
                             copyGoalImageToClipboard(title, value).then((success) => {
-                                if (!success) {
-                                    showToast('Görsel kopyalanamadı, ancak metni yapıştırabilirsin', 'info');
+                                if (success) {
+                                    showToast('Görsel de kopyalandı! Yapıştır (Ctrl+V) 🖼️', 'success');
                                 }
                             });
-                        }, 300);
+                        }, 200);
                         
-                        // Adım 3: TikTok'u aç
+                        // Adım 3: TikTok'u KAYNAĞA aç (direkt)
                         setTimeout(() => {
-                            if (isMobile) {
-                                // Mobil: Share Intent
-                                if (navigator.share) {
-                                    navigator.share({
-                                        title: 'LifeCoach AI - Hedefim',
-                                        text: tiktokText,
-                                        url: window.location.origin
-                                    }).catch(() => {
-                                        // User iptal ettiyse ya da desteklenmiyor
-                                        window.open('https://www.tiktok.com/upload', '_blank');
-                                    });
-                                } else {
-                                    // Fallback: TikTok upload sayfası
-                                    window.open('https://www.tiktok.com/upload', '_blank');
-                                }
-                            } else {
-                                // Desktop: TikTok upload sayfası
-                                window.open('https://www.tiktok.com/upload', '_blank');
-                            }
-                        }, 700);
+                            window.open('https://www.tiktok.com/upload', '_blank');
+                        }, 500);
                         
-                    }).catch(() => {
-                        showToast('⚠️ Panoya yazma izni veriniz. TikTok açılıyor...', 'error');
-                        window.open('https://www.tiktok.com/upload', '_blank');
+                    }).catch((err) => {
+                        console.error('Clipboard write error:', err);
+                        showToast('❌ Panoya yazma başarısız. TikTok açılıyor...', 'error');
+                        setTimeout(() => {
+                            window.open('https://www.tiktok.com/upload', '_blank');
+                        }, 100);
                     });
                     break;
             }
