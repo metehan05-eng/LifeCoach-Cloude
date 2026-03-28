@@ -3,14 +3,14 @@
 # Repo bilgileri bu proje için sabitlendi
 GITHUB_USER="metehan05-eng"
 GITHUB_REPO="LifeCoach-Cloude"
-REPO_URL="https://github.com/${GITHUB_USER}/${GITHUB_REPO}.git"
+REPO_URL="git@github.com:${GITHUB_USER}/${GITHUB_REPO}.git"
 
 echo "----------------------------------------------------------------"
 echo "GitHub Yükleme Aracı"
 echo "Hedef: $REPO_URL"
 echo "----------------------------------------------------------------"
-echo "⚠️  ÖNEMLİ: GitHub artık şifre ile girişi desteklemiyor."
-echo "Şifre sorulduğunda 'Personal Access Token' yapıştırmalısınız."
+echo "⚠️  ÖNEMLİ: SSH anahtarları ile otomatik bağlantı kurulacak."
+echo "Şifre sorulmayacak, SSH key'ler kullanılacak."
 echo "----------------------------------------------------------------"
 
 # 1. Git Başlatma
@@ -49,8 +49,6 @@ git commit -m "$COMMIT_MSG" || echo "⚠️ Commit edilecek yeni değişiklik yo
 
 # 4. Push
 echo "🚀 GitHub'a gönderiliyor..."
-echo "👉 Kullanıcı Adı: ${GITHUB_USER}"
-echo "👉 Şifre: (Token'ınızı yapıştırın)"
 git push -u origin main
 
 echo "----------------------------------------------------------------"
