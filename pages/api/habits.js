@@ -189,7 +189,7 @@ export default async function handler(req, res) {
     // POST - Toggle habit completion for today
     if (req.method === 'POST' && req.body.action === 'toggle') {
         try {
-            const { id } = req.body;
+            const { id, incrementCount } = req.body;
             
             if (!id) {
                 return res.status(400).json({ error: 'Alışkanlık ID gereklidir' });
@@ -206,6 +206,7 @@ export default async function handler(req, res) {
             
             const today = new Date().toISOString().split('T')[0];
             const completions = userHabits[habitIndex].completions || [];
+            const dailyTarget = userHabits[habitIndex].dailyTarget || 1;
             
             let updatedCompletions;
             let completed;
@@ -232,6 +233,41 @@ export default async function handler(req, res) {
             allHabits[userId] = userHabits;
             
             await setKVData('habits', allHabits);
+            
+            // Add XP and Flame level reward when daily target is reached
+            if (completed && incrementCount >= dailyTarget) {
+                try {
+                    const allStats = await getKVData('user-stats') || {};
+                    const userStats = allStats[userId] || {
+                        userId,
+                        xp: 0,
+                        flameLevel: 0,
+                        level: 1,
+                        history: []
+                    };
+
+                    const reward = { xp: 5, flame: 5 };
+                    userStats.xp += reward.xp;
+                    userStats.flameLevel += reward.flame;
+                    userStats.level = Math.floor(userStats.xp / 100) + 1;
+
+                    userStats.history.push({
+                        type: 'goal_daily', // Using goal_daily as it maps to daily habit targets
+                        xp: reward.xp,
+                        flame: reward.flame,
+                        timestamp: new Date().toISOString()
+                    });
+
+                    if (userStats.history.length > 100) {
+                        userStats.history = userStats.history.slice(-100);
+                    }
+
+                    allStats[userId] = userStats;
+                    await setKVData('user-stats', allStats);
+                } catch (error) {
+                    console.error('Failed to add reward for habit daily target:', error);
+                }
+            }
             
             return res.status(200).json(updatedHabit);
         } catch (error) {

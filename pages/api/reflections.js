@@ -105,6 +105,41 @@ export default async function handler(req, res) {
             allReflections[userId] = userReflections;
             await setKVData('reflections', allReflections);
             
+            // Add XP and Flame level reward for reflection (only for new reflections, not updates)
+            if (!existingToday) {
+                try {
+                    const allStats = await getKVData('user-stats') || {};
+                    const userStats = allStats[userId] || {
+                        userId,
+                        xp: 0,
+                        flameLevel: 0,
+                        level: 1,
+                        history: []
+                    };
+
+                    const reward = { xp: 5, flame: 10 };
+                    userStats.xp += reward.xp;
+                    userStats.flameLevel += reward.flame;
+                    userStats.level = Math.floor(userStats.xp / 100) + 1;
+
+                    userStats.history.push({
+                        type: 'reflection',
+                        xp: reward.xp,
+                        flame: reward.flame,
+                        timestamp: new Date().toISOString()
+                    });
+
+                    if (userStats.history.length > 100) {
+                        userStats.history = userStats.history.slice(-100);
+                    }
+
+                    allStats[userId] = userStats;
+                    await setKVData('user-stats', allStats);
+                } catch (error) {
+                    console.error('Failed to add reward for reflection:', error);
+                }
+            }
+            
             return res.status(201).json(existingToday ? userReflections.find(r => r.id === existingToday.id) : newReflection);
         } catch (error) {
             console.error('Create reflection error:', error);

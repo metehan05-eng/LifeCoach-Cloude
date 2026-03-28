@@ -98,13 +98,53 @@ export default async function handler(req, res) {
             message += `. ${nextMilestone - streak} gün sonra yeni yıldız!`;
         }
 
+        // Add XP and Flame level reward for check-in (journal/mood entry)
+        let xpReward = 0;
+        let flameReward = 0;
+        try {
+            const allStats = await getKVData('user-stats') || {};
+            const userId = userEmail;
+            const userStats = allStats[userId] || {
+                userId,
+                xp: 0,
+                flameLevel: 0,
+                level: 1,
+                history: []
+            };
+
+            // Journal/Check-in reward: +5 XP, +10 Flame
+            xpReward = 5;
+            flameReward = 10;
+            userStats.xp += xpReward;
+            userStats.flameLevel += flameReward;
+            userStats.level = Math.floor(userStats.xp / 100) + 1;
+
+            userStats.history.push({
+                type: 'journal',
+                xp: xpReward,
+                flame: flameReward,
+                timestamp: new Date().toISOString()
+            });
+
+            if (userStats.history.length > 100) {
+                userStats.history = userStats.history.slice(-100);
+            }
+
+            allStats[userId] = userStats;
+            await setKVData('user-stats', allStats);
+        } catch (error) {
+            console.error('Failed to add reward for check-in:', error);
+        }
+
         return res.status(200).json({
             success: true,
             message: message,
             streak: streak,
             stars: stars,
             newStar: newStar,
-            totalDays: userHistory.length
+            totalDays: userHistory.length,
+            xpReward: xpReward,
+            flameReward: flameReward
         });
 
     } catch (error) {
