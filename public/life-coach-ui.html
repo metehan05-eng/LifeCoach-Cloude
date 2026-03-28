@@ -2528,6 +2528,53 @@
         .btn-tiktok { color: #000000; background: white !important; }
         .btn-reddit { color: #FF4500; }
 
+        /* Full-width share buttons */
+        .share-platform-btn-full {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        }
+
+        .share-platform-btn-full:hover {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-twitter-full {
+            border-color: rgba(29, 161, 242, 0.2);
+        }
+        .btn-twitter-full:hover {
+            border-color: rgba(29, 161, 242, 0.5);
+            background: linear-gradient(135deg, rgba(29, 161, 242, 0.1), rgba(29, 161, 242, 0.05));
+        }
+
+        .btn-instagram-full {
+            border-color: rgba(225, 48, 108, 0.2);
+        }
+        .btn-instagram-full:hover {
+            border-color: rgba(225, 48, 108, 0.5);
+            background: linear-gradient(135deg, rgba(225, 48, 108, 0.1), rgba(225, 48, 108, 0.05));
+        }
+
+        .btn-tiktok-full {
+            border-color: rgba(0, 0, 0, 0.2);
+        }
+        .btn-tiktok-full:hover {
+            border-color: rgba(0, 0, 0, 0.5);
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.05));
+        }
+
+        .btn-reddit-full {
+            border-color: rgba(255, 69, 0, 0.2);
+        }
+        .btn-reddit-full:hover {
+            border-color: rgba(255, 69, 0, 0.5);
+            background: linear-gradient(135deg, rgba(255, 69, 0, 0.1), rgba(255, 69, 0, 0.05));
+        }
+
         .share-preview-card {
             background: linear-gradient(45deg, #0f172a, #1e293b);
             border: 2px solid #2dd4bf;
@@ -4223,8 +4270,8 @@
         <div class="modal-card share-modal-content w-full max-w-sm mx-auto p-6 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-6">
                 <div>
-                    <h3 class="text-xl font-bold text-white font-display">Hedefini Paylaş 🚀</h3>
-                    <p class="text-xs text-slate-400 mt-1">Başarını dünyayla paylaş, ilham ol!</p>
+                    <h3 class="text-xl font-bold text-white font-display">Dünyaya Müjde Ver! 🚀</h3>
+                    <p class="text-xs text-slate-400 mt-1">Hedefini sosyal medyada paylaş, ilham ol!</p>
                 </div>
                 <button onclick="closeShareModal()"
                     class="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-all">
@@ -4232,11 +4279,11 @@
                 </button>
             </div>
 
-            <!-- Preview Card (Automatically Edited for Share) -->
-            <div class="share-preview-card">
+            <!-- Preview Card -->
+            <div class="share-preview-card mb-6">
                 <span class="share-tag">LifeCoach AI Progress</span>
                 <h4 id="share-display-title" class="share-title">Hedef Başlığı</h4>
-                <div class="flex items-end">
+                <div class="flex items-end justify-between">
                     <div class="share-footer">
                         <i class="fa-solid fa-leaf text-teal-400"></i>
                         <span>lifecoach-ai.vercel.app</span>
@@ -4245,27 +4292,82 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-4 gap-3 mb-6">
-                <button onclick="platformShare('instagram')" class="share-platform-btn btn-instagram">
-                    <i class="fa-brands fa-instagram"></i>
-                    <span class="text-[10px] font-bold">Insta</span>
+            <!-- Platform Buttons -->
+            <div class="space-y-3 mb-6">
+                <!-- Twitter/X Button -->
+                <button onclick="platformShare('twitter')" class="w-full share-platform-btn-full btn-twitter-full p-3 flex items-center gap-3 transition-all hover:scale-105">
+                    <div class="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
+                        <i class="fa-brands fa-x-twitter text-lg"></i>
+                    </div>
+                    <div class="flex-1 text-left">
+                        <p class="font-semibold text-white">Twitter / X</p>
+                        <p class="text-xs text-slate-400">Direkt tweetle paylaş</p>
+                    </div>
+                    <i class="fa-solid fa-arrow-right text-slate-400"></i>
                 </button>
-                <button onclick="platformShare('twitter')" class="share-platform-btn btn-twitter">
-                    <i class="fa-brands fa-x-twitter"></i>
-                    <span class="text-[10px] font-bold">X</span>
+
+                <!-- Instagram Button -->
+                <button onclick="platformShare('instagram')" class="w-full share-platform-btn-full btn-instagram-full p-3 flex items-center gap-3 transition-all hover:scale-105">
+                    <div class="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
+                        <i class="fa-brands fa-instagram text-lg"></i>
+                    </div>
+                    <div class="flex-1 text-left">
+                        <p class="font-semibold text-white">Instagram</p>
+                        <p class="text-xs text-slate-400">Hikaye veya gönderi yap</p>
+                    </div>
+                    <i class="fa-solid fa-arrow-right text-slate-400"></i>
                 </button>
-                <button onclick="platformShare('tiktok')" class="share-platform-btn btn-tiktok">
-                    <i class="fa-brands fa-tiktok"></i>
-                    <span class="text-[10px] font-bold">TikTok</span>
+
+                <!-- TikTok Button -->
+                <button onclick="platformShare('tiktok')" class="w-full share-platform-btn-full btn-tiktok-full p-3 flex items-center gap-3 transition-all hover:scale-105">
+                    <div class="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
+                        <i class="fa-brands fa-tiktok text-lg"></i>
+                    </div>
+                    <div class="flex-1 text-left">
+                        <p class="font-semibold text-white">TikTok</p>
+                        <p class="text-xs text-slate-400">Video veya durum olarak paylaş</p>
+                    </div>
+                    <i class="fa-solid fa-arrow-right text-slate-400"></i>
                 </button>
-                <button onclick="platformShare('reddit')" class="share-platform-btn btn-reddit">
-                    <i class="fa-brands fa-reddit-alien"></i>
-                    <span class="text-[10px] font-bold">Reddit</span>
+
+                <!-- Reddit Button -->
+                <button onclick="platformShare('reddit')" class="w-full share-platform-btn-full btn-reddit-full p-3 flex items-center gap-3 transition-all hover:scale-105">
+                    <div class="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
+                        <i class="fa-brands fa-reddit-alien text-lg"></i>
+                    </div>
+                    <div class="flex-1 text-left">
+                        <p class="font-semibold text-white">Reddit</p>
+                        <p class="text-xs text-slate-400">Subreddit'te paylaş</p>
+                    </div>
+                    <i class="fa-solid fa-arrow-right text-slate-400"></i>
                 </button>
             </div>
 
+            <!-- Info Box -->
+            <div class="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 mb-6">
+                <p class="text-xs text-blue-300">
+                    <i class="fa-solid fa-info-circle mr-2"></i>
+                    <strong>Mobil Kullanıyorsanız:</strong> Uygulamalar açılacak ve paylaşım metni kopyalanacak. Hesabınıza giriş yaptığınız sürece direkt gönderiye hazır olacaksınız!
+                </p>
+            </div>
+
+            <!-- Image Actions -->
+            <div class="flex gap-3 mb-6">
+                <button onclick="downloadGoalImage(currentShareData.title, currentShareData.value)" 
+                    class="flex-1 btn-secondary flex items-center justify-center gap-2 py-2 px-3">
+                    <i class="fa-solid fa-download text-sm"></i>
+                    <span class="text-sm">Görseli İndir</span>
+                </button>
+                <button onclick="copyGoalImageToClipboard(currentShareData.title, currentShareData.value)" 
+                    class="flex-1 btn-secondary flex items-center justify-center gap-2 py-2 px-3">
+                    <i class="fa-solid fa-copy text-sm"></i>
+                    <span class="text-sm">Görseli Kopyala</span>
+                </button>
+            </div>
+
+            <!-- Desktop Info -->
             <p class="text-[10px] text-slate-500 text-center italic">
-                * Instagram ve TikTok için görsel kartı kopyalanır, uygulamayı açıp hikayenize yapıştırabilirsiniz.
+                Masaüstü: Yeni sekmede sosyal medya açılır. Mobil: Uygulama açılır ve metni yapıştırabilirsin.
             </p>
         </div>
     </div>
@@ -4611,43 +4713,244 @@
             modal.classList.remove('flex');
         }
 
-        function platformShare(platform) {
-            const { title, value, type } = currentShareData;
+        /**
+         * Generate Goal Image (Canvas Based)
+         * Creates a shareable visual representation of the goal
+         */
+        async function generateGoalImage(title, progress) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 600;
+            canvas.height = 600;
+            const ctx = canvas.getContext('2d');
+
+            // Background gradient
+            const gradient = ctx.createLinearGradient(0, 0, 600, 600);
+            gradient.addColorStop(0, '#0f172a');
+            gradient.addColorStop(1, '#1e293b');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 600, 600);
+
+            // Border
+            ctx.strokeStyle = '#0ea5e9';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.roundRect(20, 20, 560, 560, 20);
+            ctx.stroke();
+
+            // Header
+            ctx.font = 'bold 32px Arial';
+            ctx.fillStyle = '#14b8a6';
+            ctx.textAlign = 'center';
+            ctx.fillText('LifeCoach AI', 300, 80);
+
+            // Icon
+            ctx.font = '48px Arial';
+            ctx.fillText('🎯', 300, 140);
+
+            // Title
+            ctx.font = 'bold 28px Arial';
+            ctx.fillStyle = '#ffffff';
+            const wrappedTitle = wrapText(title, 30);
+            ctx.fillText(wrappedTitle, 300, 200);
+
+            // Progress Circle Background
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 8;
+            ctx.beginPath();
+            ctx.arc(300, 350, 80, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Progress Circle
+            const progressGradient = ctx.createLinearGradient(220, 350, 380, 350);
+            progressGradient.addColorStop(0, '#14b8a6');
+            progressGradient.addColorStop(1, '#06b6d4');
             
-            let shareText = '';
-            if (type === 'habit') {
-                shareText = `LifeCoach AI ile gelişimim tam gaz! 🔥\n\nAlışkanlık: ${title}\nSeri: ${value} Gündür Kesintisiz!\n\nSen de alışkanlıklarını disipline etmek için katıl! ✨\n#LifeCoachAI #Alışkanlıklar`;
-            } else {
-                shareText = `LifeCoach AI ile hedefime ilerliyorum! 🎯\n\nHedef: ${title}\nİlerleme: %${value}\n\nSen de potansiyelini keşfetmek için katıl! ✨\n#LifeCoachAI #Hedeflerim`;
+            ctx.strokeStyle = progressGradient;
+            ctx.lineWidth = 8;
+            ctx.beginPath();
+            const startAngle = -Math.PI / 2;
+            const endAngle = startAngle + (progress / 100) * Math.PI * 2;
+            ctx.arc(300, 350, 80, startAngle, endAngle);
+            ctx.stroke();
+
+            // Progress Text
+            ctx.font = 'bold 48px Arial';
+            ctx.fillStyle = '#14b8a6';
+            ctx.textAlign = 'center';
+            ctx.fillText(`%${Math.min(100, Math.max(0, progress))}`, 300, 360);
+
+            // Footer
+            ctx.font = '14px Arial';
+            ctx.fillStyle = '#64748b';
+            ctx.fillText('Başarmayı Bırakma! 💪', 300, 520);
+
+            // Hashtags
+            ctx.font = '12px Arial';
+            ctx.fillStyle = '#0ea5e9';
+            ctx.fillText('#LifeCoachAI #Hedeflerim #PersonalGrowth', 300, 560);
+
+            return canvas.toDataURL('image/png');
+        }
+
+        /**
+         * Wrap text to fit canvas width
+         */
+        function wrapText(text, maxLength) {
+            if (text.length > maxLength) {
+                return text.substring(0, maxLength) + '...';
+            }
+            return text;
+        }
+
+        /**
+         * Download goal image
+         */
+        function downloadGoalImage(title, progress) {
+            generateGoalImage(title, progress).then(dataUrl => {
+                const link = document.createElement('a');
+                link.href = dataUrl;
+                link.download = `hedef-${title.replace(/\s+/g, '-')}.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                showToast('Görsel indirildi! 📥', 'success');
+            });
+        }
+
+        /**
+         * Copy goal image to clipboard (for sharing)
+         */
+        async function copyGoalImageToClipboard(title, progress) {
+            try {
+                const dataUrl = await generateGoalImage(title, progress);
+                
+                // Convert to blob
+                const response = await fetch(dataUrl);
+                const blob = await response.blob();
+                
+                // Copy to clipboard
+                await navigator.clipboard.write([
+                    new ClipboardItem({
+                        'image/png': blob
+                    })
+                ]);
+                
+                showToast('Görsel panonuza kopyalandı! 📋', 'success');
+            } catch (error) {
+                console.error('Copy image error:', error);
+                showToast('Görsel kopyalanamadı. Lütfen tarayıcınızı güncelleyin.', 'error');
+            }
+        }
+
+        async function platformShare(platform) {
+            const { title, value, type } = currentShareData;
+            const token = storage.get('token');
+            
+            try {
+                // Get share data from API
+                const response = await fetch('/api/share', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        platform: platform,
+                        goalTitle: title,
+                        goalProgress: value,
+                        includeImage: true
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Share API error');
+                }
+
+                const shareData = await response.json();
+                
+                // Handle platform-specific sharing
+                await handlePlatformShare(platform, shareData, title, value);
+                
+            } catch (error) {
+                console.error('Platform share error:', error);
+                showToast('Paylaşımda hata oluştu. Lütfen tekrar deneyin.', 'error');
             }
             
-            const shareUrl = window.location.origin;
+            closeShareModal();
+        }
 
+        async function handlePlatformShare(platform, shareData, title, value) {
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
             switch(platform) {
                 case 'twitter':
-                    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`, '_blank');
+                    // Twitter: Direkt tweet paylaşım linki
+                    window.open(shareData.shareUrl, '_blank');
+                    showToast('Twitter\'da paylaş! 🐦', 'success');
                     break;
+
                 case 'reddit':
-                    window.open(`https://www.reddit.com/submit?title=${encodeURIComponent('LifeCoach AI ile Gelişimim!')}&text=${encodeURIComponent(shareText + '\n' + shareUrl)}`, '_blank');
+                    // Reddit: Subreddit paylaşım linki
+                    window.open(shareData.shareUrl, '_blank');
+                    showToast('Reddit\'te paylaş! 📱', 'success');
                     break;
+
                 case 'instagram':
+                    // Instagram: Mobil app veya web + Görsel kopyalama
+                    if (isMobile) {
+                        // Mobilde Instagram uygulamasını aç
+                        const instagramDeepLink = 'instagram://';
+                        window.location.href = instagramDeepLink;
+                        
+                        // Eğer uygulama açılmazsa web'e yönlendir
+                        setTimeout(() => {
+                            window.open('https://www.instagram.com/', '_blank');
+                        }, 1000);
+                    } else {
+                        // Desktop: Instagram web uygulaması
+                        window.open('https://www.instagram.com/', '_blank');
+                    }
+                    
+                    // Metni ve görseli kopyala
+                    const instagramText = `LifeCoach AI ile hedefime ilerliyorum! 🎯\n\nHedef: ${title}\nİlerleme: %${value}\n\nSen de potansiyelini keşfet! ✨\n#LifeCoachAI #Hedeflerim`;
+                    navigator.clipboard.writeText(instagramText);
+                    
+                    // Görseli kopyala
+                    setTimeout(() => {
+                        copyGoalImageToClipboard(title, value);
+                    }, 500);
+                    
+                    showToast('Instagram açılıyor... Metni ve görseli kopyaladık! 📋', 'success');
+                    break;
+
                 case 'tiktok':
-                    // Instagram ve TikTok doğrudan API desteklemez (hikayeye yapıştırma mantığı)
-                    // Önce metni kopyala, sonra kullanıcıya bilgi ver
-                    navigator.clipboard.writeText(shareText).then(() => {
-                        showToast('Paylaşım metni kopyalandı! Uygulamayı açıp metni yapıştırabilirsin.', 'info');
-                        // Eğer mobil cihazsa native share açılmasını dene
-                        if (navigator.share) {
-                            navigator.share({
-                                title: 'LifeCoach AI Gelişimim',
-                                text: shareText,
-                                url: shareUrl
-                            }).catch(() => {});
-                        }
-                    });
+                    // TikTok: Mobil app veya web + Görsel kopyalama
+                    if (isMobile) {
+                        // Mobilde TikTok uygulamasını aç
+                        const tiktokDeepLink = 'snssdk1233://';
+                        window.location.href = tiktokDeepLink;
+                        
+                        // Eğer uygulama açılmazsa web'e yönlendir
+                        setTimeout(() => {
+                            window.open('https://www.tiktok.com/upload', '_blank');
+                        }, 1000);
+                    } else {
+                        // Desktop: TikTok upload sayfası
+                        window.open('https://www.tiktok.com/upload', '_blank');
+                    }
+                    
+                    // Metni ve görseli kopyala
+                    const tiktokText = `LifeCoach AI ile hedefime ilerliyorum! 🎯\n\nHedef: ${title}\nİlerleme: %${value}\n\n#LifeCoachAI #Hedeflerim #PersonalGrowth`;
+                    navigator.clipboard.writeText(tiktokText);
+                    
+                    // Görseli kopyala
+                    setTimeout(() => {
+                        copyGoalImageToClipboard(title, value);
+                    }, 500);
+                    
+                    showToast('TikTok açılıyor... Metni ve görseli kopyaladık! 📋', 'success');
                     break;
             }
-            closeShareModal();
         }
 
         function showToast(message, type = 'success') {
