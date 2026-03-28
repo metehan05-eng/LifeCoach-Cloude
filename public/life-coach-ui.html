@@ -4836,9 +4836,11 @@
                 ]);
                 
                 showToast('Görsel panonuza kopyalandı! 📋', 'success');
+                return true;
             } catch (error) {
                 console.error('Copy image error:', error);
-                showToast('Görsel kopyalanamadı. Lütfen tarayıcınızı güncelleyin.', 'error');
+                // Silent fail, user can still share text
+                return false;
             }
         }
 
@@ -4896,59 +4898,99 @@
                     break;
 
                 case 'instagram':
-                    // Instagram: Mobil app veya web + Görsel kopyalama
-                    if (isMobile) {
-                        // Mobilde Instagram uygulamasını aç
-                        const instagramDeepLink = 'instagram://';
-                        window.location.href = instagramDeepLink;
-                        
-                        // Eğer uygulama açılmazsa web'e yönlendir
-                        setTimeout(() => {
-                            window.open('https://www.instagram.com/', '_blank');
-                        }, 1000);
-                    } else {
-                        // Desktop: Instagram web uygulaması
-                        window.open('https://www.instagram.com/', '_blank');
-                    }
-                    
-                    // Metni ve görseli kopyala
+                    // Instagram: Metni ve görseli kopyala, sonra Instagram'ı aç
                     const instagramText = `LifeCoach AI ile hedefime ilerliyorum! 🎯\n\nHedef: ${title}\nİlerleme: %${value}\n\nSen de potansiyelini keşfet! ✨\n#LifeCoachAI #Hedeflerim`;
-                    navigator.clipboard.writeText(instagramText);
                     
-                    // Görseli kopyala
-                    setTimeout(() => {
-                        copyGoalImageToClipboard(title, value);
-                    }, 500);
-                    
-                    showToast('Instagram açılıyor... Metni ve görseli kopyaladık! 📋', 'success');
+                    // Adım 1: Metni panoya kopyala
+                    navigator.clipboard.writeText(instagramText).then(() => {
+                        showToast('✅ Metni kopyaladık! Şimdi Instagram açılıyor...', 'success');
+                        
+                        // Adım 2: Görseli kopyala (async, arka planda)
+                        setTimeout(() => {
+                            copyGoalImageToClipboard(title, value).then((success) => {
+                                if (!success) {
+                                    showToast('Görsel kopyalanamadı, ancak metni yapıştırabilirsin', 'info');
+                                }
+                            });
+                        }, 300);
+                        
+                        // Adım 3: Instagram'ı aç
+                        setTimeout(() => {
+                            if (isMobile) {
+                                // Mobil: Share Intent
+                                if (navigator.share) {
+                                    navigator.share({
+                                        title: 'LifeCoach AI - Hedefim',
+                                        text: instagramText,
+                                        url: window.location.origin
+                                    }).catch(() => {
+                                        // User iptal ettiyse ya da desteklenmiyor
+                                        window.open('https://instagram.com', '_blank');
+                                    });
+                                } else {
+                                    // Fallback: Instagram açılır
+                                    window.open('https://instagram.com', '_blank');
+                                }
+                            } else {
+                                // Desktop: Instagram web
+                                window.open('https://instagram.com', '_blank');
+                            }
+                        }, 700);
+                        
+                    }).catch(() => {
+                        showToast('⚠️ Panoya yazma izni veriniz. Instagram açılıyor...', 'error');
+                        if (isMobile) {
+                            window.open('https://instagram.com', '_blank');
+                        } else {
+                            window.open('https://instagram.com', '_blank');
+                        }
+                    });
                     break;
 
                 case 'tiktok':
-                    // TikTok: Mobil app veya web + Görsel kopyalama
-                    if (isMobile) {
-                        // Mobilde TikTok uygulamasını aç
-                        const tiktokDeepLink = 'snssdk1233://';
-                        window.location.href = tiktokDeepLink;
-                        
-                        // Eğer uygulama açılmazsa web'e yönlendir
-                        setTimeout(() => {
-                            window.open('https://www.tiktok.com/upload', '_blank');
-                        }, 1000);
-                    } else {
-                        // Desktop: TikTok upload sayfası
-                        window.open('https://www.tiktok.com/upload', '_blank');
-                    }
-                    
-                    // Metni ve görseli kopyala
+                    // TikTok: Metni ve görseli kopyala, sonra TikTok'u aç
                     const tiktokText = `LifeCoach AI ile hedefime ilerliyorum! 🎯\n\nHedef: ${title}\nİlerleme: %${value}\n\n#LifeCoachAI #Hedeflerim #PersonalGrowth`;
-                    navigator.clipboard.writeText(tiktokText);
                     
-                    // Görseli kopyala
-                    setTimeout(() => {
-                        copyGoalImageToClipboard(title, value);
-                    }, 500);
-                    
-                    showToast('TikTok açılıyor... Metni ve görseli kopyaladık! 📋', 'success');
+                    // Adım 1: Metni panoya kopyala
+                    navigator.clipboard.writeText(tiktokText).then(() => {
+                        showToast('✅ Metni kopyaladık! Şimdi TikTok açılıyor...', 'success');
+                        
+                        // Adım 2: Görseli kopyala (async, arka planda)
+                        setTimeout(() => {
+                            copyGoalImageToClipboard(title, value).then((success) => {
+                                if (!success) {
+                                    showToast('Görsel kopyalanamadı, ancak metni yapıştırabilirsin', 'info');
+                                }
+                            });
+                        }, 300);
+                        
+                        // Adım 3: TikTok'u aç
+                        setTimeout(() => {
+                            if (isMobile) {
+                                // Mobil: Share Intent
+                                if (navigator.share) {
+                                    navigator.share({
+                                        title: 'LifeCoach AI - Hedefim',
+                                        text: tiktokText,
+                                        url: window.location.origin
+                                    }).catch(() => {
+                                        // User iptal ettiyse ya da desteklenmiyor
+                                        window.open('https://www.tiktok.com/upload', '_blank');
+                                    });
+                                } else {
+                                    // Fallback: TikTok upload sayfası
+                                    window.open('https://www.tiktok.com/upload', '_blank');
+                                }
+                            } else {
+                                // Desktop: TikTok upload sayfası
+                                window.open('https://www.tiktok.com/upload', '_blank');
+                            }
+                        }, 700);
+                        
+                    }).catch(() => {
+                        showToast('⚠️ Panoya yazma izni veriniz. TikTok açılıyor...', 'error');
+                        window.open('https://www.tiktok.com/upload', '_blank');
+                    });
                     break;
             }
         }
