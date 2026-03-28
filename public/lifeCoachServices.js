@@ -11,12 +11,31 @@ var storage = {
     }
 };
 
+// Generate or get session ID for free users
+function getSessionId() {
+    let sessionId = storage.get('session-id');
+    if (!sessionId) {
+        sessionId = 'session-' + Math.random().toString(36).substr(2, 9) + '-' + Date.now();
+        storage.set('session-id', sessionId);
+    }
+    return sessionId;
+}
+
 function getAuthHeaders() {
     const token = storage.get('token');
-    return {
-        'Content-Type': 'application/json',
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    const headers = {
+        'Content-Type': 'application/json'
     };
+    
+    // Add token if available
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    } else {
+        // For free users, add session ID
+        headers['x-session-id'] = getSessionId();
+    }
+    
+    return headers;
 }
 
 // ==================== GOALS API ====================
