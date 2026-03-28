@@ -4270,8 +4270,8 @@
         <div class="modal-card share-modal-content w-full max-w-sm mx-auto p-6 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-6">
                 <div>
-                    <h3 class="text-xl font-bold text-white font-display">Dünyaya Müjde Ver! 🚀</h3>
-                    <p class="text-xs text-slate-400 mt-1">Hedefini sosyal medyada paylaş, ilham ol!</p>
+                    <h3 class="text-xl font-bold text-white font-display">Bütün Dünyaya Müjde Ver! 🌍</h3>
+                    <p class="text-xs text-slate-400 mt-1">Başarını paylaş, ilham ver!</p>
                 </div>
                 <button onclick="closeShareModal()"
                     class="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-all">
@@ -4292,83 +4292,61 @@
                 </div>
             </div>
 
-            <!-- Platform Buttons -->
-            <div class="space-y-3 mb-6">
-                <!-- Twitter/X Button -->
-                <button onclick="platformShare('twitter')" class="w-full share-platform-btn-full btn-twitter-full p-3 flex items-center gap-3 transition-all hover:scale-105">
-                    <div class="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
-                        <i class="fa-brands fa-x-twitter text-lg"></i>
+            <!-- Web Share API Button -->
+            <div class="space-y-4 mb-6">
+                <button id="web-share-button" onclick="platformShare()" class="w-full share-platform-btn-full p-4 flex items-center gap-3 transition-all hover:scale-105 bg-gradient-to-r from-teal-500/20 to-cyan-500/20 border border-teal-500/50 hover:border-teal-400">
+                    <div class="w-12 h-12 rounded-lg bg-teal-500/30 flex items-center justify-center">
+                        <i class="fa-solid fa-share-nodes text-2xl text-teal-400"></i>
                     </div>
                     <div class="flex-1 text-left">
-                        <p class="font-semibold text-white">Twitter / X</p>
-                        <p class="text-xs text-slate-400">Direkt tweetle paylaş</p>
+                        <p class="font-semibold text-white">Sosyal Medyada Paylaş</p>
+                        <p class="text-xs text-slate-400">Tüm platformlara direkt paylaş</p>
                     </div>
                     <i class="fa-solid fa-arrow-right text-slate-400"></i>
                 </button>
 
-                <!-- Instagram Button -->
-                <button onclick="platformShare('instagram')" class="w-full share-platform-btn-full btn-instagram-full p-3 flex items-center gap-3 transition-all hover:scale-105">
-                    <div class="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
-                        <i class="fa-brands fa-instagram text-lg"></i>
+                <!-- Platform Icons (Informational) -->
+                <div class="grid grid-cols-4 gap-2 px-2">
+                    <div class="flex flex-col items-center gap-1 p-2 rounded-lg bg-white/5 text-center">
+                        <i class="fa-brands fa-instagram text-xl text-pink-500"></i>
+                        <span class="text-[10px] text-slate-400">Instagram</span>
                     </div>
-                    <div class="flex-1 text-left">
-                        <p class="font-semibold text-white">Instagram</p>
-                        <p class="text-xs text-slate-400">Hikaye veya gönderi yap</p>
+                    <div class="flex flex-col items-center gap-1 p-2 rounded-lg bg-white/5 text-center">
+                        <i class="fa-brands fa-tiktok text-xl"></i>
+                        <span class="text-[10px] text-slate-400">TikTok</span>
                     </div>
-                    <i class="fa-solid fa-arrow-right text-slate-400"></i>
-                </button>
-
-                <!-- TikTok Button -->
-                <button onclick="platformShare('tiktok')" class="w-full share-platform-btn-full btn-tiktok-full p-3 flex items-center gap-3 transition-all hover:scale-105">
-                    <div class="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
-                        <i class="fa-brands fa-tiktok text-lg"></i>
+                    <div class="flex flex-col items-center gap-1 p-2 rounded-lg bg-white/5 text-center">
+                        <i class="fa-brands fa-x-twitter text-xl text-blue-400"></i>
+                        <span class="text-[10px] text-slate-400">X/Twitter</span>
                     </div>
-                    <div class="flex-1 text-left">
-                        <p class="font-semibold text-white">TikTok</p>
-                        <p class="text-xs text-slate-400">Video veya durum olarak paylaş</p>
+                    <div class="flex flex-col items-center gap-1 p-2 rounded-lg bg-white/5 text-center">
+                        <i class="fa-brands fa-whatsapp text-xl text-green-500"></i>
+                        <span class="text-[10px] text-slate-400">WhatsApp</span>
                     </div>
-                    <i class="fa-solid fa-arrow-right text-slate-400"></i>
-                </button>
-
-                <!-- Reddit Button -->
-                <button onclick="platformShare('reddit')" class="w-full share-platform-btn-full btn-reddit-full p-3 flex items-center gap-3 transition-all hover:scale-105">
-                    <div class="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
-                        <i class="fa-brands fa-reddit-alien text-lg"></i>
-                    </div>
-                    <div class="flex-1 text-left">
-                        <p class="font-semibold text-white">Reddit</p>
-                        <p class="text-xs text-slate-400">Subreddit'te paylaş</p>
-                    </div>
-                    <i class="fa-solid fa-arrow-right text-slate-400"></i>
-                </button>
+                </div>
             </div>
 
             <!-- Info Box -->
-            <div class="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 mb-6">
+            <div class="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 mb-4">
                 <p class="text-xs text-blue-300">
                     <i class="fa-solid fa-info-circle mr-2"></i>
-                    <strong>Mobil Kullanıyorsanız:</strong> Uygulamalar açılacak ve paylaşım metni kopyalanacak. Hesabınıza giriş yaptığınız sürece direkt gönderiye hazır olacaksınız!
+                    <strong>Nasıl Çalışır:</strong> Paylaş butonuna basdığında tüm uygulamalarınız listelenir. Paylaşmak istediğin uygulamayı seç!
                 </p>
             </div>
 
             <!-- Image Actions -->
-            <div class="flex gap-3 mb-6">
+            <div class="flex gap-3">
                 <button onclick="downloadGoalImage(currentShareData.title, currentShareData.value)" 
-                    class="flex-1 btn-secondary flex items-center justify-center gap-2 py-2 px-3">
+                    class="flex-1 btn-secondary flex items-center justify-center gap-2 py-2 px-3 text-sm">
                     <i class="fa-solid fa-download text-sm"></i>
-                    <span class="text-sm">Görseli İndir</span>
+                    İndir
                 </button>
                 <button onclick="copyGoalImageToClipboard(currentShareData.title, currentShareData.value)" 
-                    class="flex-1 btn-secondary flex items-center justify-center gap-2 py-2 px-3">
+                    class="flex-1 btn-secondary flex items-center justify-center gap-2 py-2 px-3 text-sm">
                     <i class="fa-solid fa-copy text-sm"></i>
-                    <span class="text-sm">Görseli Kopyala</span>
+                    Kopyala
                 </button>
             </div>
-
-            <!-- Desktop Info -->
-            <p class="text-[10px] text-slate-500 text-center italic">
-                Masaüstü: Yeni sekmede sosyal medya açılır. Mobil: Uygulama açılır ve metni yapıştırabilirsin.
-            </p>
         </div>
     </div>
     <div id="certificate-modal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
@@ -4846,154 +4824,83 @@
 
         async function platformShare(platform) {
             const { title, value, type } = currentShareData;
-            const token = storage.get('token');
             
-            // Token kontrolü
-            if (!token) {
-                showToast('❌ Oturum kapalı! Lütfen giriş yapın.', 'error');
-                console.error('No token found');
-                return;
-            }
-
             try {
-                console.log('[SHARE] Requesting API for:', platform);
+                showToast('📤 Paylaşım hazırlanıyor...', 'success');
                 
-                // Get share data from API
-                const response = await fetch('/api/share', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        platform: platform,
-                        goalTitle: title,
-                        goalProgress: value,
-                        includeImage: true
-                    })
-                });
-
-                console.log('[SHARE] API Response status:', response.status);
-
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({}));
-                    console.error('[SHARE] API Error:', response.status, errorData);
-                    
-                    // Spesifik hata mesajları
-                    switch(response.status) {
-                        case 401:
-                            showToast('👤 Oturum süresi doldu. Lütfen yeniden giriş yapın.', 'error');
-                            break;
-                        case 400:
-                            showToast(`⚠️ Geçersiz veri: ${errorData.error || 'Bilinmeyen hata'}`, 'error');
-                            break;
-                        case 405:
-                            showToast('🔧 İstek metodu yanlış (API sorunu)', 'error');
-                            break;
-                        default:
-                            showToast(`❌ API Hatası: ${response.status}`, 'error');
-                    }
-                    return;
+                // Paylaşım metni oluştur
+                let shareText = '';
+                let shareTitle = '';
+                
+                if (type === 'habit') {
+                    shareText = `🔥 ${value} Gün Kesintisiz!\n\nAlışkanlık: ${title}\n\nLifeCoach AI ile disipline ediyorum! Sen de katıl 💪\n\n#LifeCoachAI #Alışkanlık #Disiplin`;
+                    shareTitle = `${title} Alışkanlığı`;
+                } else {
+                    shareText = `🎯 ${value}% Tamamladım!\n\nHedef: ${title}\n\nLifeCoach AI ile hedeflerime ulaşıyorum! Sen de potansiyelini keşfet 🚀\n\n#LifeCoachAI #Hedeflerim #PersonalGrowth`;
+                    shareTitle = `${title} Hedefim`;
                 }
-
-                const shareData = await response.json();
-                console.log('[SHARE] API Success:', shareData);
                 
-                // Handle platform-specific sharing
-                await handlePlatformShare(platform, shareData, title, value);
+                // Görseli oluştur
+                let imageFile = null;
+                try {
+                    const dataUrl = await generateGoalImage(title, value);
+                    const response = await fetch(dataUrl);
+                    const blob = await response.blob();
+                    imageFile = new File([blob], `${title}.png`, { type: 'image/png' });
+                } catch (imgErr) {
+                    console.warn('[SHARE] Görsel oluşturulamadı, sadece metinle paylaş:', imgErr);
+                }
+                
+                // Web Share API hangisini kullancağımızı belirle
+                let shareData = {
+                    title: shareTitle,
+                    text: shareText,
+                    url: window.location.origin
+                };
+                
+                // Eğer görsel varsa ve tarayıcı destekliyorsa ekle
+                if (imageFile && navigator.share && 'files' in (new ClipboardItem({ 'image/png': Promise.resolve(new Blob()) }))) {
+                    try {
+                        shareData.files = [imageFile];
+                    } catch (e) {
+                        console.log('[SHARE] Görsel eklenemedi, sadece metin gönderilecek');
+                    }
+                }
+                
+                // Web Share API çağır
+                if (navigator.share) {
+                    console.log('[SHARE] Web Share API kullanılıyor:', shareData);
+                    
+                    try {
+                        await navigator.share(shareData);
+                        showToast('✅ Paylaşım başarılı! 🎉', 'success');
+                        console.log('[SHARE] Paylaşım tamamlandı');
+                    } catch (shareErr) {
+                        if (shareErr.name === 'AbortError') {
+                            console.log('[SHARE] Paylaşım iptal edildi');
+                            // User iptal etti, sadece bilgi ver
+                        } else {
+                            console.error('[SHARE] Share API hatası:', shareErr);
+                            showToast(`❌ Paylaşım hatası: ${shareErr.message}`, 'error');
+                        }
+                    }
+                } else {
+                    // Fallback: Web Share API desteklenmiyor
+                    console.log('[SHARE] Web Share API desteklenmiyor, fallback kullanılıyor');
+                    showToast('⚠️ Bu tarayıcı gelişmiş paylaşımı desteklemiyor. Metni manuel kopyala.', 'info');
+                    
+                    // Metni kopyala
+                    navigator.clipboard.writeText(shareText).then(() => {
+                        showToast('✅ Metni kopyaladık! Panoya yapıştır', 'success');
+                    });
+                }
                 
             } catch (error) {
                 console.error('[SHARE] Fatal error:', error);
-                
-                // Network hataları
-                if (error instanceof TypeError && error.message.includes('fetch')) {
-                    showToast('🌐 İnternet bağlantısı var mı? Network hatası!', 'error');
-                } else {
-                    showToast(`❌ Hata: ${error.message}`, 'error');
-                }
+                showToast(`❌ Hata: ${error.message}`, 'error');
             }
             
             closeShareModal();
-        }
-
-        async function handlePlatformShare(platform, shareData, title, value) {
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            
-            switch(platform) {
-                case 'twitter':
-                    // Twitter: Direkt tweet paylaşım linki
-                    window.open(shareData.shareUrl, '_blank');
-                    showToast('Twitter\'da paylaş! 🐦', 'success');
-                    break;
-
-                case 'reddit':
-                    // Reddit: Subreddit paylaşım linki
-                    window.open(shareData.shareUrl, '_blank');
-                    showToast('Reddit\'te paylaş! 📱', 'success');
-                    break;
-
-                case 'instagram':
-                    // Instagram: Metni ve görseli kopyala, sonra Instagram'ı aç
-                    const instagramText = `LifeCoach AI ile hedefime ilerliyorum! 🎯\n\nHedef: ${title}\nİlerleme: %${value}\n\nSen de potansiyelini keşfet! ✨\n#LifeCoachAI #Hedeflerim`;
-                    
-                    // Adım 1: Metni panoya kopyala
-                    navigator.clipboard.writeText(instagramText).then(() => {
-                        showToast('✅ Metni kopyaladık! Instagram açılıyor... 📸', 'success');
-                        
-                        // Adım 2: Görseli kopyala (async, arka planda)
-                        setTimeout(() => {
-                            copyGoalImageToClipboard(title, value).then((success) => {
-                                if (success) {
-                                    showToast('Görsel de kopyalandı! Yapıştır (Ctrl+V) 🖼️', 'success');
-                                }
-                            });
-                        }, 200);
-                        
-                        // Adım 3: Instagram'ı KAYNAĞA aç (direkt, şarlatan share kartı yok)
-                        setTimeout(() => {
-                            window.open('https://instagram.com', '_blank');
-                        }, 500);
-                        
-                    }).catch((err) => {
-                        console.error('Clipboard write error:', err);
-                        showToast('❌ Panoya yazma başarısız. Instagram açılıyor...', 'error');
-                        setTimeout(() => {
-                            window.open('https://instagram.com', '_blank');
-                        }, 100);
-                    });
-                    break;
-
-                case 'tiktok':
-                    // TikTok: Metni ve görseli kopyala, sonra TikTok'u aç
-                    const tiktokText = `LifeCoach AI ile hedefime ilerliyorum! 🎯\n\nHedef: ${title}\nİlerleme: %${value}\n\n#LifeCoachAI #Hedeflerim #PersonalGrowth`;
-                    
-                    // Adım 1: Metni panoya kopyala
-                    navigator.clipboard.writeText(tiktokText).then(() => {
-                        showToast('✅ Metni kopyaladık! TikTok açılıyor... 🎵', 'success');
-                        
-                        // Adım 2: Görseli kopyala (async, arka planda)
-                        setTimeout(() => {
-                            copyGoalImageToClipboard(title, value).then((success) => {
-                                if (success) {
-                                    showToast('Görsel de kopyalandı! Yapıştır (Ctrl+V) 🖼️', 'success');
-                                }
-                            });
-                        }, 200);
-                        
-                        // Adım 3: TikTok'u KAYNAĞA aç (direkt)
-                        setTimeout(() => {
-                            window.open('https://www.tiktok.com/upload', '_blank');
-                        }, 500);
-                        
-                    }).catch((err) => {
-                        console.error('Clipboard write error:', err);
-                        showToast('❌ Panoya yazma başarısız. TikTok açılıyor...', 'error');
-                        setTimeout(() => {
-                            window.open('https://www.tiktok.com/upload', '_blank');
-                        }, 100);
-                    });
-                    break;
-            }
         }
 
         function showToast(message, type = 'success') {
