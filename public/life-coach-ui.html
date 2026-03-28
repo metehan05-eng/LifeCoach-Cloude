@@ -4848,7 +4848,16 @@
             const { title, value, type } = currentShareData;
             const token = storage.get('token');
             
+            // Token kontrolü
+            if (!token) {
+                showToast('❌ Oturum kapalı! Lütfen giriş yapın.', 'error');
+                console.error('No token found');
+                return;
+            }
+
             try {
+                console.log('[SHARE] Requesting API for:', platform);
+                
                 // Get share data from API
                 const response = await fetch('/api/share', {
                     method: 'POST',
@@ -4864,18 +4873,44 @@
                     })
                 });
 
+                console.log('[SHARE] API Response status:', response.status);
+
                 if (!response.ok) {
-                    throw new Error('Share API error');
+                    const errorData = await response.json().catch(() => ({}));
+                    console.error('[SHARE] API Error:', response.status, errorData);
+                    
+                    // Spesifik hata mesajları
+                    switch(response.status) {
+                        case 401:
+                            showToast('👤 Oturum süresi doldu. Lütfen yeniden giriş yapın.', 'error');
+                            break;
+                        case 400:
+                            showToast(`⚠️ Geçersiz veri: ${errorData.error || 'Bilinmeyen hata'}`, 'error');
+                            break;
+                        case 405:
+                            showToast('🔧 İstek metodu yanlış (API sorunu)', 'error');
+                            break;
+                        default:
+                            showToast(`❌ API Hatası: ${response.status}`, 'error');
+                    }
+                    return;
                 }
 
                 const shareData = await response.json();
+                console.log('[SHARE] API Success:', shareData);
                 
                 // Handle platform-specific sharing
                 await handlePlatformShare(platform, shareData, title, value);
                 
             } catch (error) {
-                console.error('Platform share error:', error);
-                showToast('Paylaşımda hata oluştu. Lütfen tekrar deneyin.', 'error');
+                console.error('[SHARE] Fatal error:', error);
+                
+                // Network hataları
+                if (error instanceof TypeError && error.message.includes('fetch')) {
+                    showToast('🌐 İnternet bağlantısı var mı? Network hatası!', 'error');
+                } else {
+                    showToast(`❌ Hata: ${error.message}`, 'error');
+                }
             }
             
             closeShareModal();

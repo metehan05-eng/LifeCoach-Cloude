@@ -22,11 +22,20 @@ function authenticateToken(req) {
  * POST /api/share - Generate share URLs for different platforms
  */
 export default async function handler(req, res) {
+    console.log('[SHARE API] Request received:', {
+        method: req.method,
+        hasAuth: !!req.headers['authorization'],
+        body: req.body
+    });
+
     const user = authenticateToken(req);
     
     if (!user) {
+        console.error('[SHARE API] Authentication failed');
         return res.status(401).json({ error: 'Oturum açmanız gerekiyor' });
     }
+
+    console.log('[SHARE API] User authenticated:', user.id);
     
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'İzin verilmeyen metod' });
