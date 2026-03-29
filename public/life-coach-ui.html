@@ -20,21 +20,17 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     
-    <!-- Preload Critical Fonts from gstatic -->
-    <link rel="preload" href="https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTcviYwY.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="https://fonts.gstatic.com/s/spacegrotesk/v16/V8mQoQDjQSkFtoMM3T6r8E7mF71Q-gOoraIAEj7oUXskPMBBSSJLm2E.woff2" as="font" type="font/woff2" crossorigin>
+    <!-- Preload Critical Fonts from gstatic (only Inter Latin subset) -->
+    <link rel="preload" href="https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTcviYwY.woff2" as="font" type="font/woff2" crossorigin="anonymous">
     
     <!-- Tailwind CSS - Blocking load (required for config) -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Optimized Font Awesome with preconnect -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" 
-          integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" 
-          crossorigin="anonymous" referrerpolicy="no-referrer" media="print" onload="this.media='all'">
+    <!-- Font Awesome - Normal load (icons needed immediately) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer">
     
-    <!-- Google Fonts with font-display: swap -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=Birthstone+Bounce:wght@400;500&display=swap" 
-          rel="stylesheet" media="print" onload="this.media='all'">
+    <!-- Google Fonts - Normal load (text rendering needed immediately) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=Birthstone+Bounce:wght@400;500&display=swap" rel="stylesheet">
     
     <!-- Deferred Non-Critical Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
