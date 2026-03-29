@@ -3002,6 +3002,9 @@
                     <!-- React Dashboard Header Root -->
                     <div id="react-dashboard-header-root"></div>
 
+                    <!-- System Priority Widget - Life OS Kernel -->
+                    <div id="react-system-priority-root" class="mb-6"></div>
+
                     <!-- React Dashboard Stats Root -->
                     <div id="react-dashboard-stats-root" class="mb-8"></div>
                     
@@ -10047,6 +10050,207 @@
             );
         };
 
+        // 3.5. Life OS System Priority Widget
+        const SystemPriorityWidget = () => {
+            const [priority, setPriority] = React.useState(null);
+            const [loading, setLoading] = React.useState(true);
+            const [completing, setCompleting] = React.useState(false);
+
+            React.useEffect(() => {
+                loadSystemPriority();
+            }, []);
+
+            const loadSystemPriority = async () => {
+                try {
+                    const token = localStorage.getItem('token');
+                    if (!token) {
+                        setLoading(false);
+                        return;
+                    }
+
+                    const response = await fetch('/api/system-kernel', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+
+                    if (!response.ok) throw new Error('Failed to load');
+                    
+                    const data = await response.json();
+                    setPriority(data);
+                } catch (error) {
+                    console.error('System priority load error:', error);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const completePriority = async () => {
+                if (!priority?.priority?.id) return;
+                
+                setCompleting(true);
+                try {
+                    const token = localStorage.getItem('token');
+                    const response = await fetch('/api/system-kernel', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ priorityId: priority.priority.id })
+                    });
+
+                    if (!response.ok) throw new Error('Failed to complete');
+                    
+                    const result = await response.json();
+                    
+                    // Show reward notification
+                    if (typeof showRewardNotification === 'function') {
+                        showRewardNotification(result.xpBonus || 5, 0, 'system_priority_bonus');
+                    }
+                    
+                    // Refresh priority
+                    loadSystemPriority();
+                    
+                    // Refresh stats
+                    if (typeof updateStatsDisplay === 'function') {
+                        updateStatsDisplay();
+                    }
+                    
+                    if (typeof showToast === 'function') {
+                        showToast(result.message || 'Sistem önceliği tamamlandı! +5 XP', 'success');
+                    }
+                } catch (error) {
+                    console.error('Complete error:', error);
+                    if (typeof showToast === 'function') {
+                        showToast('Tamamlanırken hata oluştu', 'error');
+                    }
+                } finally {
+                    setCompleting(false);
+                }
+            };
+
+            if (loading) {
+                return (
+                    <div className="bg-gradient-to-br from-cyan-500/10 via-blue-500/5 to-purple-500/10 border border-cyan-500/30 rounded-2xl p-6 mb-6 animate-pulse">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-xl bg-cyan-500/20 flex items-center justify-center">
+                                <i className="fa-solid fa-microchip text-cyan-400 text-xl animate-spin"></i>
+                            </div>
+                            <div>
+                                <div className="h-4 bg-white/10 rounded w-32 mb-2"></div>
+                                <div className="h-3 bg-white/5 rounded w-48"></div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (!priority?.priority) return null;
+
+            const p = priority.priority;
+            const typeColors = {
+                goal: 'from-teal-500/20 to-teal-600/5 border-teal-500/30',
+                habit: 'from-emerald-500/20 to-emerald-600/5 border-emerald-500/30',
+                reflection: 'from-purple-500/20 to-purple-600/5 border-purple-500/30',
+                focus: 'from-amber-500/20 to-amber-600/5 border-amber-500/30',
+                rest: 'from-rose-500/20 to-rose-600/5 border-rose-500/30'
+            };
+            const typeIcons = {
+                goal: 'fa-bullseye',
+                habit: 'fa-heart-pulse',
+                reflection: 'fa-pen-to-square',
+                focus: 'fa-bolt',
+                rest: 'fa-mug-hot'
+            };
+
+            return (
+                <div className={`relative bg-gradient-to-br ${typeColors[p.type] || typeColors.goal} border rounded-2xl p-6 mb-6 overflow-hidden group hover:shadow-lg hover:shadow-cyan-500/10 transition-all duration-500`}>
+                    {/* Animated neon border effect */}
+                    <div className="absolute inset-0 rounded-2xl border-2 border-cyan-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-pulse"></div>
+                    <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 rounded-2xl opacity-20 blur-lg group-hover:opacity-30 transition-opacity duration-500"></div>
+                    
+                    <div className="relative z-10">
+                        {/* Header */}
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-cyan-500/20 flex items-center justify-center border border-cyan-500/30">
+                                    <i className={`fa-solid fa-microchip text-cyan-400`}></i>
+                                </div>
+                                <div>
+                                    <span className="text-[10px] font-black text-cyan-400 uppercase tracking-widest">SYSTEM PRIORITY</span>
+                                    <h3 className="text-lg font-bold text-white">{p.title}</h3>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                {p.difficulty && (
+                                    <span className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase ${
+                                        p.difficulty === 'easy' ? 'bg-emerald-500/20 text-emerald-400' :
+                                        p.difficulty === 'medium' ? 'bg-amber-500/20 text-amber-400' :
+                                        'bg-rose-500/20 text-rose-400'
+                                    }`}>
+                                        {p.difficulty}
+                                    </span>
+                                )}
+                                <span className="px-2 py-1 rounded-lg bg-cyan-500/20 text-cyan-400 text-[10px] font-bold">
+                                    +{p.xpReward || 5} XP
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Description */}
+                        <p className="text-slate-300 text-sm mb-4">{p.description}</p>
+
+                        {/* Reasoning */}
+                        {p.reasoning && (
+                            <div className="flex items-start gap-2 mb-4 p-3 bg-white/5 rounded-xl border border-white/10">
+                                <i className="fa-solid fa-lightbulb text-amber-400 text-sm mt-0.5"></i>
+                                <p className="text-xs text-slate-400">{p.reasoning}</p>
+                            </div>
+                        )}
+
+                        {/* Meta info */}
+                        <div className="flex items-center gap-4 mb-4 text-xs text-slate-500">
+                            <span className="flex items-center gap-1">
+                                <i className="fa-regular fa-clock"></i> {p.estimatedTime || '15 dk'}
+                            </span>
+                            <span className="flex items-center gap-1">
+                                <i className="fa-solid fa-bolt"></i> Enerji: {p.energyRequired || 3}/10
+                            </span>
+                            {p.flameReward > 0 && (
+                                <span className="flex items-center gap-1 text-orange-400">
+                                    <i className="fa-solid fa-fire"></i> +{p.flameReward} Alev
+                                </span>
+                            )}
+                        </div>
+
+                        {/* Suggestions */}
+                        {priority.suggestions && priority.suggestions.length > 0 && (
+                            <div className="mb-4 space-y-2">
+                                {priority.suggestions.map((suggestion, idx) => (
+                                    <div key={idx} className="flex items-center gap-2 text-xs text-slate-400">
+                                        <i className="fa-solid fa-check text-teal-400"></i>
+                                        <span>{suggestion}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Action Button */}
+                        <button
+                            onClick={completePriority}
+                            disabled={completing}
+                            className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-bold text-sm hover:from-cyan-400 hover:to-blue-400 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-cyan-500/20"
+                        >
+                            {completing ? (
+                                <><i className="fa-solid fa-spinner fa-spin"></i> İşleniyor...</>
+                            ) : (
+                                <><i className="fa-solid fa-check-circle"></i> Tamamla (+{p.xpReward || 5} XP Bonus)</>
+                            )}
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
         // 4. Interactive Dashboard Stats Grid
         const DashboardStats = () => {
             const [stats, setStats] = React.useState({ activeGoals: 0, totalHabits: 0, bestStreak: 0, score: 0, xp: 0, flameLevel: 0, level: 1 });
@@ -10065,7 +10269,6 @@
             const xpProgress = (stats.xp % 100);
             const items = [
                 { label: 'Level', value: stats.level, icon: 'fa-star', color: 'from-yellow-500/20 to-yellow-600/5', iconColor: 'text-yellow-400' },
-                { label: 'XP', value: stats.xp, icon: 'fa-gem', color: 'from-blue-500/20 to-blue-600/5', iconColor: 'text-blue-400' },
                 { label: 'Alev Seviyesi', value: stats.flameLevel, icon: 'fa-fire', color: 'from-orange-500/20 to-orange-600/5', iconColor: 'text-orange-400' },
                 { label: 'Aktif Hedefler', value: stats.activeGoals, icon: 'fa-bullseye', color: 'from-teal-500/20 to-teal-600/5', iconColor: 'text-teal-400' },
                 { label: 'Alışkanlıklar', value: stats.totalHabits, icon: 'fa-heart-pulse', color: 'from-emerald-500/20 to-emerald-600/5', iconColor: 'text-emerald-400' },
@@ -10419,6 +10622,10 @@
 
         const dashHeaderRoot = ReactDOM.createRoot(document.getElementById('react-dashboard-header-root'));
         dashHeaderRoot.render(<DashboardHeader />);
+
+        // Life OS System Priority Widget
+        const systemPriorityRoot = ReactDOM.createRoot(document.getElementById('react-system-priority-root'));
+        systemPriorityRoot.render(<SystemPriorityWidget />);
 
         const dashStatsRoot = ReactDOM.createRoot(document.getElementById('react-dashboard-stats-root'));
         dashStatsRoot.render(<DashboardStats />);

@@ -61,6 +61,7 @@ function showRewardNotification(xp, flame, type = 'reward') {
         task_14day: '✅ 14 Günlük Plan Başarıldı!',
         task_30day: '✅ 30 Günlük Plan Başarıldı!',
         task_90day: '✅ 90 Günlük Plan Başarıldı!',
+        system_priority_bonus: '🧠 Sistem Önceliği Tamamlandı!',
         'default': '⭐ Başarı Elde Edildi!'
     };
     

@@ -48,6 +48,9 @@ const REWARDS = {
     plan_weekly: { xp: 50, flame: 40 },
     plan_monthly: { xp: 150, flame: 100 },
     plan_project: { xp: 750, flame: 300 },
+    
+    // Life OS System Kernel Bonus
+    system_priority_bonus: { xp: 5, flame: 0 },
 };
 
 // Alev Seviyesi Harcaması
