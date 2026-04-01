@@ -9,9 +9,9 @@
     <meta name="keywords" content="LifeCoach AI, Yapay Zeka Koç, Kişisel Gelişim, Hedef Takibi, Alışkanlık Takibi">
     <meta name="google-site-verification" content="GOOGLE_SEARCH_CONSOLE_VERIFICATION_CODE_HERE" />
     <title>LifeCoach AI</title>
-    <link rel="icon" type="image/png" href="./lifecoach_logo.png">
-    <link rel="apple-touch-icon" href="./lifecoach_logo.png">
-    <link rel="apple-touch-startup-image" href="./lifecoach_logo.png">
+    <link rel="icon" type="image/svg+xml" href="./lifecoach_ai_logo.svg">
+    <link rel="apple-touch-icon" href="./lifecoach_ai_logo.svg">
+    <link rel="apple-touch-startup-image" href="./lifecoach_ai_logo.svg">
     
     <!-- DNS Prefetch & Preconnect for Performance -->
     <link rel="dns-prefetch" href="https://fonts.googleapis.com">
@@ -2694,7 +2694,7 @@
     <div id="splash-screen">
         <div class="splash-logo-container">
             <div class="splash-glow"></div>
-            <img src="./lifecoach_logo.png" alt="LifeCoach AI" class="splash-logo">
+            <img src="./lifecoach_ai_logo.svg" alt="LifeCoach AI" class="splash-logo">
         </div>
         <div class="splash-text">LIFECOACH AI</div>
     </div>
@@ -2717,7 +2717,7 @@
             <div class="flex items-center gap-3">
                 <div
                     class="w-10 h-10 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center overflow-hidden">
-                    <img src="./lifecoach_logo.png" alt="Logo" class="w-full h-full object-cover">
+                    <img src="./lifecoach_ai_logo.svg" alt="Logo" class="w-full h-full object-cover">
                 </div>
                 <div>
                     <div class="logo-text">LifeCoach AI</div>
@@ -2810,7 +2810,7 @@
                 </button>
 
                 <!-- AI Asistan -->
-                <button onclick="window.location.href='assistant.html';"
+                <button onclick="window.location.href='assistant_gemini.html';"
                     class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all group"
                     data-section="chat">
                     <div
@@ -3044,7 +3044,7 @@
                             <h3 class="font-semibold text-white mb-1">Alışkanlık Oluştur</h3>
                             <p class="text-xs text-slate-400">Günlük rutinini oluştur</p>
                         </button>
-                        <button onclick="window.location.href='assistant.html';"
+                        <button onclick="window.location.href='assistant_gemini.html';"
                             class="bg-gradient-to-br from-purple-500/20 to-purple-600/10 border border-purple-500/20 rounded-2xl p-5 text-left hover:border-purple-400/50 transition-all group">
                             <div
                                 class="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
@@ -9987,7 +9987,7 @@
 
             const handleClick = (id) => {
                 if (id === 'chat') {
-                    window.location.href = 'assistant.html';
+                    window.location.href = "./assistant_gemini.html";
                     return;
                 }
                 setActive(id);
