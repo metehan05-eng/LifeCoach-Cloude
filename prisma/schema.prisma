@@ -11,16 +11,32 @@ datasource db {
 }
 
 model User {
-  id             String           @id @default(cuid())
-  name           String?
-  email          String?          @unique
-  emailVerified  DateTime?
-  image          String?
-  accounts       Account[]
-  sessions       Session[]
-  PromptTemplate PromptTemplate[]
-  Chatbot        Chatbot[]
-  Datasource     Datasource[]
+  id                      String                    @id @default(cuid())
+  name                    String?
+  email                   String?                   @unique
+  emailVerified           DateTime?
+  image                   String?
+  accounts                Account[]
+  sessions                Session[]
+  PromptTemplate          PromptTemplate[]
+  Chatbot                 Chatbot[]
+  Datasource              Datasource[]
+  ConversationMemories    ConversationMemory[]
+  Achievements            Achievement[]
+  Streaks                 Streak[]
+  MotivationScores        MotivationScore[]
+  DailyQuests             DailyQuest[]
+  StudyGroups             StudyGroup[]
+  OwnedGroups             StudyGroup[]              @relation("GroupOwner")
+  AccountabilityPartner   AccountabilityPartner[]
+  PartnerWith             AccountabilityPartner[]   @relation("PartnerWith")
+  Challenges              Challenge[]
+  UserPreferences         UserPreference?
+  AnalyticsLogs           AnalyticsLog[]
+  NotificationPreferences NotificationPreference?
+  Integrations            Integration[]
+  StressLogs              StressLog[]
+  GroupMemberships        GroupMember[]
 }
 
 model Account {
@@ -104,4 +120,234 @@ model ChatbotMessage {
   chatbotId Int?
   message   String   @db.VarChar()
   agent     String
+}
+
+// ============= YENİ MODELLER =============
+
+// 1. Conversation Memory - AI'nın long-term memory'si
+model ConversationMemory {
+  id              String   @id @default(cuid())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          String
+  conversationId  String
+  context         String   @db.Text
+  keyPoints       Json     // Important info, goals, preferences
+  emotionalState  String?
+  lastUpdated     DateTime @updatedAt
+  
+  @@index([userId])
+}
+
+// 2. Coaching Modes - Farklı koçluk modları
+model CoachingMode {
+  id              String   @id @default(cuid())
+  name            String   // "Mentor", "Therapist", "Drill Sergeant", "Friend"
+  description     String   @db.Text
+  systemPrompt    String   @db.Text
+  tone            String   // aggresive, friendly, professional, casual
+  responseStyle   String   // detailed, brief, with examples, etc
+}
+
+// 3. User Preferences - Kullanıcı ayarları
+model UserPreference {
+  id                    String   @id @default(cuid())
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId                String   @unique
+  selectedCoachingMode  String   @default("Mentor") // Default mode
+  language              String   @default("tr") // Dil seçimi
+  enableVoiceInput      Boolean  @default(true)
+  enableVoiceOutput     Boolean  @default(true)
+  darkMode              Boolean  @default(true)
+  notificationsEnabled  Boolean  @default(true)
+  offlineMode           Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+// 4. Achievements - Başarılar ve badges
+model Achievement {
+  id          String   @id @default(cuid())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  title       String
+  description String   @db.Text
+  icon        String   // emoji or icon name
+  unlockedAt  DateTime @default(now())
+  category    String   // "streak", "habit", "goal", "social"
+  points      Int      @default(0)
+  createdAt   DateTime @default(now())
+  
+  @@index([userId])
+}
+
+// 5. Streaks - Alışkanlık streakları
+model Streak {
+  id              String   @id @default(cuid())
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          String
+  habitId         String   // İlgili alışkanlık ID'si
+  currentStreak   Int      @default(0)
+  longestStreak   Int      @default(0)
+  lastCompletedAt DateTime?
+  startedAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@unique([userId, habitId])
+  @@index([userId])
+}
+
+// 6. Motivation Score - Günlük motivasyon puanı
+model MotivationScore {
+  id            String   @id @default(cuid())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  score         Int      // 0-100
+  date          DateTime
+  factors       Json     // {"sleep": 8, "exercise": 1, "goals_achieved": 3}
+  aiInsights    String   @db.Text
+  recommendations String @db.Text
+  createdAt     DateTime @default(now())
+  
+  @@unique([userId, date])
+  @@index([userId, date])
+}
+
+// 7. Daily Quests - AI tarafından üretilen günlük görevler
+model DailyQuest {
+  id          String   @id @default(cuid())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  title       String
+  description String   @db.Text
+  difficulty  String   @default("medium") // easy, medium, hard
+  xpReward    Int      @default(50)
+  completed   Boolean  @default(false)
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+  dueAt       DateTime
+  
+  @@index([userId, createdAt])
+}
+
+// 8. Study Groups - Çalışma grupları
+model StudyGroup {
+  id            String          @id @default(cuid())
+  name          String
+  description   String          @db.Text
+  owner         User            @relation("GroupOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId       String
+  members       GroupMember[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  subject       String?
+  goalSharedId  String?         // Shared goal ID
+  isPublic      Boolean         @default(true)
+  
+  @@index([ownerId])
+}
+
+model GroupMember {
+  id          String   @id @default(cuid())
+  group       StudyGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId     String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  joinedAt    DateTime @default(now())
+  role        String   @default("member") // member, moderator
+  
+  @@unique([groupId, userId])
+}
+
+// 9. Accountability Partners - Hesap verme partnerleri
+model AccountabilityPartner {
+  id          String   @id @default(cuid())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  partner     User     @relation("PartnerWith", fields: [partnerId], references: [id], onDelete: Cascade)
+  partnerId   String
+  startedAt   DateTime @default(now())
+  status      String   @default("active") // active, paused, ended
+  
+  @@unique([userId, partnerId])
+  @@index([userId])
+}
+
+// 10. Challenges - Genel ve grup challengeleri
+model Challenge {
+  id              String   @id @default(cuid())
+  creator         User     @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  creatorId       String
+  title           String
+  description     String   @db.Text
+  type            String   // "personal", "group", "public"
+  duration        Int      // Gün cinsinden
+  targetValue     Int      // Hedef (örneğin: 30 gün)
+  currentValue    Int      @default(0)
+  startedAt       DateTime @default(now())
+  endsAt          DateTime
+  xpReward        Int      @default(200)
+  isCompleted     Boolean  @default(false)
+  difficulty      String   @default("medium")
+  
+  @@index([creatorId])
+}
+
+// 11. Analytics Logs - Kullanıcı aktivite logu
+model AnalyticsLog {
+  id          String   @id @default(cuid())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  event       String   // "goal_created", "habit_completed", "chat", etc
+  metadata    Json
+  timestamp   DateTime @default(now())
+  
+  @@index([userId, timestamp])
+}
+
+// 12. Notification Preferences - Notifikasyon ayarları
+model NotificationPreference {
+  id                      String   @id @default(cuid())
+  user                    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId                  String   @unique
+  dailyReminders          Boolean  @default(true)
+  motivationAlerts        Boolean  @default(true)
+  habitReminders          Boolean  @default(true)
+  goalUpdates             Boolean  @default(true)
+  socialNotifications     Boolean  @default(true)
+  soundEnabled            Boolean  @default(true)
+  optimalReminderTime     String   @default("09:00") // HH:mm format
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+}
+
+// 13. Integrations - Third-party API entegrasyonları
+model Integration {
+  id            String   @id @default(cuid())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  type          String   // "google_calendar", "todoist", "spotify", etc
+  accessToken   String   @db.Text
+  refreshToken  String?  @db.Text
+  expiresAt     DateTime?
+  connected     Boolean  @default(true)
+  connectedAt   DateTime @default(now())
+  
+  @@unique([userId, type])
+}
+
+// 14. Stress Log - Stres seviyesi takibi
+model StressLog {
+  id              String   @id @default(cuid())
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          String
+  level           Int      // 1-10
+  triggers        String[] // stres kaynakları
+  context         String   @db.Text
+  aiAnalysis      String   @db.Text
+  recommendations String   @db.Text
+  timestamp       DateTime @default(now())
+  
+  @@index([userId, timestamp])
 }
