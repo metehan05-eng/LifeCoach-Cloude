@@ -1911,6 +1911,19 @@ app.get('/api/arena/user-stats', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.id;
         
+        // If Supabase is not configured, return default stats
+        if (!supabase) {
+            return res.json({
+                user_id: userId,
+                total_xp: 0,
+                level: 1,
+                arena_wins: 0,
+                arena_losses: 0,
+                streak: 0,
+                last_activity: new Date().toISOString()
+            });
+        }
+        
         // Get user stats from Supabase
         const { data: userStats, error } = await supabase
             .from('user_stats')
@@ -2030,7 +2043,21 @@ app.post('/api/arena/update-xp', authenticateToken, async (req, res) => {
 app.get('/api/arena/leaderboard', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.id;
-        const userLevel = req.query.level || 1;
+        
+        // If Supabase is not configured, return empty leaderboard with current user
+        if (!supabase) {
+            return res.json([{
+                rank: 1,
+                userId: userId,
+                name: 'Sen',
+                xp: 0,
+                level: 1,
+                wins: 0,
+                losses: 0,
+                winRate: 0,
+                me: true
+            }]);
+        }
         
         // Get user's current level for filtering
         const { data: currentUser, error: userError } = await supabase
@@ -2104,15 +2131,18 @@ app.get('/api/arena/challenges', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.id;
         
-        // Get user level
-        const { data: userStats, error: userError } = await supabase
-            .from('user_stats')
-            .select('level')
-            .eq('user_id', userId)
-            .single();
-            
-        if (userError || !userStats) {
-            return res.status(500).json({ error: 'Kullanıcı seviyesi alınamadı' });
+        // Get user level from local storage or default to 1
+        let userLevel = 1;
+        if (supabase) {
+            const { data: userStats, error: userError } = await supabase
+                .from('user_stats')
+                .select('level')
+                .eq('user_id', userId)
+                .single();
+                
+            if (!userError && userStats) {
+                userLevel = userStats.level;
+            }
         }
         
         // Generate challenges based on level
@@ -2160,21 +2190,88 @@ app.get('/api/arena/challenges', authenticateToken, async (req, res) => {
         ];
         
         // Scale challenges based on user level
-        const levelMultiplier = Math.max(1, Math.floor(userStats.level / 5));
+        const levelMultiplier = Math.max(1, Math.floor(userLevel / 5));
         const scaledChallenges = baseChallenges.map(challenge => ({
             ...challenge,
             requirement: challenge.requirement * (levelMultiplier > 1 ? levelMultiplier : 1),
-            xp_reward: challenge.xp_reward * (1 + (userStats.level * 0.1))
+            xp_reward: challenge.xp_reward * (1 + (userLevel * 0.1))
         }));
         
         res.json({
-            user_level: userStats.level,
+            user_level: userLevel,
             challenges: scaledChallenges,
             level_multiplier: levelMultiplier
         });
     } catch (error) {
         console.error('Challenges error:', error);
         res.status(500).json({ error: 'Meydan okumalar yüklenemedi' });
+    }
+});
+
+// --- USER STATS API (Flame/XP System) ---
+app.get('/api/user-stats', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        
+        // Try to get from local storage first
+        const stats = await getKVData(`user_stats:${userId}`) || {
+            user_id: userId,
+            total_xp: 0,
+            level: 1,
+            flameLevel: 0,
+            history: [],
+            last_activity: new Date().toISOString()
+        };
+        
+        res.json(stats);
+    } catch (error) {
+        console.error('User stats error:', error);
+        res.status(500).json({ error: 'İstatistikler alınamadı' });
+    }
+});
+
+app.post('/api/user-stats', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { rewardType, action, consumeType } = req.body;
+        
+        // Get current stats
+        let stats = await getKVData(`user_stats:${userId}`) || {
+            user_id: userId,
+            total_xp: 0,
+            level: 1,
+            flameLevel: 0,
+            history: []
+        };
+        
+        if (action === 'consume' && consumeType) {
+            // Handle flame consumption
+            if (stats.flameLevel > 0) {
+                stats.flameLevel--;
+            }
+        } else if (rewardType) {
+            // Handle reward
+            const xpGained = rewardType === 'daily_login' ? 10 : 
+                           rewardType === 'goal_complete' ? 50 : 
+                           rewardType === 'habit_streak' ? 30 : 10;
+            
+            stats.total_xp += xpGained;
+            stats.level = Math.floor(stats.total_xp / 100) + 1;
+            stats.flameLevel += 1;
+            stats.history.push({
+                type: rewardType,
+                xp: xpGained,
+                date: new Date().toISOString()
+            });
+        }
+        
+        stats.last_activity = new Date().toISOString();
+        await setKVData(`user_stats:${userId}`, stats);
+        
+        res.json(stats);
+    } catch (error) {
+        console.error('User stats update error:', error);
+        res.status(500).json({ error: 'İstatistikler güncellenemedi' });
     }
 });
 
