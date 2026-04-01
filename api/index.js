@@ -54,6 +54,37 @@ if (!GEMINI_API_KEY) {
     console.warn("UYARI: GEMINI_API_KEY ayarlanmamış. Sohbet çalışmayabilir.");
 }
 
+// Helper function to generate AI response for goals briefing
+async function generateAIResponse(prompt, history = []) {
+    if (!genAI) {
+        throw new Error('AI not configured - GEMINI_API_KEY is missing');
+    }
+    
+    const gemini31FlashLite = "gemini-3.1-flash-lite-preview";
+    
+    const model = genAI.getGenerativeModel({
+        model: gemini31FlashLite,
+        generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 800
+        }
+    });
+    
+    // Convert history to Gemini format
+    const chatHistory = history.map(msg => ({
+        role: msg.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: msg.content }]
+    }));
+    
+    const chat = model.startChat({
+        history: chatHistory,
+        generationConfig: { maxOutputTokens: 800, temperature: 0.7 }
+    });
+    
+    const result = await chat.sendMessage(prompt);
+    return result.response.text();
+}
+
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 // Rate Limit Config
