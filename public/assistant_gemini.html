@@ -882,12 +882,11 @@
         conversationHistory = getConversationHistory();
         
         loadHistoryList();
-        const lastConv = getLastConversation();
-        if (lastConv) {
-            if (lastConv.messages && lastConv.messages.length > 0) {
-                loadConversation(lastConv);
-            }
-        }
+        
+        // User requested fresh start by default when coming to the assistant page
+        // So we won't auto-load the last conversation anymore.
+        // If they want it, they can load it from 'Geçmiş' (History).
+        newChat();
     });
 
     // ── UI Helpers ───────────────────────────────────
@@ -896,6 +895,12 @@
             welcomeScreen.style.display = 'none';
             msgWrap.style.display = 'flex';
         }
+    }
+
+    function cleanText(text) {
+        if (!text) return '';
+        // JSON-action bloklarını temizle (Kullanıcı bunları görmesin)
+        return text.replace(/```json-action\n?[\s\S]*?\n?```/g, '').trim();
     }
 
     function scrollBottom() {
@@ -935,16 +940,17 @@
                     <div class="msg-time">${timeStr}</div>
                 </div>`;
         } else {
+            const cleaned = cleanText(text);
             div.innerHTML = `
                 <div class="msg-avatar">${avatar}</div>
                 <div class="msg-body">
                     <div class="msg-sender">LifeCoach AI</div>
                     <div class="msg-text" id="msg-text-${div.dataset.id}">${formatMarkdown(text)}</div>
                     <div class="msg-actions">
-                        <button class="msg-act-btn" title="Kopyala" onclick="copyMsg(this, \`${escapeHtml(text)}\`)">
+                        <button class="msg-act-btn" title="Kopyala" onclick="copyMsg(this, \`${escapeHtml(cleaned)}\`)">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                         </button>
-                        <button class="msg-act-btn" title="Sesli Dinle" onclick="playAudio(this, \`${escapeHtml(text)}\`)">
+                        <button class="msg-act-btn" title="Sesli Dinle" onclick="playAudio(this, \`${escapeHtml(cleaned)}\`)">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
                         </button>
                         <button class="msg-act-btn" title="Yeniden üret" onclick="regenerateMsg('${div.dataset.id}')">
@@ -1809,8 +1815,9 @@
     // ── Markdown formatter ───────────────────────────
     function formatMarkdown(text) {
         if (!text) return '';
+        const cleanedText = cleanText(text);
         
-        return text
+        return cleanedText
             .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
             .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
             .replace(/\*(.*?)\*/g,'<em>$1</em>')
