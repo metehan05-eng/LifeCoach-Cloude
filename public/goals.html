@@ -263,9 +263,14 @@
         });
 
         async function init() {
-            await loadGoal();
-            renderTimeline();
-            loadBriefing(selectedDate);
+            try {
+                await loadGoal();
+                renderTimeline();
+                loadBriefing(selectedDate);
+            } catch (err) {
+                console.error("Init failed:", err);
+                // The error is already alerted in loadGoal
+            }
         }
 
         async function loadGoal() {
@@ -324,6 +329,11 @@
         }
 
         async function loadBriefing(date) {
+            if (!currentGoal) {
+                console.error("Goal not loaded yet!");
+                return;
+            }
+            
             selectedDate = date;
             document.getElementById('loadingBriefing').classList.remove('hidden');
             document.getElementById('briefingCard').classList.add('hidden');
@@ -345,13 +355,25 @@
                     })
                 });
                 
-                const data = await res.json();
+                if (!res.ok) {
+                    const errorText = await res.text();
+                    throw new Error(`Sunucu Hatası (${res.status}): ` + errorText.substring(0, 50));
+                }
+                
+                const text = await res.text();
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    throw new Error("Yanıt JSON formatında değil: " + text.substring(0, 50));
+                }
+                
                 if (data.error) throw new Error(data.error);
 
                 renderBriefing(data.briefing, date);
             } catch (err) {
                 console.error(err);
-                document.getElementById('briefingContent').innerHTML = `<p class="text-red-400">Hata: Plan yüklenemedi. (${err.message})</p>`;
+                document.getElementById('briefingContent').innerHTML = `<p class="text-red-400 p-8 border border-red-500/20 rounded-xl">Hata: Plan yüklenemedi. (${err.message})</p>`;
             } finally {
                 document.getElementById('loadingBriefing').classList.add('hidden');
                 document.getElementById('briefingCard').classList.remove('hidden');
@@ -362,9 +384,14 @@
             const dateLabel = new Date(date).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' });
             document.getElementById('briefingDate').innerText = dateLabel;
 
-            // Extract Search Query
+            // Extract Search Query (Handle both SEARCH_QUERY: and just the label)
+            let searchQuery = `${currentGoal.title} dersi`;
             const queryMatch = markdown.match(/SEARCH_QUERY:\s*(.*)/i);
-            const searchQuery = queryMatch ? queryMatch[1].trim() : `${currentGoal.title} dersi`;
+            
+            if (queryMatch && queryMatch[1]) {
+                searchQuery = queryMatch[1].trim();
+            }
+            
             const cleanMarkdown = markdown.replace(/SEARCH_QUERY:\s*(.*)/i, '').trim();
 
             document.getElementById('videoQueryDisplay').innerText = searchQuery;
@@ -375,9 +402,20 @@
             // Process Markdown for Checkboxes
             let html = marked.parse(cleanMarkdown);
             
+            // Helper for safe ID generation (avoiding btoa character issues)
+            const getSafeId = (str) => {
+                let hash = 0;
+                for (let i = 0; i < str.length; i++) {
+                    const char = str.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + char;
+                    hash = hash & hash; // Convert to 32bit integer
+                }
+                return Math.abs(hash).toString(36);
+            };
+
             // Transform [ ] to interactive checkboxes
             html = html.replace(/\[\s*\]\s*(.*)/g, (match, text) => {
-                const uniqueId = btoa(text).substring(0, 8);
+                const uniqueId = getSafeId(text);
                 const isChecked = localStorage.getItem(`task-${goalId}-${date}-${uniqueId}`) === 'true';
                 return `
                     <div class="checkbox-item ${isChecked ? 'checked' : ''}" onclick="toggleCheck(this, '${goalId}', '${date}', '${uniqueId}')">

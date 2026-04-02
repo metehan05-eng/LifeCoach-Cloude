@@ -1623,9 +1623,10 @@ app.post('/api/goals/briefing', authenticateToken, async (req, res) => {
         const dayLabel = new Date(targetDate).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', weekday: 'long' });
         
         // Check if briefing already exists for this date
-        const allGoals = await getKVData('goals');
+        const allGoals = await getKVData('goals') || {};
         const userGoals = allGoals[userId] || [];
-        const goalIdx = userGoals.findIndex(g => g.id === id);
+        // Ensure same type for comparison (id might be numeric in DB but string from req)
+        const goalIdx = userGoals.findIndex(g => String(g.id) === String(id));
         
         if (goalIdx !== -1 && userGoals[goalIdx].briefings && userGoals[goalIdx].briefings[targetDate]) {
             return res.json({ briefing: userGoals[goalIdx].briefings[targetDate] });
