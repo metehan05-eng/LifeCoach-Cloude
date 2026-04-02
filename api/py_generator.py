@@ -514,22 +514,9 @@ def generate_ppt(slides, filename):
                 p.text = f"• {point}"
                 p.font.size = Pt(20)
                 p.font.color.rgb = RGBColor(226, 232, 240)
-            prompt = s_data.get("image_prompt")
-            image_url = s_data.get("image_url")
-            actual_url = image_url
-            if prompt:
-                actual_url = f"https://image.pollinations.ai/prompt/{requests.utils.quote(prompt + ', high quality, concept art')}?width=1024&height=768&nologo=true"
-            if actual_url:
-                try:
-                    response = requests.get(actual_url, timeout=10)
-                    if response.status_code == 200:
-                        img_path = tempfile.NamedTemporaryFile(delete=False, suffix=".jpg").name
-                        with open(img_path, 'wb') as f:
-                            f.write(response.content)
-                        left, top, width, height = Inches(7.5), Inches(1.5), Inches(5.3), Inches(5)
-                        slide.shapes.add_picture(img_path, left, top, width=width, height=height)
-                        os.unlink(img_path)
-                except: pass
+            # User requested only text, so we skip image generation
+            # This also prevents 504 Gateway Timeout errors from slow external requests
+            pass
         output_path = os.path.join("/tmp", filename)
         prs.save(output_path)
         

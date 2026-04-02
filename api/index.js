@@ -59,9 +59,9 @@ async function generateAIResponse(prompt, history = []) {
     if (!genAI) {
         throw new Error('AI not configured - GEMINI_API_KEY is missing');
     }
-    
+
     const gemini31FlashLite = "gemini-3.1-flash-lite-preview";
-    
+
     const model = genAI.getGenerativeModel({
         model: gemini31FlashLite,
         generationConfig: {
@@ -69,18 +69,18 @@ async function generateAIResponse(prompt, history = []) {
             maxOutputTokens: 800
         }
     });
-    
+
     // Convert history to Gemini format
     const chatHistory = history.map(msg => ({
         role: msg.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: msg.content }]
     }));
-    
+
     const chat = model.startChat({
         history: chatHistory,
         generationConfig: { maxOutputTokens: 800, temperature: 0.7 }
     });
-    
+
     const result = await chat.sendMessage(prompt);
     return result.response.text();
 }
@@ -240,7 +240,7 @@ KURALLAR:
         }
 
         // Default System Prompt - HAN 4.2 Ultra Core
-        const defaultSystemPrompt = `You are HAN 4.2 Ultra Core, the central intelligence of LifeCoach AI.
+        const defaultSystemPrompt = `You are LifeCoach AI.
 
 You are an advanced multi-domain artificial intelligence designed to assist users with life planning, productivity, scientific thinking, research, programming, and intelligent decision-making.
 
@@ -551,18 +551,16 @@ POWERPOINT (CANVA-STİLİ GÖRSEL DESTEKLİ):
   "slides": [
     {
       "title": "Gelecek Vizyonu", 
-      "content": ["Yapay zeka devrimi", "İnsan-makine işbirliği"],
-      "image_prompt": "Futuristic city with AI robots and humans coexist, 8k, cinematic lighting"
+      "content": ["Yapay zeka devrimi", "İnsan-makine işbirliği"]
     },
     {
       "title": "Verimlilik",
-      "content": ["Zaman yönetimi", "Otomasyon avantajları"],
-      "image_prompt": "Beautiful zen office with sunlight, minimal design, productivity theme"
+      "content": ["Zaman yönetimi", "Otomasyon avantajları"]
     }
   ]
 }
 \`\`\`
-Not: PowerPoint slaytlarına 'image_prompt' eklerseniz, sistem her slayt için yapay zeka ile profesyonel görseller oluşturup slayta otomatik yerleştirecektir.
+Not: PowerPoint slaytlarına görsel eklemeyin. Her slayt için bağımsız başlık ve metin (content) hazırlayın. Sunumları sadece metin odaklı olarak gerçekleştirin.
 
 ---
 
@@ -770,7 +768,7 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
                     const { data } = await supabase.from('chat_history').select('*').eq('id', sessionId).eq('user_id', req.user.id).single();
                     if (data) session = data;
                 }
-                
+
                 if (!session) {
                     newSessionId = sessionId || crypto.randomUUID();
                     const title = message.substring(0, 30) + (message.length > 30 ? '...' : '');
@@ -779,7 +777,7 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
 
                 session.messages.push({ role: 'user', content: message });
                 session.messages.push({ role: 'assistant', content: finalAiResponse });
-                
+
                 await supabase.from('chat_history').upsert({
                     id: session.id,
                     user_id: session.user_id,
@@ -787,29 +785,29 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
                     messages: session.messages,
                     updated_at: new Date().toISOString()
                 }, { onConflict: 'id' });
-                
+
             } else if (dbUser && req.user.email) {
                 if (!dbUser.sessions) dbUser.sessions = [];
-    
+
                 let session;
                 if (sessionId) {
                     session = dbUser.sessions.find(s => s.id == sessionId);
                 }
-    
+
                 if (!session) {
                     newSessionId = Date.now().toString();
                     const title = message.substring(0, 30) + (message.length > 30 ? '...' : '');
                     session = { id: newSessionId, title: title, messages: [] };
                     dbUser.sessions.push(session);
                 }
-    
+
                 session.messages.push({ role: 'user', content: message });
                 session.messages.push({ role: 'assistant', content: finalAiResponse });
-    
+
                 // En son 20 oturumu sakla
                 dbUser.sessions.sort((a, b) => Number(b.id) - Number(a.id));
                 dbUser.sessions = dbUser.sessions.slice(0, 20);
-    
+
                 await setKVData(`user:${req.user.email}`, dbUser);
             }
         }
@@ -1569,7 +1567,7 @@ app.post('/api/goals', authenticateToken, async (req, res) => {
         const userId = req.user.id;
         const { title, type, description, targetDate } = req.body;
         if (!title || !type || !description) return res.status(400).json({ error: 'Başlık, tür ve açıklama gereklidir' });
-        
+
         const allGoals = await getKVData('goals');
         const userGoals = allGoals[userId] || [];
         const newGoal = {
@@ -1595,7 +1593,7 @@ app.put('/api/goals', authenticateToken, async (req, res) => {
         const userGoals = allGoals[userId] || [];
         const idx = userGoals.findIndex(g => g.id === id);
         if (idx === -1) return res.status(404).json({ error: 'Hedef bulunamadı' });
-        
+
         userGoals[idx] = {
             ...userGoals[idx],
             title: title !== undefined ? title : userGoals[idx].title,
@@ -1642,7 +1640,7 @@ Lütfen şunları içer:
 5. "Bugün tamamlama süren dolana kadar şunları başar" gibi bir motivasyon cümlesi.
 
 Yanıt dili Türkçe olmalı. Yanıt Markdown formatında olmalı. Konu başlıklarını (1, 2, 3...) kalın yaz.`;
-        
+
         const result = await generateAIResponse(prompt, [
             { role: 'system', content: 'Sen profesyonel ve teknik bir yaşam koçusun. Kullanıcıya hedefleri doğrultusunda adım adım, teknik detaylar ve kod örnekleri içeren günlük rehberlik sağlarsın.' }
         ]);
@@ -1846,9 +1844,9 @@ app.post('/api/export-plus', authenticateToken, async (req, res) => {
         const payload = req.body;
         const pyPath = path.join(process.cwd(), 'venv/bin/python3');
         const scriptPath = path.join(process.cwd(), 'api/py_generator.py');
-        
+
         const pythonProcess = spawn(pyPath, [scriptPath]);
-        
+
         pythonProcess.stdin.write(JSON.stringify(payload));
         pythonProcess.stdin.end();
 
@@ -1863,11 +1861,11 @@ app.post('/api/export-plus', authenticateToken, async (req, res) => {
                 console.error("Python error:", errorOutput);
                 return res.status(500).json({ error: 'Python Execution Failed', details: errorOutput });
             }
-            
+
             try {
                 const result = JSON.parse(output);
                 if (result.error) return res.status(500).json({ error: result.error });
-                
+
                 const filePath = result.path;
                 if (!fs.existsSync(filePath)) {
                     return res.status(404).json({ error: 'Generated file not found' });
@@ -1876,7 +1874,7 @@ app.post('/api/export-plus', authenticateToken, async (req, res) => {
                 res.download(filePath, payload.filename || 'export.file', (err) => {
                     if (err) console.error("Download error:", err);
                     // Temizlik
-                    try { if (fs.existsSync(filePath)) fs.unlinkSync(filePath); } catch (e) {}
+                    try { if (fs.existsSync(filePath)) fs.unlinkSync(filePath); } catch (e) { }
                 });
             } catch (pErr) {
                 console.error("Parse Error:", pErr, output);
@@ -1897,7 +1895,7 @@ app.post('/api/deep-search', authenticateToken, async (req, res) => {
 
         const pyPath = path.join(process.cwd(), 'venv/bin/python3');
         const scriptPath = path.join(process.cwd(), 'api/py_generator.py');
-        
+
         const pythonProcess = spawn(pyPath, [scriptPath]);
         pythonProcess.stdin.write(JSON.stringify({ mode: 'search', query }));
         pythonProcess.stdin.end();
@@ -1920,7 +1918,7 @@ app.post('/api/deep-search', authenticateToken, async (req, res) => {
 app.get('/api/arena/user-stats', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.id;
-        
+
         // If Supabase is not configured, return default stats
         if (!supabase) {
             return res.json({
@@ -1933,19 +1931,19 @@ app.get('/api/arena/user-stats', authenticateToken, async (req, res) => {
                 last_activity: new Date().toISOString()
             });
         }
-        
+
         // Get user stats from Supabase
         const { data: userStats, error } = await supabase
             .from('user_stats')
             .select('*')
             .eq('user_id', userId)
             .single();
-            
+
         if (error && error.code !== 'PGRST116') { // Not found error
             console.error('Supabase error:', error);
             return res.status(500).json({ error: 'Veritabanı hatası' });
         }
-        
+
         // If no stats exist, create default stats
         if (!userStats) {
             const defaultStats = {
@@ -1957,21 +1955,21 @@ app.get('/api/arena/user-stats', authenticateToken, async (req, res) => {
                 streak: 0,
                 last_activity: new Date().toISOString()
             };
-            
+
             const { data: newStats, error: insertError } = await supabase
                 .from('user_stats')
                 .insert(defaultStats)
                 .select()
                 .single();
-                
+
             if (insertError) {
                 console.error('Insert error:', insertError);
                 return res.status(500).json({ error: 'İstatistikler oluşturulamadı' });
             }
-            
+
             return res.json(newStats);
         }
-        
+
         res.json(userStats);
     } catch (error) {
         console.error('Arena stats error:', error);
@@ -1984,27 +1982,27 @@ app.post('/api/arena/update-xp', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.id;
         const { xpGained, reason } = req.body;
-        
+
         if (!xpGained || xpGained <= 0) {
             return res.status(400).json({ error: 'Geçersiz XP miktarı' });
         }
-        
+
         // Get current stats
         const { data: currentStats, error: fetchError } = await supabase
             .from('user_stats')
             .select('*')
             .eq('user_id', userId)
             .single();
-            
+
         if (fetchError) {
             console.error('Fetch error:', fetchError);
             return res.status(500).json({ error: 'Mevcut istatistikler alınamadı' });
         }
-        
+
         // Calculate new level based on XP
         const newTotalXp = currentStats.total_xp + xpGained;
         const newLevel = Math.floor(newTotalXp / 100) + 1; // Her 100 XP'de 1 level
-        
+
         // Update stats
         const { data: updatedStats, error: updateError } = await supabase
             .from('user_stats')
@@ -2016,12 +2014,12 @@ app.post('/api/arena/update-xp', authenticateToken, async (req, res) => {
             .eq('user_id', userId)
             .select()
             .single();
-            
+
         if (updateError) {
             console.error('Update error:', updateError);
             return res.status(500).json({ error: 'XP güncellenemedi' });
         }
-        
+
         // Log XP history
         const { error: historyError } = await supabase
             .from('xp_history')
@@ -2031,12 +2029,12 @@ app.post('/api/arena/update-xp', authenticateToken, async (req, res) => {
                 reason: reason || 'XP Kazanımı',
                 created_at: new Date().toISOString()
             });
-            
+
         if (historyError) {
             console.error('History error:', historyError);
             // Continue even if history fails
         }
-        
+
         res.json({
             success: true,
             updatedStats,
@@ -2053,7 +2051,7 @@ app.post('/api/arena/update-xp', authenticateToken, async (req, res) => {
 app.get('/api/arena/leaderboard', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.id;
-        
+
         // If Supabase is not configured, return empty leaderboard with current user
         if (!supabase) {
             return res.json([{
@@ -2068,23 +2066,23 @@ app.get('/api/arena/leaderboard', authenticateToken, async (req, res) => {
                 me: true
             }]);
         }
-        
+
         // Get user's current level for filtering
         const { data: currentUser, error: userError } = await supabase
             .from('user_stats')
             .select('level')
             .eq('user_id', userId)
             .single();
-            
+
         if (userError || !currentUser) {
             return res.status(500).json({ error: 'Kullanıcı seviyesi alınamadı' });
         }
-        
+
         // Get leaderboard with level-based filtering
         const levelRange = 5; // Show users within 5 levels
         const minLevel = Math.max(1, currentUser.level - levelRange);
         const maxLevel = currentUser.level + levelRange;
-        
+
         const { data: leaderboard, error } = await supabase
             .from('user_stats')
             .select('user_id, total_xp, level, arena_wins, arena_losses')
@@ -2092,29 +2090,29 @@ app.get('/api/arena/leaderboard', authenticateToken, async (req, res) => {
             .lte('level', maxLevel)
             .order('total_xp', { ascending: false })
             .limit(50);
-            
+
         if (error) {
             console.error('Leaderboard error:', error);
             return res.status(500).json({ error: 'Liderlik tablosu alınamadı' });
         }
-        
+
         // Get user emails for display
         const userIds = leaderboard.map(entry => entry.user_id);
         const { data: users, error: usersError } = await supabase
             .from('users')
             .select('id, email')
             .in('id', userIds);
-            
+
         if (usersError) {
             console.error('Users error:', usersError);
             // Continue without user names
         }
-        
+
         // Combine data
         const leaderboardWithNames = leaderboard.map((entry, index) => {
             const user = users?.find(u => u.id === entry.user_id);
             const isCurrentUser = entry.user_id === userId;
-            
+
             return {
                 rank: index + 1,
                 userId: entry.user_id,
@@ -2123,12 +2121,12 @@ app.get('/api/arena/leaderboard', authenticateToken, async (req, res) => {
                 level: entry.level,
                 wins: entry.arena_wins || 0,
                 losses: entry.arena_losses || 0,
-                winRate: entry.arena_wins > 0 ? 
+                winRate: entry.arena_wins > 0 ?
                     Math.round((entry.arena_wins / (entry.arena_wins + entry.arena_losses)) * 100) : 0,
                 me: isCurrentUser
             };
         });
-        
+
         res.json(leaderboardWithNames);
     } catch (error) {
         console.error('Leaderboard error:', error);
@@ -2140,7 +2138,7 @@ app.get('/api/arena/leaderboard', authenticateToken, async (req, res) => {
 app.get('/api/arena/challenges', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.id;
-        
+
         // Get user level from local storage or default to 1
         let userLevel = 1;
         if (supabase) {
@@ -2149,12 +2147,12 @@ app.get('/api/arena/challenges', authenticateToken, async (req, res) => {
                 .select('level')
                 .eq('user_id', userId)
                 .single();
-                
+
             if (!userError && userStats) {
                 userLevel = userStats.level;
             }
         }
-        
+
         // Generate challenges based on level
         const baseChallenges = [
             {
@@ -2198,7 +2196,7 @@ app.get('/api/arena/challenges', authenticateToken, async (req, res) => {
                 category: "goals"
             }
         ];
-        
+
         // Scale challenges based on user level
         const levelMultiplier = Math.max(1, Math.floor(userLevel / 5));
         const scaledChallenges = baseChallenges.map(challenge => ({
@@ -2206,7 +2204,7 @@ app.get('/api/arena/challenges', authenticateToken, async (req, res) => {
             requirement: challenge.requirement * (levelMultiplier > 1 ? levelMultiplier : 1),
             xp_reward: challenge.xp_reward * (1 + (userLevel * 0.1))
         }));
-        
+
         res.json({
             user_level: userLevel,
             challenges: scaledChallenges,
@@ -2222,7 +2220,7 @@ app.get('/api/arena/challenges', authenticateToken, async (req, res) => {
 app.get('/api/user-stats', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.id;
-        
+
         // Try to get from local storage first
         const stats = await getKVData(`user_stats:${userId}`) || {
             user_id: userId,
@@ -2232,7 +2230,7 @@ app.get('/api/user-stats', authenticateToken, async (req, res) => {
             history: [],
             last_activity: new Date().toISOString()
         };
-        
+
         res.json(stats);
     } catch (error) {
         console.error('User stats error:', error);
@@ -2244,7 +2242,7 @@ app.post('/api/user-stats', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.id;
         const { rewardType, action, consumeType } = req.body;
-        
+
         // Get current stats
         let stats = await getKVData(`user_stats:${userId}`) || {
             user_id: userId,
@@ -2253,7 +2251,7 @@ app.post('/api/user-stats', authenticateToken, async (req, res) => {
             flameLevel: 0,
             history: []
         };
-        
+
         if (action === 'consume' && consumeType) {
             // Handle flame consumption
             if (stats.flameLevel > 0) {
@@ -2261,10 +2259,10 @@ app.post('/api/user-stats', authenticateToken, async (req, res) => {
             }
         } else if (rewardType) {
             // Handle reward
-            const xpGained = rewardType === 'daily_login' ? 10 : 
-                           rewardType === 'goal_complete' ? 50 : 
-                           rewardType === 'habit_streak' ? 30 : 10;
-            
+            const xpGained = rewardType === 'daily_login' ? 10 :
+                rewardType === 'goal_complete' ? 50 :
+                    rewardType === 'habit_streak' ? 30 : 10;
+
             stats.total_xp += xpGained;
             stats.level = Math.floor(stats.total_xp / 100) + 1;
             stats.flameLevel += 1;
@@ -2274,10 +2272,10 @@ app.post('/api/user-stats', authenticateToken, async (req, res) => {
                 date: new Date().toISOString()
             });
         }
-        
+
         stats.last_activity = new Date().toISOString();
         await setKVData(`user_stats:${userId}`, stats);
-        
+
         res.json(stats);
     } catch (error) {
         console.error('User stats update error:', error);
@@ -2290,17 +2288,17 @@ app.get('/api/eq-dashboard', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.id;
         const userEmail = req.user.email;
-        
+
         // Get all user data for analysis
         const allReflections = await getKVData('reflections') || {};
         const userReflections = allReflections[userId] || [];
-        
+
         const allFocus = await getKVData('focus') || {};
         const userFocus = allFocus[userId] || [];
-        
+
         const allHabits = await getKVData('habits') || {};
         const userHabits = allHabits[userId] || [];
-        
+
         // Calculate mood trends from reflections
         const moodScores = { 'terrible': 20, 'bad': 40, 'neutral': 60, 'good': 80, 'excellent': 100 };
         const moodHistory = userReflections.map(r => ({
@@ -2309,16 +2307,16 @@ app.get('/api/eq-dashboard', authenticateToken, async (req, res) => {
             mood: r.mood,
             content: r.content
         })).sort((a, b) => new Date(a.date) - new Date(b.date));
-        
+
         // Calculate stress indicators
         const stressIndicators = {
             negativeWords: ['stressed', 'anxious', 'worried', 'overwhelmed', 'tired', 'exhausted', 'frustrated', 'upset', 'angry', 'sad'],
             positiveWords: ['happy', 'excited', 'grateful', 'peaceful', 'calm', 'energized', 'motivated', 'confident', 'joyful', 'content']
         };
-        
+
         let stressScore = 50; // base
         let positivityScore = 50; // base
-        
+
         userReflections.forEach(r => {
             const content = (r.content || '').toLowerCase();
             stressIndicators.negativeWords.forEach(word => {
@@ -2328,40 +2326,40 @@ app.get('/api/eq-dashboard', authenticateToken, async (req, res) => {
                 if (content.includes(word)) positivityScore += 5;
             });
         });
-        
+
         stressScore = Math.min(100, stressScore);
         positivityScore = Math.min(100, positivityScore);
-        
+
         // Calculate productivity metrics
         const totalFocusMinutes = userFocus.reduce((sum, s) => sum + (s.duration || 0), 0);
         const completedSessions = userFocus.filter(s => s.status === 'completed').length;
-        const habitCompletionRate = userHabits.length > 0 
+        const habitCompletionRate = userHabits.length > 0
             ? Math.round((userHabits.reduce((acc, h) => acc + (h.completions?.length || 0), 0) / (userHabits.length * 30)) * 100)
             : 0;
-        
+
         // Weekly and monthly summaries
         const now = new Date();
         const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
         const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        
+
         const weeklyData = moodHistory.filter(m => new Date(m.date) >= oneWeekAgo);
         const monthlyData = moodHistory.filter(m => new Date(m.date) >= oneMonthAgo);
-        
-        const weeklyAvg = weeklyData.length > 0 
+
+        const weeklyAvg = weeklyData.length > 0
             ? Math.round(weeklyData.reduce((sum, m) => sum + m.score, 0) / weeklyData.length)
             : 60;
-        const monthlyAvg = monthlyData.length > 0 
+        const monthlyAvg = monthlyData.length > 0
             ? Math.round(monthlyData.reduce((sum, m) => sum + m.score, 0) / monthlyData.length)
             : 60;
-        
+
         // EQ Score calculation (0-100)
         const eqScore = Math.round(
-            (weeklyAvg * 0.3) + 
-            ((100 - stressScore) * 0.25) + 
-            (positivityScore * 0.25) + 
+            (weeklyAvg * 0.3) +
+            ((100 - stressScore) * 0.25) +
+            (positivityScore * 0.25) +
             (Math.min(100, habitCompletionRate * 2) * 0.2)
         );
-        
+
         // Generate insights
         const insights = [];
         if (stressScore > 70) {
@@ -2376,7 +2374,7 @@ app.get('/api/eq-dashboard', authenticateToken, async (req, res) => {
         if (totalFocusMinutes > 300) {
             insights.push({ type: 'success', message: 'Odaklanma seanslarınız verimli görünüyor!' });
         }
-        
+
         res.json({
             eqScore,
             moodHistory: moodHistory.slice(-30), // Last 30 days
@@ -2402,7 +2400,7 @@ app.post('/api/eq-dashboard/export', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.id;
         const { format = 'word' } = req.body;
-        
+
         // Get EQ data
         const allReflections = await getKVData('reflections') || {};
         const userReflections = allReflections[userId] || [];
@@ -2410,21 +2408,21 @@ app.post('/api/eq-dashboard/export', authenticateToken, async (req, res) => {
         const userFocus = allFocus[userId] || [];
         const allHabits = await getKVData('habits') || {};
         const userHabits = allHabits[userId] || [];
-        
+
         // Calculate metrics (same as GET endpoint)
         const moodScores = { 'terrible': 20, 'bad': 40, 'neutral': 60, 'good': 80, 'excellent': 100 };
         const moodHistory = userReflections.map(r => ({
             date: r.date,
             score: moodScores[r.mood] || 60
         })).sort((a, b) => new Date(a.date) - new Date(b.date));
-        
+
         let stressScore = 50;
         let positivityScore = 50;
         const stressIndicators = {
             negativeWords: ['stressed', 'anxious', 'worried', 'overwhelmed', 'tired', 'exhausted'],
             positiveWords: ['happy', 'excited', 'grateful', 'peaceful', 'calm', 'energized']
         };
-        
+
         userReflections.forEach(r => {
             const content = (r.content || '').toLowerCase();
             stressIndicators.negativeWords.forEach(word => {
@@ -2434,26 +2432,26 @@ app.post('/api/eq-dashboard/export', authenticateToken, async (req, res) => {
                 if (content.includes(word)) positivityScore += 5;
             });
         });
-        
+
         const totalFocusMinutes = userFocus.reduce((sum, s) => sum + (s.duration || 0), 0);
-        const habitCompletionRate = userHabits.length > 0 
+        const habitCompletionRate = userHabits.length > 0
             ? Math.round((userHabits.reduce((acc, h) => acc + (h.completions?.length || 0), 0) / (userHabits.length * 30)) * 100)
             : 0;
-        
+
         const now = new Date();
         const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
         const weeklyData = moodHistory.filter(m => new Date(m.date) >= oneWeekAgo);
-        const weeklyAvg = weeklyData.length > 0 
+        const weeklyAvg = weeklyData.length > 0
             ? Math.round(weeklyData.reduce((sum, m) => sum + m.score, 0) / weeklyData.length)
             : 60;
-        
+
         const eqScore = Math.round(
-            (weeklyAvg * 0.3) + 
-            ((100 - Math.min(100, stressScore)) * 0.25) + 
-            (Math.min(100, positivityScore) * 0.25) + 
+            (weeklyAvg * 0.3) +
+            ((100 - Math.min(100, stressScore)) * 0.25) +
+            (Math.min(100, positivityScore) * 0.25) +
             (Math.min(100, habitCompletionRate * 2) * 0.2)
         );
-        
+
         // Prepare content for export
         const reportContent = [
             { type: "heading", text: "Duygusal Zeka (EQ) Analiz Raporu", level: 0 },
@@ -2461,9 +2459,11 @@ app.post('/api/eq-dashboard/export', authenticateToken, async (req, res) => {
             { type: "paragraph", text: `` },
             { type: "heading", text: "Genel EQ Puanı", level: 1 },
             { type: "paragraph", text: `Sizin EQ Puanınız: ${eqScore}/100` },
-            { type: "paragraph", text: eqScore >= 80 ? 'Mükemmel! Duygusal zekanız çok yüksek seviyede.' : 
-                eqScore >= 60 ? 'İyi gidiyorsunuz. Duygusal farkındalığınız gelişmekte.' : 
-                'Gelişim alanları mevcut. Kendinizi tanımaya devam edin.' },
+            {
+                type: "paragraph", text: eqScore >= 80 ? 'Mükemmel! Duygusal zekanız çok yüksek seviyede.' :
+                    eqScore >= 60 ? 'İyi gidiyorsunuz. Duygusal farkındalığınız gelişmekte.' :
+                        'Gelişim alanları mevcut. Kendinizi tanımaya devam edin.'
+            },
             { type: "heading", text: "Haftalık Ruh Hali Özeti", level: 1 },
             { type: "paragraph", text: `Haftalık Ortalama: ${weeklyAvg}/100` },
             { type: "heading", text: "Stres ve Pozitivite Analizi", level: 1 },
@@ -2474,7 +2474,7 @@ app.post('/api/eq-dashboard/export', authenticateToken, async (req, res) => {
             { type: "paragraph", text: `Alışkanlık Tamamlama Oranı: %${habitCompletionRate}` },
             { type: "heading", text: "Tavsiyeler", level: 1 }
         ];
-        
+
         if (stressScore > 70) {
             reportContent.push({ type: "paragraph", text: "• Stres seviyeniz yüksek. Günlük meditasyon ve nefes egzersizleri yapmayı deneyin." });
         }
@@ -2485,11 +2485,11 @@ app.post('/api/eq-dashboard/export', authenticateToken, async (req, res) => {
             reportContent.push({ type: "paragraph", text: "• Odaklanma seanslarınızı artırmayı hedefleyin. Pomodoro tekniği deneyebilirsiniz." });
         }
         reportContent.push({ type: "paragraph", text: "• Düzenli günlük tutmaya devam edin. Bu farkındalığınızı artırır." });
-        
+
         // Call Python generator for Word export with EQ chart
         const pyPath = path.join(process.cwd(), 'venv/bin/python3');
         const scriptPath = path.join(process.cwd(), 'api/py_generator.py');
-        
+
         const pythonProcess = spawn(pyPath, [scriptPath]);
         pythonProcess.stdin.write(JSON.stringify({
             mode: 'export',
@@ -2511,11 +2511,11 @@ app.post('/api/eq-dashboard/export', authenticateToken, async (req, res) => {
                 console.error("Python error:", errorOutput);
                 return res.status(500).json({ error: 'Report generation failed', details: errorOutput });
             }
-            
+
             try {
                 const result = JSON.parse(output);
                 if (result.error) return res.status(500).json({ error: result.error });
-                
+
                 const filePath = result.path;
                 if (!fs.existsSync(filePath)) {
                     return res.status(404).json({ error: 'Generated file not found' });
@@ -2523,7 +2523,7 @@ app.post('/api/eq-dashboard/export', authenticateToken, async (req, res) => {
 
                 res.download(filePath, `EQ_Rapor_${new Date().toISOString().split('T')[0]}.docx`, (err) => {
                     if (err) console.error("Download error:", err);
-                    try { if (fs.existsSync(filePath)) fs.unlinkSync(filePath); } catch (e) {}
+                    try { if (fs.existsSync(filePath)) fs.unlinkSync(filePath); } catch (e) { }
                 });
             } catch (pErr) {
                 console.error("Parse Error:", pErr, output);
@@ -2542,23 +2542,23 @@ app.post('/api/eq-dashboard/export', authenticateToken, async (req, res) => {
 app.post('/api/generate-file', optionalAuth, async (req, res) => {
     try {
         const { type, data, filename } = req.body;
-        
+
         if (!type || !filename) {
             return res.status(400).json({ error: 'Dosya tipi ve isim gerekli' });
         }
 
         const pyPath = path.join(process.cwd(), 'venv/bin/python3');
         const scriptPath = path.join(process.cwd(), 'api/py_generator.py');
-        
+
         const pythonProcess = spawn(pyPath, [scriptPath]);
-        
+
         const payload = {
             mode: 'export',
             type: type,
             filename: filename,
             ...data
         };
-        
+
         pythonProcess.stdin.write(JSON.stringify(payload));
         pythonProcess.stdin.end();
 
@@ -2573,11 +2573,11 @@ app.post('/api/generate-file', optionalAuth, async (req, res) => {
                 console.error("Python error:", errorOutput);
                 return res.status(500).json({ error: 'Dosya oluşturma hatası', details: errorOutput });
             }
-            
+
             try {
                 const result = JSON.parse(output);
                 if (result.error) return res.status(500).json({ error: result.error });
-                
+
                 res.json({ success: true, path: result.path, filename: filename });
             } catch (pErr) {
                 console.error("Parse Error:", pErr, output);
@@ -2595,7 +2595,7 @@ app.post('/api/py_generator', optionalAuth, async (req, res) => {
     try {
         // Multipart form data için multer kullanılmalı, ancak şimdilik basit analiz
         const { action } = req.body;
-        
+
         if (action === 'analyze') {
             // Dosya analizi mantığı buraya eklenecek
             // Şimdilik basit bir yanıt döndürüyoruz
@@ -2613,7 +2613,7 @@ app.post('/api/py_generator', optionalAuth, async (req, res) => {
 app.get('/api/download', optionalAuth, async (req, res) => {
     try {
         const filePath = req.query.path;
-        
+
         if (!filePath) {
             return res.status(400).json({ error: 'Dosya yolu gerekli' });
         }
@@ -2632,7 +2632,7 @@ app.get('/api/download', optionalAuth, async (req, res) => {
                 console.error('Download error:', err);
             }
             // Dosyayı temizle
-            try { fs.unlinkSync(filePath); } catch (e) {}
+            try { fs.unlinkSync(filePath); } catch (e) { }
         });
     } catch (error) {
         console.error('Download error:', error);
@@ -2660,7 +2660,7 @@ app.post('/api/generate-media', authenticateToken, async (req, res) => {
         if (type === 'image') {
             try {
                 const imageModel = genAI.getGenerativeModel({ model: "imagen-4.0-fast-generate-001" });
-                
+
                 const result = await imageModel.generateContent({
                     contents: [{ role: 'user', parts: [{ text: prompt }] }],
                     generationConfig: {
@@ -2670,7 +2670,7 @@ app.post('/api/generate-media', authenticateToken, async (req, res) => {
 
                 const response = result.response;
                 const imagePart = response.candidates[0].content.parts.find(part => part.inlineData);
-                
+
                 if (imagePart && imagePart.inlineData) {
                     return res.json({
                         success: true,
@@ -2686,7 +2686,7 @@ app.post('/api/generate-media', authenticateToken, async (req, res) => {
                 // Fallback to Pollinations
                 const seed = Math.floor(Math.random() * 1000000);
                 const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt + ", visually stunning, 8k, masterpiece, highly detailed")}?width=1024&height=1024&nologo=true&enhance=true&seed=${seed}`;
-                
+
                 const imageRes = await fetch(imageUrl);
                 if (!imageRes.ok) throw new Error("Pollinations error");
                 const buffer = await imageRes.arrayBuffer();
@@ -2706,7 +2706,7 @@ app.post('/api/generate-media', authenticateToken, async (req, res) => {
         if (type === 'video') {
             try {
                 const videoModel = genAI.getGenerativeModel({ model: "veo-3.1-fast-generate-preview" });
-                
+
                 const result = await videoModel.generateContent({
                     contents: [{ role: 'user', parts: [{ text: prompt }] }],
                     generationConfig: {
@@ -2716,7 +2716,7 @@ app.post('/api/generate-media', authenticateToken, async (req, res) => {
 
                 const response = result.response;
                 const videoPart = response.candidates[0].content.parts.find(part => part.inlineData);
-                
+
                 if (videoPart && videoPart.inlineData) {
                     return res.json({
                         success: true,
@@ -2729,8 +2729,8 @@ app.post('/api/generate-media', authenticateToken, async (req, res) => {
                 }
             } catch (veoError) {
                 console.error('[Media] Veo 3.1 error:', veoError);
-                return res.status(500).json({ 
-                    error: 'Video oluşturma hatası', 
+                return res.status(500).json({
+                    error: 'Video oluşturma hatası',
                     details: veoError.message,
                     type: 'video'
                 });
@@ -2761,13 +2761,13 @@ app.post('/api/generate-audio', authenticateToken, async (req, res) => {
 
         try {
             const audioModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash-native-audio-latest" });
-            
+
             const result = await audioModel.generateContent({
-                contents: [{ 
-                    role: 'user', 
+                contents: [{
+                    role: 'user',
                     parts: [
                         { text: `Convert this text to natural speech: ${text}` }
-                    ] 
+                    ]
                 }],
                 generationConfig: {
                     responseModalities: ['AUDIO'],
@@ -2776,7 +2776,7 @@ app.post('/api/generate-audio', authenticateToken, async (req, res) => {
 
             const response = result.response;
             const audioPart = response.candidates[0].content.parts.find(part => part.inlineData);
-            
+
             if (audioPart && audioPart.inlineData) {
                 return res.json({
                     success: true,
@@ -2789,8 +2789,8 @@ app.post('/api/generate-audio', authenticateToken, async (req, res) => {
             }
         } catch (audioError) {
             console.error('[Audio] Gemini audio error:', audioError);
-            return res.status(500).json({ 
-                error: 'Ses oluşturma hatası', 
+            return res.status(500).json({
+                error: 'Ses oluşturma hatası',
                 details: audioError.message
             });
         }
@@ -2805,22 +2805,22 @@ app.post('/api/generate-audio', authenticateToken, async (req, res) => {
 app.post('/api/deep-search', optionalAuth, async (req, res) => {
     try {
         const { query, max_results = 5 } = req.body;
-        
+
         if (!query) {
             return res.status(400).json({ error: 'Arama sorgusu gerekli' });
         }
 
         const pyPath = path.join(process.cwd(), 'venv/bin/python3');
         const scriptPath = path.join(process.cwd(), 'api/py_generator.py');
-        
+
         const pythonProcess = spawn(pyPath, [scriptPath]);
-        
+
         const payload = {
             mode: 'search',
             query: query,
             max_results: max_results
         };
-        
+
         pythonProcess.stdin.write(JSON.stringify(payload));
         pythonProcess.stdin.end();
 
@@ -2835,11 +2835,11 @@ app.post('/api/deep-search', optionalAuth, async (req, res) => {
                 console.error("Python error:", errorOutput);
                 return res.status(500).json({ error: 'Arama hatası', details: errorOutput });
             }
-            
+
             try {
                 const result = JSON.parse(output);
                 if (result.error) return res.status(500).json({ error: result.error });
-                
+
                 res.json({ success: true, results: result.results || [] });
             } catch (pErr) {
                 console.error("Parse Error:", pErr, output);

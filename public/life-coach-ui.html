@@ -7734,12 +7734,13 @@
                         chatInputContainer.classList.remove('hidden');
                         chatInputContainer.style.display = 'block';
 
-                        if (messageHistory.length > 0) {
-                            if (welcomeScreen) welcomeScreen.classList.add('hidden');
-                            if (chatContainer) chatContainer.classList.remove('hidden');
-                        } else {
-                            if (welcomeScreen) welcomeScreen.classList.remove('hidden');
-                            if (chatContainer) chatContainer.classList.add('hidden');
+                        // If entering chat from a different section, start fresh as requested
+                        // Check active nav before we updated it to determine if it's a switch
+                        const currentActiveNav = document.querySelector('.nav-item.bg-teal-500\\/20');
+                        const isSwitchingToChat = currentActiveNav && currentActiveNav.getAttribute('data-section') !== 'chat';
+                        
+                        if (isSwitchingToChat || !currentActiveNav) {
+                            startNewChat();
                         }
                     } else {
                         chatInputContainer.classList.add('hidden');
