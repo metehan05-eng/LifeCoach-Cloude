@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LifeCoach AI — Hedef Detayları</title>
+    <link rel="icon" type="image/svg+xml" href="/lifecoach_ai_logo.svg">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --bg: #030712;
+            --card-bg: rgba(15, 23, 42, 0.6);
+            --accent: #2dd4bf;
+            --border: rgba(45, 212, 191, 0.1);
+        }
+
+        body {
+            background-color: var(--bg);
+            color: #e2e8f0;
+            font-family: 'Inter', sans-serif;
+            background-image: radial-gradient(circle at 50% -20%, rgba(45, 212, 191, 0.15), transparent 70%);
+            min-height: 100vh;
+        }
+
+        .glass {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+        }
+
+        .font-display { font-family: 'Space Grotesk', sans-serif; }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(45, 212, 191, 0.2); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(45, 212, 191, 0.4); }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .checkbox-item:hover {
+            background: rgba(45, 212, 191, 0.05);
+            border-color: rgba(45, 212, 191, 0.2);
+        }
+
+        .checkbox-item.checked {
+            text-decoration: line-through;
+            opacity: 0.6;
+            background: rgba(45, 212, 191, 0.02);
+        }
+
+        .checkbox-item input {
+            accent-color: var(--accent);
+            width: 18px;
+            height: 18px;
+        }
+
+        .timeline-btn {
+            position: relative;
+            padding-bottom: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 80px;
+        }
+
+        .timeline-btn::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            right: -50%;
+            width: 100%;
+            height: 2px;
+            background: rgba(255,255,255,0.05);
+            z-index: 0;
+        }
+
+        .timeline-btn:last-child::before { display: none; }
+
+        .timeline-btn .dot {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+            transition: all 0.3s;
+        }
+
+        .timeline-btn.active .dot {
+            background: var(--accent);
+            color: var(--bg);
+            box-shadow: 0 0 15px rgba(45, 212, 191, 0.4);
+        }
+
+        .timeline-btn.past .dot {
+            background: rgba(45, 212, 191, 0.1);
+            color: var(--accent);
+        }
+
+        .timeline-btn.future .dot {
+            background: rgba(255,255,255,0.05);
+            color: #475569;
+        }
+
+        code { font-family: 'Fira Code', monospace; font-size: 0.9em; }
+        pre { border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade { animation: fadeIn 0.4s ease-out forwards; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
+            <div class="flex items-center gap-4">
+                <a href="/life-coach-ui.html" class="w-10 h-10 glass rounded-xl flex items-center justify-center hover:bg-teal-500/10 transition-colors">
+                    <i class="fa-solid fa-arrow-left text-teal-400"></i>
+                </a>
+                <div>
+                    <h1 id="goalTitle" class="text-3xl font-bold text-white font-display">Hedef Yükleniyor...</h1>
+                    <p id="goalType" class="text-slate-400 text-sm mt-1">Yapay zeka yol haritanız hazırlanıyor.</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="text-right hidden md:block">
+                    <div id="progressLabel" class="text-xs font-bold text-teal-400 uppercase tracking-widest mb-1">İlerleme: %0</div>
+                    <div class="w-48 h-2 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                        <div id="progressBar" class="h-full bg-teal-500 transition-all duration-1000" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Timeline Navigation -->
+        <div id="timeline" class="flex overflow-x-auto pb-4 mb-10 no-scrollbar items-center">
+            <!-- Timeline items injected by JS -->
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Main Content -->
+            <div class="lg:col-span-2 space-y-8">
+                <!-- Today's Briefing -->
+                <div id="briefingCard" class="glass rounded-3xl p-6 md:p-8 relative overflow-hidden hidden animate-fade">
+                    <div class="absolute top-0 right-0 p-4 opacity-10">
+                        <i class="fa-solid fa-sparkles text-6xl text-teal-400"></i>
+                    </div>
+                    
+                    <div id="briefingHeader" class="flex items-center gap-3 mb-8">
+                        <div class="w-10 h-10 rounded-xl bg-teal-500/20 flex items-center justify-center text-teal-400">
+                            <i class="fa-solid fa-calendar-day"></i>
+                        </div>
+                        <h2 id="briefingDate" class="text-xl font-bold text-white"></h2>
+                    </div>
+
+                    <div id="briefingContent" class="prose prose-invert max-w-none space-y-6">
+                        <!-- Briefing content processed by marked.js -->
+                    </div>
+
+                    <!-- Finish Day Action -->
+                    <div id="finishAction" class="mt-12 pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-6">
+                        <div class="flex-1">
+                            <h4 class="text-white font-bold mb-1">Harika İlerliyorsun!</h4>
+                            <p class="text-xs text-slate-400">Tüm başlıkları tamamladıysan bugünü bitir ve ödülünü al.</p>
+                        </div>
+                        <button id="finishDayBtn" class="px-8 py-3 bg-teal-500 hover:bg-emerald-400 text-bg font-black rounded-2xl shadow-xl shadow-teal-500/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                            BUGÜNÜ TAMAMLA 🚀
+                        </button>
+                    </div>
+
+                    <!-- YouTube Search -->
+                    <div id="videoSection" class="mt-12 p-6 rounded-2xl bg-gradient-to-br from-red-500/10 to-orange-500/5 border border-red-500/20">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-brands fa-youtube text-2xl text-red-500"></i>
+                                <h3 class="font-bold text-white">Önerilen Video Eğitimi</h3>
+                            </div>
+                            <button id="searchYoutubeBtn" class="px-4 py-2 bg-red-500/20 hover:bg-red-500/40 text-red-400 rounded-xl text-xs font-bold transition-all">
+                                YouTube'da Ara
+                            </button>
+                        </div>
+                        <p class="text-sm text-slate-400 mb-4 italic">"Yapay zeka bugün öğrendiğiniz konuyu pekiştirmeniz için en iyi içeriği buldu."</p>
+                        <div id="videoQueryDisplay" class="p-3 bg-black/40 rounded-xl border border-white/5 text-sm font-mono text-emerald-400">
+                            Arama yapılıyor...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loading State -->
+                <div id="loadingBriefing" class="glass rounded-3xl p-12 flex flex-col items-center justify-center text-center space-y-4">
+                    <div class="w-16 h-16 border-4 border-teal-500/20 border-t-teal-500 rounded-full animate-spin"></div>
+                    <div>
+                        <p class="text-lg font-bold text-white">Plan Hazırlanıyor</p>
+                        <p class="text-slate-500 text-sm">Hedefinize giden en kısa yolu hesaplıyoruz...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar / Stats -->
+            <div class="space-y-8">
+                <!-- Past Days History -->
+                <div class="glass rounded-3xl p-6">
+                    <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                        <i class="fa-solid fa-history text-teal-400 text-sm"></i>
+                        Geçmiş Günler
+                    </h3>
+                    <div id="historyList" class="space-y-3">
+                        <!-- History items injected by JS -->
+                    </div>
+                </div>
+
+                <!-- Motivation Card -->
+                <div class="bg-gradient-to-br from-teal-500 to-emerald-600 rounded-3xl p-8 relative overflow-hidden shadow-2xl shadow-teal-500/20">
+                    <div class="relative z-10">
+                        <h3 class="text-2xl font-bold text-white mb-4">Yoldasın! 🚀</h3>
+                        <p class="text-teal-50/80 text-sm leading-relaxed mb-6">
+                            "Küçük adımlar, zamanla büyük dağları aşar. Bugünün görevlerini tamamlayarak hedefine bir adım daha yaklaş."
+                        </p>
+                        <button onclick="window.history.back()" class="w-full py-3 bg-white/20 hover:bg-white/30 backdrop-blur-md rounded-xl text-white font-bold transition-all">
+                            Geri Dön
+                        </button>
+                    </div>
+                    <i class="fa-solid fa-mountain absolute -bottom-4 -right-4 text-8xl text-black/10"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="./lifeCoachServices.js"></script>
+    <script>
+        let currentGoal = null;
+        let selectedDate = new Date().toISOString().split('T')[0];
+        const goalId = new URLSearchParams(window.location.search).get('id');
+
+        if (!goalId) {
+            window.location.href = '/life-coach-ui.html';
+        }
+
+        // Initialize marked.js
+        marked.setOptions({
+            breaks: true,
+            gfm: true
+        });
+
+        async function init() {
+            await loadGoal();
+            renderTimeline();
+            loadBriefing(selectedDate);
+        }
+
+        async function loadGoal() {
+            try {
+                const goals = await GoalsService.getAll();
+                currentGoal = goals.find(g => g.id === goalId);
+                
+                if (!currentGoal) throw new Error('Hedef bulunamadı');
+
+                document.getElementById('goalTitle').innerText = currentGoal.title;
+                document.getElementById('goalType').innerText = currentGoal.type + ' Hedef Planı';
+                document.getElementById('progressLabel').innerText = `İlerleme: %${currentGoal.progress}`;
+                document.getElementById('progressBar').style.width = currentGoal.progress + '%';
+            } catch (err) {
+                console.error(err);
+                alert('Hata: ' + err.message);
+            }
+        }
+
+        function renderTimeline() {
+            const container = document.getElementById('timeline');
+            container.innerHTML = '';
+            
+            const today = new Date();
+            const dates = [];
+
+            // Past 4 days, Today, Next 2 days
+            for (let i = -4; i <= 2; i++) {
+                const d = new Date();
+                d.setDate(today.getDate() + i);
+                dates.push(d);
+            }
+
+            dates.forEach(date => {
+                const dateISO = date.toISOString().split('T')[0];
+                const isToday = dateISO === new Date().toISOString().split('T')[0];
+                const isSelected = dateISO === selectedDate;
+                const isPast = date < today && !isToday;
+                const isFuture = date > today;
+                
+                const dayName = date.toLocaleDateString('tr-TR', { weekday: 'short' });
+                const dayNum = date.getDate();
+
+                const item = document.createElement('div');
+                item.className = `timeline-btn ${isSelected ? 'active' : (isPast ? 'past' : 'future')}`;
+                item.onclick = () => selectDate(dateISO);
+                
+                item.innerHTML = `
+                    <div class="dot">
+                        ${isToday ? '<i class="fa-solid fa-star text-[10px]"></i>' : dayNum}
+                    </div>
+                    <span class="text-[10px] uppercase font-bold mt-2 ${isSelected ? 'text-teal-400' : 'text-slate-500'}">${dayName}</span>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        async function loadBriefing(date) {
+            selectedDate = date;
+            document.getElementById('loadingBriefing').classList.remove('hidden');
+            document.getElementById('briefingCard').classList.add('hidden');
+            
+            renderTimeline();
+            updateHistory();
+
+            try {
+                const res = await fetch('/api/goals/briefing', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({
+                        id: goalId,
+                        title: currentGoal.title,
+                        description: currentGoal.description,
+                        progress: currentGoal.progress,
+                        completions: currentGoal.completions,
+                        date: date
+                    })
+                });
+                
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+
+                renderBriefing(data.briefing, date);
+            } catch (err) {
+                console.error(err);
+                document.getElementById('briefingContent').innerHTML = `<p class="text-red-400">Hata: Plan yüklenemedi. (${err.message})</p>`;
+            } finally {
+                document.getElementById('loadingBriefing').classList.add('hidden');
+                document.getElementById('briefingCard').classList.remove('hidden');
+            }
+        }
+
+        function renderBriefing(markdown, date) {
+            const dateLabel = new Date(date).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' });
+            document.getElementById('briefingDate').innerText = dateLabel;
+
+            // Extract Search Query
+            const queryMatch = markdown.match(/SEARCH_QUERY:\s*(.*)/i);
+            const searchQuery = queryMatch ? queryMatch[1].trim() : `${currentGoal.title} dersi`;
+            const cleanMarkdown = markdown.replace(/SEARCH_QUERY:\s*(.*)/i, '').trim();
+
+            document.getElementById('videoQueryDisplay').innerText = searchQuery;
+            document.getElementById('searchYoutubeBtn').onclick = () => {
+                window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(searchQuery)}`, '_blank');
+            };
+
+            // Process Markdown for Checkboxes
+            let html = marked.parse(cleanMarkdown);
+            
+            // Transform [ ] to interactive checkboxes
+            html = html.replace(/\[\s*\]\s*(.*)/g, (match, text) => {
+                const uniqueId = btoa(text).substring(0, 8);
+                const isChecked = localStorage.getItem(`task-${goalId}-${date}-${uniqueId}`) === 'true';
+                return `
+                    <div class="checkbox-item ${isChecked ? 'checked' : ''}" onclick="toggleCheck(this, '${goalId}', '${date}', '${uniqueId}')">
+                        <input type="checkbox" ${isChecked ? 'checked' : ''} onclick="event.stopPropagation()">
+                        <span>${text}</span>
+                    </div>
+                `;
+            });
+
+            document.getElementById('briefingContent').innerHTML = html;
+
+            // Handle Finish Day Button
+            const finishBtn = document.getElementById('finishDayBtn');
+            const isCompleted = (currentGoal.completions || []).includes(date);
+            const isToday = date === new Date().toISOString().split('T')[0];
+
+            if (isCompleted) {
+                finishBtn.innerText = 'GÜN TAMAMLANDI ✅';
+                finishBtn.classList.remove('bg-teal-500');
+                finishBtn.classList.add('bg-emerald-500/20', 'text-emerald-400');
+                finishBtn.disabled = true;
+            } else if (!isToday) {
+                finishBtn.innerText = 'SADECE BUGÜNÜ TAMAMLAYABİLİRSİN ⏳';
+                finishBtn.disabled = true;
+            } else {
+                finishBtn.onclick = async () => {
+                    finishBtn.disabled = true;
+                    finishBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> GÜNCELLENİYOR...';
+                    try {
+                        const result = await GoalsService.toggleDay(goalId);
+                        if (result.completedToday) {
+                            confetti({ particleCount: 100, spread: 70, origin: { y: 0.8 } });
+                            loadGoal(); // Re-fetch to get new completions
+                        }
+                    } catch (err) {
+                        alert('Hata: ' + err.message);
+                    } finally {
+                        loadBriefing(date);
+                    }
+                };
+            }
+        }
+
+        function toggleCheck(el, goalId, date, taskId) {
+            const checkbox = el.querySelector('input');
+            const isChecked = !checkbox.checked;
+            checkbox.checked = isChecked;
+            
+            if (isChecked) {
+                el.classList.add('checked');
+                localStorage.setItem(`task-${goalId}-${date}-${taskId}`, 'true');
+                
+                // If it's today and all checked, maybe trigger confetti
+                checkAllTasks();
+            } else {
+                el.classList.remove('checked');
+                localStorage.removeItem(`task-${goalId}-${date}-${taskId}`);
+            }
+        }
+
+        function checkAllTasks() {
+            const total = document.querySelectorAll('.checkbox-item').length;
+            const checked = document.querySelectorAll('.checkbox-item.checked').length;
+            if (total > 0 && total === checked) {
+                confetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: { y: 0.6 },
+                    colors: ['#2dd4bf', '#fbbf24']
+                });
+            }
+        }
+
+        function selectDate(date) {
+            loadBriefing(date);
+        }
+
+        function updateHistory() {
+            const list = document.getElementById('historyList');
+            list.innerHTML = '';
+            
+            if (!currentGoal.briefings) return;
+
+            const dates = Object.keys(currentGoal.briefings).sort((a, b) => b.localeCompare(a));
+            
+            if (dates.length === 0) {
+                list.innerHTML = '<p class="text-xs text-slate-500 italic">Henüz geçmiş plan kaydı yok.</p>';
+                return;
+            }
+
+            dates.slice(0, 5).forEach(date => {
+                const d = new Date(date);
+                const day = d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
+                
+                const item = document.createElement('button');
+                item.className = `w-full p-4 glass rounded-2xl flex items-center justify-between hover:border-teal-500/40 transition-all group ${date === selectedDate ? 'border-teal-500/50' : ''}`;
+                item.onclick = () => selectDate(date);
+                item.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <span class="text-xs font-bold text-slate-500 group-hover:text-teal-400">${day}</span>
+                        <div class="h-4 w-px bg-white/10"></div>
+                        <span class="text-sm text-slate-300 group-hover:text-white truncate">Günlük Plan</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-[10px] text-slate-600 group-hover:text-teal-400"></i>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        init();
+    </script>
+</body>
+</html>

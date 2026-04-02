@@ -7730,6 +7730,11 @@
                     activeNav.classList.remove('text-slate-400');
                 }
 
+                // Specific logic for dashboard/panel refresh
+                if (sectionName === 'dashboard') {
+                    loadDashboard();
+                }
+
                 // Chat input visibility control
                 const chatInputContainer = document.getElementById('chat-input-container');
                 const chatContainer = document.getElementById('chat-container');
@@ -7810,6 +7815,9 @@
 
                     // Save to global for React
                     window.dashboardStats = { activeGoals, totalHabits, bestStreak, score, xp, flameLevel, level };
+                    
+                    // Sync with localStorage for DashboardHeader fallback
+                    localStorage.setItem('lifecoach-badge-status', JSON.stringify({ xp, level }));
 
                     // Update DOM only if elements exist (backwards compatibility)
                     const gEl = document.getElementById('dash-goals');
@@ -7968,9 +7976,10 @@
                                     <h3 class="text-xl text-white font-bold mb-2 group-hover:text-teal-400 transition-colors">${escapeHTML(goal.title)}</h3>
                                     ${goal.description ? `<p class="text-sm text-slate-400 leading-relaxed line-clamp-2 hover:line-clamp-none transition-all">${escapeHTML(goal.description)}</p>` : ''}
                                     
-                                    <!-- Premium Briefing Area -->
-                                    <div id="${briefingId}" class="mt-5 p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-xl text-sm text-slate-300">
-                                        <i class="fa-solid fa-spinner fa-spin mr-1"></i>Yol haritası yükleniyor...
+                                    <!-- Roadmap Status Summary -->
+                                    <div id="${briefingId}" class="mt-4 flex items-center gap-2 text-[10px] text-teal-500/60 font-bold uppercase tracking-widest">
+                                        <i class="fa-solid fa-sparkles animate-pulse"></i>
+                                        <span>Yol haritası hazır • Hazır olduğunda aç</span>
                                     </div>
                                 </div>
                                 <div class="flex gap-2 ml-4">
@@ -8010,7 +8019,12 @@
                                     onchange="updateGoalProgress('${goal.id}', this.value)"
                                     class="flex-1 h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-teal-500">
                                 
-                                <button ${completeAction} class="px-5 py-2 text-xs font-bold rounded-xl transition-all shadow-lg ${completeBtnClass}">
+                                <button onclick="window.location.href='/goals.html?id=${goal.id}'" class="flex-1 px-5 py-2.5 bg-teal-500/10 hover:bg-teal-500/20 text-teal-400 border border-teal-500/30 rounded-xl text-xs font-bold transition-all shadow-lg flex items-center justify-center gap-2 group">
+                                    <i class="fa-solid fa-map-location-dot group-hover:scale-110 transition-transform"></i>
+                                    <span>Yol Haritasını Aç</span>
+                                </button>
+
+                                <button ${completeAction} class="px-5 py-2.5 text-xs font-bold rounded-xl transition-all shadow-lg ${completeBtnClass}">
                                     <i class="fa-solid fa-check-circle mr-1"></i> Hedefi Tamamla
                                 </button>
                             </div>
@@ -10726,17 +10740,27 @@
 
             React.useEffect(() => {
                 const updateXp = () => {
-                    const badge = JSON.parse(localStorage.getItem('lifecoach-badge-status') || '{}');
-                    setXp(badge.xp || 0);
-                    setLevel(badge.level || 1);
+                    // Try global state first (updated by loadDashboard), then localStorage
+                    const globalStats = window.dashboardStats;
+                    if (globalStats) {
+                        setXp(globalStats.xp || 0);
+                        setLevel(globalStats.level || 1);
+                    } else {
+                        const badge = JSON.parse(localStorage.getItem('lifecoach-badge-status') || '{}');
+                        setXp(badge.xp || 0);
+                        setLevel(badge.level || 1);
+                    }
                 };
                 updateXp();
-                const interval = setInterval(updateXp, 2000);
+                const interval = setInterval(updateXp, 1000); // Faster sync
                 return () => clearInterval(interval);
             }, []);
 
-            const nextLevelXp = level * 250;
-            const progress = (xp / nextLevelXp) * 100;
+            // Consistent with backend: level = (total_xp / 100) + 1
+            // So progress towards next level is (total_xp % 100)
+            const currentLevelProgressXp = xp % 100;
+            const nextLevelTargetXp = 100;
+            const progress = (currentLevelProgressXp / nextLevelTargetXp) * 100;
 
             return (
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 mt-2">
@@ -10753,7 +10777,7 @@
                         <div className="flex-1 min-w-[150px]">
                             <div className="flex justify-between items-center mb-1.5">
                                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Seviye İlerlemesi</span>
-                                <span className="text-[10px] font-bold text-teal-400">{xp} / {nextLevelXp} XP</span>
+                                <span className="text-[10px] font-bold text-teal-400">{currentLevelProgressXp} / {nextLevelTargetXp} XP (Tüm: {xp})</span>
                             </div>
                             <div className="h-2 bg-white/5 rounded-full overflow-hidden border border-white/5">
                                 <div className="h-full bg-gradient-to-r from-yellow-400 via-amber-300 to-teal-400 transition-all duration-1000 ease-out" style={{ width: `${progress}%` }}>

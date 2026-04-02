@@ -1615,10 +1615,22 @@ app.put('/api/goals', authenticateToken, async (req, res) => {
 
 app.post('/api/goals/briefing', authenticateToken, async (req, res) => {
     try {
-        const { title, description, progress, completions } = req.body;
+        const userId = req.user.id;
+        const { id, title, description, progress, completions, date } = req.body;
         if (!title || !description) return res.status(400).json({ error: 'Title and description required' });
 
-        const today = new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' });
+        const targetDate = date || new Date().toISOString().split('T')[0];
+        const dayLabel = new Date(targetDate).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', weekday: 'long' });
+        
+        // Check if briefing already exists for this date
+        const allGoals = await getKVData('goals');
+        const userGoals = allGoals[userId] || [];
+        const goalIdx = userGoals.findIndex(g => g.id === id);
+        
+        if (goalIdx !== -1 && userGoals[goalIdx].briefings && userGoals[goalIdx].briefings[targetDate]) {
+            return res.json({ briefing: userGoals[goalIdx].briefings[targetDate] });
+        }
+
         const completionCount = Array.isArray(completions) ? completions.length : 0;
         const currentProgress = progress || 0;
 
@@ -1626,26 +1638,45 @@ app.post('/api/goals/briefing', authenticateToken, async (req, res) => {
 Açıklama: ${description}
 Kullanıcı İlerlemesi: %${currentProgress}
 Tamamlanan Gün Sayısı: ${completionCount}
-Bugünün Tarihi: ${today}
+İstenen Tarih: ${dayLabel}
 
-Görev: Bu hedefe ulaşmak için bugün neler yapılabileceğini detaylandırın. 
-Kullanıcının mevcut ilerlemesini (%${currentProgress}) ve daha önce ${completionCount} gün çalıştığını göz önünde bulundurarak, "Yol Haritası"nın bir sonraki mantıklı adımını önerin. 
-Eğer kullanıcı yeni başlıyorsa (0 gün), temelden başlayın. Eğer birkaç gün geçmişse, konuları derinleştirin.
+Görev: Bu hedefe ulaşmak için bugünkü (veya belirtilen tarihteki) "Yol Haritası"nı hazırlayın. 
+Yanıt formatı çok katı olmalıdır. Yanıtın sonuna mutlaka "SEARCH_QUERY: [YouTube arama terimi]" ekleyin.
 
-Lütfen şunları içer:
-1. Bugün çalışılması gereken ana konu (Örn: PHP Temelleri - Koşullu İfadeler).
-2. Bu konunun kısa açıklaması.
-3. Bir kod örneği (Eğer hedefe uygunsa, Markdown formatında).
-4. Bu kod örneğinin açıklaması.
-5. "Bugün tamamlama süren dolana kadar şunları başar" gibi bir motivasyon cümlesi.
+Lütfen şu bölümleri içer:
+1. **Günlük Odak**: Bugünün ana konusu.
+2. **Öğrenilecek Başlıklar**: (Maddeler halinde, başında [ ] kutucuğu olsun)
+3. **Konu Özeti**: Teknik ve kısa açıklama.
+4. **Pratik Uygulama / Kod Örneği**: Markdown formatında.
+5. **YouTube Arama Terimi**: (Hedefle ilgili eğitici video bulmak için en iyi arama terimi)
 
-Yanıt dili Türkçe olmalı. Yanıt Markdown formatında olmalı. Konu başlıklarını (1, 2, 3...) kalın yaz.`;
+Örnek Format:
+### 1. Günlük Odak
+...
+### 2. Öğrenilecek Başlıklar
+[ ] Değişken tanımlama
+[ ] Veri tipleri
+...
+SEARCH_QUERY: PHP değişken tanımlama dersi
+
+Yanıt dili Türkçe olmalı.`;
 
         const result = await generateAIResponse(prompt, [
-            { role: 'system', content: 'Sen profesyonel ve teknik bir yaşam koçusun. Kullanıcıya hedefleri doğrultusunda adım adım, teknik detaylar ve kod örnekleri içeren günlük rehberlik sağlarsın.' }
+            { role: 'system', content: 'Sen profesyonel bir teknik yaşam koçusun. Kullanıcıya hedefleri doğrultusunda adım adım, uygulamalı ve YouTube video önerili günlük rehberlik sağlarsın.' }
         ]);
-        res.json({ briefing: result.trim() });
+
+        const briefing = result.trim();
+
+        // Save briefing to history if goal exists
+        if (goalIdx !== -1) {
+            if (!userGoals[goalIdx].briefings) userGoals[goalIdx].briefings = {};
+            userGoals[goalIdx].briefings[targetDate] = briefing;
+            await setKVData('goals', allGoals);
+        }
+
+        res.json({ briefing });
     } catch (error) {
+        console.error('Briefing error:', error);
         res.status(500).json({ error: 'Briefing generation failed' });
     }
 });
@@ -2261,7 +2292,8 @@ app.post('/api/user-stats', authenticateToken, async (req, res) => {
             // Handle reward
             const xpGained = rewardType === 'daily_login' ? 10 :
                 rewardType === 'goal_complete' ? 50 :
-                    rewardType === 'habit_streak' ? 30 : 10;
+                rewardType === 'habit_streak' ? 30 :
+                rewardType === 'assistant_message' ? 10 : 10;
 
             stats.total_xp += xpGained;
             stats.level = Math.floor(stats.total_xp / 100) + 1;
