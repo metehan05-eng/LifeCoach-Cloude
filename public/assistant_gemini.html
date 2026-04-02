@@ -807,7 +807,7 @@
         </div>
     </div>
 </div>
-
+<script src="./lifeCoachServices.js"></script>
 <script>
     // ── State ────────────────────────────────────────
     let messages = [];
@@ -977,6 +977,15 @@
 
         messages.push({ role: 'user', content: text });
         renderMsg('user', text);
+
+        // Kazanılan XP'yi ekle
+        if (typeof StatsService !== 'undefined') {
+            StatsService.addReward('assistant_message').then(stats => {
+                if (stats && stats.total_xp) {
+                    console.log('XP updated:', stats.total_xp);
+                }
+            }).catch(e => console.warn('XP addition failed:', e));
+        }
 
         // typing
         isTyping = true;
