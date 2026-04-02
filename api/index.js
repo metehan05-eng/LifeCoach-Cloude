@@ -192,6 +192,13 @@ app.post('/api/chat', optionalAuth, async (req, res) => {
         let memoryInjection = "";
         let modeInjection = "";
         let localizationInjection = "";
+        let personaInjection = "";
+
+        const PERSONAS = {
+            drill: "Sen bir sert disiplin koçusun. Mazeret kabul etmezsin. Kullanıcıya doğrudan, net ve sonuç odaklı konuşursun. Zaman zaman hesap sorarsın. Yumuşamazsın, ama amacın zarar vermek değil itici kuvvet olmak. Şerbet değil zehirli bir ilaç gibi dürüst ol.",
+            kind: "Sen nazik, empatik ve destekleyici bir yaşam koçusun. Her zaman anlayışla yaklaşırsın. Küçük adımları bile büyük başarı olarak kutlarsın. Kullanıcıyı asla yargılamazsın.",
+            sage: "Sen Sokratik yöntemi kullanan bilge bir koçsun. Doğrudan cevap vermek yerine sorular sorarak kullanıcının kendi cevabını bulmasına rehberlik edersin. Derin düşündürürsün. Bilgece ve felsefi bir ton kullan."
+        };
 
         // Akıllı Dil ve Konum Tespiti
         const detectedLang = userLanguage || 'tr-TR';
@@ -234,8 +241,13 @@ KURALLAR:
 
         if (req.user && req.user.email) {
             dbUser = await getKVData(`user:${req.user.email}`);
-            if (dbUser && dbUser.memory) {
-                memoryInjection = `\n\n--- KULLANICI UZUN VADELİ HAFIZA (BİLDİKLERİNİZ) ---\n${dbUser.memory}\n----------------------------------------------------\nKullanıcı hakkında bu bilgileri hatırlayarak kişiselleştirilmiş cevap verin.`;
+            if (dbUser) {
+                if (dbUser.memory) {
+                    memoryInjection = `\n\n--- KULLANICI UZUN VADELİ HAFIZA (BİLDİKLERİNİZ) ---\n${dbUser.memory}\n----------------------------------------------------\nKullanıcı hakkında bu bilgileri hatırlayarak kişiselleştirilmiş cevap verin.`;
+                }
+                if (dbUser.persona && PERSONAS[dbUser.persona]) {
+                    personaInjection = `\n\n--- AKTİF KİŞİLİK (PERSONA) ---\n${PERSONAS[dbUser.persona]}\n----------------------------------------------------\nBu kişilik karakterine bürunerek cevap verin.`;
+                }
             }
         }
 
@@ -500,6 +512,7 @@ You must output a json-action for it:
 The Python engine will automatically generate charts based on the 'eq_data' provided.
 You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI. (Operating on Gemini 3.1 Pro)
 ${memoryInjection}
+${personaInjection}
 ${modeInjection}
 ${localizationInjection}
 
@@ -1054,7 +1067,7 @@ app.get('/api/profile', authenticateToken, async (req, res) => {
 // Update Profile
 app.post('/api/update-profile', authenticateToken, async (req, res) => {
     try {
-        const { newName, newAvatar } = req.body;
+        const { newName, newAvatar, persona, job, goal, notes } = req.body;
         const user = await getKVData(`user:${req.user.email}`);
 
         if (!user) {
@@ -1062,7 +1075,17 @@ app.post('/api/update-profile', authenticateToken, async (req, res) => {
         }
 
         user.name = newName || user.name;
-        user.avatar = newAvatar; // Avatarı boş olsa bile ayarla (silme durumu için)
+        if (newAvatar !== undefined) user.avatar = newAvatar;
+        if (persona !== undefined) user.persona = persona;
+        
+        // Detailed memory fields
+        if (!user.memoryData) user.memoryData = {};
+        if (job !== undefined) user.memoryData.job = job;
+        if (goal !== undefined) user.memoryData.goal = goal;
+        if (notes !== undefined) user.memoryData.notes = notes;
+        
+        // General text memory for injection in chat
+        user.memory = `AD: ${user.name}\nMESLEK: ${user.memoryData.job || 'Bilinmiyor'}\nHEDEF: ${user.memoryData.goal || 'Bilinmiyor'}\nNOTLAR: ${user.memoryData.notes || 'Yok'}`;
 
         await setKVData(`user:${req.user.email}`, user);
 
@@ -1073,13 +1096,35 @@ app.post('/api/update-profile', authenticateToken, async (req, res) => {
                 email: user.email,
                 name: user.name,
                 type: user.type,
-                avatar: user.avatar
+                avatar: user.avatar,
+                persona: user.persona,
+                memoryData: user.memoryData
             }
         });
 
     } catch (error) {
         console.error('Update profile error:', error);
         res.status(500).json({ error: 'Profil güncellenemedi' });
+    }
+});
+
+// Get Profile
+app.get('/api/profile', authenticateToken, async (req, res) => {
+    try {
+        const user = await getKVData(`user:${req.user.email}`);
+        if (!user) {
+            return res.status(404).json({ error: 'Kullanıcı bulunamadı' });
+        }
+
+        res.json({
+            name: user.name,
+            avatar: user.avatar,
+            persona: user.persona,
+            memoryData: user.memoryData || {}
+        });
+    } catch (error) {
+        console.error('Get profile error:', error);
+        res.status(500).json({ error: 'Profil alınamadı' });
     }
 });
 
