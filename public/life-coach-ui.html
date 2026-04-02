@@ -6174,26 +6174,23 @@
             const sectionChat = document.getElementById('section-chat');
             const chatInputContainer = document.getElementById('chat-input-container');
 
-            const isChatActive = sectionChat && !sectionChat.classList.contains('hidden');
-
-            if (isChatActive) {
-                if (chatContainer) {
-                    chatContainer.innerHTML = '';
-                    chatContainer.classList.add('hidden');
-                    chatContainer.style.display = 'none';
-                }
-                if (welcomeScreen) {
-                    welcomeScreen.classList.remove('hidden');
-                    welcomeScreen.style.display = 'flex';
-                }
-                if (sectionChat) {
-                    sectionChat.classList.add('welcome-active');
-                    sectionChat.style.display = 'flex';
-                }
-                if (chatInputContainer) {
-                    chatInputContainer.classList.remove('hidden');
-                    chatInputContainer.style.display = 'block';
-                }
+            // Always reset DOM even if hidden - this fixes switching sections to fresh chat
+            if (chatContainer) {
+                chatContainer.innerHTML = '';
+                chatContainer.classList.add('hidden');
+                chatContainer.style.display = 'none';
+            }
+            if (welcomeScreen) {
+                welcomeScreen.classList.remove('hidden');
+                welcomeScreen.style.display = 'flex';
+            }
+            if (sectionChat) {
+                sectionChat.classList.add('welcome-active');
+                sectionChat.style.display = 'flex';
+            }
+            if (chatInputContainer) {
+                chatInputContainer.classList.remove('hidden');
+                chatInputContainer.style.display = 'block';
             }
 
             // Clear inputs
@@ -6487,10 +6484,17 @@
 
             const msgId = 'msg-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
 
+            const cleanTextForDisplay = (rawText) => {
+                if (!rawText) return '';
+                // JSON-action bloklarını temizle (Kullanıcı bunları ham olarak görmesin)
+                return rawText.replace(/```json-action\n?[\s\S]*?\n?```/g, '').trim();
+            };
+
             const sanitizedAndParsedText = (rawText) => {
                 if (!rawText) return '';
+                const cleanedText = cleanTextForDisplay(rawText);
                 // Önce özel etiketleri işle (sıra önemli: thinking -> images -> mermaid)
-                let processed = parseThinkingProcess(parseMarkdownImages(parseMermaidMindmap(rawText)));
+                let processed = parseThinkingProcess(parseMarkdownImages(parseMermaidMindmap(cleanedText)));
                 // marked.js'i çağır ve DOMPurify ile temizle
                 return DOMPurify.sanitize(marked.parse(processed));
             };
@@ -6577,7 +6581,10 @@
             if (!element) return;
 
             element.textContent = '';
-            const parts = text.split(/(\s+)/);
+            // Görüntülenecek metni temizle (JSON aksiyonlarını çıkar)
+            const cleanedText = text.replace(/```json-action\n?[\s\S]*?\n?```/g, '').trim();
+            
+            const parts = cleanedText.split(/(\s+)/);
             let i = 0;
             function type() {
                 const el = document.getElementById(elementId);
@@ -6594,7 +6601,7 @@
             setTimeout(() => {
                 const el = document.getElementById(elementId);
                 if (el) {
-                    let processed = parseThinkingProcess(parseMarkdownImages(parseMermaidMindmap(text)));
+                    let processed = parseThinkingProcess(parseMarkdownImages(parseMermaidMindmap(cleanedText)));
                     el.innerHTML = DOMPurify.sanitize(marked.parse(processed));
                     // Mermaid diagramları render et
                     mermaid.run({ querySelector: '.mermaid' });
