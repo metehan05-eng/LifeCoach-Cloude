@@ -9280,7 +9280,7 @@
                 catch (e) { return {}; }
             }
 
-            function saveMemory() {
+            async function saveMemory() {
                 const mem = {
                     name: document.getElementById('memory-name').value.trim(),
                     job: document.getElementById('memory-job').value.trim(),
@@ -9289,6 +9289,29 @@
                     updatedAt: new Date().toISOString()
                 };
                 localStorage.setItem('lifecoach_memory', JSON.stringify(mem));
+                
+                // Backend Sync
+                try {
+                    const token = localStorage.getItem('token');
+                    if (token) {
+                        await fetch('/api/update-profile', {
+                            method: 'POST',
+                            headers: { 
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({
+                                job: mem.job,
+                                goal: mem.goal,
+                                notes: mem.notes,
+                                newName: mem.name
+                            })
+                        });
+                    }
+                } catch (e) {
+                    console.error('Memory sync failed:', e);
+                }
+
                 showToast('💾 Hafıza kaydedildi! AI artık seni tanıyacak.');
                 addXP(5, 'Hafıza güncellendi');
             }
@@ -9297,11 +9320,10 @@
                 return localStorage.getItem('lifecoach_persona') || 'kind';
             }
 
-            function selectPersona(persona) {
+            async function selectPersona(persona) {
                 localStorage.setItem('lifecoach_persona', persona);
                 // Update UI - uncheck all, check selected
                 document.querySelectorAll('.persona-card').forEach(card => {
-                    const p = PERSONAS[card.dataset.persona];
                     card.style.borderColor = `rgba(255,255,255,0.1)`;
                     card.querySelector('.persona-check').classList.add('hidden');
                     card.querySelector('.persona-check').classList.remove('flex');
@@ -9312,33 +9334,84 @@
                     selectedCard.style.borderColor = p.border;
                     selectedCard.querySelector('.persona-check').classList.remove('hidden');
                     selectedCard.querySelector('.persona-check').classList.add('flex');
+                    
+                    // Show banner
+                    const banner = document.getElementById('current-persona-banner');
+                    if (banner) {
+                        banner.classList.remove('hidden');
+                        banner.style.background = p.color;
+                        banner.style.borderColor = p.border;
+                        document.getElementById('persona-banner-icon').textContent = p.emoji;
+                        document.getElementById('persona-banner-name').textContent = p.name;
+                        document.getElementById('persona-banner-desc').textContent = p.prompt.substring(0, 80) + '...';
+                    }
                 }
-                // Show banner
-                const p = PERSONAS[persona];
-                const banner = document.getElementById('current-persona-banner');
-                if (banner && p) {
-                    banner.classList.remove('hidden');
-                    banner.style.background = p.color;
-                    banner.style.borderColor = p.border;
-                    document.getElementById('persona-banner-icon').textContent = p.emoji;
-                    document.getElementById('persona-banner-name').textContent = p.name;
-                    document.getElementById('persona-banner-desc').textContent = p.prompt.substring(0, 80) + '...';
+                
+                // Backend Sync
+                try {
+                    const token = localStorage.getItem('token');
+                    if (token) {
+                        await fetch('/api/update-profile', {
+                            method: 'POST',
+                            headers: { 
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({ persona: persona })
+                        });
+                    }
+                } catch (e) {
+                    console.error('Persona sync failed:', e);
                 }
-                showToast(`${p.emoji} ${p.name} karakteri seçildi!`);
+
+                showToast(`${PERSONAS[persona].emoji} ${PERSONAS[persona].name} karakteri seçildi!`);
                 // Update greeting on chat welcome screen
-                updateChatGreeting();
+                if (typeof updateChatGreeting === 'function') updateChatGreeting();
             }
 
-            function loadPersonaSection() {
+            async function loadPersonaSection() {
+                // Initial load from local storage
                 const saved = getPersona();
-                // Load memory
                 const mem = getMemory();
                 if (mem.name) document.getElementById('memory-name').value = mem.name;
                 if (mem.job) document.getElementById('memory-job').value = mem.job;
                 if (mem.goal) document.getElementById('memory-goal').value = mem.goal;
                 if (mem.notes) document.getElementById('memory-notes').value = mem.notes;
-                // Visually select saved persona
                 selectPersona(saved);
+
+                // Sync from backend
+                const token = localStorage.getItem('token');
+                if (token) {
+                    try {
+                        const response = await fetch('/api/profile', {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        const profile = await response.json();
+                        if (profile && !profile.error) {
+                            if (profile.persona) {
+                                localStorage.setItem('lifecoach_persona', profile.persona);
+                                selectPersona(profile.persona);
+                            }
+                            if (profile.memoryData || profile.name) {
+                                const newMem = {
+                                    name: profile.name || mem.name,
+                                    job: profile.memoryData?.job || mem.job,
+                                    goal: profile.memoryData?.goal || mem.goal,
+                                    notes: profile.memoryData?.notes || mem.notes,
+                                    updatedAt: new Date().toISOString()
+                                };
+                                localStorage.setItem('lifecoach_memory', JSON.stringify(newMem));
+                                // Update visible inputs
+                                if (newMem.name) document.getElementById('memory-name').value = newMem.name;
+                                if (newMem.job) document.getElementById('memory-job').value = newMem.job;
+                                if (newMem.goal) document.getElementById('memory-goal').value = newMem.goal;
+                                if (newMem.notes) document.getElementById('memory-notes').value = newMem.notes;
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('Profile sync failed:', e);
+                    }
+                }
             }
 
             function buildSystemPrompt() {
