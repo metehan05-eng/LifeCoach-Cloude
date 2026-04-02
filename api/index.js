@@ -1617,21 +1617,31 @@ app.put('/api/goals', authenticateToken, async (req, res) => {
 
 app.post('/api/goals/briefing', authenticateToken, async (req, res) => {
     try {
-        const { title, description } = req.body;
+        const { title, description, progress, completions } = req.body;
         if (!title || !description) return res.status(400).json({ error: 'Title and description required' });
+
+        const today = new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' });
+        const completionCount = Array.isArray(completions) ? completions.length : 0;
+        const currentProgress = progress || 0;
 
         const prompt = `Hedef: ${title}
 Açıklama: ${description}
+Kullanıcı İlerlemesi: %${currentProgress}
+Tamamlanan Gün Sayısı: ${completionCount}
+Bugünün Tarihi: ${today}
 
 Görev: Bu hedefe ulaşmak için bugün neler yapılabileceğini detaylandırın. 
+Kullanıcının mevcut ilerlemesini (%${currentProgress}) ve daha önce ${completionCount} gün çalıştığını göz önünde bulundurarak, "Yol Haritası"nın bir sonraki mantıklı adımını önerin. 
+Eğer kullanıcı yeni başlıyorsa (0 gün), temelden başlayın. Eğer birkaç gün geçmişse, konuları derinleştirin.
+
 Lütfen şunları içer:
-1. Bugün çalışılması gereken ana konu (Örn: PHP Temelleri - Değişkenler).
+1. Bugün çalışılması gereken ana konu (Örn: PHP Temelleri - Koşullu İfadeler).
 2. Bu konunun kısa açıklaması.
 3. Bir kod örneği (Eğer hedefe uygunsa, Markdown formatında).
 4. Bu kod örneğinin açıklaması.
 5. "Bugün tamamlama süren dolana kadar şunları başar" gibi bir motivasyon cümlesi.
 
-Yanıt dili Türkçe olmalı. Yanıt Markdown formatında olabilir.`;
+Yanıt dili Türkçe olmalı. Yanıt Markdown formatında olmalı. Konu başlıklarını (1, 2, 3...) kalın yaz.`;
         
         const result = await generateAIResponse(prompt, [
             { role: 'system', content: 'Sen profesyonel ve teknik bir yaşam koçusun. Kullanıcıya hedefleri doğrultusunda adım adım, teknik detaylar ve kod örnekleri içeren günlük rehberlik sağlarsın.' }

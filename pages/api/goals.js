@@ -1,5 +1,8 @@
 import { getKVData, setKVData } from '../../lib/db.js';
+import { createClient } from '@supabase/supabase-js';
 import jwt from 'jsonwebtoken';
+
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
 const JWT_SECRET = process.env.JWT_SECRET || 'gizli-anahtar-degistir';
 
@@ -59,6 +62,18 @@ export default async function handler(req, res) {
             
             const allGoals = await getKVData('goals');
             const userGoals = allGoals[userId] || [];
+            
+            // --- ABONELİK KONTROLÜ (Hedef Sınırı) ---
+            const { data: sub } = await supabase.from('subscriptions').select('plan_tier, status').eq('user_id', userId).single();
+            const plan = (sub && sub.status === 'active') ? sub.plan_tier : 'free';
+
+            if (plan === 'free' && userGoals.length >= 3) {
+                return res.status(403).json({ 
+                    error: 'Ücretsiz planda en fazla 3 hedef oluşturabilirsiniz.',
+                    requiresUpgrade: true 
+                });
+            }
+            // ----------------------------------------
             
             const newGoal = {
                 id: Date.now().toString(),
@@ -145,15 +160,28 @@ export default async function handler(req, res) {
                         goal_yearly: { xp: 50, flame: 20 }
                     };
 
+                    // --- ABONELİK ÇARPANI ---
+                    const { data: sub } = await supabase.from('subscriptions').select('plan_tier, status').eq('user_id', userId).single();
+                    const plan = (sub && sub.status === 'active') ? sub.plan_tier : 'free';
+                    
+                    let multiplier = 1;
+                    if (plan === 'pro') multiplier = 1.5;
+                    if (plan === 'ultimate') multiplier = 2;
+                    // ------------------------
+
                     const reward = rewards[rewardType];
-                    userStats.xp += reward.xp;
-                    userStats.flameLevel += reward.flame;
+                    const finalXp = Math.floor(reward.xp * multiplier);
+                    const finalFlame = Math.floor(reward.flame * multiplier);
+
+                    userStats.xp += finalXp;
+                    userStats.flameLevel += finalFlame;
                     userStats.level = Math.floor(userStats.xp / 100) + 1;
 
                     userStats.history.push({
                         type: rewardType,
-                        xp: reward.xp,
-                        flame: reward.flame,
+                        xp: finalXp,
+                        flame: finalFlame,
+                        multiplier: multiplier,
                         timestamp: new Date().toISOString()
                     });
 
