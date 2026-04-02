@@ -12,26 +12,31 @@
     <link rel="icon" type="image/svg+xml" href="./lifecoach_ai_logo.svg">
     <link rel="apple-touch-icon" href="./lifecoach_ai_logo.svg">
     <link rel="apple-touch-startup-image" href="./lifecoach_ai_logo.svg">
-    
+
     <!-- DNS Prefetch & Preconnect for Performance -->
     <link rel="dns-prefetch" href="https://fonts.googleapis.com">
     <link rel="dns-prefetch" href="https://fonts.gstatic.com">
     <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
-    
+
     <!-- Preload Critical Fonts from gstatic (only Inter Latin subset) -->
-    <link rel="preload" href="https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTcviYwY.woff2" as="font" type="font/woff2" crossorigin="anonymous">
-    
+    <link rel="preload" href="https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTcviYwY.woff2" as="font"
+        type="font/woff2" crossorigin="anonymous">
+
     <!-- Tailwind CSS - Blocking load (required for config) -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
+
     <!-- Font Awesome - Normal load (icons needed immediately) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer">
-    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer">
+
     <!-- Google Fonts - Normal load (text rendering needed immediately) -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=Birthstone+Bounce:wght@400;500&display=swap" rel="stylesheet">
-    
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=Birthstone+Bounce:wght@400;500&display=swap"
+        rel="stylesheet">
+
     <!-- Deferred Non-Critical Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/dompurify@2.4.0/dist/purify.min.js" defer></script>
@@ -40,7 +45,7 @@
     <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js" defer></script>
-    
+
     <!-- React & Babel -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -179,7 +184,9 @@
 
         /* ===== MOBILE OPTIMIZATIONS ===== */
         @media (max-width: 768px) {
-            html, body {
+
+            html,
+            body {
                 width: 100vw !important;
                 max-width: 100vw !important;
                 overflow-x: hidden !important;
@@ -189,6 +196,7 @@
                 display: block !important;
                 min-width: 0 !important;
             }
+
             #main-content {
                 margin: 0 !important;
                 padding: 0 !important;
@@ -201,6 +209,7 @@
                 overflow-x: hidden !important;
                 min-width: 0 !important;
             }
+
             #sections-wrapper {
                 margin: 0 !important;
                 padding: 0 0 100px 0 !important;
@@ -213,6 +222,7 @@
                 overflow-x: hidden !important;
                 min-width: 0 !important;
             }
+
             .section-content {
                 width: 100vw !important;
                 max-width: 100vw !important;
@@ -226,16 +236,17 @@
                 overflow-x: hidden !important;
                 overflow-y: auto !important;
             }
+
             .section-content:not(.hidden) {
                 display: flex !important;
                 flex-direction: column !important;
             }
-            
+
             /* Global box-sizing for mobile */
             * {
                 box-sizing: border-box !important;
             }
-            
+
             #section-chat {
                 display: none;
                 position: fixed !important;
@@ -249,10 +260,11 @@
                 overflow-x: hidden !important;
                 overflow-y: hidden !important;
             }
+
             body.chat-active #section-chat {
                 display: block !important;
             }
-            
+
             /* Aggressive wrap for long text */
             #section-chat * {
                 max-width: 100vw !important;
@@ -260,7 +272,7 @@
                 word-break: break-word !important;
                 min-width: 0 !important;
             }
-            
+
             #section-chat h2 {
                 white-space: normal !important;
                 max-width: 90vw !important;
@@ -269,7 +281,7 @@
             }
 
             /* Stack header and column vertically */
-            #section-chat > div {
+            #section-chat>div {
                 width: 100% !important;
                 margin: 0 !important;
                 left: 0 !important;
@@ -327,11 +339,13 @@
                 z-index: 110 !important;
                 background: linear-gradient(to top, #030712 90%, transparent) !important;
             }
+
             .input-container-glass {
                 max-width: 100% !important;
                 width: 100% !important;
                 margin: 0 !important;
             }
+
             #user-input {
                 width: 100% !important;
             }
@@ -1166,11 +1180,13 @@
                 justify-content: flex-start !important;
                 padding-top: 40px !important;
             }
+
             #dynamic-greeting {
                 font-size: 1.75rem !important;
                 margin-bottom: 1.5rem !important;
                 line-height: 1.2 !important;
             }
+
             .welcome-icon-wrapper {
                 margin-bottom: 0.5rem !important;
                 transform: scale(0.8);
@@ -1784,7 +1800,9 @@
             }
 
             /* Prevent horizontal overflow on main containers */
-            #main-content, #sections-wrapper, .section-content > div {
+            #main-content,
+            #sections-wrapper,
+            .section-content>div {
                 max-width: 100vw;
                 overflow-x: hidden;
             }
@@ -2510,6 +2528,7 @@
                 display: none;
             }
         }
+
         /* Share Modal Styles */
         .share-modal-content {
             background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.98));
@@ -2541,10 +2560,22 @@
             font-size: 1.5rem;
         }
 
-        .btn-twitter { color: #1DA1F2; }
-        .btn-instagram { color: #E1306C; }
-        .btn-tiktok { color: #000000; background: white !important; }
-        .btn-reddit { color: #FF4500; }
+        .btn-twitter {
+            color: #1DA1F2;
+        }
+
+        .btn-instagram {
+            color: #E1306C;
+        }
+
+        .btn-tiktok {
+            color: #000000;
+            background: white !important;
+        }
+
+        .btn-reddit {
+            color: #FF4500;
+        }
 
         /* Full-width share buttons */
         .share-platform-btn-full {
@@ -2564,6 +2595,7 @@
         .btn-twitter-full {
             border-color: rgba(29, 161, 242, 0.2);
         }
+
         .btn-twitter-full:hover {
             border-color: rgba(29, 161, 242, 0.5);
             background: linear-gradient(135deg, rgba(29, 161, 242, 0.1), rgba(29, 161, 242, 0.05));
@@ -2572,6 +2604,7 @@
         .btn-instagram-full {
             border-color: rgba(225, 48, 108, 0.2);
         }
+
         .btn-instagram-full:hover {
             border-color: rgba(225, 48, 108, 0.5);
             background: linear-gradient(135deg, rgba(225, 48, 108, 0.1), rgba(225, 48, 108, 0.05));
@@ -2580,6 +2613,7 @@
         .btn-tiktok-full {
             border-color: rgba(0, 0, 0, 0.2);
         }
+
         .btn-tiktok-full:hover {
             border-color: rgba(0, 0, 0, 0.5);
             background: linear-gradient(135deg, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.05));
@@ -2588,6 +2622,7 @@
         .btn-reddit-full {
             border-color: rgba(255, 69, 0, 0.2);
         }
+
         .btn-reddit-full:hover {
             border-color: rgba(255, 69, 0, 0.5);
             background: linear-gradient(135deg, rgba(255, 69, 0, 0.1), rgba(255, 69, 0, 0.05));
@@ -2665,27 +2700,64 @@
             position: relative;
             overflow: hidden;
         }
+
         .certificate-card::before {
-            content: ''; position: absolute; inset: 0;
+            content: '';
+            position: absolute;
+            inset: 0;
             background: url("https://www.transparenttextures.com/patterns/cubes.png");
-            opacity: 0.05; pointer-events: none;
+            opacity: 0.05;
+            pointer-events: none;
         }
+
         .certificate-seal {
-            width: 80px; height: 80px;
+            width: 80px;
+            height: 80px;
             background: radial-gradient(circle, #fcd34d 0%, #d97706 100%);
-            border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            font-weight: bold; color: #451a03; box-shadow: 0 0 20px rgba(217, 119, 6, 0.4);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #451a03;
+            box-shadow: 0 0 20px rgba(217, 119, 6, 0.4);
             transform: rotate(-15deg);
         }
-        .voice-btn-pulse { animation: voice-pulse 1.5s infinite; }
-        @keyframes voice-pulse {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(20, 184, 166, 0.4); }
-            70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(20, 184, 166, 0); }
-            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(20, 184, 166, 0); }
+
+        .voice-btn-pulse {
+            animation: voice-pulse 1.5s infinite;
         }
-        .arena-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .arena-card:hover { transform: translateY(-5px); border-color: rgba(45, 212, 191, 0.4); box-shadow: 0 10px 30px -10px rgba(45, 212, 191, 0.2); }
-        .signature-font { font-family: 'Birthstone Bounce', cursive; }
+
+        @keyframes voice-pulse {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(20, 184, 166, 0.4);
+            }
+
+            70% {
+                transform: scale(1.1);
+                box-shadow: 0 0 0 10px rgba(20, 184, 166, 0);
+            }
+
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(20, 184, 166, 0);
+            }
+        }
+
+        .arena-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .arena-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(45, 212, 191, 0.4);
+            box-shadow: 0 10px 30px -10px rgba(45, 212, 191, 0.2);
+        }
+
+        .signature-font {
+            font-family: 'Birthstone Bounce', cursive;
+        }
     </style>
 </head>
 
@@ -3027,21 +3099,22 @@
                     <span
                         class="ml-auto text-[9px] px-2 py-1 rounded-md bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black shadow-[0_2px_8px_rgba(245,158,11,0.4)] relative z-10 uppercase tracking-wider group-hover:shadow-[0_4px_12px_rgba(245,158,11,0.6)] transition-all">Üret</span>
                 </button>
-            </nav>
-        </div>
+                </nav>
+            </div>
 
-        <!-- Glow Divider -->
-        <div class="px-4 pb-2">
-            <div class="glow-divider"></div>
-        </div>
+            <!-- Glow Divider -->
+            <div class="px-4 pb-2">
+                <div class="glow-divider"></div>
+            </div>
 
-        <!-- Discipline Badge Removed -->
+            <!-- Discipline Badge Removed -->
 
 
-        <!-- Auth Section -->
-        <div class="p-4 border-t border-white/5" id="auth-container">
-            <!-- JS ile doldurulacak -->
-        </div>
+
+            <!-- Auth Section -->
+            <div class="p-4 border-t border-white/5" id="auth-container">
+                <!-- JS ile doldurulacak -->
+            </div>
     </aside>
 
     <!-- Main Content -->
@@ -3063,7 +3136,9 @@
                 </div>
             </div>
             <div class="flex items-center gap-2">
-                <div id="xp-badge-mobile" class="hidden text-[10px] px-2 py-1 rounded-lg bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 font-black">LV.1</div>
+                <div id="xp-badge-mobile"
+                    class="hidden text-[10px] px-2 py-1 rounded-lg bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 font-black">
+                    LV.1</div>
                 <button onclick="toggleDarkMode()"
                     class="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-300 hover:text-white transition-all">
                     <i class="fa-solid fa-moon text-sm"></i>
@@ -3088,7 +3163,7 @@
 
                     <!-- React Dashboard Stats Root -->
                     <div id="react-dashboard-stats-root" class="mb-8"></div>
-                    
+
                     <!-- Quick Actions -->
                     <div class="grid md:grid-cols-3 gap-4">
                         <button onclick="showSection('goals');"
@@ -3411,15 +3486,18 @@
                     </div>
 
                     <!-- AI Focus Radio -->
-                    <div class="bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 rounded-2xl p-6 mb-8 text-center">
+                    <div
+                        class="bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 rounded-2xl p-6 mb-8 text-center">
                         <h3 class="text-lg font-bold text-white mb-4 flex items-center justify-center gap-2">
-                             <i class="fa-solid fa-radio text-indigo-400"></i> AI Focus Radio
+                            <i class="fa-solid fa-radio text-indigo-400"></i> AI Focus Radio
                         </h3>
                         <div class="flex justify-center gap-4">
-                            <button onclick="playFocusBeats('lofi')" class="btn-secondary flex-1 py-3 flex flex-col items-center gap-2 bg-indigo-500/5 hover:bg-indigo-500/20">
+                            <button onclick="playFocusBeats('lofi')"
+                                class="btn-secondary flex-1 py-3 flex flex-col items-center gap-2 bg-indigo-500/5 hover:bg-indigo-500/20">
                                 <i class="fa-solid fa-headphones text-xl"></i> <span>LoFi Beats</span>
                             </button>
-                            <button onclick="playFocusBeats('rain')" class="btn-secondary flex-1 py-3 flex flex-col items-center gap-2 bg-indigo-500/5 hover:bg-indigo-500/20">
+                            <button onclick="playFocusBeats('rain')"
+                                class="btn-secondary flex-1 py-3 flex flex-col items-center gap-2 bg-indigo-500/5 hover:bg-indigo-500/20">
                                 <i class="fa-solid fa-cloud-rain text-xl"></i> <span>Deep Rain</span>
                             </button>
                         </div>
@@ -3928,19 +4006,23 @@
                             <div class="flex justify-between items-center mt-6">
                                 <!-- Media Type Selector -->
                                 <div class="flex gap-2">
-                                    <button type="button" onclick="setWaffleType('image')" id="waffle-type-image" class="waffle-type-btn active px-3 py-2 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-300 text-sm font-medium transition-all">
+                                    <button type="button" onclick="setWaffleType('image')" id="waffle-type-image"
+                                        class="waffle-type-btn active px-3 py-2 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-300 text-sm font-medium transition-all">
                                         <i class="fa-solid fa-image mr-1"></i> Resim
                                     </button>
-                                    <button type="button" onclick="setWaffleType('video')" id="waffle-type-video" class="waffle-type-btn px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-slate-400 text-sm font-medium hover:bg-white/10 transition-all">
+                                    <button type="button" onclick="setWaffleType('video')" id="waffle-type-video"
+                                        class="waffle-type-btn px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-slate-400 text-sm font-medium hover:bg-white/10 transition-all">
                                         <i class="fa-solid fa-video mr-1"></i> Video
                                     </button>
-                                    <button type="button" onclick="setWaffleType('audio')" id="waffle-type-audio" class="waffle-type-btn px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-slate-400 text-sm font-medium hover:bg-white/10 transition-all">
+                                    <button type="button" onclick="setWaffleType('audio')" id="waffle-type-audio"
+                                        class="waffle-type-btn px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-slate-400 text-sm font-medium hover:bg-white/10 transition-all">
                                         <i class="fa-solid fa-microphone mr-1"></i> Ses
                                     </button>
                                 </div>
                                 <button onclick="generateWaffle()" id="waffle-generate-btn"
                                     class="waffle-btn text-white font-bold py-3 px-8 rounded-xl shadow-[0_0_15px_rgba(245,158,11,0.4)] flex items-center gap-3 transform hover:scale-105 transition-all text-lg">
-                                    <i class="fa-solid fa-fire text-amber-200"></i> <span id="waffle-btn-text">Görsel Üret (Waffle'la)</span>
+                                    <i class="fa-solid fa-fire text-amber-200"></i> <span id="waffle-btn-text">Görsel
+                                        Üret (Waffle'la)</span>
                                 </button>
                             </div>
                         </div>
@@ -3949,35 +4031,42 @@
                     <!-- Loading State (Baking Animation) -->
                     <div id="waffle-loading"
                         class="hidden flex-col items-center justify-center py-12 bg-black/40 rounded-[2.5rem] border border-amber-500/20 backdrop-blur-xl mb-8 shadow-2xl relative overflow-hidden transition-all duration-700">
-                        
+
                         <!-- Baking Animation -->
                         <div class="relative w-48 h-48 mb-6 flex items-center justify-center">
                             <!-- Oven Body -->
-                            <div class="absolute inset-0 bg-gradient-to-b from-[#3d1d05] to-[#1a0c02] rounded-3xl border-4 border-amber-900 shadow-2xl overflow-hidden flex items-center justify-center">
-                                 <!-- Glass Door -->
-                                 <div class="absolute inset-2 bg-amber-400/5 rounded-2xl border border-white/5 backdrop-blur-md z-10 flex flex-col items-center justify-center overflow-hidden">
+                            <div
+                                class="absolute inset-0 bg-gradient-to-b from-[#3d1d05] to-[#1a0c02] rounded-3xl border-4 border-amber-900 shadow-2xl overflow-hidden flex items-center justify-center">
+                                <!-- Glass Door -->
+                                <div
+                                    class="absolute inset-2 bg-amber-400/5 rounded-2xl border border-white/5 backdrop-blur-md z-10 flex flex-col items-center justify-center overflow-hidden">
                                     <!-- Inside Glow -->
                                     <div class="absolute inset-0 bg-orange-500/10 animate-pulse"></div>
-                                    
+
                                     <!-- Fire -->
-                                    <div id="waffle-fire-icon" class="text-6xl animate-pulse filter drop-shadow-[0_0_15px_rgba(251,146,60,0.8)]">🔥</div>
-                                    
+                                    <div id="waffle-fire-icon"
+                                        class="text-6xl animate-pulse filter drop-shadow-[0_0_15px_rgba(251,146,60,0.8)]">
+                                        🔥</div>
+
                                     <!-- Bread (Hidden initially) -->
-                                    <div id="waffle-bread-icon" class="hidden text-7xl animate-bounce drop-shadow-2xl">🍞</div>
-                                 </div>
+                                    <div id="waffle-bread-icon" class="hidden text-7xl animate-bounce drop-shadow-2xl">
+                                        🍞</div>
+                                </div>
                             </div>
-                            
+
                             <!-- Steam -->
                             <div class="absolute -top-6 flex gap-2">
                                 <span class="block w-2 h-8 bg-white/20 blur-sm rounded-full animate-ping"></span>
-                                <span class="block w-2 h-12 bg-white/20 blur-sm rounded-full animate-ping delay-300"></span>
+                                <span
+                                    class="block w-2 h-12 bg-white/20 blur-sm rounded-full animate-ping delay-300"></span>
                             </div>
                         </div>
 
                         <div class="text-amber-400 font-bold mb-2 text-xl tracking-wide" id="waffle-status-text">
                             Waffle fırında pişiyor...
                         </div>
-                        <p class="text-amber-500/50 text-xs animate-pulse italic" id="waffle-status-subtext">Isı ayarlanıyor, malzemeler karıştırılıyor...</p>
+                        <p class="text-amber-500/50 text-xs animate-pulse italic" id="waffle-status-subtext">Isı
+                            ayarlanıyor, malzemeler karıştırılıyor...</p>
                     </div>
 
                     <!-- Waffle Gallery (Görsellerin Kaydedildiği Yer) -->
@@ -3988,486 +4077,509 @@
                             </h3>
                             <div class="h-px bg-white/5 flex-1"></div>
                         </div>
-                        <div id="waffle-gallery" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 auto-rows-max">
+                        <div id="waffle-gallery"
+                            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 auto-rows-max">
                             <!-- Üretilen görseller buraya eklenecek -->
                         </div>
                     </div>
-                        <!-- Çıktılar buraya eklenecek -->
-                        <div id="waffle-empty-state"
-                            class="col-span-1 md:col-span-2 lg:col-span-2 flex flex-col items-center justify-center py-16 text-slate-500 bg-white/5 rounded-3xl border border-white/5 border-dashed">
-                            <i class="fa-solid fa-image text-4xl mb-4 opacity-50"></i>
-                            <p>Henüz waffle üretilmedi. Denemek için yukarıya bir şeyler yazın!</p>
-                        </div>
+                    <!-- Çıktılar buraya eklenecek -->
+                    <div id="waffle-empty-state"
+                        class="col-span-1 md:col-span-2 lg:col-span-2 flex flex-col items-center justify-center py-16 text-slate-500 bg-white/5 rounded-3xl border border-white/5 border-dashed">
+                        <i class="fa-solid fa-image text-4xl mb-4 opacity-50"></i>
+                        <p>Henüz waffle üretilmedi. Denemek için yukarıya bir şeyler yazın!</p>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Smart Coach Section -->
-            <div id="section-coach" class="section-content hidden flex-col">
-                <div class="max-w-4xl mx-auto w-full">
-                    <div class="mb-8">
-                        <h2 class="text-3xl font-bold text-white font-display mb-2">Smart Coach 🧠</h2>
-                        <p class="text-slate-400 text-sm">Kişisel yapay zeka koçun</p>
-                    </div>
-
-                    <!-- Score Display -->
-                    <div
-                        class="bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-2xl p-6 mb-6">
-                        <div class="flex items-center justify-between mb-4">
-                            <div>
-                                <h3 class="text-lg font-semibold text-white">Verimlilik Puanın</h3>
-                                <p class="text-sm text-slate-400">Yapay zeka tarafından hesaplandı</p>
-                            </div>
-                            <div class="text-right">
-                                <div id="coach-score" class="text-5xl font-bold text-amber-400">0</div>
-                                <div id="coach-grade" class="text-sm text-slate-400">/ 100</div>
-                            </div>
-                        </div>
-                        <div class="h-3 bg-white/10 rounded-full overflow-hidden">
-                            <div id="coach-progress-bar"
-                                class="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full transition-all duration-1000"
-                                style="width: 0%"></div>
-                        </div>
-                        <div id="coach-summary" class="mt-4 text-slate-300 text-sm"></div>
-                    </div>
-
-                    <!-- Deep Analysis Card - 100 Flame -->
-                    <div class="bg-gradient-to-br from-violet-500/10 to-purple-500/5 border border-violet-500/20 rounded-2xl p-6 mb-6">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="flex items-center gap-3">
-                                <div class="w-12 h-12 rounded-xl bg-violet-500/20 flex items-center justify-center">
-                                    <i class="fa-solid fa-file-pdf text-violet-400 text-xl"></i>
-                                </div>
-                                <div>
-                                    <h3 class="text-lg font-semibold text-white">Derin Analiz Raporu</h3>
-                                    <p class="text-sm text-violet-400">PDF formatında kapsamlı analiz</p>
-                                </div>
-                            </div>
-                            <span class="text-2xl font-black text-violet-400">100 🔥</span>
-                        </div>
-                        <p class="text-slate-400 text-sm mb-4">AI Koçun senin için detaylı bir kişisel gelişim raporu hazırlayacak. Hedeflerin, alışkanlıkların ve ilerlemelerin analiz edilerek özel öneriler sunulacak.</p>
-                        <button 
-                            onclick="purchaseDeepAnalysis()"
-                            id="deep-analysis-btn"
-                            class="w-full py-3 rounded-xl bg-gradient-to-r from-violet-500 to-purple-500 text-white font-bold hover:from-violet-400 hover:to-purple-400 transition-all flex items-center justify-center gap-2"
-                        >
-                            <i class="fa-solid fa-wand-magic-sparkles"></i>Derin Analiz Al
-                        </button>
-                        <div id="deep-analysis-result" class="hidden mt-4 p-4 bg-violet-500/10 rounded-xl border border-violet-500/20">
-                            <div class="flex items-center gap-2 mb-2">
-                                <i class="fa-solid fa-check-circle text-emerald-400"></i>
-                                <span class="text-white font-semibold">Rapor Hazır!</span>
-                            </div>
-                            <p class="text-slate-400 text-sm mb-3">Derin analiz raporun hazırlandı. PDF olarak indirebilirsin.</p>
-                            <button 
-                                onclick="downloadAnalysisPDF()"
-                                class="w-full py-2 rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 font-semibold hover:bg-emerald-500/30 transition-all flex items-center justify-center gap-2"
-                            >
-                                <i class="fa-solid fa-download"></i>PDF İndir
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Insights -->
-                    <div class="space-y-4 mb-6" id="coach-insights">
-                        <!-- Insights will be loaded dynamically -->
-                    </div>
-
-                    <!-- AI Recommendations -->
-                    <div class="bg-white/5 border border-white/10 rounded-xl p-4">
-                        <h3 class="text-lg font-semibold text-white mb-4">
-                            <i class="fa-solid fa-lightbulb text-amber-400 mr-2"></i>Öneriler
-                        </h3>
-                        <div id="recommendations-list" class="space-y-3">
-                            <p class="text-slate-500 text-sm text-center py-4">Öneriler yükleniyor...</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ===== SOSYAL SECTIONS ===== -->
-
-            <!-- Study Groups Section -->
-            <div id="section-study-groups" class="section-content hidden flex-col">
-                <div class="p-6 flex-1 overflow-y-auto">
-                    <div class="mb-6">
-                        <h2 class="text-3xl font-bold text-white mb-2">👥 Çalışma Grupları</h2>
-                        <p class="text-slate-400">Aynı hedefler'i paylaşan arkadaşlarla bir grup oluştur veya katıl</p>
-                    </div>
-
-                    <button onclick="showGroupModal()" class="mb-6 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold rounded-xl hover:from-cyan-400 hover:to-blue-400 transition-all">
-                        <i class="fa-solid fa-plus mr-2"></i>Yeni Grup Oluştur
-                    </button>
-
-                    <div id="groups-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <p class="text-slate-500 text-center col-span-full">Henüz grup yok. Yeni bir grup oluşturup başla!</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Accountability Partners Section -->
-            <div id="section-accountability" class="section-content hidden flex-col">
-                <div class="p-6 flex-1 overflow-y-auto">
-                    <div class="mb-6">
-                        <h2 class="text-3xl font-bold text-white mb-2">🤝 Hesap Verme Partnerleri</h2>
-                        <p class="text-slate-400">Birbirlerine hesap vermeli partnerler ve haftalık check-ins</p>
-                    </div>
-
-                    <button onclick="showPartnerModal()" class="mb-6 px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-500 text-white font-semibold rounded-xl hover:from-pink-400 hover:to-rose-400 transition-all">
-                        <i class="fa-solid fa-handshake mr-2"></i>Partner Ekle
-                    </button>
-
-                    <div id="partners-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <p class="text-slate-500 text-center col-span-full">Henüz partneriniz yok. Biri ekleyerek başla!</p>
-                    </div>
-
-                    <!-- Weekly Check-in Card -->
-                    <div class="mt-8 bg-white/5 border border-white/10 rounded-xl p-6">
-                        <h3 class="text-lg font-semibold text-white mb-4">📅 Bu Hafta's Check-ins</h3>
-                        <div id="checkins-list" class="space-y-3">
-                            <p class="text-slate-500 text-sm">Check-in kaydı yok</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Challenges Section -->
-            <div id="section-challenges" class="section-content hidden flex-col">
-                <div class="p-6 flex-1 overflow-y-auto">
-                    <div class="mb-6">
-                        <h2 class="text-3xl font-bold text-white mb-2">🏅 Challengeler</h2>
-                        <p class="text-slate-400">30 günlük kişisel veya grup challengelerine katıl</p>
-                    </div>
-
-                    <button onclick="showChallengeModal()" class="mb-6 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold rounded-xl hover:from-orange-400 hover:to-red-400 transition-all">
-                        <i class="fa-solid fa-fire mr-2"></i>Yeni Challenge Oluştur
-                    </button>
-
-                    <!-- Active Challenges -->
-                    <div class="mb-8">
-                        <h3 class="text-lg font-semibold text-white mb-4">🔥 Aktif Challengeler</h3>
-                        <div id="active-challenges" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="bg-white/5 border border-white/10 rounded-xl p-4 text-center text-slate-500">
-                                Aktif challenge yok
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Past Challenges -->
-                    <div>
-                        <h3 class="text-lg font-semibold text-white mb-4">✅ Tamamlanan Challengeler</h3>
-                        <div id="past-challenges" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="bg-white/5 border border-white/10 rounded-xl p-4 text-center text-slate-500">
-                                Tamamlanan challenge yok
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Leaderboard Section -->
-            <div id="section-leaderboard" class="section-content hidden flex-col">
-                <div class="p-6 flex-1 overflow-y-auto">
-                    <div class="mb-6">
-                        <h2 class="text-3xl font-bold text-white mb-2">🏆 Leaderboard</h2>
-                        <p class="text-slate-400">Diğer kullanıcılarla XP puanlarında yarış</p>
-                    </div>
-
-                    <!-- Period Selector -->
-                    <div class="flex gap-2 mb-6">
-                        <button class="px-4 py-2 rounded-lg bg-teal-500/20 text-teal-400 border border-teal-500/30 text-sm font-semibold">📊 Haftalık</button>
-                        <button class="px-4 py-2 rounded-lg bg-white/5 text-slate-400 hover:bg-white/10 border border-white/10 text-sm font-semibold">📈 Aylık</button>
-                        <button class="px-4 py-2 rounded-lg bg-white/5 text-slate-400 hover:bg-white/10 border border-white/10 text-sm font-semibold">🏅 Tüm Zamanlar</button>
-                    </div>
-
-                    <!-- Leaderboard List -->
-                    <div id="leaderboard-list" class="space-y-3">
-                        <div class="flex items-center gap-4 p-4 bg-white/5 border border-white/10 rounded-xl">
-                            <div class="text-2xl font-bold text-yellow-400">🥇</div>
-                            <div class="flex-1">
-                                <p class="font-semibold text-white">Ali</p>
-                                <p class="text-sm text-slate-400">5000 XP • 30 Streak</p>
-                            </div>
-                            <div class="text-right">
-                                <p class="font-bold text-yellow-400">Rank: #1</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-4 p-4 bg-white/5 border border-white/10 rounded-xl">
-                            <div class="text-2xl font-bold text-gray-300">🥈</div>
-                            <div class="flex-1">
-                                <p class="font-semibold text-white">Ayşe</p>
-                                <p class="text-sm text-slate-400">4500 XP • 28 Streak</p>
-                            </div>
-                            <div class="text-right">
-                                <p class="font-bold text-gray-300">Rank: #2</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Analytics Section -->
-            <div id="section-analytics" class="section-content hidden flex-col">
-                <div class="p-6 flex-1 overflow-y-auto">
-                    <div class="mb-6">
-                        <h2 class="text-3xl font-bold text-white mb-2">📊 Analytics & İçgörüler</h2>
-                        <p class="text-slate-400">Aktiviteni analiz et ve ilerlemeyi takip et</p>
-                    </div>
-
-                    <!-- Stats Overview -->
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                        <div class="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
-                            <p class="text-3xl font-bold text-teal-400">42</p>
-                            <p class="text-sm text-slate-400">Toplam Etkinlik</p>
-                        </div>
-                        <div class="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
-                            <p class="text-3xl font-bold text-rose-400">12</p>
-                            <p class="text-sm text-slate-400">Günlük Ort.</p>
-                        </div>
-                        <div class="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
-                            <p class="text-3xl font-bold text-amber-400">85%</p>
-                            <p class="text-sm text-slate-400">Başarı Oranı</p>
-                        </div>
-                        <div class="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
-                            <p class="text-3xl font-bold text-green-400">7</p>
-                            <p class="text-sm text-slate-400">Günlük Streak</p>
-                        </div>
-                    </div>
-
-                    <!-- Weekly Report -->
-                    <div class="bg-white/5 border border-white/10 rounded-xl p-6">
-                        <h3 class="text-lg font-semibold text-white mb-4">📈 Haftalık Rapor</h3>
-                        <div class="space-y-3">
-                            <div class="flex justify-between items-center pb-3 border-b border-white/10">
-                                <span class="text-slate-300">Pazartesi</span>
-                                <span class="text-teal-400 font-semibold">8 etkinlik</span>
-                            </div>
-                            <div class="flex justify-between items-center pb-3 border-b border-white/10">
-                                <span class="text-slate-300">Salı</span>
-                                <span class="text-teal-400 font-semibold">6 etkinlik</span>
-                            </div>
-                            <div class="flex justify-between items-center pb-3 border-b border-white/10">
-                                <span class="text-slate-300">Çarşamba</span>
-                                <span class="text-teal-400 font-semibold">9 etkinlik</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Insights -->
-                    <div class="mt-6 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/20 rounded-xl p-6">
-                        <h3 class="text-lg font-semibold text-white mb-3">💡 AI İçgörü</h3>
-                        <p class="text-slate-300">Harika gidiyor! Bu haftaki etkinlik sayın geçen haftaya kıyasla %15 arttı. Motivasyonun yüksek, bu momentum'u devam ettir! 🚀</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Chat Section (Claude Style) -->
-            <div id="section-chat"
-                class="section-content flex flex-col h-full welcome-active w-full overflow-hidden">
-
-                <!-- Mobile Chat Header (only on mobile) -->
-                <div class="flex md:hidden items-center justify-between px-4 py-3 border-b border-white/5 bg-slate-900/80 backdrop-blur-md flex-shrink-0" style="min-height:52px;">
-                    <div class="flex items-center gap-2">
-                        <div class="w-7 h-7 rounded-lg bg-teal-500/20 flex items-center justify-center">
-                            <i class="fa-solid fa-robot text-teal-400 text-xs"></i>
-                        </div>
-                        <span class="text-sm font-bold text-white">AI Asistan</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <button onclick="startNewChat()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-slate-300 text-xs font-medium hover:bg-white/10 transition-all">
-                            <i class="fa-solid fa-plus text-teal-400"></i>
-                            <span>Yeni</span>
-                        </button>
-                        <button onclick="openMobileHistory()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-400 text-xs font-medium hover:bg-teal-500/20 transition-all">
-                            <i class="fa-solid fa-clock-rotate-left"></i>
-                            <span>Geçmiş</span>
-                        </button>
-                    </div>
+        <!-- Smart Coach Section -->
+        <div id="section-coach" class="section-content hidden flex-col">
+            <div class="max-w-4xl mx-auto w-full">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold text-white font-display mb-2">Smart Coach 🧠</h2>
+                    <p class="text-slate-400 text-sm">Kişisel yapay zeka koçun</p>
                 </div>
 
-                <!-- Mobile History Drawer Overlay -->
-                <div id="mobile-history-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[140] hidden" onclick="closeMobileHistory()"></div>
-                <div id="mobile-history-drawer" class="fixed bottom-0 left-0 right-0 z-[150] bg-[#0b1120] border-t border-white/10 rounded-t-3xl shadow-2xl transform translate-y-full transition-transform duration-300 ease-out" style="max-height: 80vh; display:flex; flex-direction:column;">
-                    <!-- Drawer Handle -->
-                    <div class="flex items-center justify-center pt-3 pb-1">
-                        <div class="w-10 h-1 bg-white/20 rounded-full"></div>
+                <!-- Score Display -->
+                <div
+                    class="bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-2xl p-6 mb-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 class="text-lg font-semibold text-white">Verimlilik Puanın</h3>
+                            <p class="text-sm text-slate-400">Yapay zeka tarafından hesaplandı</p>
+                        </div>
+                        <div class="text-right">
+                            <div id="coach-score" class="text-5xl font-bold text-amber-400">0</div>
+                            <div id="coach-grade" class="text-sm text-slate-400">/ 100</div>
+                        </div>
                     </div>
-                    <!-- Drawer Header -->
-                    <div class="flex items-center justify-between px-5 py-3 border-b border-white/5">
+                    <div class="h-3 bg-white/10 rounded-full overflow-hidden">
+                        <div id="coach-progress-bar"
+                            class="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full transition-all duration-1000"
+                            style="width: 0%"></div>
+                    </div>
+                    <div id="coach-summary" class="mt-4 text-slate-300 text-sm"></div>
+                </div>
+
+                <!-- Deep Analysis Card - 100 Flame -->
+                <div
+                    class="bg-gradient-to-br from-violet-500/10 to-purple-500/5 border border-violet-500/20 rounded-2xl p-6 mb-6">
+                    <div class="flex items-center justify-between mb-4">
                         <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-xl bg-teal-500/15 flex items-center justify-center">
-                                <i class="fa-solid fa-clock-rotate-left text-teal-400 text-sm"></i>
+                            <div class="w-12 h-12 rounded-xl bg-violet-500/20 flex items-center justify-center">
+                                <i class="fa-solid fa-file-pdf text-violet-400 text-xl"></i>
                             </div>
                             <div>
-                                <h3 class="text-sm font-bold text-white">Sohbet Geçmişi</h3>
-                                <p class="text-xs text-slate-500">Geçmiş konuşmalarına devam et</p>
+                                <h3 class="text-lg font-semibold text-white">Derin Analiz Raporu</h3>
+                                <p class="text-sm text-violet-400">PDF formatında kapsamlı analiz</p>
                             </div>
                         </div>
-                        <button onclick="closeMobileHistory()" class="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-all">
-                            <i class="fa-solid fa-xmark text-sm"></i>
-                        </button>
+                        <span class="text-2xl font-black text-violet-400">100 🔥</span>
                     </div>
-                    <!-- New Chat Button -->
-                    <div class="px-4 pt-3 pb-2">
-                        <button onclick="startNewChat(); closeMobileHistory();" class="w-full py-3 rounded-2xl bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/20 text-teal-400 text-sm font-bold transition-all flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-plus"></i>
-                            Yeni Sohbet Başlat
-                        </button>
-                    </div>
-                    <!-- Search -->
-                    <div class="px-4 pb-3">
-                        <div class="relative">
-                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
-                            <input type="text" id="mobile-history-search" onkeyup="filterMobileHistory()" placeholder="Geçmişi ara..." class="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-teal-500/40 focus:bg-white/8">
+                    <p class="text-slate-400 text-sm mb-4">AI Koçun senin için detaylı bir kişisel gelişim raporu
+                        hazırlayacak. Hedeflerin, alışkanlıkların ve ilerlemelerin analiz edilerek özel öneriler
+                        sunulacak.</p>
+                    <button onclick="purchaseDeepAnalysis()" id="deep-analysis-btn"
+                        class="w-full py-3 rounded-xl bg-gradient-to-r from-violet-500 to-purple-500 text-white font-bold hover:from-violet-400 hover:to-purple-400 transition-all flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>Derin Analiz Al
+                    </button>
+                    <div id="deep-analysis-result"
+                        class="hidden mt-4 p-4 bg-violet-500/10 rounded-xl border border-violet-500/20">
+                        <div class="flex items-center gap-2 mb-2">
+                            <i class="fa-solid fa-check-circle text-emerald-400"></i>
+                            <span class="text-white font-semibold">Rapor Hazır!</span>
                         </div>
+                        <p class="text-slate-400 text-sm mb-3">Derin analiz raporun hazırlandı. PDF olarak
+                            indirebilirsin.</p>
+                        <button onclick="downloadAnalysisPDF()"
+                            class="w-full py-2 rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 font-semibold hover:bg-emerald-500/30 transition-all flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-download"></i>PDF İndir
+                        </button>
                     </div>
-                    <!-- History List -->
-                    <div id="mobile-history-list" class="flex-1 overflow-y-auto px-3 pb-8 space-y-1">
-                        <div class="text-center py-8 text-slate-500">
-                            <i class="fa-solid fa-clock-rotate-left text-3xl mb-3 opacity-30"></i>
-                            <p class="text-sm">Geçmiş konuşma bulunamadı</p>
+                </div>
+
+                <!-- Insights -->
+                <div class="space-y-4 mb-6" id="coach-insights">
+                    <!-- Insights will be loaded dynamically -->
+                </div>
+
+                <!-- AI Recommendations -->
+                <div class="bg-white/5 border border-white/10 rounded-xl p-4">
+                    <h3 class="text-lg font-semibold text-white mb-4">
+                        <i class="fa-solid fa-lightbulb text-amber-400 mr-2"></i>Öneriler
+                    </h3>
+                    <div id="recommendations-list" class="space-y-3">
+                        <p class="text-slate-500 text-sm text-center py-4">Öneriler yükleniyor...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== SOSYAL SECTIONS ===== -->
+
+        <!-- Study Groups Section -->
+        <div id="section-study-groups" class="section-content hidden flex-col">
+            <div class="p-6 flex-1 overflow-y-auto">
+                <div class="mb-6">
+                    <h2 class="text-3xl font-bold text-white mb-2">👥 Çalışma Grupları</h2>
+                    <p class="text-slate-400">Aynı hedefler'i paylaşan arkadaşlarla bir grup oluştur veya katıl</p>
+                </div>
+
+                <button onclick="showGroupModal()"
+                    class="mb-6 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold rounded-xl hover:from-cyan-400 hover:to-blue-400 transition-all">
+                    <i class="fa-solid fa-plus mr-2"></i>Yeni Grup Oluştur
+                </button>
+
+                <div id="groups-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <p class="text-slate-500 text-center col-span-full">Henüz grup yok. Yeni bir grup oluşturup başla!
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Accountability Partners Section -->
+        <div id="section-accountability" class="section-content hidden flex-col">
+            <div class="p-6 flex-1 overflow-y-auto">
+                <div class="mb-6">
+                    <h2 class="text-3xl font-bold text-white mb-2">🤝 Hesap Verme Partnerleri</h2>
+                    <p class="text-slate-400">Birbirlerine hesap vermeli partnerler ve haftalık check-ins</p>
+                </div>
+
+                <button onclick="showPartnerModal()"
+                    class="mb-6 px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-500 text-white font-semibold rounded-xl hover:from-pink-400 hover:to-rose-400 transition-all">
+                    <i class="fa-solid fa-handshake mr-2"></i>Partner Ekle
+                </button>
+
+                <div id="partners-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <p class="text-slate-500 text-center col-span-full">Henüz partneriniz yok. Biri ekleyerek başla!</p>
+                </div>
+
+                <!-- Weekly Check-in Card -->
+                <div class="mt-8 bg-white/5 border border-white/10 rounded-xl p-6">
+                    <h3 class="text-lg font-semibold text-white mb-4">📅 Bu Hafta's Check-ins</h3>
+                    <div id="checkins-list" class="space-y-3">
+                        <p class="text-slate-500 text-sm">Check-in kaydı yok</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Challenges Section -->
+        <div id="section-challenges" class="section-content hidden flex-col">
+            <div class="p-6 flex-1 overflow-y-auto">
+                <div class="mb-6">
+                    <h2 class="text-3xl font-bold text-white mb-2">🏅 Challengeler</h2>
+                    <p class="text-slate-400">30 günlük kişisel veya grup challengelerine katıl</p>
+                </div>
+
+                <button onclick="showChallengeModal()"
+                    class="mb-6 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold rounded-xl hover:from-orange-400 hover:to-red-400 transition-all">
+                    <i class="fa-solid fa-fire mr-2"></i>Yeni Challenge Oluştur
+                </button>
+
+                <!-- Active Challenges -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-semibold text-white mb-4">🔥 Aktif Challengeler</h3>
+                    <div id="active-challenges" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-white/5 border border-white/10 rounded-xl p-4 text-center text-slate-500">
+                            Aktif challenge yok
                         </div>
                     </div>
                 </div>
-                
-                <!-- Inner Column that holds scrollable content and fixed bottom input -->
-                <div class="flex-1 flex flex-col min-h-0 w-full relative">
-                    
-                    <!-- Middle Area: This grows and contains either the scrollable chat OR the centered welcome -->
-                    <div class="flex-1 flex flex-col min-h-0 relative">
-                        <!-- Message Container: scrolls internally -->
-                        <div id="chat-container"
-                            class="max-w-4xl mx-auto w-full h-full flex flex-col space-y-6 px-4 pt-6 overflow-y-auto hidden">
-                            <!-- Messages will be appended here -->
-                        </div>
 
-                        <!-- Welcome Screen: centered in the middle area when idle -->
-                        <div id="welcome-screen" class="flex-1 flex flex-col items-center justify-center">
-                            <div class="welcome-icon-wrapper mb-2 animate-bounce-subtle"
-                                style="width: 64px; height: 64px; border-radius: 20px; background: linear-gradient(135deg, rgba(45, 212, 191, 0.2), rgba(15, 118, 110, 0.1)); border: 1px solid rgba(45, 212, 191, 0.2); display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
-                                <i class="fa-solid fa-leaf text-3xl text-teal-400"></i>
-                            </div>
-
-                            <div class="space-y-4 px-4 w-full">
-                                <h2 id="dynamic-greeting"
-                                    class="text-4xl md:text-5xl font-bold text-white mb-8 tracking-tight font-display text-center">İyi akşamlar. Sana bugün nasıl yardımcı olabilirim?</h2>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Input Area: pinned at bottom of flex column, always in its place -->
-                    <div id="chat-input-container" class="input-area">
-                        <form id="chat-form" class="input-container-glass">
-                            <!-- File Previews -->
-                            <div id="file-previews" class="file-previews"></div>
-
-                            <!-- Textarea -->
-                            <textarea id="user-input" rows="1" placeholder="Ask LifeCoach AI anything..."
-                                class="chat-textarea custom-scrollbar"
-                                oninput="this.style.height = ''; this.style.height = Math.min(this.scrollHeight, 250) + 'px';"></textarea>
-
-                            <input type="file" id="file-upload"
-                                accept="image/*,.pdf,.txt,.md,.doc,.docx,.xls,.xlsx,.ppt,.pptx" class="hidden" multiple
-                                onchange="handleFileSelect(this)">
-
-                            <!-- Actions Bar -->
-                            <div class="input-actions-bar">
-                                <div class="action-group">
-                                    <button type="button" id="voice-input-btn" onclick="toggleVoiceInput()" class="input-action-btn"
-                                        title="Sesli Komut">
-                                        <i class="fa-solid fa-microphone"></i>
-                                    </button>
-                                    <div id="plus-menu-container-bottom" class="relative">
-                                        <button type="button" onclick="togglePlusMenuBottom()" class="input-action-btn"
-                                            title="Dosya Eylemleri">
-                                            <i class="fa-solid fa-plus"></i>
-                                        </button>
-                                        <div id="plus-dropdown-bottom"
-                                            class="absolute bottom-full left-0 mb-3 w-56 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl hidden flex-col overflow-hidden z-[60] animate-fade-up">
-                                            <div
-                                                class="px-4 py-2.5 text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-white/5">
-                                                Hızlı İşlemler</div>
-                                            <button type="button"
-                                                onclick="document.getElementById('file-upload').click(); togglePlusMenuBottom();"
-                                                class="px-4 py-3 hover:bg-teal-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
-                                                <i class="fa-solid fa-upload text-teal-400 w-4"></i> Dosya Yükle
-                                            </button>
-                                            <div class="h-[1px] bg-white/5"></div>
-                                            <button type="button" onclick="createExcelFile(); togglePlusMenuBottom();"
-                                                class="px-4 py-3 hover:bg-green-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
-                                                <i class="fa-solid fa-file-excel text-green-500 w-4"></i> Excel Dosyası
-                                                Oluştur
-                                            </button>
-                                            <button type="button" onclick="createWordFile(); togglePlusMenuBottom();"
-                                                class="px-4 py-3 hover:bg-blue-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
-                                                <i class="fa-solid fa-file-word text-blue-500 w-4"></i> Word Belgesi
-                                                Oluştur
-                                            </button>
-                                            <button type="button" onclick="createPPTFile(); togglePlusMenuBottom();"
-                                                class="px-4 py-3 hover:bg-orange-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
-                                                <i class="fa-solid fa-file-powerpoint text-orange-500 w-4"></i>
-                                                PowerPoint Oluştur
-                                            </button>
-                                            <div class="h-[1px] bg-white/5"></div>
-                                            <button type="button" onclick="generateAIImage(); togglePlusMenuBottom();"
-                                                class="px-4 py-3 hover:bg-orange-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
-                                                <i class="fa-solid fa-palette text-orange-400 w-4"></i> Görüntü Oluştur
-                                                (Nano Banana)
-                                            </button>
-                                            <div class="h-[1px] bg-white/5"></div>
-                                            <button type="button"
-                                                onclick="createClassListExcel(); togglePlusMenuBottom();"
-                                                class="px-4 py-3 hover:bg-amber-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
-                                                <i class="fa-solid fa-table-list text-amber-400 w-4"></i> Sınıf Listesi
-                                                (Excel A4)
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <button type="button" id="deep-search-btn" onclick="toggleDeepSearch()"
-                                        class="input-action-btn" title="Deep Search Mode">
-                                        <i class="fa-solid fa-bolt-lightning"></i>
-                                    </button>
-                                    <button type="button" id="mic-btn-new" onclick="toggleDictation()"
-                                        class="input-action-btn" title="Voice Mode">
-                                        <i class="fa-solid fa-microphone"></i>
-                                    </button>
-                                    <div class="h-4 w-px bg-white/10 mx-1"></div>
-                                    <button type="button" onclick="startEmergencyMode()"
-                                        class="input-action-btn mode-btn-emergency" title="Acil Durum Modu">
-                                        <i class="fa-solid fa-heart-pulse"></i>
-                                    </button>
-                                    <button type="button" onclick="startToughLoveMode()"
-                                        class="input-action-btn mode-btn-tough" title="Yüzleşme Modu">
-                                        <i class="fa-solid fa-hand-fist"></i>
-                                    </button>
-                                    <button type="button" onclick="startFocusSprintMode()"
-                                        class="input-action-btn mode-btn-focus" title="Focus Sprint Modu">
-                                        <i class="fa-solid fa-bullseye"></i>
-                                    </button>
-                                    <button type="button" onclick="startCreativeBoostMode()"
-                                        class="input-action-btn mode-btn-creative" title="Creative Boost Modu">
-                                        <i class="fa-solid fa-wand-magic-sparkles"></i>
-                                    </button>
-                                </div>
-
-                                <div class="action-group">
-                                    <div class="text-[10px] text-slate-500 font-medium mr-2 hidden sm:block">Press Shift
-                                        + Enter for
-                                        new line</div>
-                                    <button type="submit" class="send-btn-new" id="send-btn" title="Send message">
-                                        <i class="fa-solid fa-arrow-up"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
-                        <div class="text-center mt-3">
-                            <p class="text-[11px] text-[#8a8b86]/50 font-medium">LifeCoach AI can make mistakes.
-                                Consider verifying
-                                critical information.</p>
+                <!-- Past Challenges -->
+                <div>
+                    <h3 class="text-lg font-semibold text-white mb-4">✅ Tamamlanan Challengeler</h3>
+                    <div id="past-challenges" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-white/5 border border-white/10 rounded-xl p-4 text-center text-slate-500">
+                            Tamamlanan challenge yok
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
+
+        <!-- Leaderboard Section -->
+        <div id="section-leaderboard" class="section-content hidden flex-col">
+            <div class="p-6 flex-1 overflow-y-auto">
+                <div class="mb-6">
+                    <h2 class="text-3xl font-bold text-white mb-2">🏆 Leaderboard</h2>
+                    <p class="text-slate-400">Diğer kullanıcılarla XP puanlarında yarış</p>
+                </div>
+
+                <!-- Period Selector -->
+                <div class="flex gap-2 mb-6">
+                    <button
+                        class="px-4 py-2 rounded-lg bg-teal-500/20 text-teal-400 border border-teal-500/30 text-sm font-semibold">📊
+                        Haftalık</button>
+                    <button
+                        class="px-4 py-2 rounded-lg bg-white/5 text-slate-400 hover:bg-white/10 border border-white/10 text-sm font-semibold">📈
+                        Aylık</button>
+                    <button
+                        class="px-4 py-2 rounded-lg bg-white/5 text-slate-400 hover:bg-white/10 border border-white/10 text-sm font-semibold">🏅
+                        Tüm Zamanlar</button>
+                </div>
+
+                <!-- Leaderboard List -->
+                <div id="leaderboard-list" class="space-y-3">
+                    <div class="flex items-center gap-4 p-4 bg-white/5 border border-white/10 rounded-xl">
+                        <div class="text-2xl font-bold text-yellow-400">🥇</div>
+                        <div class="flex-1">
+                            <p class="font-semibold text-white">Ali</p>
+                            <p class="text-sm text-slate-400">5000 XP • 30 Streak</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-yellow-400">Rank: #1</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4 p-4 bg-white/5 border border-white/10 rounded-xl">
+                        <div class="text-2xl font-bold text-gray-300">🥈</div>
+                        <div class="flex-1">
+                            <p class="font-semibold text-white">Ayşe</p>
+                            <p class="text-sm text-slate-400">4500 XP • 28 Streak</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-gray-300">Rank: #2</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Section -->
+        <div id="section-analytics" class="section-content hidden flex-col">
+            <div class="p-6 flex-1 overflow-y-auto">
+                <div class="mb-6">
+                    <h2 class="text-3xl font-bold text-white mb-2">📊 Analytics & İçgörüler</h2>
+                    <p class="text-slate-400">Aktiviteni analiz et ve ilerlemeyi takip et</p>
+                </div>
+
+                <!-- Stats Overview -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
+                        <p class="text-3xl font-bold text-teal-400">42</p>
+                        <p class="text-sm text-slate-400">Toplam Etkinlik</p>
+                    </div>
+                    <div class="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
+                        <p class="text-3xl font-bold text-rose-400">12</p>
+                        <p class="text-sm text-slate-400">Günlük Ort.</p>
+                    </div>
+                    <div class="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
+                        <p class="text-3xl font-bold text-amber-400">85%</p>
+                        <p class="text-sm text-slate-400">Başarı Oranı</p>
+                    </div>
+                    <div class="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
+                        <p class="text-3xl font-bold text-green-400">7</p>
+                        <p class="text-sm text-slate-400">Günlük Streak</p>
+                    </div>
+                </div>
+
+                <!-- Weekly Report -->
+                <div class="bg-white/5 border border-white/10 rounded-xl p-6">
+                    <h3 class="text-lg font-semibold text-white mb-4">📈 Haftalık Rapor</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center pb-3 border-b border-white/10">
+                            <span class="text-slate-300">Pazartesi</span>
+                            <span class="text-teal-400 font-semibold">8 etkinlik</span>
+                        </div>
+                        <div class="flex justify-between items-center pb-3 border-b border-white/10">
+                            <span class="text-slate-300">Salı</span>
+                            <span class="text-teal-400 font-semibold">6 etkinlik</span>
+                        </div>
+                        <div class="flex justify-between items-center pb-3 border-b border-white/10">
+                            <span class="text-slate-300">Çarşamba</span>
+                            <span class="text-teal-400 font-semibold">9 etkinlik</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Insights -->
+                <div
+                    class="mt-6 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/20 rounded-xl p-6">
+                    <h3 class="text-lg font-semibold text-white mb-3">💡 AI İçgörü</h3>
+                    <p class="text-slate-300">Harika gidiyor! Bu haftaki etkinlik sayın geçen haftaya kıyasla %15 arttı.
+                        Motivasyonun yüksek, bu momentum'u devam ettir! 🚀</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Section (Claude Style) -->
+        <div id="section-chat" class="section-content flex flex-col h-full welcome-active w-full overflow-hidden">
+
+            <!-- Mobile Chat Header (only on mobile) -->
+            <div class="flex md:hidden items-center justify-between px-4 py-3 border-b border-white/5 bg-slate-900/80 backdrop-blur-md flex-shrink-0"
+                style="min-height:52px;">
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-teal-500/20 flex items-center justify-center">
+                        <i class="fa-solid fa-robot text-teal-400 text-xs"></i>
+                    </div>
+                    <span class="text-sm font-bold text-white">AI Asistan</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="startNewChat()"
+                        class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-slate-300 text-xs font-medium hover:bg-white/10 transition-all">
+                        <i class="fa-solid fa-plus text-teal-400"></i>
+                        <span>Yeni</span>
+                    </button>
+                    <button onclick="openMobileHistory()"
+                        class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-400 text-xs font-medium hover:bg-teal-500/20 transition-all">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                        <span>Geçmiş</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mobile History Drawer Overlay -->
+            <div id="mobile-history-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[140] hidden"
+                onclick="closeMobileHistory()"></div>
+            <div id="mobile-history-drawer"
+                class="fixed bottom-0 left-0 right-0 z-[150] bg-[#0b1120] border-t border-white/10 rounded-t-3xl shadow-2xl transform translate-y-full transition-transform duration-300 ease-out"
+                style="max-height: 80vh; display:flex; flex-direction:column;">
+                <!-- Drawer Handle -->
+                <div class="flex items-center justify-center pt-3 pb-1">
+                    <div class="w-10 h-1 bg-white/20 rounded-full"></div>
+                </div>
+                <!-- Drawer Header -->
+                <div class="flex items-center justify-between px-5 py-3 border-b border-white/5">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-xl bg-teal-500/15 flex items-center justify-center">
+                            <i class="fa-solid fa-clock-rotate-left text-teal-400 text-sm"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-white">Sohbet Geçmişi</h3>
+                            <p class="text-xs text-slate-500">Geçmiş konuşmalarına devam et</p>
+                        </div>
+                    </div>
+                    <button onclick="closeMobileHistory()"
+                        class="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-all">
+                        <i class="fa-solid fa-xmark text-sm"></i>
+                    </button>
+                </div>
+                <!-- New Chat Button -->
+                <div class="px-4 pt-3 pb-2">
+                    <button onclick="startNewChat(); closeMobileHistory();"
+                        class="w-full py-3 rounded-2xl bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/20 text-teal-400 text-sm font-bold transition-all flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-plus"></i>
+                        Yeni Sohbet Başlat
+                    </button>
+                </div>
+                <!-- Search -->
+                <div class="px-4 pb-3">
+                    <div class="relative">
+                        <i
+                            class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                        <input type="text" id="mobile-history-search" onkeyup="filterMobileHistory()"
+                            placeholder="Geçmişi ara..."
+                            class="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-teal-500/40 focus:bg-white/8">
+                    </div>
+                </div>
+                <!-- History List -->
+                <div id="mobile-history-list" class="flex-1 overflow-y-auto px-3 pb-8 space-y-1">
+                    <div class="text-center py-8 text-slate-500">
+                        <i class="fa-solid fa-clock-rotate-left text-3xl mb-3 opacity-30"></i>
+                        <p class="text-sm">Geçmiş konuşma bulunamadı</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inner Column that holds scrollable content and fixed bottom input -->
+            <div class="flex-1 flex flex-col min-h-0 w-full relative">
+
+                <!-- Middle Area: This grows and contains either the scrollable chat OR the centered welcome -->
+                <div class="flex-1 flex flex-col min-h-0 relative">
+                    <!-- Message Container: scrolls internally -->
+                    <div id="chat-container"
+                        class="max-w-4xl mx-auto w-full h-full flex flex-col space-y-6 px-4 pt-6 overflow-y-auto hidden">
+                        <!-- Messages will be appended here -->
+                    </div>
+
+                    <!-- Welcome Screen: centered in the middle area when idle -->
+                    <div id="welcome-screen" class="flex-1 flex flex-col items-center justify-center">
+                        <div class="welcome-icon-wrapper mb-2 animate-bounce-subtle"
+                            style="width: 64px; height: 64px; border-radius: 20px; background: linear-gradient(135deg, rgba(45, 212, 191, 0.2), rgba(15, 118, 110, 0.1)); border: 1px solid rgba(45, 212, 191, 0.2); display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+                            <i class="fa-solid fa-leaf text-3xl text-teal-400"></i>
+                        </div>
+
+                        <div class="space-y-4 px-4 w-full">
+                            <h2 id="dynamic-greeting"
+                                class="text-4xl md:text-5xl font-bold text-white mb-8 tracking-tight font-display text-center">
+                                İyi akşamlar. Sana bugün nasıl yardımcı olabilirim?</h2>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Input Area: pinned at bottom of flex column, always in its place -->
+                <div id="chat-input-container" class="input-area">
+                    <form id="chat-form" class="input-container-glass">
+                        <!-- File Previews -->
+                        <div id="file-previews" class="file-previews"></div>
+
+                        <!-- Textarea -->
+                        <textarea id="user-input" rows="1" placeholder="Ask LifeCoach AI anything..."
+                            class="chat-textarea custom-scrollbar"
+                            oninput="this.style.height = ''; this.style.height = Math.min(this.scrollHeight, 250) + 'px';"></textarea>
+
+                        <input type="file" id="file-upload"
+                            accept="image/*,.pdf,.txt,.md,.doc,.docx,.xls,.xlsx,.ppt,.pptx" class="hidden" multiple
+                            onchange="handleFileSelect(this)">
+
+                        <!-- Actions Bar -->
+                        <div class="input-actions-bar">
+                            <div class="action-group">
+                                <button type="button" id="voice-input-btn" onclick="toggleVoiceInput()"
+                                    class="input-action-btn" title="Sesli Komut">
+                                    <i class="fa-solid fa-microphone"></i>
+                                </button>
+                                <div id="plus-menu-container-bottom" class="relative">
+                                    <button type="button" onclick="togglePlusMenuBottom()" class="input-action-btn"
+                                        title="Dosya Eylemleri">
+                                        <i class="fa-solid fa-plus"></i>
+                                    </button>
+                                    <div id="plus-dropdown-bottom"
+                                        class="absolute bottom-full left-0 mb-3 w-56 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl hidden flex-col overflow-hidden z-[60] animate-fade-up">
+                                        <div
+                                            class="px-4 py-2.5 text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-white/5">
+                                            Hızlı İşlemler</div>
+                                        <button type="button"
+                                            onclick="document.getElementById('file-upload').click(); togglePlusMenuBottom();"
+                                            class="px-4 py-3 hover:bg-teal-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
+                                            <i class="fa-solid fa-upload text-teal-400 w-4"></i> Dosya Yükle
+                                        </button>
+                                        <div class="h-[1px] bg-white/5"></div>
+                                        <button type="button" onclick="createExcelFile(); togglePlusMenuBottom();"
+                                            class="px-4 py-3 hover:bg-green-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
+                                            <i class="fa-solid fa-file-excel text-green-500 w-4"></i> Excel Dosyası
+                                            Oluştur
+                                        </button>
+                                        <button type="button" onclick="createWordFile(); togglePlusMenuBottom();"
+                                            class="px-4 py-3 hover:bg-blue-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
+                                            <i class="fa-solid fa-file-word text-blue-500 w-4"></i> Word Belgesi
+                                            Oluştur
+                                        </button>
+                                        <button type="button" onclick="createPPTFile(); togglePlusMenuBottom();"
+                                            class="px-4 py-3 hover:bg-orange-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
+                                            <i class="fa-solid fa-file-powerpoint text-orange-500 w-4"></i>
+                                            PowerPoint Oluştur
+                                        </button>
+                                        <div class="h-[1px] bg-white/5"></div>
+                                        <button type="button" onclick="generateAIImage(); togglePlusMenuBottom();"
+                                            class="px-4 py-3 hover:bg-orange-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
+                                            <i class="fa-solid fa-palette text-orange-400 w-4"></i> Görüntü Oluştur
+                                            (Nano Banana)
+                                        </button>
+                                        <div class="h-[1px] bg-white/5"></div>
+                                        <button type="button" onclick="createClassListExcel(); togglePlusMenuBottom();"
+                                            class="px-4 py-3 hover:bg-amber-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
+                                            <i class="fa-solid fa-table-list text-amber-400 w-4"></i> Sınıf Listesi
+                                            (Excel A4)
+                                        </button>
+                                    </div>
+                                </div>
+                                <button type="button" id="deep-search-btn" onclick="toggleDeepSearch()"
+                                    class="input-action-btn" title="Deep Search Mode">
+                                    <i class="fa-solid fa-bolt-lightning"></i>
+                                </button>
+                                <button type="button" id="mic-btn-new" onclick="toggleDictation()"
+                                    class="input-action-btn" title="Voice Mode">
+                                    <i class="fa-solid fa-microphone"></i>
+                                </button>
+                                <div class="h-4 w-px bg-white/10 mx-1"></div>
+                                <button type="button" onclick="startEmergencyMode()"
+                                    class="input-action-btn mode-btn-emergency" title="Acil Durum Modu">
+                                    <i class="fa-solid fa-heart-pulse"></i>
+                                </button>
+                                <button type="button" onclick="startToughLoveMode()"
+                                    class="input-action-btn mode-btn-tough" title="Yüzleşme Modu">
+                                    <i class="fa-solid fa-hand-fist"></i>
+                                </button>
+                                <button type="button" onclick="startFocusSprintMode()"
+                                    class="input-action-btn mode-btn-focus" title="Focus Sprint Modu">
+                                    <i class="fa-solid fa-bullseye"></i>
+                                </button>
+                                <button type="button" onclick="startCreativeBoostMode()"
+                                    class="input-action-btn mode-btn-creative" title="Creative Boost Modu">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                </button>
+                            </div>
+
+                            <div class="action-group">
+                                <div class="text-[10px] text-slate-500 font-medium mr-2 hidden sm:block">Press Shift
+                                    + Enter for
+                                    new line</div>
+                                <button type="submit" class="send-btn-new" id="send-btn" title="Send message">
+                                    <i class="fa-solid fa-arrow-up"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                    <div class="text-center mt-3">
+                        <p class="text-[11px] text-[#8a8b86]/50 font-medium">LifeCoach AI can make mistakes.
+                            Consider verifying
+                            critical information.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
         </div>
     </main>
 
@@ -4544,7 +4656,8 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Açıklama</label>
+                    <label
+                        class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Açıklama</label>
                     <textarea id="goal-description" class="modal-input" rows="2"
                         placeholder="Hedefini detaylı açıkla..." required></textarea>
                 </div>
@@ -4593,7 +4706,8 @@
 
             <!-- Web Share API Button -->
             <div class="space-y-4 mb-6">
-                <button id="web-share-button" onclick="platformShare()" class="w-full share-platform-btn-full p-4 flex items-center gap-3 transition-all hover:scale-105 bg-gradient-to-r from-teal-500/20 to-cyan-500/20 border border-teal-500/50 hover:border-teal-400">
+                <button id="web-share-button" onclick="platformShare()"
+                    class="w-full share-platform-btn-full p-4 flex items-center gap-3 transition-all hover:scale-105 bg-gradient-to-r from-teal-500/20 to-cyan-500/20 border border-teal-500/50 hover:border-teal-400">
                     <div class="w-12 h-12 rounded-lg bg-teal-500/30 flex items-center justify-center">
                         <i class="fa-solid fa-share-nodes text-2xl text-teal-400"></i>
                     </div>
@@ -4629,18 +4743,19 @@
             <div class="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 mb-4">
                 <p class="text-xs text-blue-300">
                     <i class="fa-solid fa-info-circle mr-2"></i>
-                    <strong>Nasıl Çalışır:</strong> Paylaş butonuna basdığında tüm uygulamalarınız listelenir. Paylaşmak istediğin uygulamayı seç!
+                    <strong>Nasıl Çalışır:</strong> Paylaş butonuna basdığında tüm uygulamalarınız listelenir. Paylaşmak
+                    istediğin uygulamayı seç!
                 </p>
             </div>
 
             <!-- Image Actions -->
             <div class="flex gap-3">
-                <button onclick="downloadGoalImage(currentShareData.title, currentShareData.value)" 
+                <button onclick="downloadGoalImage(currentShareData.title, currentShareData.value)"
                     class="flex-1 btn-secondary flex items-center justify-center gap-2 py-2 px-3 text-sm">
                     <i class="fa-solid fa-download text-sm"></i>
                     İndir
                 </button>
-                <button onclick="copyGoalImageToClipboard(currentShareData.title, currentShareData.value)" 
+                <button onclick="copyGoalImageToClipboard(currentShareData.title, currentShareData.value)"
                     class="flex-1 btn-secondary flex items-center justify-center gap-2 py-2 px-3 text-sm">
                     <i class="fa-solid fa-copy text-sm"></i>
                     Kopyala
@@ -4648,21 +4763,27 @@
             </div>
         </div>
     </div>
-    <div id="certificate-modal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
+    <div id="certificate-modal"
+        class="fixed inset-0 z-[100] hidden items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
         <div class="certificate-card w-full max-w-2xl p-10 rounded-lg text-center relative animate-scale-in">
-            <div class="absolute top-4 right-4 text-slate-500 hover:text-white cursor-pointer" onclick="closeCertificateModal()">
+            <div class="absolute top-4 right-4 text-slate-500 hover:text-white cursor-pointer"
+                onclick="closeCertificateModal()">
                 <i class="fa-solid fa-xmark text-2xl"></i>
             </div>
             <div class="mb-6 flex justify-center">
                 <div class="certificate-seal"><i class="fa-solid fa-trophy text-3xl"></i></div>
             </div>
-            <h1 class="text-4xl font-display font-black text-white mb-2 tracking-tighter uppercase italic">BAŞARI SERTİFİKASI</h1>
-            <p class="text-teal-400 font-medium mb-8 uppercase tracking-widest text-sm">LifeCoach AI Üstün Performans Onayı</p>
+            <h1 class="text-4xl font-display font-black text-white mb-2 tracking-tighter uppercase italic">BAŞARI
+                SERTİFİKASI</h1>
+            <p class="text-teal-400 font-medium mb-8 uppercase tracking-widest text-sm">LifeCoach AI Üstün Performans
+                Onayı</p>
             <div class="space-y-4 mb-10">
                 <p class="text-slate-400 text-lg">Sayın kullanıcımız,</p>
                 <h2 id="cert-user-name" class="text-3xl font-bold text-white">Değerli Kullanıcı</h2>
                 <p class="text-slate-400 text-lg">Şu büyük hedefi başarıyla tamamladığınızı onaylıyoruz:</p>
-                <div id="cert-goal-title" class="text-2xl font-bold text-emerald-400 bg-emerald-500/10 py-3 rounded-xl border border-emerald-500/20">Hedef Başlığı</div>
+                <div id="cert-goal-title"
+                    class="text-2xl font-bold text-emerald-400 bg-emerald-500/10 py-3 rounded-xl border border-emerald-500/20">
+                    Hedef Başlığı</div>
             </div>
             <div class="grid grid-cols-2 gap-8 text-left mb-10 border-t border-white/10 pt-8">
                 <div>
@@ -4674,12 +4795,14 @@
                     <div class="flex flex-col items-end">
                         <span class="signature-font text-3xl text-teal-400 leading-none">Metehan Haydar Erbaş</span>
                         <div class="h-px w-32 bg-gradient-to-l from-teal-500/50 to-transparent mt-0.5"></div>
-                        <p class="text-[10px] text-white/50 font-bold uppercase tracking-tighter mt-1">LifeCoach AI Senior Coach</p>
+                        <p class="text-[10px] text-white/50 font-bold uppercase tracking-tighter mt-1">LifeCoach AI
+                            Senior Coach</p>
                     </div>
                 </div>
             </div>
             <div class="flex gap-4">
-                <button onclick="shareCertificate()" class="btn-primary flex-1 py-4 flex items-center justify-center gap-2">
+                <button onclick="shareCertificate()"
+                    class="btn-primary flex-1 py-4 flex items-center justify-center gap-2">
                     <i class="fa-solid fa-share-nodes"></i> Dünyaya İlan Et
                 </button>
                 <button onclick="downloadCertificate()" class="btn-secondary px-8 py-4">
@@ -4769,29 +4892,38 @@
 
                 <!-- Daily Target -->
                 <div>
-                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Günlük Hedef Sayısı</label>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Günlük Hedef
+                        Sayısı</label>
                     <div class="flex gap-2 items-center">
-                        <button type="button" onclick="decrementDailyTarget()" class="w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:bg-white/10"><i class="fa-solid fa-minus text-sm"></i></button>
-                        <input type="number" id="habit-daily-target" class="modal-input flex-1 text-center" min="1" max="100" value="1" required>
-                        <button type="button" onclick="incrementDailyTarget()" class="w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:bg-white/10"><i class="fa-solid fa-plus text-sm"></i></button>
+                        <button type="button" onclick="decrementDailyTarget()"
+                            class="w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:bg-white/10"><i
+                                class="fa-solid fa-minus text-sm"></i></button>
+                        <input type="number" id="habit-daily-target" class="modal-input flex-1 text-center" min="1"
+                            max="100" value="1" required>
+                        <button type="button" onclick="incrementDailyTarget()"
+                            class="w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:bg-white/10"><i
+                                class="fa-solid fa-plus text-sm"></i></button>
                     </div>
                     <p class="text-xs text-slate-500 mt-1">Bu alışkanlığı günde kaç kez tamamlamalısın?</p>
                 </div>
-                
+
                 <!-- Reminder Settings -->
                 <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-4 space-y-3">
                     <div class="flex items-center gap-2">
                         <input type="checkbox" id="habit-reminder-enabled" class="w-4 h-4 rounded">
-                        <label for="habit-reminder-enabled" class="text-sm font-medium text-slate-300">Bildirim Al</label>
+                        <label for="habit-reminder-enabled" class="text-sm font-medium text-slate-300">Bildirim
+                            Al</label>
                     </div>
-                    
+
                     <div id="habit-reminder-options" class="hidden space-y-3">
                         <div>
-                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Saat</label>
+                            <label
+                                class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Saat</label>
                             <input type="time" id="habit-reminder-time" class="modal-input" value="09:00">
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Tekrar</label>
+                            <label
+                                class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Tekrar</label>
                             <select id="habit-reminder-frequency" class="modal-input">
                                 <option value="daily">Her Gün</option>
                                 <option value="weekdays">Hafta İçi (Pazartesi-Cuma)</option>
@@ -4800,7 +4932,8 @@
                             </select>
                         </div>
                         <div id="habit-specific-days" class="hidden">
-                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Günler</label>
+                            <label
+                                class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Günler</label>
                             <div class="grid grid-cols-4 gap-2">
                                 <label class="flex items-center gap-2 text-sm">
                                     <input type="checkbox" class="habit-day-checkbox" value="1"> Pzt
@@ -5029,11 +5162,11 @@
 
         function openShareItemModal(title, value, type = 'goal') {
             currentShareData = { title, value, type };
-            
+
             // Popüleri doldur
             document.getElementById('share-display-title').textContent = title;
             document.getElementById('share-display-progress').textContent = type === 'habit' ? `${value} Gün` : `%${value}`;
-            
+
             const tagEl = document.querySelector('.share-tag');
             if (tagEl) {
                 tagEl.textContent = type === 'habit' ? 'LifeCoach AI Streak' : 'LifeCoach AI Progress';
@@ -5102,7 +5235,7 @@
             const progressGradient = ctx.createLinearGradient(220, 350, 380, 350);
             progressGradient.addColorStop(0, '#14b8a6');
             progressGradient.addColorStop(1, '#06b6d4');
-            
+
             ctx.strokeStyle = progressGradient;
             ctx.lineWidth = 8;
             ctx.beginPath();
@@ -5161,18 +5294,18 @@
         async function copyGoalImageToClipboard(title, progress) {
             try {
                 const dataUrl = await generateGoalImage(title, progress);
-                
+
                 // Convert to blob
                 const response = await fetch(dataUrl);
                 const blob = await response.blob();
-                
+
                 // Copy to clipboard
                 await navigator.clipboard.write([
                     new ClipboardItem({
                         'image/png': blob
                     })
                 ]);
-                
+
                 showToast('Görsel panonuza kopyalandı! 📋', 'success');
                 return true;
             } catch (error) {
@@ -5184,16 +5317,16 @@
 
         async function platformShare() {
             const { title, value, type } = currentShareData;
-            
+
             console.log('[SHARE] Başlıyor:', { title, value, type });
-            
+
             try {
                 showToast('📤 Paylaşım hazırlanıyor...', 'success');
-                
+
                 // Paylaşım metni oluştur
                 let shareText = '';
                 let shareTitle = '';
-                
+
                 if (type === 'habit') {
                     shareText = `🔥 ${value} Gün Kesintisiz!\n\nAlışkanlık: ${title}\n\nLifeCoach AI ile disipline ediyorum! Sen de katıl 💪\n\n#LifeCoachAI #Alışkanlık #Disiplin`;
                     shareTitle = `${title} Alışkanlığı`;
@@ -5201,9 +5334,9 @@
                     shareText = `🎯 ${value}% Tamamladım!\n\nHedef: ${title}\n\nLifeCoach AI ile hedeflerime ulaşıyorum! Sen de potansiyelini keşfet 🚀\n\n#LifeCoachAI #Hedeflerim #PersonalGrowth`;
                     shareTitle = `${title} Hedefim`;
                 }
-                
+
                 console.log('[SHARE] Metin hazırlandı');
-                
+
                 // Görseli oluştur (optional)
                 let imageFile = null;
                 try {
@@ -5216,14 +5349,14 @@
                 } catch (imgErr) {
                     console.warn('[SHARE] Görsel oluşturulamadı (sorun değil):', imgErr.message);
                 }
-                
+
                 // Share Data oluştur
                 let shareData = {
                     title: shareTitle,
                     text: shareText,
                     url: window.location.origin
                 };
-                
+
                 // Görsel ekle (eğer mümkünseyse)
                 if (imageFile) {
                     try {
@@ -5233,13 +5366,13 @@
                         console.warn('[SHARE] Görsel eklenemedi, sadece metin:', e.message);
                     }
                 }
-                
+
                 console.log('[SHARE] Web Share API var mı?', !!navigator.share);
-                
+
                 // Web Share API çağır
                 if (navigator.share) {
                     console.log('[SHARE] Web Share API çağrılıyor...');
-                    
+
                     try {
                         await navigator.share(shareData);
                         showToast('✅ Paylaşım başarılı! 🎉', 'success');
@@ -5257,7 +5390,7 @@
                     // Fallback: Web Share API desteklenmiyor
                     console.log('[SHARE] Web Share API desteklenmiyor, fallback...');
                     showToast('💻 Bu tarayıcıda gelişmiş paylaşım desteklenmiyor', 'info');
-                    
+
                     // Metni kopyala
                     try {
                         await navigator.clipboard.writeText(shareText);
@@ -5266,12 +5399,12 @@
                         showToast('❌ Clipboard erişimi başarısız', 'error');
                     }
                 }
-                
+
             } catch (error) {
                 console.error('[SHARE] FATAL ERROR:', error);
                 showToast(`❌ Kritik hata: ${error.message}`, 'error');
             }
-            
+
             closeShareModal();
         }
 
@@ -5317,14 +5450,13 @@
             if (!container) return;
 
             const toast = document.createElement('div');
-            toast.className = `toast animate-fade-in-up flex items-center gap-3 border-l-4 ${
-                type === 'success' ? 'border-l-emerald-500' : 
+            toast.className = `toast animate-fade-in-up flex items-center gap-3 border-l-4 ${type === 'success' ? 'border-l-emerald-500' :
                 type === 'error' ? 'border-l-red-500' : 'border-l-blue-500'
-            }`;
-            
-            const icon = type === 'success' ? 'fa-check-circle text-emerald-400' : 
-                         type === 'error' ? 'fa-circle-exclamation text-red-400' : 'fa-circle-info text-blue-400';
-            
+                }`;
+
+            const icon = type === 'success' ? 'fa-check-circle text-emerald-400' :
+                type === 'error' ? 'fa-circle-exclamation text-red-400' : 'fa-circle-info text-blue-400';
+
             toast.innerHTML = `
                 <i class="fa-solid ${icon}"></i>
                 <span class="text-sm font-medium text-slate-200">${message}</span>
@@ -5351,7 +5483,7 @@
             document.getElementById('cert-user-name').textContent = user.name || 'Değerli Kullanıcı';
             document.getElementById('cert-goal-title').textContent = goalTitle;
             document.getElementById('cert-date').textContent = new Date().toLocaleDateString('tr-TR');
-            
+
             const modal = document.getElementById('certificate-modal');
             if (modal) {
                 modal.classList.remove('hidden');
@@ -5432,7 +5564,7 @@
             recognition.interimResults = false;
 
             const btn = document.getElementById('voice-input-btn');
-            
+
             recognition.onend = () => {
                 btn.classList.remove('voice-btn-pulse', 'text-teal-400');
             };
@@ -5449,14 +5581,14 @@
                 showToast('Müzik durduruldu.');
                 return;
             }
-            
+
             const sounds = {
-                lofi: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', 
+                lofi: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
                 rain: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3'
             };
-            
+
             if (!sounds[type]) return;
-            
+
             focusAudio = new Audio(sounds[type]);
             focusAudio.loop = true;
             focusAudio.play().catch(e => showToast('Müzik oynatılamadı.'));
@@ -5860,68 +5992,68 @@
                 headers: { 'Authorization': `Bearer ${token}` },
                 signal: AbortSignal.timeout(8000)
             })
-            .then(r => r.json())
-            .then(data => {
-                const sessions = data.sessions || [];
-                if (sessions.length === 0) {
-                    mobileList.innerHTML = `
+                .then(r => r.json())
+                .then(data => {
+                    const sessions = data.sessions || [];
+                    if (sessions.length === 0) {
+                        mobileList.innerHTML = `
                         <div class="text-center py-10 text-slate-500">
                             <i class="fa-regular fa-message text-3xl mb-3 opacity-30"></i>
                             <p class="text-sm">Henüz sohbet geçmişiniz yok.</p>
                         </div>`;
-                    return;
-                }
+                        return;
+                    }
 
-                const groups = { 'Bugün': [], 'Dün': [], 'Bu Hafta': [], 'Daha Eski': [] };
-                const now = new Date();
-                const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-                const yesterdayStart = todayStart - 86400000;
-                const weekStart = todayStart - 6 * 86400000;
+                    const groups = { 'Bugün': [], 'Dün': [], 'Bu Hafta': [], 'Daha Eski': [] };
+                    const now = new Date();
+                    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+                    const yesterdayStart = todayStart - 86400000;
+                    const weekStart = todayStart - 6 * 86400000;
 
-                sessions.sort((a, b) => Number(b.id) - Number(a.id));
-                sessions.forEach(session => {
-                    const sid = Number(session.id);
-                    if (sid >= todayStart) groups['Bugün'].push(session);
-                    else if (sid >= yesterdayStart) groups['Dün'].push(session);
-                    else if (sid >= weekStart) groups['Bu Hafta'].push(session);
-                    else groups['Daha Eski'].push(session);
-                });
+                    sessions.sort((a, b) => Number(b.id) - Number(a.id));
+                    sessions.forEach(session => {
+                        const sid = Number(session.id);
+                        if (sid >= todayStart) groups['Bugün'].push(session);
+                        else if (sid >= yesterdayStart) groups['Dün'].push(session);
+                        else if (sid >= weekStart) groups['Bu Hafta'].push(session);
+                        else groups['Daha Eski'].push(session);
+                    });
 
-                mobileList.innerHTML = '';
-                Object.entries(groups).forEach(([label, groupSessions]) => {
-                    if (groupSessions.length === 0) return;
+                    mobileList.innerHTML = '';
+                    Object.entries(groups).forEach(([label, groupSessions]) => {
+                        if (groupSessions.length === 0) return;
 
-                    const header = document.createElement('div');
-                    header.className = 'mobile-history-group-header text-[10px] font-bold text-slate-600 uppercase tracking-widest px-2 py-2 mt-3';
-                    header.textContent = label;
-                    mobileList.appendChild(header);
+                        const header = document.createElement('div');
+                        header.className = 'mobile-history-group-header text-[10px] font-bold text-slate-600 uppercase tracking-widest px-2 py-2 mt-3';
+                        header.textContent = label;
+                        mobileList.appendChild(header);
 
-                    groupSessions.forEach(session => {
-                        const safeTitle = (session.title || 'Sohbet').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                        const isActive = currentSessionId == session.id;
-                        const div = document.createElement('div');
-                        div.className = `flex items-center gap-2 group rounded-2xl transition-all ${isActive ? 'bg-teal-500/10 border border-teal-500/20' : 'border border-transparent hover:bg-white/5 hover:border-white/10'}`;
-                        div.innerHTML = `
+                        groupSessions.forEach(session => {
+                            const safeTitle = (session.title || 'Sohbet').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                            const isActive = currentSessionId == session.id;
+                            const div = document.createElement('div');
+                            div.className = `flex items-center gap-2 group rounded-2xl transition-all ${isActive ? 'bg-teal-500/10 border border-teal-500/20' : 'border border-transparent hover:bg-white/5 hover:border-white/10'}`;
+                            div.innerHTML = `
                             <button onclick="loadSession(${session.id}); closeMobileHistory();" class="flex-1 text-left px-4 py-3.5 flex items-center gap-3 min-w-0">
                                 <div class="w-8 h-8 rounded-xl ${isActive ? 'bg-teal-500/20' : 'bg-white/5'} flex items-center justify-center flex-shrink-0">
                                     <i class="fa-regular fa-message ${isActive ? 'text-teal-400' : 'text-slate-500'} text-xs"></i>
                                 </div>
                                 <div class="min-w-0 flex-1">
                                     <div class="truncate text-sm ${isActive ? 'text-teal-400 font-semibold' : 'text-slate-300'}">${safeTitle}</div>
-                                    <div class="text-[10px] text-slate-600 mt-0.5">${new Date(Number(session.id)).toLocaleDateString('tr-TR', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'})}</div>
+                                    <div class="text-[10px] text-slate-600 mt-0.5">${new Date(Number(session.id)).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</div>
                                 </div>
                                 ${isActive ? '<i class="fa-solid fa-check text-teal-400 text-xs flex-shrink-0"></i>' : ''}
                             </button>
                             <button onclick="deleteSession(${session.id}); setTimeout(populateMobileHistoryList, 300);" class="w-9 h-9 mr-2 rounded-xl flex items-center justify-center text-slate-700 hover:text-red-400 hover:bg-red-500/10 transition-all flex-shrink-0 opacity-0 group-hover:opacity-100" title="Sil">
                                 <i class="fa-solid fa-trash text-xs"></i>
                             </button>`;
-                        mobileList.appendChild(div);
+                            mobileList.appendChild(div);
+                        });
                     });
+                })
+                .catch(() => {
+                    mobileList.innerHTML = `<div class="px-4 py-6 text-xs text-red-400 text-center">Geçmiş yüklenemedi. Tekrar deneyin.</div>`;
                 });
-            })
-            .catch(() => {
-                mobileList.innerHTML = `<div class="px-4 py-6 text-xs text-red-400 text-center">Geçmiş yüklenemedi. Tekrar deneyin.</div>`;
-            });
         }
 
         window.openMobileHistory = openMobileHistory;
@@ -6152,9 +6284,9 @@
             try {
                 const response = await fetch('/api/export-plus', {
                     method: 'POST',
-                    headers: { 
+                    headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}` 
+                        'Authorization': `Bearer ${token}`
                     },
                     body: JSON.stringify({ type, data, filename })
                 });
@@ -6168,11 +6300,10 @@
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement("a");
                 a.href = url;
-                a.download = filename || `LifeCoach_Export.${
-                    type === 'excel' ? 'xlsx' :
+                a.download = filename || `LifeCoach_Export.${type === 'excel' ? 'xlsx' :
                     type === 'word' || type === 'certificate' ? 'docx' :
-                    'pptx'
-                }`;
+                        'pptx'
+                    }`;
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
@@ -6210,16 +6341,16 @@
                 dataToSend.columns = ["Mesaj İçeriği"];
                 dataToSend.rows = lines.filter(l => l.trim() !== "").map(l => [l]);
             }
-            
+
             exportToOffice('excel', dataToSend, 'LifeCoach_Veri.xlsx');
         }
 
         function exportMessageAsWord(text) {
-            exportToOffice('word', [{type: 'paragraph', text: text.replace(/<[^>]*>/g, '')}], 'LifeCoach_Mesaj.docx');
+            exportToOffice('word', [{ type: 'paragraph', text: text.replace(/<[^>]*>/g, '') }], 'LifeCoach_Mesaj.docx');
         }
 
         function exportMessageAsPPT(text) {
-            exportToOffice('ppt', [{title: "LifeCoach AI", content: [text.replace(/<[^>]*>/g, '').substring(0, 500)]}], 'LifeCoach_Mesaj.pptx');
+            exportToOffice('ppt', [{ title: "LifeCoach AI", content: [text.replace(/<[^>]*>/g, '').substring(0, 500)] }], 'LifeCoach_Mesaj.pptx');
         }
 
         async function sendFeedback(btn, type, messageContent) {
@@ -6407,7 +6538,7 @@
 
             const card = document.createElement('div');
             card.className = 'doc-action-card mt-5 p-5 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between group hover:bg-white/[0.08] transition-all animate-fade-in-up';
-            
+
             const iconMap = {
                 'excel': { icon: 'fa-file-excel', color: 'text-green-500', bg: 'bg-green-500/10' },
                 'word': { icon: 'fa-file-word', color: 'text-blue-500', bg: 'bg-blue-500/10' },
@@ -7038,7 +7169,7 @@
             },
             'nl': {
                 'greeting': 'Hoe kan ik je vandaag helpen?',
-                'input_placeholder': 'Vraag LifeCoach AI alles...', 
+                'input_placeholder': 'Vraag LifeCoach AI alles...',
                 'emergency_btn': 'Noodgeval',
                 'tough_love_btn': 'Tough Love',
                 'new_chat': 'Nieuwe chat starten',
@@ -7063,8 +7194,8 @@
 
         let userLanguage = navigator.language.split('-')[0] || 'en';
         // Özel dil eşleşmeleri
-        if (navigator.language === 'zh-TW') userLanguage = 'zh'; 
-        if (!TRANSLATIONS[userLanguage]) userLanguage = 'en'; 
+        if (navigator.language === 'zh-TW') userLanguage = 'zh';
+        if (!TRANSLATIONS[userLanguage]) userLanguage = 'en';
 
         function applyTranslations() {
             const lang = TRANSLATIONS[userLanguage];
@@ -7177,7 +7308,7 @@
                 showToast('Lütfen günlük yoklama için giriş yapın (Login needed)', 'info');
                 return;
             }
-            
+
             try {
                 const res = await fetch('/api/check-in', {
                     method: 'POST',
@@ -7201,11 +7332,11 @@
         async function autoCheckInOnMessage() {
             const lastCheckIn = localStorage.getItem('last-check-in-date');
             const today = new Date().toISOString().split('T')[0];
-            
+
             if (lastCheckIn !== today) {
                 const token = storage.get('token');
                 if (!token) return;
-                
+
                 try {
                     const res = await fetch('/api/check-in', {
                         method: 'POST',
@@ -7248,10 +7379,10 @@
                     padding: 16
                 }
             });
-            
+
             // Initialize Notifications
             initializeNotifications();
-            
+
             applyTranslations(); // Dil ayarlarını uygula
             let isDeepSearch = false;
             let attachedFiles = [];
@@ -7493,10 +7624,10 @@
                                     // Zaten aktifse bir şey yapma, değilse UI'ı koru
                                 } else if (data.trigger.type === 'focus_sprint_active') {
                                     showToast('🎯 Sprint aktif: 25 dakika odak zamanı!');
-                                    try { confetti({ particleCount: 40, spread: 60, origin: { y: 0.8 } }); } catch (e) {}
+                                    try { confetti({ particleCount: 40, spread: 60, origin: { y: 0.8 } }); } catch (e) { }
                                 } else if (data.trigger.type === 'creative_boost_active') {
                                     showToast('✨ Creative Boost: fikir akışı başladı!');
-                                    try { confetti({ particleCount: 70, spread: 85, origin: { y: 0.78 } }); } catch (e) {}
+                                    try { confetti({ particleCount: 70, spread: 85, origin: { y: 0.78 } }); } catch (e) { }
                                 } else if (data.trigger.type === 'tough_love_active') {
                                     showToast('👊 Tough Love aktif: odaklan ve uygula!');
                                 }
@@ -7663,7 +7794,7 @@
                     const totalHabits = token ? habits.length : 0;
                     const bestStreak = token && habits.length > 0 ? Math.max(0, ...habits.map(h => h.streak || 0)) : 0;
                     const score = progress?.productivityScore || 0;
-                    
+
                     // Add XP and Flame Level stats
                     const xp = stats?.xp || 0;
                     const flameLevel = stats?.flameLevel || 0;
@@ -7763,11 +7894,11 @@
                     // "Tamamla" butonu aktiflik kontrolü - Kullanıcı isteği: Süre bitene kadar gösterme/aktif etme
                     const targetDate = goal.targetDate ? new Date(goal.targetDate) : null;
                     const isTimeUp = targetDate ? targetDate <= new Date() : false; // Süre yoksa false varsayıyoruz ki sadece süreli hedefler bitsin
-                    
+
                     const canComplete = isTimeUp && goal.status !== 'completed';
-                    
-                    const completeBtnClass = canComplete 
-                        ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30' 
+
+                    const completeBtnClass = canComplete
+                        ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
                         : 'hidden'; // Kullanıcı "süresi bittiği zaman göstersin" dediği için hidden yapıyoruz
                     const completeAction = canComplete ? `onclick="completeGoal('${goal.id}')"` : '';
 
@@ -7783,7 +7914,7 @@
                                     .replace(/<code>/g, '<code class="bg-black/40 text-emerald-400 px-1.5 py-0.5 rounded border border-white/5 font-mono text-[11px]">')
                                     .replace(/<pre>/g, '<pre class="bg-black/50 p-4 rounded-xl border border-white/10 mb-4 overflow-x-auto shadow-inner">')
                                     .replace(/<ul>/g, '<ul class="space-y-2 mb-4 list-disc list-inside text-slate-300">');
-                                
+
                                 el.innerHTML = `
                                     <div class="flex items-center gap-2 mb-4 text-emerald-300 font-bold border-b border-emerald-500/20 pb-2">
                                         <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
@@ -7809,7 +7940,7 @@
                     const briefingId = `briefing-${goal.id}`;
                     setTimeout(() => {
                         if (!goalBriefings[goal.id] && goal.status !== 'completed') {
-                            GoalsService.getBriefing(goal.title, goal.description).then(brief => {
+                            GoalsService.getBriefing(goal.title, goal.description, goal.progress, goal.completions || []).then(brief => {
                                 goalBriefings[goal.id] = brief;
                                 renderBriefing(briefingId, brief);
                             });
@@ -7990,7 +8121,7 @@
                     loadGoals();
                     closeGoalSuccessModal();
                     showToast('Hedef başarıyla tamamlandı ve notun kaydedildi! ✨');
-                    
+
                     // Open AI Certificate
                     setTimeout(() => openCertificate(title), 800);
                 } catch (err) {
@@ -8237,17 +8368,17 @@
                 const icon = document.getElementById('habit-icon').value;
                 const dailyTarget = parseInt(document.getElementById('habit-daily-target').value) || 1;
                 const reminderEnabled = document.getElementById('habit-reminder-enabled').checked;
-                
+
                 let reminder = null;
                 if (reminderEnabled) {
                     const reminderTime = document.getElementById('habit-reminder-time').value;
                     const frequency = document.getElementById('habit-reminder-frequency').value;
-                    
+
                     reminder = {
                         enabled: true,
                         time: reminderTime, // HH:MM format
                         frequency: frequency, // daily, weekdays, weekends, specific
-                        specificDays: frequency === 'specific' 
+                        specificDays: frequency === 'specific'
                             ? Array.from(document.querySelectorAll('.habit-day-checkbox:checked'))
                                 .map(cb => parseInt(cb.value))
                             : []
@@ -8907,7 +9038,7 @@
                 const FLAME_COST = 100;
                 const btn = document.getElementById('deep-analysis-btn');
                 const resultDiv = document.getElementById('deep-analysis-result');
-                
+
                 try {
                     // Check flame level
                     const stats = await StatsService.getStats();
@@ -8945,7 +9076,7 @@
                 try {
                     const token = storage.get('token');
                     const coaching = await SmartCoachService.getCoaching();
-                    
+
                     // Create PDF content
                     const pdfContent = {
                         title: 'Kişisel Gelişim Analiz Raporu',
@@ -9025,7 +9156,7 @@
                     a.click();
                     document.body.removeChild(a);
                     URL.revokeObjectURL(url);
-                    
+
                     showToast('📥 Rapor indirildi!', 'success');
                 } catch (error) {
                     console.error('PDF download error:', error);
@@ -9376,7 +9507,7 @@
                 if (xpData.history.length > 50) xpData.history = xpData.history.slice(0, 50);
                 localStorage.setItem('lifecoach_xp', JSON.stringify(xpData));
                 checkBadges();
-                
+
                 // Sync with Supabase if user is logged in
                 const token = localStorage.getItem('token');
                 if (token) {
@@ -9388,15 +9519,15 @@
                         },
                         body: JSON.stringify({ xpGained: amount, reason })
                     }).then(response => response.json())
-                    .then(data => {
-                        if (data.success && data.levelUp) {
-                            showToast(`🎉 LEVEL UP! Seviye ${data.updatedStats.level}!`);
-                        }
-                    }).catch(error => {
-                        console.error('Supabase sync error:', error);
-                    });
+                        .then(data => {
+                            if (data.success && data.levelUp) {
+                                showToast(`🎉 LEVEL UP! Seviye ${data.updatedStats.level}!`);
+                            }
+                        }).catch(error => {
+                            console.error('Supabase sync error:', error);
+                        });
                 }
-                
+
                 // Update nav badge
                 const levelInfo = getLevelInfo(xpData.total);
                 const navBadge = document.getElementById('xp-badge-nav');
@@ -9709,13 +9840,13 @@
 
                     // Phase 1: Baking (2 seconds)
                     await new Promise(r => setTimeout(r, 2000));
-                    
+
                     // Phase 2: Finished Baking (Switch icons)
                     fireIcon.classList.add('hidden');
                     breadIcon.classList.remove('hidden');
                     statusText.innerText = "Waffle hazır!";
                     statusSub.innerText = "Sıcak sıcak fırından çıktı, tabağa alınıyor...";
-                    
+
                     // Phase 3: Final Reveal (1.5 seconds)
                     await new Promise(r => setTimeout(r, 1500));
 
@@ -9739,7 +9870,7 @@
                     </div>`;
 
                     galleryEl.insertAdjacentHTML('afterbegin', imageCard);
-                    
+
                     // Save to history
                     const history = JSON.parse(localStorage.getItem('waffle-history') || '[]');
                     history.unshift({ url: imageUrl, prompt, date: new Date().toISOString() });
@@ -9759,7 +9890,7 @@
                 const history = JSON.parse(localStorage.getItem('waffle-history') || '[]');
                 const galleryEl = document.getElementById('waffle-gallery');
                 if (!galleryEl || history.length === 0) return;
-                
+
                 galleryEl.innerHTML = history.map(item => `
                     <div class="relative group rounded-3xl overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.5)] border border-orange-500/20 transform transition duration-500 hover:scale-[1.02]">
                         <div class="absolute inset-0 bg-slate-800 -z-10"></div>
@@ -10527,7 +10658,7 @@
                         { id: 'plans', selector: '#section-plans' },
                         { id: 'waffle', selector: '#section-waffle' }
                     ];
-                    for(let s of sections) {
+                    for (let s of sections) {
                         const el = document.querySelector(s.selector);
                         if (el && !el.classList.contains('hidden')) {
                             setActive(s.id);
@@ -10563,11 +10694,10 @@
                             <button
                                 key={item.id}
                                 onClick={() => handleClick(item.id)}
-                                className={`flex flex-col items-center justify-center transition-all duration-500 relative ${
-                                    item.primary 
-                                        ? 'w-14 h-14 -mt-10 bg-gradient-to-br from-teal-500 to-emerald-600 rounded-2xl shadow-xl shadow-teal-500/40 text-white ring-4 ring-[#0F172A]/50' 
-                                        : 'w-12 h-12'
-                                } ${active === item.id && !item.primary ? 'text-teal-400' : 'text-slate-400'}`}
+                                className={`flex flex-col items-center justify-center transition-all duration-500 relative ${item.primary
+                                    ? 'w-14 h-14 -mt-10 bg-gradient-to-br from-teal-500 to-emerald-600 rounded-2xl shadow-xl shadow-teal-500/40 text-white ring-4 ring-[#0F172A]/50'
+                                    : 'w-12 h-12'
+                                    } ${active === item.id && !item.primary ? 'text-teal-400' : 'text-slate-400'}`}
                             >
                                 <i className={`fa-solid ${item.icon} ${item.primary ? 'text-xl animate-pulse' : 'text-lg'}`}></i>
                                 {!item.primary && <span className="text-[9px] mt-1 font-bold uppercase tracking-tighter opacity-80">{item.label}</span>}
@@ -10585,7 +10715,7 @@
         const DashboardHeader = () => {
             const [xp, setXp] = React.useState(0);
             const [level, setLevel] = React.useState(1);
-            
+
             React.useEffect(() => {
                 const updateXp = () => {
                     const badge = JSON.parse(localStorage.getItem('lifecoach-badge-status') || '{}');
@@ -10651,7 +10781,7 @@
                     });
 
                     if (!response.ok) throw new Error('Failed to load');
-                    
+
                     const data = await response.json();
                     setPriority(data);
                 } catch (error) {
@@ -10663,7 +10793,7 @@
 
             const completePriority = async () => {
                 if (!priority?.priority?.id) return;
-                
+
                 setCompleting(true);
                 try {
                     const token = localStorage.getItem('token');
@@ -10677,22 +10807,22 @@
                     });
 
                     if (!response.ok) throw new Error('Failed to complete');
-                    
+
                     const result = await response.json();
-                    
+
                     // Show reward notification
                     if (typeof showRewardNotification === 'function') {
                         showRewardNotification(result.xpBonus || 5, 0, 'system_priority_bonus');
                     }
-                    
+
                     // Refresh priority
                     loadSystemPriority();
-                    
+
                     // Refresh stats
                     if (typeof updateStatsDisplay === 'function') {
                         updateStatsDisplay();
                     }
-                    
+
                     if (typeof showToast === 'function') {
                         showToast(result.message || 'Sistem önceliği tamamlandı! +5 XP', 'success');
                     }
@@ -10745,7 +10875,7 @@
                     {/* Animated neon border effect */}
                     <div className="absolute inset-0 rounded-2xl border-2 border-cyan-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-pulse"></div>
                     <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 rounded-2xl opacity-20 blur-lg group-hover:opacity-30 transition-opacity duration-500"></div>
-                    
+
                     <div className="relative z-10">
                         {/* Header */}
                         <div className="flex items-center justify-between mb-4">
@@ -10760,11 +10890,10 @@
                             </div>
                             <div className="flex items-center gap-2">
                                 {p.difficulty && (
-                                    <span className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase ${
-                                        p.difficulty === 'easy' ? 'bg-emerald-500/20 text-emerald-400' :
+                                    <span className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase ${p.difficulty === 'easy' ? 'bg-emerald-500/20 text-emerald-400' :
                                         p.difficulty === 'medium' ? 'bg-amber-500/20 text-amber-400' :
-                                        'bg-rose-500/20 text-rose-400'
-                                    }`}>
+                                            'bg-rose-500/20 text-rose-400'
+                                        }`}>
                                         {p.difficulty}
                                     </span>
                                 )}
@@ -10862,9 +10991,9 @@
                             <span className="text-xs text-slate-400">{xpProgress}/100 XP</span>
                         </div>
                         <div className="w-full bg-white/5 rounded-full h-3 overflow-hidden border border-white/10">
-                            <div 
+                            <div
                                 className="bg-gradient-to-r from-blue-500 to-cyan-400 h-full transition-all duration-300 rounded-full"
-                                style={{width: `${xpProgress}%`}}
+                                style={{ width: `${xpProgress}%` }}
                             ></div>
                         </div>
                     </div>
@@ -10932,19 +11061,16 @@
                         leaderboardData = Array.isArray(data) ? data : [];
                     }
                     setLeaderboard(leaderboardData);
-                    
-                    // Find user rank - ensure leaderboardData is array
+
                     if (Array.isArray(leaderboardData) && leaderboardData.length > 0) {
                         const userEntry = leaderboardData.find(entry => entry && entry.me);
                         setUserRank(userEntry?.rank || null);
                     }
 
-                    // Load challenges
                     const challengesResponse = await fetch('/api/arena/challenges', {
                         headers: { 'Authorization': `Bearer ${token}` }
                     });
                     if (!challengesResponse.ok) {
-                        console.error('Challenges error:', challengesResponse.status);
                         setChallenges([]);
                     } else {
                         const challengesData = await challengesResponse.json();
@@ -10958,34 +11084,6 @@
                     setChallenges([]);
                 } finally {
                     setLoading(false);
-                }
-            };
-
-            const updateXP = async (xpAmount, reason) => {
-                try {
-                    const token = localStorage.getItem('token');
-                    const response = await fetch('/api/arena/update-xp', {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ xpGained: xpAmount, reason })
-                    });
-                    
-                    const data = await response.json();
-                    if (data.success) {
-                        setUserStats(data.updatedStats);
-                        if (data.levelUp) {
-                            showToast(`🎉 LEVEL UP! Seviye ${data.updatedStats.level}!`);
-                        } else {
-                            showToast(`+${xpAmount} XP Kazanıldı!`);
-                        }
-                        loadArenaData(); // Refresh all data
-                    }
-                } catch (error) {
-                    console.error('XP update error:', error);
-                    showToast('XP güncellenemedi', 'error');
                 }
             };
 
@@ -11016,9 +11114,6 @@
                 label: challenge.title,
                 xp: `+${Math.round(challenge.xp_reward)} XP`,
                 icon: challenge.icon,
-                color: challenge.category === 'chat' ? 'purple' : 
-                       challenge.category === 'mood' ? 'emerald' : 
-                       challenge.category === 'habits' ? 'rose' : 'amber',
                 desc: challenge.description
             }));
 
@@ -11046,42 +11141,6 @@
                         </div>
                     </div>
 
-                    <div className="bg-gradient-to-r from-teal-500/20 via-emerald-500/10 to-transparent border border-teal-500/30 rounded-[32px] p-8 mb-12 relative overflow-hidden group">
-                        <div className="absolute -right-10 -top-10 w-64 h-64 bg-teal-500/10 rounded-full blur-3xl group-hover:bg-teal-500/20 transition-all duration-700"></div>
-                        <i className="fa-solid fa-crown absolute right-12 top-1/2 -translate-y-1/2 text-9xl text-teal-400/10 group-hover:scale-110 group-hover:rotate-12 transition-all duration-700 pointer-events-none"></i>
-                        
-                        <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
-                            <div className="relative">
-                                <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-yellow-400 via-amber-500 to-orange-600 p-1 shadow-2xl">
-                                    <div className="w-full h-full rounded-[22px] bg-[#0F172A] flex items-center justify-center relative overflow-hidden">
-                                        <i className="fa-solid fa-user-astronaut text-4xl text-white group-hover:animate-bounce"></i>
-                                    </div>
-                                </div>
-                                <div className="absolute -bottom-2 -right-2 w-10 h-10 rounded-2xl bg-teal-500 border-4 border-[#0F172A] flex items-center justify-center shadow-lg">
-                                    <span className="text-xs font-black text-white">Lv{userStats.level}</span>
-                                </div>
-                            </div>
-                            <div className="text-center md:text-left">
-                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/10 border border-teal-500/20 mb-3">
-                                    <i className="fa-solid fa-medal text-[10px] text-teal-400"></i>
-                                    <span className="text-[9px] font-black text-teal-400 uppercase tracking-tighter">Level {userStats.level} Warrior</span>
-                                </div>
-                                <h3 className="text-3xl font-black text-white mb-2 tracking-tight">Sen <span className="text-teal-400 font-display">"Arena Fighter"</span></h3>
-                                <div className="flex items-center justify-center md:justify-start gap-5">
-                                    <div className="flex flex-col">
-                                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Toplam XP</span>
-                                        <span className="text-xl font-black text-white leading-none tracking-tight">{(userStats.total_xp || 0).toLocaleString()}</span>
-                                    </div>
-                                    <div className="w-px h-8 bg-white/10"></div>
-                                    <div className="flex flex-col">
-                                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Galibiyet</span>
-                                        <span className="text-xl font-black text-amber-500 leading-none tracking-tight">{userStats.arena_wins || 0}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
                     <div className="grid lg:grid-cols-3 gap-8">
                         <div className="lg:col-span-2 space-y-6">
                             <div className="bg-[#0F172A]/80 border border-white/10 rounded-[2rem] p-8 backdrop-blur-xl shadow-2xl">
@@ -11092,98 +11151,83 @@
                                         </div>
                                         Global Liderler
                                     </h3>
-                                    <div className="text-right">
-                                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block">Son Senkronizasyon</span>
-                                        <span className="text-[11px] font-bold text-teal-400">Şimdi</span>
-                                    </div>
                                 </div>
-                                
+
                                 <div className="space-y-4">
-                                    {leaderboard.map((user, i) => (
-                                        <div key={i} className={`flex items-center justify-between p-4 rounded-2xl transition-all duration-300 ${user.me ? 'bg-teal-500/10 border-2 border-teal-500/30 shadow-lg shadow-teal-500/10' : 'bg-white/5 border border-white/10 hover:border-white/20 hover:scale-[1.01]'}`}>
-                                            <div className="flex items-center gap-4">
-                                                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${user.color} flex items-center justify-center text-white shadow-lg text-lg`}>
-                                                    <i className={`fa-solid ${user.icon}`}></i>
-                                                </div>
-                                                <div className="flex flex-col">
-                                                    <span className={`text-md font-bold leading-tight ${user.me ? 'text-teal-400' : 'text-white'}`}>{user.name}</span>
-                                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">#{user.rank} GLOBAL</span>
-                                                </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <div className="text-lg font-black text-white tracking-tight">{user.xp || 0}</div>
-                                                <div className="text-[9px] font-black text-slate-500 uppercase tracking-tighter leading-none opacity-60">Puan</div>
-                                            </div>
+                                    {leaderboard.length === 0 ? (
+                                        <div className="text-center py-10 opacity-50 border border-dashed border-white/10 rounded-2xl">
+                                            <p className="text-slate-500 text-xs text-center">Henüz veri bulunmuyor</p>
                                         </div>
-                                    ))}
+                                    ) : (
+                                        leaderboard.map((entry, index) => (
+                                            <div key={index} className={`flex items-center justify-between p-4 rounded-2xl ${entry.me ? 'bg-teal-500/10 border border-teal-500/30' : 'bg-white/5 border border-white/10'}`}>
+                                                <div className="flex items-center gap-4">
+                                                    <span className={`w-8 h-8 flex items-center justify-center rounded-lg font-black ${index === 0 ? 'bg-yellow-500 text-white' : index === 1 ? 'bg-slate-300 text-slate-800' : index === 2 ? 'bg-orange-600 text-white' : 'text-slate-500'}`}>
+                                                        {index + 1}
+                                                    </span>
+                                                    <div>
+                                                        <p className="text-sm font-bold text-white uppercase">{entry.username || 'Gizli Savaşçı'}</p>
+                                                        <p className="text-[10px] text-slate-500 font-bold">Level {entry.level || 1}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-sm font-black text-white">{(entry.total_xp || 0).toLocaleString()} XP</p>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
                                 </div>
                             </div>
                         </div>
 
                         <div className="space-y-6">
                             <div className="bg-[#0F172A]/80 border border-white/10 rounded-[2rem] p-8 backdrop-blur-xl shadow-2xl">
-                                <h3 className="text-xl font-bold text-white mb-6 tracking-tight flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-rose-500/20 flex items-center justify-center">
-                                        <i className="fa-solid fa-bolt text-rose-500 text-sm"></i>
-                                    </div>
-                                    XP Boosters
-                                </h3>
-                                
-                                {/* XP Boost Card - 50 Flame */}
-                                <div className="mb-6 p-5 rounded-2xl bg-gradient-to-br from-amber-500/10 to-orange-500/5 border border-amber-500/20">
-                                    <div className="flex items-center justify-between mb-3">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
-                                                <i className="fa-solid fa-fire text-amber-400 text-lg"></i>
-                                            </div>
-                                            <div>
-                                                <span className="text-sm font-bold text-white block">XP Boost</span>
-                                                <span className="text-[10px] text-amber-400">1 Saatlik %20 Bonus</span>
-                                            </div>
-                                        </div>
-                                        <span className="text-lg font-black text-amber-400">50 🔥</span>
-                                    </div>
-                                    <button 
-                                        onClick={async () => {
-                                            try {
-                                                const FLAME_COST = 50;
-                                                const stats = await StatsService.getStats();
-                                                if ((stats?.flameLevel || 0) < FLAME_COST) {
-                                                    showToast(`🔥 Yeterli alev yok! Gerekli: ${FLAME_COST}`, 'error');
-                                                    return;
-                                                }
-                                                await StatsService.consumeFlame('xp_boost');
-                                                showRewardNotification(0, -FLAME_COST, 'xp_boost');
-                                                updateStatsDisplay();
+                                <h3 className="text-xl font-bold text-white mb-6">Market</h3>
+                                <button
+                                    onClick={async () => {
+                                        try {
+                                            const token = localStorage.getItem('token');
+                                            const response = await fetch('/api/arena/consume-flame', {
+                                                method: 'POST',
+                                                headers: {
+                                                    'Authorization': `Bearer ${token}`,
+                                                    'Content-Type': 'application/json'
+                                                },
+                                                body: JSON.stringify({ item: 'xp_boost' })
+                                            });
+                                            const data = await response.json();
+                                            if (data.success) {
                                                 showToast('⚡ XP Boost aktif! 1 saat boyunca %20 daha fazla XP kazanacaksın.', 'success');
-                                            } catch (e) {
-                                                showToast('XP Boost aktifleştirilemedi', 'error');
+                                            } else {
+                                                showToast(data.message || 'XP Boost aktifleştirilemedi', 'error');
                                             }
-                                        }}
-                                        className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold text-sm hover:from-amber-400 hover:to-orange-400 transition-all"
+                                        } catch (e) {
+                                            showToast('XP Boost aktifleştirilemedi', 'error');
+                                        }
+                                    }}
+                                    className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold text-sm hover:from-amber-400 hover:to-orange-400 transition-all"
+                                >
+                                    <i className="fa-solid fa-bolt mr-2"></i>XP Boost Al (25 Alev)
+                                </button>
+                            </div>
+
+                            <div className="space-y-4">
+                                {missions.map((mission) => (
+                                    <button
+                                        key={mission.id}
+                                        onClick={() => window.showSection && window.showSection(mission.id)}
+                                        className={`w-full p-5 rounded-3xl bg-gradient-to-br from-${mission.color}-500/10 to-transparent border border-${mission.color}-500/20 hover:border-${mission.color}-500/50 text-left transition-all group scale-active`}
                                     >
-                                        <i className="fa-solid fa-bolt mr-2"></i>XP Boost Al
-                                    </button>
-                                </div>
-                                
-                                <div className="space-y-4">
-                                    {missions.map((mission) => (
-                                        <button 
-                                            key={mission.id}
-                                            onClick={() => window.showSection && window.showSection(mission.id)} 
-                                            className={`w-full p-5 rounded-3xl bg-gradient-to-br from-${mission.color}-500/10 to-transparent border border-${mission.color}-500/20 hover:border-${mission.color}-500/50 text-left transition-all group scale-active`}
-                                        >
-                                            <div className="flex items-center justify-between mb-3">
-                                                <div className={`w-10 h-10 rounded-xl bg-${mission.color}-500/20 flex items-center justify-center text-${mission.color}-400 group-hover:scale-110 transition-transform`}>
-                                                    <i className={`fa-solid ${mission.icon} text-base`}></i>
-                                                </div>
-                                                <span className={`text-[10px] font-black text-${mission.color}-400 uppercase tracking-widest bg-${mission.color}-500/10 px-2 py-1 rounded-lg`}>{mission.xp}</span>
+                                        <div className="flex items-center justify-between mb-3">
+                                            <div className={`w-10 h-10 rounded-xl bg-${mission.color}-500/20 flex items-center justify-center text-${mission.color}-400 group-hover:scale-110 transition-transform`}>
+                                                <i className={`fa-solid ${mission.icon} text-base`}></i>
                                             </div>
-                                            <span className="text-[13px] font-black text-white mb-1 block uppercase tracking-tight">{mission.label}</span>
-                                            <p className="text-[10px] text-slate-400 font-medium leading-tight">{mission.desc}</p>
-                                        </button>
-                                    ))}
-                                </div>
+                                            <span className={`text-[10px] font-black text-${mission.color}-400 uppercase tracking-widest bg-${mission.color}-500/10 px-2 py-1 rounded-lg`}>{mission.xp}</span>
+                                        </div>
+                                        <span className="text-[13px] font-black text-white mb-1 block uppercase tracking-tight">{mission.label}</span>
+                                        <p className="text-[10px] text-slate-400 font-medium leading-tight">{mission.desc}</p>
+                                    </button>
+                                ))}
                             </div>
                         </div>
                     </div>
@@ -11192,25 +11236,26 @@
         };
 
         // Mount all components
-        const statsRoot = ReactDOM.createRoot(document.getElementById('react-goals-stats-root'));
-        statsRoot.render(<GoalStats />);
+        window.addEventListener('DOMContentLoaded', () => {
+            const statsRoot = ReactDOM.createRoot(document.getElementById('react-goals-stats-root'));
+            statsRoot.render(<GoalStats />);
 
-        const navRoot = ReactDOM.createRoot(document.getElementById('react-mobile-nav-root'));
-        navRoot.render(<BottomNav />);
+            const navRoot = ReactDOM.createRoot(document.getElementById('react-mobile-nav-root'));
+            navRoot.render(<BottomNav />);
 
-        const dashHeaderRoot = ReactDOM.createRoot(document.getElementById('react-dashboard-header-root'));
-        dashHeaderRoot.render(<DashboardHeader />);
+            const dashHeaderRoot = ReactDOM.createRoot(document.getElementById('react-dashboard-header-root'));
+            dashHeaderRoot.render(<DashboardHeader />);
 
-        // Life OS System Priority Widget
-        const systemPriorityRoot = ReactDOM.createRoot(document.getElementById('react-system-priority-root'));
-        systemPriorityRoot.render(<SystemPriorityWidget />);
+            // Life OS System Priority Widget
+            const systemPriorityRoot = ReactDOM.createRoot(document.getElementById('react-system-priority-root'));
+            systemPriorityRoot.render(<SystemPriorityWidget />);
 
-        const dashStatsRoot = ReactDOM.createRoot(document.getElementById('react-dashboard-stats-root'));
-        dashStatsRoot.render(<DashboardStats />);
+            const dashStatsRoot = ReactDOM.createRoot(document.getElementById('react-dashboard-stats-root'));
+            dashStatsRoot.render(<DashboardStats />);
 
-        const arenaRoot = ReactDOM.createRoot(document.getElementById('react-arena-root'));
-        arenaRoot.render(<AIArena />);
+            const arenaRoot = ReactDOM.createRoot(document.getElementById('react-arena-root'));
+            arenaRoot.render(<AIArena />);
+        });
     </script>
 </body>
-
 </html>

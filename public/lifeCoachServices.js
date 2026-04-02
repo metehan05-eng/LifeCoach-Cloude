@@ -203,12 +203,12 @@ const GoalsService = {
         }
     },
 
-    async getBriefing(title, description) {
+    async getBriefing(title, description, progress = 0, completions = []) {
         try {
             const res = await fetch('/api/goals/briefing', {
                 method: 'POST',
                 headers: getAuthHeaders(),
-                body: JSON.stringify({ title, description })
+                body: JSON.stringify({ title, description, progress, completions })
             });
             if (!res.ok) throw new Error('Failed to fetch briefing');
             const data = await res.json();

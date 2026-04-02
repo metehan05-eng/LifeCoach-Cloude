@@ -1,5 +1,8 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { getKVData, setKVData } from '../../lib/db';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
@@ -10,7 +13,17 @@ if (GEMINI_API_KEY) {
 
 // --- LİMİT SİSTEMİ (KV Tabanlı) ---
 
-async function checkRateLimit(req, ip, fingerprint) {
+async function checkRateLimit(req, ip, fingerprint, userId) {
+    // Abonelik Durumu
+    let plan = 'free';
+    if (userId) {
+        const { data: sub } = await supabase.from('subscriptions').select('plan_tier, status').eq('user_id', userId).single();
+        if (sub && sub.status === 'active') plan = sub.plan_tier;
+    }
+
+    // Premium ise limit kontrolünü gevşet veya kaldır
+    if (plan === 'ultimate') return { allowed: true, plan: 'ultimate' };
+    
     const ua = req.headers['user-agent'] || 'unknown';
     
     // Node.js Crypto (Vercel/Local uyumlu)
@@ -41,13 +54,25 @@ async function checkRateLimit(req, ip, fingerprint) {
         user.lastReset = now;
     }
 
-    // Limit Kontrolü (2 saatte 10 mesaj)
-    const MAX_MESSAGES = 10;
+    // Limit Kontrolü
+    let MAX_MESSAGES = 10;
+    let RESET_TIME = 2 * 60 * 60 * 1000; // 2 saat
+
+    if (plan === 'pro') {
+        MAX_MESSAGES = 500; // Pro için yüksek limit
+        RESET_TIME = 24 * 60 * 60 * 1000; // 24 saat
+    }
+
     if (user.messageCount >= MAX_MESSAGES) {
         const timePassed = now - user.lastReset;
-        const timeLeft = (2 * 60 * 60 * 1000) - timePassed;
+        const timeLeft = RESET_TIME - timePassed;
         const minutesLeft = Math.ceil(timeLeft / 60000);
-        return { allowed: false, error: `Üzgünüm, işlem limitine ulaştın. Lütfen ${minutesLeft} dakika sonra tekrar gel.`, retryAfter: minutesLeft };
+        const hoursLeft = Math.ceil(timeLeft / 3600000);
+        
+        let errorMsg = `Ücretsiz işlem limitine ulaştın. ${minutesLeft} dakika sonra gel veya Pro'ya geç!`;
+        if (plan === 'pro') errorMsg = `Pro günlük limitine ulaştın. ${hoursLeft} saat sonra sıfırlanacak.`;
+
+        return { allowed: false, error: errorMsg, retryAfter: minutesLeft };
     }
 
     user.messageCount++;
@@ -55,7 +80,7 @@ async function checkRateLimit(req, ip, fingerprint) {
     // Dosyaya kaydet
     await setKVData('user_limits', limits);
 
-    return { allowed: true };
+    return { allowed: true, plan };
 }
 
 // --- GEMINI ÇAĞRISI ---
@@ -152,11 +177,20 @@ export default async function handler(req, res) {
         // IP Adresini al (Vercel/Standard header)
         const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
 
+        // Kullanıcı ID'sini bul (Auth sistemi varsayılarak)
+        let userId = null;
+        if (email) {
+            // Basitlik için email üzerinden userId bulma (Projede nasıl tutuluyorsa)
+            // Gerçek projede auth middleware kullanılmalı
+        }
+
         // 1. Limit Kontrolü
-        const limitStatus = await checkRateLimit(req, ip, fingerprintID);
+        const limitStatus = await checkRateLimit(req, ip, fingerprintID, userId);
         if (!limitStatus.allowed) {
             return res.status(429).json({ error: limitStatus.error, retryAfter: limitStatus.retryAfter });
         }
+        
+        const userPlan = limitStatus.plan || 'free';
 
         // 2. Hafıza Motoru (Memory Engine)
         let memoryContext = "";

@@ -36,11 +36,15 @@ export default async function handler(req, res) {
     }
     
     try {
-        const { title, description } = req.body;
+        const { title, description, progress, completions } = req.body;
         
         if (!title) {
             return res.status(400).json({ error: 'Hedef başlığı gereklidir' });
         }
+
+        const today = new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' });
+        const completionCount = Array.isArray(completions) ? completions.length : 0;
+        const currentProgress = progress || 0;
         
         // If Gemini is not configured, return fallback advice
         if (!genAI) {
@@ -50,23 +54,26 @@ export default async function handler(req, res) {
         
         const gemini31FlashLite = "gemini-3.1-flash-lite-preview";
         
-        const systemPrompt = `Sen bir yaşam koçu ve hedef uzmanısın. Kullanıcının hedefi için kısa, pratik ve motive edici bir öneri sunmalısın.
-
-Yanıt formatı (Markdown kullan, maksimum 3-4 cümle):
-1. Hedefi önce kısa bir cümleyle onayla/öv
-2. Spesifik, uygulanabilir bir ilk adım öner
-3. Motive edici bir kapanış cümlesi
-
-Örnek yanıtlar:
-- "Harika bir hedef! Başlamak için yarın sabah 15 dakika erken kalkıp ilk görevini belirle. Küçük adımlar büyük başarıları getirir!"
-- "Bu hedef seni ileriye taşıyacak! Bugün kendine 20 dakika ayırıp bir plan oluştur. Her uzman bir gün başlangıç yaptı!"
-
-Kullanıcının hedefini analiz et ve özelleştirilmiş öneri sun.`;
+        const systemPrompt = `Sen profesyonel ve teknik bir yaşam koçusun. Kullanıcının hedefi doğrultusunda teknik detaylar, yol haritası ve kod örnekleri içeren günlük rehberlik sağlarsın.`;
 
         const userPrompt = `Hedef: ${title}
-${description ? `Açıklama: ${description}` : ''}
+Açıklama: ${description || ''}
+Kullanıcı İlerlemesi: %${currentProgress}
+Tamamlanan Gün Sayısı: ${completionCount}
+Bugünün Tarihi: ${today}
 
-Bu hedef için kısa, pratik ve motive edici bir öneri ver.`;
+Görev: Bu hedefe ulaşmak için bugün neler yapılabileceğini detaylandırın. 
+Kullanıcının mevcut ilerlemesini (%${currentProgress}) ve daha önce ${completionCount} gün çalıştığını göz önünde bulundurarak, "Yol Haritası"nın bir sonraki mantıklı adımını önerin. 
+Eğer birkaç gün geçmişse, konuları derinleştirin.
+
+Yanıt formatı (Markdown kullan):
+1. **Bugün çalışılması gereken ana konu** (Örn: PHP Temelleri - Koşullu İfadeler).
+2. **Konunun açıklaması**.
+3. **Kod Örneği** (Markdown formatında, hedefe uygunsa).
+4. **Kod Örneğinin Açıklaması**.
+5. **Günlük Motivasyon ve Görev** (Motive edici bir kapanış).
+
+Yanıt dili Türkçe olmalı.`;
 
         try {
             const model = genAI.getGenerativeModel({
@@ -74,7 +81,7 @@ Bu hedef için kısa, pratik ve motive edici bir öneri ver.`;
                 systemInstruction: systemPrompt,
                 generationConfig: {
                     temperature: 0.7,
-                    maxOutputTokens: 300
+                    maxOutputTokens: 800
                 }
             });
             
