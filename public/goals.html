@@ -3,622 +3,691 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LifeCoach AI — Hedef Detayları</title>
+    <title>LifeCoach AI — Hedef Yol Haritası</title>
     <link rel="icon" type="image/svg+xml" href="/lifecoach_ai_logo.svg">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         :root {
             --bg: #030712;
-            --card-bg: rgba(15, 23, 42, 0.6);
+            --card: rgba(15, 23, 42, 0.7);
             --accent: #2dd4bf;
-            --border: rgba(45, 212, 191, 0.1);
+            --border: rgba(45, 212, 191, 0.12);
         }
+
+        * { box-sizing: border-box; }
 
         body {
             background-color: var(--bg);
             color: #e2e8f0;
             font-family: 'Inter', sans-serif;
-            background-image: radial-gradient(circle at 50% -20%, rgba(45, 212, 191, 0.15), transparent 70%);
+            background-image:
+                radial-gradient(ellipse 80% 40% at 20% 0%, rgba(45,212,191,0.10) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 40% at 80% 100%, rgba(34,211,238,0.06) 0%, transparent 60%);
             min-height: 100vh;
         }
 
         .glass {
-            background: var(--card-bg);
-            backdrop-filter: blur(12px);
+            background: var(--card);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             border: 1px solid var(--border);
         }
 
         .font-display { font-family: 'Space Grotesk', sans-serif; }
 
-        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(45, 212, 191, 0.2); border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(45, 212, 191, 0.4); }
+        ::-webkit-scrollbar-thumb { background: rgba(45,212,191,0.2); border-radius: 10px; }
 
-        .checkbox-item {
+        /* ── Timeline ── */
+        .timeline-wrap {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .timeline-wrap::-webkit-scrollbar { display: none; }
+
+        .day-btn {
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 10px 14px;
+            border-radius: 14px;
+            cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.06);
+            background: rgba(255,255,255,0.03);
+            transition: all 0.2s;
+            min-width: 60px;
+        }
+        .day-btn:hover { border-color: var(--accent); background: rgba(45,212,191,0.08); }
+        .day-btn.active { background: rgba(45,212,191,0.15); border-color: var(--accent); box-shadow: 0 0 14px rgba(45,212,191,0.2); }
+        .day-btn.past { opacity: 0.65; }
+        .day-num { font-size: 1.1rem; font-weight: 700; color: white; }
+        .day-name { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em; color: #64748b; font-weight: 600; }
+        .day-btn.active .day-name { color: var(--accent); }
+
+        /* ── Briefing content ── */
+        .briefing-body h1,.briefing-body h2,.briefing-body h3 {
+            color: #2dd4bf;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            margin: 1.4em 0 0.6em;
+        }
+        .briefing-body h3 { font-size: 1rem; letter-spacing: 0.02em; text-transform: uppercase; color: #5eead4; }
+        .briefing-body p { color: #cbd5e1; line-height: 1.75; margin-bottom: 0.75em; }
+        .briefing-body ul { padding-left: 1.25em; }
+        .briefing-body li { color: #cbd5e1; margin-bottom: 4px; }
+        .briefing-body strong { color: #f1f5f9; }
+
+        /* ── Code / Terminal ── */
+        .briefing-body pre {
+            background: #000 !important;
+            border: 1px solid #1e293b !important;
+            border-radius: 14px !important;
+            padding: 40px 20px 20px !important;
+            overflow-x: auto;
+            position: relative;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            margin: 1em 0;
+        }
+        .briefing-body pre::before {
+            content: "● ● ●";
+            position: absolute;
+            top: 12px;
+            left: 16px;
+            color: #374151;
+            letter-spacing: 3px;
+            font-size: 10px;
+        }
+        .briefing-body pre::after {
+            content: "TERMINAL";
+            position: absolute;
+            top: 11px;
+            right: 16px;
+            color: #374151;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 2px;
+        }
+        .briefing-body code {
+            font-family: 'Fira Code', 'Courier New', monospace;
+            font-size: 0.85em;
+        }
+        .briefing-body pre code {
+            color: #10b981 !important;
+            background: transparent !important;
+            text-shadow: 0 0 8px rgba(16,185,129,0.3);
+        }
+        .briefing-body :not(pre) > code {
+            background: rgba(45,212,191,0.1);
+            border: 1px solid rgba(45,212,191,0.2);
+            color: #2dd4bf;
+            padding: 2px 7px;
+            border-radius: 6px;
+            font-size: 0.82em;
+        }
+
+        /* ── Checkbox items ── */
+        .task-item {
             display: flex;
             align-items: center;
             gap: 12px;
-            padding: 10px 14px;
+            padding: 12px 16px;
             background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.06);
             border-radius: 12px;
             margin-bottom: 8px;
             cursor: pointer;
             transition: all 0.2s;
         }
-
-        .checkbox-item:hover {
-            background: rgba(45, 212, 191, 0.05);
-            border-color: rgba(45, 212, 191, 0.2);
+        .task-item:hover { background: rgba(45,212,191,0.05); border-color: rgba(45,212,191,0.2); }
+        .task-item.done { opacity: 0.55; }
+        .task-item.done .task-text { text-decoration: line-through; }
+        .task-check {
+            width: 20px; height: 20px;
+            border-radius: 6px;
+            border: 2px solid rgba(45,212,191,0.4);
+            flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s;
         }
-
-        .checkbox-item.checked {
-            text-decoration: line-through;
-            opacity: 0.6;
-            background: rgba(45, 212, 191, 0.02);
-        }
-
-        .checkbox-item input {
-            accent-color: var(--accent);
-            width: 18px;
-            height: 18px;
-        }
-
-        .timeline-btn {
-            position: relative;
-            padding-bottom: 2rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-width: 80px;
-        }
-
-        .timeline-btn::before {
-            content: '';
-            position: absolute;
-            top: 15px;
-            right: -50%;
-            width: 100%;
-            height: 2px;
-            background: rgba(255,255,255,0.05);
-            z-index: 0;
-        }
-
-        .timeline-btn:last-child::before { display: none; }
-
-        .timeline-btn .dot {
-            width: 32px;
-            height: 32px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1;
-            transition: all 0.3s;
-        }
-
-        .timeline-btn.active .dot {
+        .task-item.done .task-check {
             background: var(--accent);
-            color: var(--bg);
-            box-shadow: 0 0 15px rgba(45, 212, 191, 0.4);
+            border-color: var(--accent);
         }
+        .task-text { color: #cbd5e1; font-size: 0.9rem; line-height: 1.5; }
 
-        .timeline-btn.past .dot {
-            background: rgba(45, 212, 191, 0.1);
-            color: var(--accent);
+        /* ── YouTube section ── */
+        #yt-player-wrap {
+            width: 100%;
+            aspect-ratio: 16/9;
+            border-radius: 16px;
+            overflow: hidden;
+            background: #000;
+            margin-top: 16px;
         }
+        #yt-player-wrap iframe { width: 100%; height: 100%; border: none; }
 
-        .timeline-btn.future .dot {
+        /* ── Progress bar ── */
+        .prog-bar { height: 6px; background: rgba(255,255,255,0.07); border-radius: 99px; overflow: hidden; }
+        .prog-fill { height: 100%; background: linear-gradient(90deg, #0f766e, #2dd4bf); border-radius: 99px; transition: width 0.6s ease; }
+
+        /* ── Animations ── */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(14px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .fade-up { animation: fadeUp 0.45s cubic-bezier(0.16,1,0.3,1) forwards; }
+
+        /* ── Buttons ── */
+        .btn-primary {
+            background: linear-gradient(135deg,#0f766e,#14b8a6);
+            color: white; border: none; border-radius: 14px;
+            padding: 12px 24px; font-weight: 700; cursor: pointer;
+            transition: all 0.25s; box-shadow: 0 4px 15px rgba(15,118,110,0.35);
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(15,118,110,0.5); }
+        .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+        .btn-ghost {
             background: rgba(255,255,255,0.05);
-            color: #475569;
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #94a3b8; border-radius: 12px;
+            padding: 8px 16px; font-size: 0.8rem; font-weight: 600;
+            cursor: pointer; transition: all 0.2s;
         }
-
-        code { font-family: 'Fira Code', monospace; font-size: 0.9em; }
-        pre { border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
-
-        .terminal-style {
-            background: #000 !important;
-            border: 1px solid #333 !important;
-            padding: 20px !important;
-            position: relative;
-            padding-top: 35px !important;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-            overflow-x: auto;
-        }
-
-        .terminal-style::before {
-            content: "● ● ●";
-            position: absolute;
-            top: 10px;
-            left: 15px;
-            color: #444;
-            letter-spacing: 2px;
-            font-size: 10px;
-        }
-
-        .terminal-style code {
-            color: #10b981 !important;
-            text-shadow: 0 0 5px rgba(16, 185, 129, 0.3);
-            font-family: 'Fira Code', 'Courier New', monospace;
-        }
- 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade { animation: fadeIn 0.4s ease-out forwards; }
+        .btn-ghost:hover { background: rgba(45,212,191,0.1); border-color: var(--accent); color: var(--accent); }
     </style>
 </head>
 <body class="p-4 md:p-8">
-    <div class="max-w-6xl mx-auto">
-        <!-- Header -->
-        <header class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
-            <div class="flex items-center gap-4">
-                <a href="/life-coach-ui.html" class="w-10 h-10 glass rounded-xl flex items-center justify-center hover:bg-teal-500/10 transition-colors">
-                    <i class="fa-solid fa-arrow-left text-teal-400"></i>
-                </a>
+<div class="max-w-5xl mx-auto">
+
+    <!-- Header -->
+    <header class="flex flex-col md:flex-row md:items-center justify-between gap-5 mb-10">
+        <div class="flex items-center gap-4">
+            <a href="/life-coach-ui.html" class="w-10 h-10 glass rounded-xl flex items-center justify-center hover:bg-teal-500/10 transition-colors flex-shrink-0">
+                <i class="fa-solid fa-arrow-left text-teal-400"></i>
+            </a>
+            <div>
+                <h1 id="goalTitle" class="text-2xl md:text-3xl font-bold text-white font-display">Yükleniyor...</h1>
+                <p id="goalSubtitle" class="text-slate-400 text-sm mt-0.5">Yapay zeka yol haritanız hazırlanıyor</p>
+            </div>
+        </div>
+        <div class="flex flex-col gap-1 min-w-[180px]">
+            <div class="flex justify-between items-center">
+                <span class="text-xs text-slate-500 font-medium">İlerleme</span>
+                <span id="progressLabel" class="text-xs font-bold text-teal-400">%0</span>
+            </div>
+            <div class="prog-bar">
+                <div id="progressBar" class="prog-fill" style="width:0%"></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Timeline -->
+    <div class="timeline-wrap mb-8" id="timeline"></div>
+
+    <!-- Main grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Left: Briefing -->
+        <div class="lg:col-span-2 space-y-6">
+
+            <!-- Loading -->
+            <div id="loadingState" class="glass rounded-3xl p-12 flex flex-col items-center justify-center text-center gap-4">
+                <div class="w-14 h-14 border-4 border-teal-500/20 border-t-teal-500 rounded-full animate-spin"></div>
                 <div>
-                    <h1 id="goalTitle" class="text-3xl font-bold text-white font-display">Hedef Yükleniyor...</h1>
-                    <p id="goalType" class="text-slate-400 text-sm mt-1">Yapay zeka yol haritanız hazırlanıyor.</p>
+                    <p class="text-lg font-bold text-white">Plan Hazırlanıyor</p>
+                    <p class="text-slate-500 text-sm">Hedefinize giden yolu çiziyoruz...</p>
                 </div>
             </div>
-            <div class="flex items-center gap-4">
-                <div class="text-right hidden md:block">
-                    <div id="progressLabel" class="text-xs font-bold text-teal-400 uppercase tracking-widest mb-1">İlerleme: %0</div>
-                    <div class="w-48 h-2 bg-white/5 rounded-full overflow-hidden border border-white/5">
-                        <div id="progressBar" class="h-full bg-teal-500 transition-all duration-1000" style="width: 0%"></div>
+
+            <!-- Briefing Card (hidden until loaded) -->
+            <div id="briefingCard" class="hidden">
+
+                <!-- Date label -->
+                <div class="flex items-center gap-3 mb-5">
+                    <div class="w-9 h-9 rounded-xl bg-teal-500/20 flex items-center justify-center text-teal-400 flex-shrink-0">
+                        <i class="fa-solid fa-calendar-day text-sm"></i>
+                    </div>
+                    <h2 id="briefingDate" class="text-lg font-bold text-white font-display"></h2>
+                </div>
+
+                <!-- Briefing content -->
+                <div id="briefingContent" class="glass rounded-3xl p-6 md:p-8 relative overflow-hidden briefing-body fade-up">
+                    <div class="absolute top-0 right-0 p-4 opacity-[0.06] pointer-events-none">
+                        <i class="fa-solid fa-sparkles text-7xl text-teal-400"></i>
                     </div>
                 </div>
-            </div>
-        </header>
 
-        <!-- Timeline Navigation -->
-        <div id="timeline" class="flex overflow-x-auto pb-4 mb-10 no-scrollbar items-center">
-            <!-- Timeline items injected by JS -->
+                <!-- Tasks checklist -->
+                <div id="tasksSection" class="glass rounded-2xl p-5 mt-4 hidden">
+                    <h3 class="text-sm font-bold text-teal-400 uppercase tracking-widest mb-4">
+                        <i class="fa-solid fa-list-check mr-2"></i>Öğrenilecek Başlıklar
+                    </h3>
+                    <div id="tasksList"></div>
+                </div>
+
+                <!-- Finish day -->
+                <div class="glass rounded-2xl p-5 mt-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div>
+                        <p class="text-white font-semibold text-sm">Harika İlerliyorsun! 🎯</p>
+                        <p class="text-slate-500 text-xs mt-0.5">Başlıkları tamamladıysan bugünü bitir ve ödülünü al.</p>
+                    </div>
+                    <button id="finishDayBtn" class="btn-primary flex-shrink-0 text-sm">
+                        BUGÜNÜ TAMAMLA 🚀
+                    </button>
+                </div>
+
+                <!-- YouTube Section -->
+                <div id="videoSection" class="glass rounded-2xl p-5 mt-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-brands fa-youtube text-xl text-red-500"></i>
+                            <h3 class="font-bold text-white text-sm">Önerilen Video Eğitimi</h3>
+                        </div>
+                        <button id="searchYoutubeBtn" class="btn-ghost text-xs">
+                            <i class="fa-solid fa-search mr-1"></i>YouTube'da Ara
+                        </button>
+                    </div>
+                    <p id="videoQueryDisplay" class="text-xs text-slate-400 italic mb-3">Yapay zeka en iyi videoyu buluyor...</p>
+                    <!-- YouTube player injects here -->
+                    <div id="ytPlayerWrap"></div>
+                </div>
+
+            </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- Main Content -->
-            <div class="lg:col-span-2 space-y-8">
-                <!-- Today's Briefing -->
-                <div id="briefingCard" class="glass rounded-3xl p-6 md:p-8 relative overflow-hidden hidden animate-fade">
-                    <div class="absolute top-0 right-0 p-4 opacity-10">
-                        <i class="fa-solid fa-sparkles text-6xl text-teal-400"></i>
-                    </div>
-                    
-                    <div id="briefingHeader" class="flex items-center gap-3 mb-8">
-                        <div class="w-10 h-10 rounded-xl bg-teal-500/20 flex items-center justify-center text-teal-400">
-                            <i class="fa-solid fa-calendar-day"></i>
-                        </div>
-                        <h2 id="briefingDate" class="text-xl font-bold text-white"></h2>
-                    </div>
+        <!-- Right: Sidebar -->
+        <div class="space-y-5">
 
-                    <div id="briefingContent" class="prose prose-invert max-w-none space-y-6">
-                        <!-- Briefing content processed by marked.js -->
-                    </div>
-
-                    <!-- Finish Day Action -->
-                    <div id="finishAction" class="mt-12 pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-6">
-                        <div class="flex-1">
-                            <h4 class="text-white font-bold mb-1">Harika İlerliyorsun!</h4>
-                            <p class="text-xs text-slate-400">Tüm başlıkları tamamladıysan bugünü bitir ve ödülünü al.</p>
-                        </div>
-                        <button id="finishDayBtn" class="px-8 py-3 bg-teal-500 hover:bg-emerald-400 text-bg font-black rounded-2xl shadow-xl shadow-teal-500/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
-                            BUGÜNÜ TAMAMLA 🚀
-                        </button>
-                    </div>
-
-                    <!-- YouTube Search -->
-                    <div id="videoSection" class="mt-12 p-6 rounded-2xl bg-gradient-to-br from-red-500/10 to-orange-500/5 border border-red-500/20">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="flex items-center gap-3">
-                                <i class="fa-brands fa-youtube text-2xl text-red-500"></i>
-                                <h3 class="font-bold text-white">Önerilen Video Eğitimi</h3>
-                            </div>
-                            <button id="searchYoutubeBtn" class="px-4 py-2 bg-red-500/20 hover:bg-red-500/40 text-red-400 rounded-xl text-xs font-bold transition-all">
-                                YouTube'da Ara
-                            </button>
-                        </div>
-                        <p class="text-sm text-slate-400 mb-4 italic">"Yapay zeka bugün öğrendiğiniz konuyu pekiştirmeniz için en iyi içeriği buldu."</p>
-                        <div id="videoQueryDisplay" class="p-3 bg-black/40 rounded-xl border border-white/5 text-sm font-mono text-emerald-400">
-                            Arama yapılıyor...
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Loading State -->
-                <div id="loadingBriefing" class="glass rounded-3xl p-12 flex flex-col items-center justify-center text-center space-y-4">
-                    <div class="w-16 h-16 border-4 border-teal-500/20 border-t-teal-500 rounded-full animate-spin"></div>
-                    <div>
-                        <p class="text-lg font-bold text-white">Plan Hazırlanıyor</p>
-                        <p class="text-slate-500 text-sm">Hedefinize giden en kısa yolu hesaplıyoruz...</p>
-                    </div>
-                </div>
+            <!-- Past Days -->
+            <div class="glass rounded-2xl p-5">
+                <h3 class="text-sm font-bold text-white mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left text-teal-400 text-xs"></i>
+                    Geçmiş Günler
+                </h3>
+                <div id="historyList" class="space-y-2"></div>
             </div>
 
-            <!-- Sidebar / Stats -->
-            <div class="space-y-8">
-                <!-- Past Days History -->
-                <div class="glass rounded-3xl p-6">
-                    <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                        <i class="fa-solid fa-history text-teal-400 text-sm"></i>
-                        Geçmiş Günler
-                    </h3>
-                    <div id="historyList" class="space-y-3">
-                        <!-- History items injected by JS -->
-                    </div>
+            <!-- Motivation -->
+            <div class="rounded-2xl p-6 relative overflow-hidden" style="background: linear-gradient(135deg, #0f766e, #0d9488);">
+                <div class="relative z-10">
+                    <h3 class="text-xl font-bold text-white mb-3 font-display">Yoldasın! 🚀</h3>
+                    <p class="text-teal-100/80 text-xs leading-relaxed mb-5">
+                        "Küçük adımlar, zamanla büyük dağları aşar. Bugünün görevlerini tamamlayarak hedefinize bir adım daha yaklaş."
+                    </p>
+                    <button onclick="window.history.back()" class="w-full py-2.5 bg-white/20 hover:bg-white/30 rounded-xl text-white text-sm font-bold transition-all">
+                        ← Geri Dön
+                    </button>
                 </div>
-
-                <!-- Motivation Card -->
-                <div class="bg-gradient-to-br from-teal-500 to-emerald-600 rounded-3xl p-8 relative overflow-hidden shadow-2xl shadow-teal-500/20">
-                    <div class="relative z-10">
-                        <h3 class="text-2xl font-bold text-white mb-4">Yoldasın! 🚀</h3>
-                        <p class="text-teal-50/80 text-sm leading-relaxed mb-6">
-                            "Küçük adımlar, zamanla büyük dağları aşar. Bugünün görevlerini tamamlayarak hedefine bir adım daha yaklaş."
-                        </p>
-                        <button onclick="window.history.back()" class="w-full py-3 bg-white/20 hover:bg-white/30 backdrop-blur-md rounded-xl text-white font-bold transition-all">
-                            Geri Dön
-                        </button>
-                    </div>
-                    <i class="fa-solid fa-mountain absolute -bottom-4 -right-4 text-8xl text-black/10"></i>
-                </div>
+                <i class="fa-solid fa-mountain absolute -bottom-3 -right-3 text-7xl text-black/10"></i>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Scripts -->
-    <script src="./lifeCoachServices.js"></script>
-    <script>
-        let currentGoal = null;
-        let selectedDate = new Date().toISOString().split('T')[0];
-        const goalId = new URLSearchParams(window.location.search).get('id');
+<script src="./lifeCoachServices.js"></script>
+<script>
+    // ─────────────────────────────────────────────
+    // STATE
+    // ─────────────────────────────────────────────
+    let currentGoal = null;
+    const goalId = new URLSearchParams(window.location.search).get('id');
+    let selectedDate = getTodayISO();
 
-        if (!goalId) {
-            window.location.href = '/life-coach-ui.html';
+    if (!goalId) window.location.href = '/life-coach-ui.html';
+
+    // marked.js setup
+    marked.setOptions({ breaks: true, gfm: true });
+
+    // ─────────────────────────────────────────────
+    // UTILITIES
+    // ─────────────────────────────────────────────
+    function getTodayISO() {
+        // Use local date to avoid UTC offset issues
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
+    function localDateLabel(isoDate) {
+        // Parse yyyy-mm-dd without timezone shift
+        const [y, m, d] = isoDate.split('-').map(Number);
+        return new Date(y, m-1, d).toLocaleDateString('tr-TR', {
+            weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+        });
+    }
+
+    function getSafeId(str) {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = ((hash << 5) - hash) + str.charCodeAt(i);
+            hash |= 0;
         }
+        return Math.abs(hash).toString(36);
+    }
 
-        // Initialize marked.js
-        marked.setOptions({
-            breaks: true,
-            gfm: true
+    function setProgress(pct) {
+        document.getElementById('progressLabel').textContent = `%${pct}`;
+        document.getElementById('progressBar').style.width = pct + '%';
+    }
+
+    // ─────────────────────────────────────────────
+    // INIT
+    // ─────────────────────────────────────────────
+    async function init() {
+        try {
+            await loadGoal();
+            renderTimeline();
+            loadBriefing(selectedDate);
+        } catch (err) {
+            console.error('Init failed:', err);
+        }
+    }
+
+    async function loadGoal() {
+        const goals = await GoalsService.getAll();
+        currentGoal = goals.find(g => g.id === goalId);
+        if (!currentGoal) { alert('Hedef bulunamadı'); return; }
+
+        document.getElementById('goalTitle').textContent = currentGoal.title;
+        document.getElementById('goalSubtitle').textContent = currentGoal.type + ' Hedef Planı';
+        setProgress(currentGoal.progress || 0);
+    }
+
+    // ─────────────────────────────────────────────
+    // TIMELINE  (only today & past — no future)
+    // ─────────────────────────────────────────────
+    function renderTimeline() {
+        const container = document.getElementById('timeline');
+        container.innerHTML = '';
+        const todayISO = getTodayISO();
+
+        // Show last 6 days + today
+        for (let i = -6; i <= 0; i++) {
+            const d = new Date();
+            d.setDate(d.getDate() + i);
+            const iso = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+            const isToday = iso === todayISO;
+            const isSelected = iso === selectedDate;
+
+            const btn = document.createElement('div');
+            btn.className = `day-btn ${isSelected ? 'active' : (iso < todayISO ? 'past' : '')}`;
+            btn.onclick = () => selectDate(iso);
+            btn.innerHTML = `
+                <span class="day-num">${isToday ? '<i class="fa-solid fa-star text-[10px] text-teal-400"></i>' : d.getDate()}</span>
+                <span class="day-name">${d.toLocaleDateString('tr-TR', {weekday:'short'})}</span>
+            `;
+            container.appendChild(btn);
+        }
+    }
+
+    function selectDate(iso) {
+        selectedDate = iso;
+        loadBriefing(iso);
+    }
+
+    // ─────────────────────────────────────────────
+    // LOAD BRIEFING FROM API
+    // ─────────────────────────────────────────────
+    async function loadBriefing(date) {
+        if (!currentGoal) return;
+
+        selectedDate = date;
+        renderTimeline();
+        updateHistory();
+
+        // Show loading, hide card
+        document.getElementById('loadingState').classList.remove('hidden');
+        document.getElementById('briefingCard').classList.add('hidden');
+
+        try {
+            const res = await fetch('/api/goals/briefing', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({
+                    id: goalId,
+                    title: currentGoal.title,
+                    description: currentGoal.description,
+                    progress: currentGoal.progress,
+                    completions: currentGoal.completions,
+                    date: date
+                })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok || data.error) {
+                throw new Error(data.error || `Sunucu hatası: ${res.status}`);
+            }
+
+            renderBriefing(data.briefing, date);
+
+        } catch (err) {
+            console.error(err);
+            document.getElementById('briefingContent').innerHTML =
+                `<p class="text-red-400 p-4 border border-red-500/20 rounded-xl text-sm">${err.message}</p>`;
+        } finally {
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('briefingCard').classList.remove('hidden');
+        }
+    }
+
+    // ─────────────────────────────────────────────
+    // RENDER BRIEFING
+    // ─────────────────────────────────────────────
+    function renderBriefing(markdown, date) {
+        // ── 1. Set date label
+        document.getElementById('briefingDate').textContent = localDateLabel(date);
+
+        // ── 2. Extract metadata from end of markdown
+        let searchQuery = currentGoal.title + ' dersi';
+        let youtubeId = null;
+
+        const sqMatch = markdown.match(/SEARCH_QUERY:\s*(.+)/i);
+        if (sqMatch) searchQuery = sqMatch[1].trim();
+
+        const ytMatch = markdown.match(/YOUTUBE_ID:\s*([A-Za-z0-9_-]{11})/i);
+        if (ytMatch) youtubeId = ytMatch[1].trim();
+
+        // ── 3. Clean markdown (remove metadata lines)
+        let clean = markdown
+            .replace(/SEARCH_QUERY:\s*.+/gi, '')
+            .replace(/YOUTUBE_ID:\s*.+/gi, '')
+            .replace(/---+/g, '')
+            .trim();
+
+        // ── 4. Extract [ ] checklist items before rendering
+        const checklistItems = [];
+        clean = clean.replace(/^\s*\[\s*\]\s+(.+)$/gm, (match, text) => {
+            checklistItems.push(text.trim());
+            return ''; // remove from main markdown
         });
 
-        async function init() {
-            try {
-                await loadGoal();
-                renderTimeline();
-                loadBriefing(selectedDate);
-            } catch (err) {
-                console.error("Init failed:", err);
-                // The error is already alerted in loadGoal
-            }
-        }
+        // ── 5. Render main markdown → HTML
+        const html = marked.parse(clean);
+        document.getElementById('briefingContent').innerHTML = html;
 
-        async function loadGoal() {
-            try {
-                const goals = await GoalsService.getAll();
-                currentGoal = goals.find(g => g.id === goalId);
-                
-                if (!currentGoal) throw new Error('Hedef bulunamadı');
-
-                document.getElementById('goalTitle').innerText = currentGoal.title;
-                document.getElementById('goalType').innerText = currentGoal.type + ' Hedef Planı';
-                document.getElementById('progressLabel').innerText = `İlerleme: %${currentGoal.progress}`;
-                document.getElementById('progressBar').style.width = currentGoal.progress + '%';
-            } catch (err) {
-                console.error(err);
-                alert('Hata: ' + err.message);
-            }
-        }
-
-        function renderTimeline() {
-            const container = document.getElementById('timeline');
-            container.innerHTML = '';
-            
-            const now = new Date();
-            const todayISO = now.toISOString().split('T')[0];
-            const dates = [];
-
-            // Past 5 days + Today only (no future: future unlocks after 23:59)
-            for (let i = -5; i <= 0; i++) {
-                const d = new Date();
-                d.setDate(now.getDate() + i);
-                dates.push(d);
-            }
-
-            dates.forEach(date => {
-                const dateISO = date.toISOString().split('T')[0];
-                const isToday = dateISO === todayISO;
-                const isSelected = dateISO === selectedDate;
-                const isPast = dateISO < todayISO;
-                
-                const dayName = date.toLocaleDateString('tr-TR', { weekday: 'short' });
-                const dayNum = date.getDate();
+        // ── 6. Render checklist separately
+        if (checklistItems.length > 0) {
+            const tasksList = document.getElementById('tasksList');
+            tasksList.innerHTML = '';
+            checklistItems.forEach(text => {
+                const taskId = getSafeId(text);
+                const storageKey = `task-${goalId}-${date}-${taskId}`;
+                const isDone = localStorage.getItem(storageKey) === 'true';
 
                 const item = document.createElement('div');
-                // Future dates are NOT rendered. Past & today are clickable.
-                item.className = `timeline-btn ${isSelected ? 'active' : (isPast ? 'past' : '')}`;
-                item.style.cursor = 'pointer';
-                item.onclick = () => selectDate(dateISO);
-                
+                item.className = `task-item${isDone ? ' done' : ''}`;
+                item.dataset.taskId = taskId;
+                item.dataset.storageKey = storageKey;
+                item.onclick = () => toggleTask(item, storageKey);
                 item.innerHTML = `
-                    <div class="dot">
-                        ${isToday ? '<i class="fa-solid fa-star text-[10px]"></i>' : dayNum}
+                    <div class="task-check">
+                        ${isDone ? '<i class="fa-solid fa-check text-[10px] text-[#030712]"></i>' : ''}
                     </div>
-                    <span class="text-[10px] uppercase font-bold mt-2 ${isSelected ? 'text-teal-400' : 'text-slate-500'}">${dayName}</span>
+                    <span class="task-text">${text}</span>
                 `;
-                container.appendChild(item);
+                tasksList.appendChild(item);
             });
+
+            document.getElementById('tasksSection').classList.remove('hidden');
+            updateProgressFromTasks(date);
+        } else {
+            document.getElementById('tasksSection').classList.add('hidden');
         }
 
-        async function loadBriefing(date) {
-            if (!currentGoal) {
-                console.error("Goal not loaded yet!");
-                return;
-            }
-            
-            selectedDate = date;
-            document.getElementById('loadingBriefing').classList.remove('hidden');
-            document.getElementById('briefingCard').classList.add('hidden');
-            
-            renderTimeline();
-            updateHistory();
+        // ── 7. YouTube player
+        const ytWrap = document.getElementById('ytPlayerWrap');
+        const queryDisplay = document.getElementById('videoQueryDisplay');
+        const searchBtn = document.getElementById('searchYoutubeBtn');
 
-            try {
-                const res = await fetch('/api/goals/briefing', {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({
-                        id: goalId,
-                        title: currentGoal.title,
-                        description: currentGoal.description,
-                        progress: currentGoal.progress,
-                        completions: currentGoal.completions,
-                        date: date
-                    })
-                });
-                
-                if (!res.ok) {
-                    const errorText = await res.text();
-                    throw new Error(`Sunucu Hatası (${res.status}): ` + errorText.substring(0, 50));
-                }
-                
-                const text = await res.text();
-                let data;
+        searchBtn.onclick = () => {
+            window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(searchQuery)}`, '_blank');
+        };
+
+        if (youtubeId) {
+            queryDisplay.innerHTML = `<i class="fa-brands fa-youtube text-red-500 mr-1"></i> <strong class="text-white">${searchQuery}</strong>`;
+            ytWrap.innerHTML = `
+                <div id="yt-player-wrap">
+                    <iframe
+                        src="https://www.youtube.com/embed/${youtubeId}?rel=0&modestbranding=1&autohide=1"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowfullscreen>
+                    </iframe>
+                </div>`;
+            searchBtn.style.display = 'none';
+        } else {
+            queryDisplay.textContent = searchQuery;
+            ytWrap.innerHTML = '';
+            searchBtn.style.display = '';
+        }
+
+        // ── 8. Finish Day button
+        setupFinishBtn(date);
+    }
+
+    // ─────────────────────────────────────────────
+    // TASK TOGGLE
+    // ─────────────────────────────────────────────
+    function toggleTask(item, storageKey) {
+        const isDone = item.classList.toggle('done');
+        const check = item.querySelector('.task-check');
+        check.innerHTML = isDone ? '<i class="fa-solid fa-check text-[10px] text-[#030712]"></i>' : '';
+        localStorage.setItem(storageKey, String(isDone));
+        updateProgressFromTasks(selectedDate);
+    }
+
+    function updateProgressFromTasks(date) {
+        const all = document.querySelectorAll('.task-item');
+        const done = document.querySelectorAll('.task-item.done');
+        if (all.length === 0) return;
+
+        const pct = Math.round((done.length / all.length) * 100);
+        setProgress(pct);
+
+        // Sync to DB only if today
+        if (date === getTodayISO()) {
+            GoalsService.updateProgress(goalId, pct).catch(() => {});
+        }
+
+        // All done → confetti
+        if (all.length > 0 && done.length === all.length) {
+            confetti({ particleCount: 80, spread: 60, origin: { y: 0.7 }, colors: ['#2dd4bf', '#fbbf24'] });
+        }
+    }
+
+    // ─────────────────────────────────────────────
+    // FINISH DAY BUTTON
+    // ─────────────────────────────────────────────
+    function setupFinishBtn(date) {
+        const btn = document.getElementById('finishDayBtn');
+        const todayISO = getTodayISO();
+        const isCompleted = (currentGoal.completions || []).includes(date);
+        const isToday = date === todayISO;
+
+        // Reset state
+        btn.disabled = false;
+        btn.className = 'btn-primary flex-shrink-0 text-sm';
+        btn.onclick = null;
+
+        if (isCompleted) {
+            btn.textContent = 'GÜN TAMAMLANDI ✅';
+            btn.disabled = true;
+            btn.style.background = 'rgba(16,185,129,0.2)';
+            btn.style.color = '#34d399';
+            btn.style.boxShadow = 'none';
+        } else if (!isToday) {
+            btn.textContent = 'Sadece bugün tamamlanabilir ⏳';
+            btn.disabled = true;
+        } else {
+            btn.textContent = 'BUGÜNÜ TAMAMLA 🚀';
+            btn.onclick = async () => {
+                btn.disabled = true;
+                btn.textContent = '⏳ Güncelleniyor...';
                 try {
-                    data = JSON.parse(text);
-                } catch (e) {
-                    throw new Error("Yanıt JSON formatında değil: " + text.substring(0, 50));
-                }
-                
-                if (data.error) throw new Error(data.error);
-                if (!data.briefing) throw new Error('Briefing verisi bos');
-
-                renderBriefing(data.briefing, date);
-            } catch (err) {
-                console.error(err);
-                document.getElementById('briefingContent').innerHTML = `<p class="text-red-400 p-8 border border-red-500/20 rounded-xl">Hata: Plan yüklenemedi. (${err.message})</p>`;
-            } finally {
-                document.getElementById('loadingBriefing').classList.add('hidden');
-                document.getElementById('briefingCard').classList.remove('hidden');
-            }
-        }
-
-        function renderBriefing(markdown, date) {
-            const dateLabel = new Date(date + 'T12:00:00').toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' });
-            document.getElementById('briefingDate').innerText = dateLabel;
-
-            // 1. Extract Metadata
-            let searchQuery = `${currentGoal.title} dersi`;
-            const queryMatch = markdown.match(/SEARCH_QUERY:\s*(.*)/i);
-            if (queryMatch && queryMatch[1]) searchQuery = queryMatch[1].trim();
-
-            const youtubeIdMatch = markdown.match(/YOUTUBE_ID:\s*([a-zA-Z0-9_-]{11})/i);
-            const youtubeId = youtubeIdMatch ? youtubeIdMatch[1] : null;
-
-            // 2. Clean Markdown
-            let cleanMarkdown = markdown
-                .replace(/SEARCH_QUERY:\s*(.*)/i, '')
-                .replace(/YOUTUBE_ID:\s*(.*)/i, '')
-                .trim();
-
-            // 3. Process Markdown
-            let html = marked.parse(cleanMarkdown);
-
-            // Style Terminal/Code Blocks manually if needed (or use Prism/Highlight.js if available)
-            // Here we just add a class for CSS targeting
-            html = html.replace(/<pre><code>/g, '<pre class="terminal-style"><code class="language-python">');
-
-            // 4. Transform [ ] to interactive checkboxes
-            const getSafeId = (str) => {
-                let hash = 0;
-                for (let i = 0; i < str.length; i++) {
-                    const char = str.charCodeAt(i);
-                    hash = ((hash << 5) - hash) + char;
-                    hash = hash & hash;
-                }
-                return Math.abs(hash).toString(36);
-            };
-
-            html = html.replace(/\[\s*\]\s*(.*)/g, (match, text) => {
-                const uniqueId = getSafeId(text);
-                const isChecked = localStorage.getItem(`task-${goalId}-${date}-${uniqueId}`) === 'true';
-                return `
-                    <div class="checkbox-item ${isChecked ? 'checked' : ''}" onclick="toggleCheck(this, '${goalId}', '${date}', '${uniqueId}')">
-                        <input type="checkbox" ${isChecked ? 'checked' : ''} onclick="event.stopPropagation()">
-                        <span>${text}</span>
-                    </div>
-                `;
-            });
-
-            document.getElementById('briefingContent').innerHTML = html;
-
-            // 5. YouTube Handling
-            const youtubeSection = document.getElementById('videoSection');
-            const videoQueryDisplay = document.getElementById('videoQueryDisplay');
-            let videoDisplayArea = document.getElementById('videoDisplayArea');
-            
-            if (!videoDisplayArea) {
-                videoDisplayArea = document.createElement('div');
-                videoDisplayArea.id = 'videoDisplayArea';
-                videoDisplayArea.className = 'mt-6 rounded-2xl overflow-hidden glass border border-white/10 hidden';
-                videoDisplayArea.style.height = '315px';
-                youtubeSection.appendChild(videoDisplayArea);
-            } else {
-                videoDisplayArea.style.height = '315px';
-            }
-
-            if (youtubeId) {
-                // Show embedded YouTube player
-                videoQueryDisplay.innerHTML = `<i class="fa-brands fa-youtube mr-2 text-red-500"></i><span class="text-white font-semibold">Konu Videosu</span> <span class="text-slate-400 text-xs ml-1">(${searchQuery})</span>`;
-                videoDisplayArea.innerHTML = `<iframe id="yt-iframe" width="100%" height="100%" src="https://www.youtube.com/embed/${youtubeId}?rel=0&modestbranding=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen style="border-radius:16px;"></iframe>`;
-                videoDisplayArea.classList.remove('hidden');
-                videoDisplayArea.style.display = 'block';
-                // Hide the search button since we already have a direct video
-                document.getElementById('searchYoutubeBtn').style.display = 'none';
-            } else {
-                videoQueryDisplay.innerText = searchQuery;
-                videoDisplayArea.classList.add('hidden');
-                videoDisplayArea.style.display = 'none';
-                document.getElementById('searchYoutubeBtn').style.display = '';
-            }
-
-            document.getElementById('searchYoutubeBtn').onclick = () => {
-                window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(searchQuery)}`, '_blank');
-            };
-
-            // 6. Progress Calculation
-            updateCalculatedProgress();
-
-            // 7. Finish Day Button
-            const finishBtn = document.getElementById('finishDayBtn');
-            const isCompleted = (currentGoal.completions || []).includes(date);
-            const isToday = date === new Date().toISOString().split('T')[0];
-
-            if (isCompleted) {
-                finishBtn.innerText = 'GÜN TAMAMLANDI ✅';
-                finishBtn.classList.remove('bg-teal-500');
-                finishBtn.classList.add('bg-emerald-500/20', 'text-emerald-400');
-                finishBtn.disabled = true;
-            } else if (!isToday) {
-                finishBtn.innerText = 'SADECE BUGÜNÜ TAMAMLAYABİLİRSİN ⏳';
-                finishBtn.disabled = true;
-            } else {
-                finishBtn.onclick = async () => {
-                    finishBtn.disabled = true;
-                    finishBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> GÜNCELLENİYOR...';
-                    try {
-                        const result = await GoalsService.toggleDay(goalId);
-                        if (result.completedToday) {
-                            confetti({ particleCount: 100, spread: 70, origin: { y: 0.8 } });
-                            loadGoal(); 
-                        }
-                    } catch (err) {
-                        alert('Hata: ' + err.message);
-                    } finally {
-                        loadBriefing(date);
+                    const result = await GoalsService.toggleDay(goalId);
+                    if (result.completedToday) {
+                        confetti({ particleCount: 120, spread: 80, origin: { y: 0.7 } });
+                        await loadGoal();
                     }
-                };
-            }
+                } catch (err) {
+                    alert('Hata: ' + err.message);
+                } finally {
+                    loadBriefing(date);
+                }
+            };
+        }
+    }
+
+    // ─────────────────────────────────────────────
+    // HISTORY SIDEBAR
+    // ─────────────────────────────────────────────
+    function updateHistory() {
+        const list = document.getElementById('historyList');
+        list.innerHTML = '';
+
+        if (!currentGoal?.briefings) {
+            list.innerHTML = '<p class="text-xs text-slate-600 italic">Henüz geçmiş plan yok.</p>';
+            return;
         }
 
-        function toggleCheck(el, goalId, date, taskId) {
-            const checkbox = el.querySelector('input');
-            const isChecked = !checkbox.checked;
-            checkbox.checked = isChecked;
-            
-            if (isChecked) {
-                el.classList.add('checked');
-                localStorage.setItem(`task-${goalId}-${date}-${taskId}`, 'true');
-            } else {
-                el.classList.remove('checked');
-                localStorage.removeItem(`task-${goalId}-${date}-${taskId}`);
-            }
+        const dates = Object.keys(currentGoal.briefings).sort((a, b) => b.localeCompare(a)).slice(0, 6);
 
-            updateCalculatedProgress();
-            checkAllTasks();
+        if (dates.length === 0) {
+            list.innerHTML = '<p class="text-xs text-slate-600 italic">Henüz geçmiş plan yok.</p>';
+            return;
         }
 
-        function updateCalculatedProgress() {
-            const total = document.querySelectorAll('.checkbox-item').length;
-            const checked = document.querySelectorAll('.checkbox-item.checked').length;
-            
-            if (total === 0) return;
+        dates.forEach(d => {
+            const label = new Date(d + 'T12:00:00').toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
+            const item = document.createElement('button');
+            item.className = `w-full flex items-center justify-between p-3 rounded-xl transition-all text-left border ${d === selectedDate ? 'border-teal-500/40 bg-teal-500/10' : 'border-white/5 bg-white/3 hover:border-white/15'}`;
+            item.onclick = () => selectDate(d);
+            item.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-teal-400">${label}</span>
+                    <div class="w-px h-3 bg-white/10"></div>
+                    <span class="text-xs text-slate-400">Günlük Plan</span>
+                </div>
+                <i class="fa-solid fa-chevron-right text-[9px] text-slate-600"></i>`;
+            list.appendChild(item);
+        });
+    }
 
-            const percentage = Math.round((checked / total) * 100);
-            
-            document.getElementById('progressLabel').innerText = `İlerleme: %${percentage}`;
-            document.getElementById('progressBar').style.width = percentage + '%';
-            
-            // Optionally sync this back to the goal progress in DB if it's today
-            if (selectedDate === new Date().toISOString().split('T')[0]) {
-                updateGoalProgressInDB(percentage);
-            }
-        }
-
-        async function updateGoalProgressInDB(percentage) {
-            try {
-                await GoalsService.updateProgress(goalId, percentage);
-            } catch (err) {
-                console.warn("Progress sync failed:", err);
-            }
-        }
-
-        function checkAllTasks() {
-            const total = document.querySelectorAll('.checkbox-item').length;
-            const checked = document.querySelectorAll('.checkbox-item.checked').length;
-            if (total > 0 && total === checked) {
-                confetti({
-                    particleCount: 100,
-                    spread: 70,
-                    origin: { y: 0.6 },
-                    colors: ['#2dd4bf', '#fbbf24']
-                });
-            }
-        }
-
-        function selectDate(date) {
-            loadBriefing(date);
-        }
-
-        function updateHistory() {
-            const list = document.getElementById('historyList');
-            list.innerHTML = '';
-            
-            if (!currentGoal.briefings) return;
-
-            const dates = Object.keys(currentGoal.briefings).sort((a, b) => b.localeCompare(a));
-            
-            if (dates.length === 0) {
-                list.innerHTML = '<p class="text-xs text-slate-500 italic">Henüz geçmiş plan kaydı yok.</p>';
-                return;
-            }
-
-            dates.slice(0, 5).forEach(date => {
-                const d = new Date(date);
-                const day = d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
-                
-                const item = document.createElement('button');
-                item.className = `w-full p-4 glass rounded-2xl flex items-center justify-between hover:border-teal-500/40 transition-all group ${date === selectedDate ? 'border-teal-500/50' : ''}`;
-                item.onclick = () => selectDate(date);
-                item.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <span class="text-xs font-bold text-slate-500 group-hover:text-teal-400">${day}</span>
-                        <div class="h-4 w-px bg-white/10"></div>
-                        <span class="text-sm text-slate-300 group-hover:text-white truncate">Günlük Plan</span>
-                    </div>
-                    <i class="fa-solid fa-chevron-right text-[10px] text-slate-600 group-hover:text-teal-400"></i>
-                `;
-                list.appendChild(item);
-            });
-        }
-
-        init();
-    </script>
+    // ─────────────────────────────────────────────
+    // START
+    // ─────────────────────────────────────────────
+    init();
+</script>
 </body>
 </html>
