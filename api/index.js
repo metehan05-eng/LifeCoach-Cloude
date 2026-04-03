@@ -1687,28 +1687,35 @@ Tamamlanan Gün Sayısı: ${completionCount}
 İstenen Tarih: ${dayLabel}
 
 Görev: Bu hedefe ulaşmak için bugünkü (veya belirtilen tarihteki) "Yol Haritası"nı hazırlayın. 
-Yanıt formatı çok katı olmalıdır. Yanıtın sonuna mutlaka "SEARCH_QUERY: [YouTube arama terimi]" ekleyin.
 
-Lütfen şu bölümleri içer:
-1. **Günlük Odak**: Bugünün ana konusu.
-2. **Öğrenilecek Başlıklar**: (Maddeler halinde, başında [ ] kutucuğu olsun)
-3. **Konu Özeti**: Teknik ve kısa açıklama.
-4. **Pratik Uygulama / Kod Örneği**: Markdown formatında.
-5. **YouTube Arama Terimi**: (Hedefle ilgili eğitici video bulmak için en iyi arama terimi)
+KONUYA ÖZEL KURALLAR:
+1. Eğer konu MATEMATİK ise: Formülleri, hesaplamaları ve çözüm adımlarını detaylıca gösterin.
+2. Eğer konu YAZILIM/PROGRAMLAMA ise: Kod örnekleri verin ve bu kodun terminaldeki çıktısını (Expected Output) mutlaka gösterin.
+3. Eğer konu FİZİK veya diğer fen bilimleri ise: Kanunları ve deneysel/pratik örnekleri öne çıkarın.
+4. Diğer konular için: O konuya en uygun pedagojik yöntemi (örneğin yabancı dilde diyalog/kelime çalışması) kullanın.
 
-Örnek Format:
+YANIT FORMATI (Markdown):
 ### 1. Günlük Odak
 ...
 ### 2. Öğrenilecek Başlıklar
-[ ] Değişken tanımlama
-[ ] Veri tipleri
+[ ] Konu Başlığı 1
+[ ] Konu Başlığı 2
 ...
-SEARCH_QUERY: PHP değişken tanımlama dersi
+### 3. Konu Özeti & Detaylı Anlatım
+(Konuya göre matematiksel hesaplamalar veya teknik açıklamalar burada yer almalı)
+### 4. Pratik Uygulama / Örnek
+(Yazılım için kod ve [TERMINAL ÇIKTISI] burada yer almalı)
+
+---
+MUTLAKA YANITIN EN SONUNA ŞUNU EKLE:
+SEARCH_QUERY: [YouTube arama terimi]
+YOUTUBE_ID: [Eğer bu konuyla ilgili çok spesifik ve kaliteli bir video ID'si biliyorsan (isteğe bağlı, boş bırakabilirsin)]
+---
 
 Yanıt dili Türkçe olmalı.`;
 
         const result = await generateAIResponse(prompt, [
-            { role: 'system', content: 'Sen profesyonel bir teknik yaşam koçusun. Kullanıcıya hedefleri doğrultusunda adım adım, uygulamalı ve YouTube video önerili günlük rehberlik sağlarsın.' }
+            { role: 'system', content: 'Sen dünyanın en iyi teknik yaşam koçusun. Kullanıcıya hedefleri doğrultusunda adım adım, uygulamalı ve YouTube video önerili günlük rehberlik sağlarsın.' }
         ]);
 
         const briefing = result.trim();

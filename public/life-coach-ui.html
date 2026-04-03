@@ -7919,51 +7919,9 @@
                     const completeAction = canComplete ? `onclick="completeGoal('${goal.id}')"` : '';
 
                     // Briefing içeriğini Markdown olarak işle
-                    const renderBriefing = (id, content) => {
-                        const el = document.getElementById(id);
-                        if (el) {
-                            if (content) {
-                                // Manual styling for markdown elements to look premium without prose plugin
-                                const styledHTML = marked.parse(content)
-                                    .replace(/<h3>/g, '<h3 class="text-teal-300 font-bold mb-2 mt-3 text-base">')
-                                    .replace(/<p>/g, '<p class="text-slate-300 mb-3 leading-relaxed">')
-                                    .replace(/<code>/g, '<code class="bg-black/40 text-emerald-400 px-1.5 py-0.5 rounded border border-white/5 font-mono text-[11px]">')
-                                    .replace(/<pre>/g, '<pre class="bg-black/50 p-4 rounded-xl border border-white/10 mb-4 overflow-x-auto shadow-inner">')
-                                    .replace(/<ul>/g, '<ul class="space-y-2 mb-4 list-disc list-inside text-slate-300">');
 
-                                el.innerHTML = `
-                                    <div class="flex items-center gap-2 mb-4 text-emerald-300 font-bold border-b border-emerald-500/20 pb-2">
-                                        <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                                        <i class="fa-solid fa-wand-magic-sparkles text-xs"></i>
-                                        <span class="tracking-wide uppercase text-[10px]">Bugün İçin AI Yol Haritası</span>
-                                    </div>
-                                    <div class="briefing-content">
-                                        ${styledHTML}
-                                    </div>
-                                `;
-                            } else {
-                                el.innerHTML = `
-                                    <div class="flex items-center gap-3 text-slate-400 py-2">
-                                        <i class="fa-solid fa-spinner fa-spin text-teal-500"></i>
-                                        <span class="text-xs italic tracking-wide">Yapay zeka size özel bir plan hazırlıyor...</span>
-                                    </div>
-                                `;
-                            }
-                        }
-                    };
 
-                    // Briefing çekme tetikleyicisi (render sonrası için)
-                    const briefingId = `briefing-${goal.id}`;
-                    setTimeout(() => {
-                        if (!goalBriefings[goal.id] && goal.status !== 'completed') {
-                            GoalsService.getBriefing(goal.title, goal.description, goal.progress, goal.completions || []).then(brief => {
-                                goalBriefings[goal.id] = brief;
-                                renderBriefing(briefingId, brief);
-                            });
-                        } else if (goalBriefings[goal.id]) {
-                            renderBriefing(briefingId, goalBriefings[goal.id]);
-                        }
-                    }, 0);
+
 
                     return `
                         <div class="bg-[#0F172A]/80 border border-white/10 rounded-2xl p-6 hover:border-teal-500/30 transition-all group animate-fade-in-up backdrop-blur-md">
@@ -7976,11 +7934,7 @@
                                     <h3 class="text-xl text-white font-bold mb-2 group-hover:text-teal-400 transition-colors">${escapeHTML(goal.title)}</h3>
                                     ${goal.description ? `<p class="text-sm text-slate-400 leading-relaxed line-clamp-2 hover:line-clamp-none transition-all">${escapeHTML(goal.description)}</p>` : ''}
                                     
-                                    <!-- Roadmap Status Summary -->
-                                    <div id="${briefingId}" class="mt-4 flex items-center gap-2 text-[10px] text-teal-500/60 font-bold uppercase tracking-widest">
-                                        <i class="fa-solid fa-sparkles animate-pulse"></i>
-                                        <span>Yol haritası hazır • Hazır olduğunda aç</span>
-                                    </div>
+
                                 </div>
                                 <div class="flex gap-2 ml-4">
                                     <button onclick="openShareItemModal('${escapeJS(goal.title)}', '${goal.progress}', 'goal')" class="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-teal-500/20 hover:border-teal-500/30 border border-transparent transition-all" title="Paylaş">

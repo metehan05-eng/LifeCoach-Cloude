@@ -121,6 +121,32 @@
         code { font-family: 'Fira Code', monospace; font-size: 0.9em; }
         pre { border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
 
+        .terminal-style {
+            background: #000 !important;
+            border: 1px solid #333 !important;
+            padding: 20px !important;
+            position: relative;
+            padding-top: 35px !important;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            overflow-x: auto;
+        }
+
+        .terminal-style::before {
+            content: "● ● ●";
+            position: absolute;
+            top: 10px;
+            left: 15px;
+            color: #444;
+            letter-spacing: 2px;
+            font-size: 10px;
+        }
+
+        .terminal-style code {
+            color: #10b981 !important;
+            text-shadow: 0 0 5px rgba(16, 185, 129, 0.3);
+            font-family: 'Fira Code', 'Courier New', monospace;
+        }
+ 
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -384,36 +410,38 @@
             const dateLabel = new Date(date).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' });
             document.getElementById('briefingDate').innerText = dateLabel;
 
-            // Extract Search Query (Handle both SEARCH_QUERY: and just the label)
+            // 1. Extract Metadata
             let searchQuery = `${currentGoal.title} dersi`;
             const queryMatch = markdown.match(/SEARCH_QUERY:\s*(.*)/i);
-            
-            if (queryMatch && queryMatch[1]) {
-                searchQuery = queryMatch[1].trim();
-            }
-            
-            const cleanMarkdown = markdown.replace(/SEARCH_QUERY:\s*(.*)/i, '').trim();
+            if (queryMatch && queryMatch[1]) searchQuery = queryMatch[1].trim();
 
-            document.getElementById('videoQueryDisplay').innerText = searchQuery;
-            document.getElementById('searchYoutubeBtn').onclick = () => {
-                window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(searchQuery)}`, '_blank');
-            };
+            const youtubeIdMatch = markdown.match(/YOUTUBE_ID:\s*([a-zA-Z0-9_-]{11})/i);
+            const youtubeId = youtubeIdMatch ? youtubeIdMatch[1] : null;
 
-            // Process Markdown for Checkboxes
+            // 2. Clean Markdown
+            let cleanMarkdown = markdown
+                .replace(/SEARCH_QUERY:\s*(.*)/i, '')
+                .replace(/YOUTUBE_ID:\s*(.*)/i, '')
+                .trim();
+
+            // 3. Process Markdown
             let html = marked.parse(cleanMarkdown);
-            
-            // Helper for safe ID generation (avoiding btoa character issues)
+
+            // Style Terminal/Code Blocks manually if needed (or use Prism/Highlight.js if available)
+            // Here we just add a class for CSS targeting
+            html = html.replace(/<pre><code>/g, '<pre class="terminal-style"><code class="language-python">');
+
+            // 4. Transform [ ] to interactive checkboxes
             const getSafeId = (str) => {
                 let hash = 0;
                 for (let i = 0; i < str.length; i++) {
                     const char = str.charCodeAt(i);
                     hash = ((hash << 5) - hash) + char;
-                    hash = hash & hash; // Convert to 32bit integer
+                    hash = hash & hash;
                 }
                 return Math.abs(hash).toString(36);
             };
 
-            // Transform [ ] to interactive checkboxes
             html = html.replace(/\[\s*\]\s*(.*)/g, (match, text) => {
                 const uniqueId = getSafeId(text);
                 const isChecked = localStorage.getItem(`task-${goalId}-${date}-${uniqueId}`) === 'true';
@@ -427,7 +455,35 @@
 
             document.getElementById('briefingContent').innerHTML = html;
 
-            // Handle Finish Day Button
+            // 5. YouTube Handling
+            const youtubeSection = document.getElementById('videoSection');
+            const videoQueryDisplay = document.getElementById('videoQueryDisplay');
+            let videoDisplayArea = document.getElementById('videoDisplayArea');
+            
+            if (!videoDisplayArea) {
+                videoDisplayArea = document.createElement('div');
+                videoDisplayArea.id = 'videoDisplayArea';
+                videoDisplayArea.className = 'mt-6 aspect-video rounded-2xl overflow-hidden glass border border-white/10 hidden';
+                youtubeSection.appendChild(videoDisplayArea);
+            }
+
+            if (youtubeId) {
+                videoQueryDisplay.innerHTML = `<i class="fa-solid fa-play-circle mr-2 text-red-500"></i>Video bulundu: <strong>${youtubeId}</strong>`;
+                videoDisplayArea.innerHTML = `<iframe width="100%" height="100%" src="https://www.youtube.com/embed/${youtubeId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+                videoDisplayArea.classList.remove('hidden');
+            } else {
+                videoQueryDisplay.innerText = searchQuery;
+                videoDisplayArea.classList.add('hidden');
+            }
+
+            document.getElementById('searchYoutubeBtn').onclick = () => {
+                window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(searchQuery)}`, '_blank');
+            };
+
+            // 6. Progress Calculation
+            updateCalculatedProgress();
+
+            // 7. Finish Day Button
             const finishBtn = document.getElementById('finishDayBtn');
             const isCompleted = (currentGoal.completions || []).includes(date);
             const isToday = date === new Date().toISOString().split('T')[0];
@@ -448,7 +504,7 @@
                         const result = await GoalsService.toggleDay(goalId);
                         if (result.completedToday) {
                             confetti({ particleCount: 100, spread: 70, origin: { y: 0.8 } });
-                            loadGoal(); // Re-fetch to get new completions
+                            loadGoal(); 
                         }
                     } catch (err) {
                         alert('Hata: ' + err.message);
@@ -467,12 +523,37 @@
             if (isChecked) {
                 el.classList.add('checked');
                 localStorage.setItem(`task-${goalId}-${date}-${taskId}`, 'true');
-                
-                // If it's today and all checked, maybe trigger confetti
-                checkAllTasks();
             } else {
                 el.classList.remove('checked');
                 localStorage.removeItem(`task-${goalId}-${date}-${taskId}`);
+            }
+
+            updateCalculatedProgress();
+            checkAllTasks();
+        }
+
+        function updateCalculatedProgress() {
+            const total = document.querySelectorAll('.checkbox-item').length;
+            const checked = document.querySelectorAll('.checkbox-item.checked').length;
+            
+            if (total === 0) return;
+
+            const percentage = Math.round((checked / total) * 100);
+            
+            document.getElementById('progressLabel').innerText = `İlerleme: %${percentage}`;
+            document.getElementById('progressBar').style.width = percentage + '%';
+            
+            // Optionally sync this back to the goal progress in DB if it's today
+            if (selectedDate === new Date().toISOString().split('T')[0]) {
+                updateGoalProgressInDB(percentage);
+            }
+        }
+
+        async function updateGoalProgressInDB(percentage) {
+            try {
+                await GoalsService.updateProgress(goalId, percentage);
+            } catch (err) {
+                console.warn("Progress sync failed:", err);
             }
         }
 
