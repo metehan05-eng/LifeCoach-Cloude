@@ -32,6 +32,7 @@ app.use(express.json({ limit: '50mb' }));
 
 // --- AYARLAR ve SABİTLER ---
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "GOOGLE_CLIENT_ID_BURAYA";
 const JWT_SECRET = process.env.JWT_SECRET || 'gizli-anahtar-degistir';
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -52,6 +53,32 @@ if (GEMINI_API_KEY) {
 
 if (!GEMINI_API_KEY) {
     console.warn("UYARI: GEMINI_API_KEY ayarlanmamış. Sohbet çalışmayabilir.");
+}
+
+// ── YouTube Data API v3 Search Helper ──────────────────────────────
+async function searchYouTubeVideo(query) {
+    if (!YOUTUBE_API_KEY) return null;
+    try {
+        const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=1&q=${encodeURIComponent(query)}&relevanceLanguage=tr&key=${YOUTUBE_API_KEY}`;
+        const res = await fetch(url);
+        if (!res.ok) {
+            console.error('[YouTube] API error:', res.status, await res.text());
+            return null;
+        }
+        const data = await res.json();
+        if (data.items && data.items.length > 0) {
+            const item = data.items[0];
+            return {
+                videoId: item.id.videoId,
+                title: item.snippet.title,
+                channel: item.snippet.channelTitle,
+                thumbnail: item.snippet.thumbnails?.medium?.url || null
+            };
+        }
+    } catch (err) {
+        console.error('[YouTube] Search failed:', err.message);
+    }
+    return null;
 }
 
 // Helper function to generate AI response for goals briefing
@@ -1664,94 +1691,117 @@ app.post('/api/goals/briefing', authenticateToken, async (req, res) => {
         const { id, title, description, progress, completions, date } = req.body;
         if (!title || !description) return res.status(400).json({ error: 'Title and description required' });
 
+        // ── Date handling (no timezone shift)
         const targetDate = date || new Date().toISOString().split('T')[0];
         const todayDate = new Date().toISOString().split('T')[0];
-        
-        // Fix date parsing - add T12:00:00 to avoid timezone shift
-        const dayLabel = new Date(targetDate + 'T12:00:00').toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', weekday: 'long' });
-        
-        // Block future dates - plan only opens after 23:59 of current day
+        const [y, m, d2] = targetDate.split('-').map(Number);
+        const dayLabel = new Date(y, m - 1, d2).toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' });
+
+        // ── Block future dates
         if (targetDate > todayDate) {
-            return res.status(403).json({ error: 'Gelecek gunler icin plan olusturulamaz. Saat 23:59 oldugunda acilacak.' });
+            return res.status(403).json({ error: 'Gelecek tarihler için plan henüz oluşturulamaz.' });
         }
 
-        // Check if briefing already exists for this date
+        // ── Load goal data
         const allGoals = await getKVData('goals') || {};
         const userGoals = allGoals[userId] || [];
         const goalIdx = userGoals.findIndex(g => String(g.id) === String(id));
-        
+
+        // ── Return cached briefing if exists
         if (goalIdx !== -1 && userGoals[goalIdx].briefings && userGoals[goalIdx].briefings[targetDate]) {
-            return res.json({ briefing: userGoals[goalIdx].briefings[targetDate] });
+            const cached = userGoals[goalIdx].briefings[targetDate];
+            // If cached is an object (new format) return it directly
+            if (typeof cached === 'object' && cached.content) {
+                return res.json({ briefing: cached.content, video: cached.video || null });
+            }
+            // Legacy string format
+            return res.json({ briefing: cached, video: null });
         }
+
+        // ── Build past topics context
+        const existingBriefings = (goalIdx !== -1 && userGoals[goalIdx].briefings) ? userGoals[goalIdx].briefings : {};
+        const sortedPastDates = Object.keys(existingBriefings).sort();
+        const pastTopicLines = sortedPastDates.map((pd, i) => {
+            const b = existingBriefings[pd];
+            const text = typeof b === 'object' ? (b.content || '').substring(0, 180) : b.substring(0, 180);
+            return `[Gün ${i + 1} - ${pd}]: ${text.replace(/\n/g, ' ')}`;
+        }).join('\n');
+
+        const pastSection = sortedPastDates.length > 0
+            ? `=== DAHA ÖNCE İŞLENEN KONULAR (BUNLARI TEKRAR ETME) ===\n${pastTopicLines}\n=== SONRAKİ KONUYA GEÇ ===`
+            : '=== BU HEDEF İÇİN İLK GÜN — Temelden başla ===';
 
         const completionCount = Array.isArray(completions) ? completions.length : 0;
         const currentProgress = progress || 0;
 
-        // Build past topics context to prevent repetition
-        const existingBriefings = (goalIdx !== -1 && userGoals[goalIdx].briefings) ? userGoals[goalIdx].briefings : {};
-        const sortedPastDates = Object.keys(existingBriefings).sort();
-        const pastTopicsSummary = sortedPastDates.map((d, i) => {
-            const shortContent = existingBriefings[d].substring(0, 200).replace(/\n/g, ' ');
-            return `[Gun ${i+1} - ${d}]: ${shortContent}`;
-        }).join('\n');
-
-        const pastSection = sortedPastDates.length > 0
-            ? `=== DAHA ONCE ISLENEN KONULAR (TEKRAR ETME) ===\n${pastTopicsSummary}\n=== SIRADAKI KONUYA GEC ===`
-            : '=== BU HEDEF ICIN ILK GUN ===';
-
+        // ── AI Prompt — detailed content + search query only (no YOUTUBE_ID)
         const prompt = `Hedef: ${title}
-Aciklama: ${description}
-Kullanici Ilerlemesi: %${currentProgress}
-Tamamlanan Gun Sayisi: ${completionCount}
-Istenen Tarih: ${dayLabel} (${targetDate})
+Açıklama: ${description}
+İlerleme: %${currentProgress} | Tamamlanan Gün: ${completionCount}
+Tarih: ${dayLabel}
 
 ${pastSection}
 
-Gorev: ISTENEN TARIHE OZEL (${dayLabel}) ve daha once islenmemis SIRADAKI konuyu anlat.
-Gecmiste islenen konulari KESINLIKLE tekrar etme. Mantikli bir ilerlemeyle bir adim ileri git.
+GÖREV: Yukarıdaki hedefe uygun, ${dayLabel} tarihine özel ve geçmişte işlenmemiş SIRADAKİ KONUYU anlat.
 
-KONUYA OZEL KURALLAR:
-1. Konu MATEMATIK ise: Formuller, hesaplamalar ve cozum adimlarini detaylica goster.
-2. Konu YAZILIM/PROGRAMLAMA ise: Calisir kod ver, altina mutlaka "Beklenen Cikti:" ile terminal ciktisini goster.
-3. Konu FIZIK veya diger fen bilimleri ise: Kanun ve deneysel ornekleri one cikar.
-4. Diger konular: O konuya en uygun pedagojik yontemi kullan.
+KONU KURALLARI:
+- YAZILIM/PROGRAMLAMA: Açıklama yap, çalışan kod ver, "**Beklenen Çıktı:**" bloğuyla terminal çıktısını göster.
+- MATEMATİK: Formüller, adım adım hesaplama göster.
+- DİĞER: O konuya en uygun yöntemi kullan (diyalog, tablo, liste vb.)
 
-YANITFORMATI (Markdown):
-### 1. Gunluk Odak
-(Bugün ne ogrenileceginin ozeti - YENI KONU, oncekinden FARKLI)
-### 2. Ogrenilecek Basliklar
-[ ] Baslik 1
-[ ] Baslik 2
-### 3. Konu Ozeti ve Detayli Anlatim
-(Matematiksel hesaplamalar, kod veya konu anlatim)
-### 4. Pratik Uygulama / Ornek
-(Yazilimda: kod blogu + Beklenen Cikti: ...)
+ZORUNLU YAPI (bu başlıkları kullan):
+### 🎯 Günlük Odak
+(Bu günün konusu — 1-2 cümle özet)
+
+### 📚 Öğrenilecek Başlıklar
+[ ] Başlık 1
+[ ] Başlık 2
+[ ] Başlık 3
+
+### 📖 Detaylı Anlatım
+(Konuyu kapsamlı ve anlaşılır şekilde açıkla. Teknik detayları, formülleri veya örnekleri buraya yaz.)
+
+### 💻 Pratik Uygulama
+(Kod, hesaplama veya alıştırma örneği)
 
 ---
-MUTLAKA EN SONA EKLE:
-SEARCH_QUERY: [Bu gunun konusunu ogretmek icin YouTube Turkce arama terimi]
-YOUTUBE_ID: [Bu konuyla ilgili gercek bir YouTube video ID'si - 11 karakter alfanumerik]
+SEARCH_QUERY: [Bu konuyu öğrenmek için YouTube'da aranacak Türkçe arama terimi]
 ---
 
-Yanit dili Turkce olmali.`;
+Yanıt dili Türkçe olmalı. SEARCH_QUERY satırını en sona yaz, başka hiçbir şey ekleme.`;
 
-        const result = await generateAIResponse(prompt, [
-            { role: 'system', content: 'Sen dunyanin en iyi teknik yasam kocusun. Her gun farkli ve siradaki konuyu anlatan, uygulamali ve YouTube video onerili gunluk rehberlik saglarsin. Ayni konuyu asla tekrar etmezsin.' }
+        const aiText = await generateAIResponse(prompt, [
+            { role: 'system', content: 'Sen Türkçe içerik üreten uzman bir eğitim koçusun. Her gün farklı, ilerleyici konular anlat. Aynı konuyu kesinlikle tekrar etme.' }
         ]);
 
-        const briefing = result.trim();
+        // ── Extract search query from AI response
+        let searchQuery = `${title} dersi türkçe`;
+        const sqMatch = aiText.match(/SEARCH_QUERY:\s*(.+)/i);
+        if (sqMatch && sqMatch[1]) searchQuery = sqMatch[1].trim();
 
-        // Save briefing to history if goal exists
+        // Clean AI text (remove SEARCH_QUERY line and trailing ---)
+        const cleanContent = aiText
+            .replace(/SEARCH_QUERY:\s*.+/gi, '')
+            .replace(/---+\s*$/g, '')
+            .trim();
+
+        // ── YouTube Data API — find real video
+        const video = await searchYouTubeVideo(searchQuery);
+        console.log(`[YouTube] Query: "${searchQuery}" → ${video ? video.videoId : 'no result'}`);
+
+        // ── Cache result
+        const cacheEntry = { content: cleanContent, video: video, searchQuery, createdAt: new Date().toISOString() };
         if (goalIdx !== -1) {
             if (!userGoals[goalIdx].briefings) userGoals[goalIdx].briefings = {};
-            userGoals[goalIdx].briefings[targetDate] = briefing;
+            userGoals[goalIdx].briefings[targetDate] = cacheEntry;
             await setKVData('goals', allGoals);
         }
 
-        res.json({ briefing });
+        res.json({ briefing: cleanContent, video });
+
     } catch (error) {
         console.error('Briefing error:', error);
-        res.status(500).json({ error: 'Briefing generation failed' });
+        res.status(500).json({ error: 'Briefing generation failed: ' + error.message });
     }
 });
 

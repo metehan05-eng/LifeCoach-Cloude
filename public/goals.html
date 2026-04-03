@@ -470,7 +470,8 @@
                 throw new Error(data.error || `Sunucu hatası: ${res.status}`);
             }
 
-            renderBriefing(data.briefing, date);
+            // New format: { briefing: string, video: { videoId, title, channel, thumbnail } | null }
+            renderBriefing(data.briefing, date, data.video || null);
 
         } catch (err) {
             console.error(err);
@@ -485,39 +486,33 @@
     // ─────────────────────────────────────────────
     // RENDER BRIEFING
     // ─────────────────────────────────────────────
-    function renderBriefing(markdown, date) {
+    function renderBriefing(markdown, date, video) {
         // ── 1. Set date label
         document.getElementById('briefingDate').textContent = localDateLabel(date);
 
-        // ── 2. Extract metadata from end of markdown
-        let searchQuery = currentGoal.title + ' dersi';
-        let youtubeId = null;
-
+        // ── 2. Extract search query (still used for fallback search button)
+        let searchQuery = currentGoal.title + ' dersi türkçe';
         const sqMatch = markdown.match(/SEARCH_QUERY:\s*(.+)/i);
         if (sqMatch) searchQuery = sqMatch[1].trim();
 
-        const ytMatch = markdown.match(/YOUTUBE_ID:\s*([A-Za-z0-9_-]{11})/i);
-        if (ytMatch) youtubeId = ytMatch[1].trim();
-
-        // ── 3. Clean markdown (remove metadata lines)
+        // ── 3. Clean markdown
         let clean = markdown
             .replace(/SEARCH_QUERY:\s*.+/gi, '')
             .replace(/YOUTUBE_ID:\s*.+/gi, '')
-            .replace(/---+/g, '')
+            .replace(/---+\s*$/g, '')
             .trim();
 
-        // ── 4. Extract [ ] checklist items before rendering
+        // ── 4. Extract [ ] checklist items
         const checklistItems = [];
         clean = clean.replace(/^\s*\[\s*\]\s+(.+)$/gm, (match, text) => {
             checklistItems.push(text.trim());
-            return ''; // remove from main markdown
+            return '';
         });
 
-        // ── 5. Render main markdown → HTML
-        const html = marked.parse(clean);
-        document.getElementById('briefingContent').innerHTML = html;
+        // ── 5. Render main markdown
+        document.getElementById('briefingContent').innerHTML = marked.parse(clean);
 
-        // ── 6. Render checklist separately
+        // ── 6. Render checklist
         if (checklistItems.length > 0) {
             const tasksList = document.getElementById('tasksList');
             tasksList.innerHTML = '';
@@ -525,28 +520,21 @@
                 const taskId = getSafeId(text);
                 const storageKey = `task-${goalId}-${date}-${taskId}`;
                 const isDone = localStorage.getItem(storageKey) === 'true';
-
                 const item = document.createElement('div');
                 item.className = `task-item${isDone ? ' done' : ''}`;
-                item.dataset.taskId = taskId;
-                item.dataset.storageKey = storageKey;
                 item.onclick = () => toggleTask(item, storageKey);
                 item.innerHTML = `
-                    <div class="task-check">
-                        ${isDone ? '<i class="fa-solid fa-check text-[10px] text-[#030712]"></i>' : ''}
-                    </div>
-                    <span class="task-text">${text}</span>
-                `;
+                    <div class="task-check">${isDone ? '<i class="fa-solid fa-check text-[10px] text-[#030712]"></i>' : ''}</div>
+                    <span class="task-text">${text}</span>`;
                 tasksList.appendChild(item);
             });
-
             document.getElementById('tasksSection').classList.remove('hidden');
             updateProgressFromTasks(date);
         } else {
             document.getElementById('tasksSection').classList.add('hidden');
         }
 
-        // ── 7. YouTube player
+        // ── 7. YouTube section — use real video from API
         const ytWrap = document.getElementById('ytPlayerWrap');
         const queryDisplay = document.getElementById('videoQueryDisplay');
         const searchBtn = document.getElementById('searchYoutubeBtn');
@@ -555,24 +543,30 @@
             window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(searchQuery)}`, '_blank');
         };
 
-        if (youtubeId) {
-            queryDisplay.innerHTML = `<i class="fa-brands fa-youtube text-red-500 mr-1"></i> <strong class="text-white">${searchQuery}</strong>`;
+        if (video && video.videoId) {
+            // Show video title & channel
+            queryDisplay.innerHTML = `
+                <i class="fa-brands fa-youtube text-red-500 mr-1"></i>
+                <strong class="text-white">${video.title || searchQuery}</strong>
+                ${video.channel ? `<span class="text-slate-500 text-xs ml-2">• ${video.channel}</span>` : ''}`;
+            // Embed player
             ytWrap.innerHTML = `
                 <div id="yt-player-wrap">
                     <iframe
-                        src="https://www.youtube.com/embed/${youtubeId}?rel=0&modestbranding=1&autohide=1"
+                        src="https://www.youtube.com/embed/${video.videoId}?rel=0&modestbranding=1"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                         allowfullscreen>
                     </iframe>
                 </div>`;
             searchBtn.style.display = 'none';
         } else {
-            queryDisplay.textContent = searchQuery;
+            // No video found — show search button
+            queryDisplay.innerHTML = `<i class="fa-solid fa-search mr-1 text-slate-500"></i> <span class="text-slate-400">${searchQuery}</span>`;
             ytWrap.innerHTML = '';
             searchBtn.style.display = '';
         }
 
-        // ── 8. Finish Day button
+        // ── 8. Finish day button
         setupFinishBtn(date);
     }
 
