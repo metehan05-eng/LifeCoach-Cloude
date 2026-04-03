@@ -1665,12 +1665,19 @@ app.post('/api/goals/briefing', authenticateToken, async (req, res) => {
         if (!title || !description) return res.status(400).json({ error: 'Title and description required' });
 
         const targetDate = date || new Date().toISOString().split('T')[0];
-        const dayLabel = new Date(targetDate).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', weekday: 'long' });
+        const todayDate = new Date().toISOString().split('T')[0];
         
+        // Fix date parsing - add T12:00:00 to avoid timezone shift
+        const dayLabel = new Date(targetDate + 'T12:00:00').toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', weekday: 'long' });
+        
+        // Block future dates - plan only opens after 23:59 of current day
+        if (targetDate > todayDate) {
+            return res.status(403).json({ error: 'Gelecek gunler icin plan olusturulamaz. Saat 23:59 oldugunda acilacak.' });
+        }
+
         // Check if briefing already exists for this date
         const allGoals = await getKVData('goals') || {};
         const userGoals = allGoals[userId] || [];
-        // Ensure same type for comparison (id might be numeric in DB but string from req)
         const goalIdx = userGoals.findIndex(g => String(g.id) === String(id));
         
         if (goalIdx !== -1 && userGoals[goalIdx].briefings && userGoals[goalIdx].briefings[targetDate]) {
@@ -1680,42 +1687,56 @@ app.post('/api/goals/briefing', authenticateToken, async (req, res) => {
         const completionCount = Array.isArray(completions) ? completions.length : 0;
         const currentProgress = progress || 0;
 
+        // Build past topics context to prevent repetition
+        const existingBriefings = (goalIdx !== -1 && userGoals[goalIdx].briefings) ? userGoals[goalIdx].briefings : {};
+        const sortedPastDates = Object.keys(existingBriefings).sort();
+        const pastTopicsSummary = sortedPastDates.map((d, i) => {
+            const shortContent = existingBriefings[d].substring(0, 200).replace(/\n/g, ' ');
+            return `[Gun ${i+1} - ${d}]: ${shortContent}`;
+        }).join('\n');
+
+        const pastSection = sortedPastDates.length > 0
+            ? `=== DAHA ONCE ISLENEN KONULAR (TEKRAR ETME) ===\n${pastTopicsSummary}\n=== SIRADAKI KONUYA GEC ===`
+            : '=== BU HEDEF ICIN ILK GUN ===';
+
         const prompt = `Hedef: ${title}
-Açıklama: ${description}
-Kullanıcı İlerlemesi: %${currentProgress}
-Tamamlanan Gün Sayısı: ${completionCount}
-İstenen Tarih: ${dayLabel}
+Aciklama: ${description}
+Kullanici Ilerlemesi: %${currentProgress}
+Tamamlanan Gun Sayisi: ${completionCount}
+Istenen Tarih: ${dayLabel} (${targetDate})
 
-Görev: Bu hedefe ulaşmak için bugünkü (veya belirtilen tarihteki) "Yol Haritası"nı hazırlayın. 
+${pastSection}
 
-KONUYA ÖZEL KURALLAR:
-1. Eğer konu MATEMATİK ise: Formülleri, hesaplamaları ve çözüm adımlarını detaylıca gösterin.
-2. Eğer konu YAZILIM/PROGRAMLAMA ise: Kod örnekleri verin ve bu kodun terminaldeki çıktısını (Expected Output) mutlaka gösterin.
-3. Eğer konu FİZİK veya diğer fen bilimleri ise: Kanunları ve deneysel/pratik örnekleri öne çıkarın.
-4. Diğer konular için: O konuya en uygun pedagojik yöntemi (örneğin yabancı dilde diyalog/kelime çalışması) kullanın.
+Gorev: ISTENEN TARIHE OZEL (${dayLabel}) ve daha once islenmemis SIRADAKI konuyu anlat.
+Gecmiste islenen konulari KESINLIKLE tekrar etme. Mantikli bir ilerlemeyle bir adim ileri git.
 
-YANIT FORMATI (Markdown):
-### 1. Günlük Odak
-...
-### 2. Öğrenilecek Başlıklar
-[ ] Konu Başlığı 1
-[ ] Konu Başlığı 2
-...
-### 3. Konu Özeti & Detaylı Anlatım
-(Konuya göre matematiksel hesaplamalar veya teknik açıklamalar burada yer almalı)
-### 4. Pratik Uygulama / Örnek
-(Yazılım için kod ve [TERMINAL ÇIKTISI] burada yer almalı)
+KONUYA OZEL KURALLAR:
+1. Konu MATEMATIK ise: Formuller, hesaplamalar ve cozum adimlarini detaylica goster.
+2. Konu YAZILIM/PROGRAMLAMA ise: Calisir kod ver, altina mutlaka "Beklenen Cikti:" ile terminal ciktisini goster.
+3. Konu FIZIK veya diger fen bilimleri ise: Kanun ve deneysel ornekleri one cikar.
+4. Diger konular: O konuya en uygun pedagojik yontemi kullan.
+
+YANITFORMATI (Markdown):
+### 1. Gunluk Odak
+(Bugün ne ogrenileceginin ozeti - YENI KONU, oncekinden FARKLI)
+### 2. Ogrenilecek Basliklar
+[ ] Baslik 1
+[ ] Baslik 2
+### 3. Konu Ozeti ve Detayli Anlatim
+(Matematiksel hesaplamalar, kod veya konu anlatim)
+### 4. Pratik Uygulama / Ornek
+(Yazilimda: kod blogu + Beklenen Cikti: ...)
 
 ---
-MUTLAKA YANITIN EN SONUNA ŞUNU EKLE:
-SEARCH_QUERY: [YouTube arama terimi]
-YOUTUBE_ID: [Eğer bu konuyla ilgili çok spesifik ve kaliteli bir video ID'si biliyorsan (isteğe bağlı, boş bırakabilirsin)]
+MUTLAKA EN SONA EKLE:
+SEARCH_QUERY: [Bu gunun konusunu ogretmek icin YouTube Turkce arama terimi]
+YOUTUBE_ID: [Bu konuyla ilgili gercek bir YouTube video ID'si - 11 karakter alfanumerik]
 ---
 
-Yanıt dili Türkçe olmalı.`;
+Yanit dili Turkce olmali.`;
 
         const result = await generateAIResponse(prompt, [
-            { role: 'system', content: 'Sen dünyanın en iyi teknik yaşam koçusun. Kullanıcıya hedefleri doğrultusunda adım adım, uygulamalı ve YouTube video önerili günlük rehberlik sağlarsın.' }
+            { role: 'system', content: 'Sen dunyanin en iyi teknik yasam kocusun. Her gun farkli ve siradaki konuyu anlatan, uygulamali ve YouTube video onerili gunluk rehberlik saglarsin. Ayni konuyu asla tekrar etmezsin.' }
         ]);
 
         const briefing = result.trim();
