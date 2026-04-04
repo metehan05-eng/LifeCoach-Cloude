@@ -200,9 +200,25 @@
         const name = state.userMemory.name || '';
         const greeting = name ? name + ', ' : '';
         let response = '';
-        if (state.currentPersona === 'empathetic') response = greeting + 'Anliyorum, size bu konuda yardimci olabilirim. Ne hissettigini anlamaya calisiyorum.';
-        else if (state.currentPersona === 'disciplined') response = greeting + 'Hadi yap! Bahane yok. Hedefe odaklan, aksiyona gec.';
-        else response = greeting + 'Ilgin bir soru! Neden boyle dusunuyorsun? Birlikte derinlemesine inceleyelim.';
+        
+        const lowerText = (userText || '').toLowerCase();
+        if (lowerText.includes('hangi oyun') || lowerText.includes('oyun öner') || lowerText.includes('oyun tavsiye')) {
+            response = 'Rekabet mi istiyorsun, rahatlamak mı, hikaye mi yoksa aksiyon mu?';
+        } else if (lowerText.includes('rekabet')) {
+            response = 'Eğer rekabet seviyorsan Valorant';
+        } else if (lowerText.includes('rahatla')) {
+            response = 'Rahatlamak istiyorsan MineCraft';
+        } else if (lowerText.includes('hikaye')) {
+            response = 'Hikaye seviyorsan Elden Ring';
+        } else if (lowerText.includes('aksiyon')) {
+            response = 'Aksiyon seviyorsan Call Of Duty';
+        } else if (lowerText.includes('yarış')) {
+            response = 'Eğer Yarış oyunu seviyorsan Need for speed ve Cars 2 The Video Game';
+        } else {
+            if (state.currentPersona === 'empathetic') response = greeting + 'Anliyorum, size bu konuda yardimci olabilirim. Ne hissettigini anlamaya calisiyorum.';
+            else if (state.currentPersona === 'disciplined') response = greeting + 'Hadi yap! Bahane yok. Hedefe odaklan, aksiyona gec.';
+            else response = greeting + 'Ilgin bir soru! Neden boyle dusunuyorsun? Birlikte derinlemesine inceleyelim.';
+        }
         addMessage(response, 'assistant');
     }
 

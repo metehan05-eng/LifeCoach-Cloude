@@ -491,6 +491,17 @@ Never provide:
 
 Redirect unsafe requests into safe alternatives.
 
+GAME RECOMMENDATION RULES (OYUN ÖNERİSİ KURALLARI):
+Eğer kullanıcı "hangi oyunları önerirsin" gibi oyun tavsiyesi isterse, KESİNLİKLE HEMEN OYUN ÖNERME. 
+ÖNCE SADECE şu soruyu sor: "Rekabet mi istiyorsun, rahatlamak mı, hikaye mi yoksa aksiyon mu?"
+
+Kullanıcı bu soruya cevap verdiğinde, seçimine göre SADECE şu oyunları öner:
+- Eğer "Rekabet" seviyorsa: Valorant
+- Eğer "Rahatlamak" istiyorsa: MineCraft
+- Eğer "Hikaye" seviyorsa: Elden Ring
+- Eğer "Aksiyon" seviyorsa: Call Of Duty
+- Eğer "Yarış" oyunu seviyorsa: Need for speed ve Cars 2 The Video Game
+
 MISSION
 
 You exist to help users:
@@ -3005,6 +3016,62 @@ app.post('/api/deep-search', optionalAuth, async (req, res) => {
     } catch (error) {
         console.error('Deep search error:', error);
         res.status(500).json({ error: 'Arama sırasında hata oluştu' });
+    }
+});
+
+// === AVATAR GENERATOR ===
+app.post('/api/avatar/generate', authenticateToken, async (req, res) => {
+    try {
+        const { imageBase64 } = req.body;
+        if (!imageBase64) {
+            return res.status(400).json({ error: 'Resim verisi eksik.' });
+        }
+        
+        const pyPath = path.join(process.cwd(), 'venv/bin/python3');
+        const scriptPath = path.join(process.cwd(), 'api/avatar.py');
+        
+        const pythonProcess = spawn(pyPath, [scriptPath], {
+            env: { ...process.env } // Pass environment variables including GEMINI_API_KEY
+        });
+        
+        let outputData = '';
+        let errorData = '';
+        
+        pythonProcess.stdout.on('data', (data) => {
+            outputData += data.toString();
+        });
+        
+        pythonProcess.stderr.on('data', (data) => {
+            errorData += data.toString();
+        });
+        
+        pythonProcess.on('close', (code) => {
+            if (code !== 0) {
+                console.error("Python Error (Avatar):", errorData);
+                return res.status(500).json({ error: 'Python script error', details: errorData });
+            }
+            
+            try {
+                // Find JSON output (python script prints json dumped obj)
+                const result = JSON.parse(outputData.trim());
+                if (result.error) {
+                    return res.status(500).json({ error: result.error });
+                }
+                
+                res.json(result);
+            } catch (err) {
+                console.error("Parse error:", err, "Raw Output:", outputData);
+                res.status(500).json({ error: 'Output parse error' });
+            }
+        });
+        
+        // Write the payload to python script stdin
+        pythonProcess.stdin.write(JSON.stringify({ imageBase64 }));
+        pythonProcess.stdin.end();
+
+    } catch (error) {
+        console.error('Avatar Generation Error:', error);
+        res.status(500).json({ error: 'Avatar oluşturulurken bir hata meydana geldi.' });
     }
 });
 

@@ -3012,6 +3012,19 @@
                         class="ml-auto text-[9px] px-1.5 py-0.5 rounded-md bg-purple-500/20 text-purple-400 font-bold border border-purple-500/30 shadow-[0_0_8px_rgba(168,85,247,0.2)]">YENİ</span>
                 </button>
 
+                <!-- Avatar Oluşturucu -->
+                <button onclick="showSection('avatar'); closeSidebarMobile();"
+                    class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all group"
+                    data-section="avatar">
+                    <div
+                        class="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-pink-500/10 to-pink-400/5 border border-pink-500/20 group-hover:from-pink-500/20 group-hover:to-pink-400/10 group-hover:border-pink-500/30 transition-all shadow-md shadow-pink-500/10 group-hover:shadow-lg group-hover:shadow-pink-500/20">
+                        <i
+                            class="fa-solid fa-user-astronaut text-pink-400 text-[13px] group-hover:scale-110 transition-transform duration-300"></i>
+                    </div>
+                    <span class="text-sm font-medium group-hover:font-semibold transition-colors">AI Avatar</span>
+                    <span class="ml-auto text-[10px] text-pink-400 font-bold"><i class="fa-solid fa-bolt"></i> Sims Modeli</span>
+                </button>
+
                 <!-- Duygu Durumu -->
                 <button onclick="showSection('mood'); closeSidebarMobile();"
                     class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all group"
@@ -4361,6 +4374,223 @@
                         Motivasyonun yüksek, bu momentum'u devam ettir! 🚀</p>
                 </div>
             </div>
+        </div>
+
+        <!-- Avatar Generator Section -->
+        <div id="section-avatar" class="section-content hidden flex-col w-full h-full p-4 md:p-8 overflow-y-auto">
+            <div class="max-w-4xl w-full mx-auto space-y-6">
+                <!-- Header -->
+                <div class="text-center mb-10">
+                    <h2 class="text-3xl font-display font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-rose-300">AI Avatar <span class="text-pink-500 text-sm align-top">BETA</span></h2>
+                    <p class="text-slate-400 mt-2">Selfieni yükle, yapay zeka senin için The Sims tarzı kişiselleştirilmiş bir avatar ve karakter analizi oluştursun.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Upload Box -->
+                    <div class="bg-surface-dark border border-white/10 rounded-2xl p-6 flex flex-col items-center justify-center text-center group cursor-pointer hover:border-pink-500/30 transition-all relative overflow-hidden h-[400px]"
+                         onclick="document.getElementById('avatar-upload').click()" id="avatar-upload-area">
+                        <div class="absolute inset-0 bg-gradient-to-b from-pink-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        <input type="file" id="avatar-upload" class="hidden" accept="image/*" onchange="handleAvatarUpload(event)">
+                        
+                        <div id="avatar-upload-placeholder" class="space-y-4">
+                            <div class="w-20 h-20 bg-pink-500/10 rounded-full flex items-center justify-center mx-auto text-pink-400 group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-cloud-arrow-up text-3xl"></i>
+                            </div>
+                            <h3 class="text-xl font-semibold text-white">Selfie Yükle</h3>
+                            <p class="text-sm text-slate-400">Net bir yüz fotoğrafı seçin</p>
+                        </div>
+                        
+                        <img id="avatar-preview-img" class="hidden absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50" />
+                        
+                        <div id="avatar-loading" class="hidden absolute inset-0 bg-surface-dark/90 backdrop-blur-sm flex-col items-center justify-center z-10">
+                            <i class="fa-solid fa-spinner fa-spin text-4xl text-pink-500 mb-4"></i>
+                            <p class="text-pink-300 font-medium animate-pulse text-center px-4" id="avatar-loading-text">Yüz analizi yapılıyor...</p>
+                        </div>
+                    </div>
+
+                    <!-- Output Area -->
+                    <div class="bg-surface-dark border border-white/10 rounded-2xl p-6 h-[400px] flex flex-col items-center justify-center relative shadow-lg shadow-pink-900/5" id="avatar-result-area">
+                        <!-- Before generation text -->
+                        <div id="avatar-result-empty" class="text-center text-slate-500">
+             <i class="fa-regular fa-image text-5xl mb-4 opacity-30"></i>
+                            <p>Avatarınız burada görünecek</p>
+                        </div>
+                        
+                        <!-- Result Content -->
+                        <div id="avatar-result-content" class="hidden w-full h-full flex flex-col">
+                            <div class="flex-1 flex justify-center items-center mb-4">
+                                <img id="generated-avatar-img" class="w-40 h-40 rounded-full border-4 border-pink-500/30 shadow-[0_0_30px_rgba(236,72,153,0.3)] bg-slate-900" src="" alt="Avatar">
+                            </div>
+                            <div class="bg-slate-900/50 rounded-xl p-4 border border-white/5 flex-shrink-0">
+                                <div class="flex justify-between items-center mb-2">
+                                    <h4 class="text-pink-400 font-bold" id="avatar-personality-title">Kişilik Tipi</h4>
+                                    <span class="text-xs bg-indigo-500/20 text-indigo-300 px-2 py-1 rounded-md">Vibe: <span id="avatar-vibe"></span></span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2 text-sm">
+                                    <div>
+                                        <p class="text-emerald-400 mb-1"><i class="fa-solid fa-bolt mr-1"></i>Güçlü Yönler</p>
+                                        <ul id="avatar-strengths" class="text-slate-300 pl-4 list-disc text-xs space-y-1"></ul>
+                                    </div>
+                                    <div>
+                                        <p class="text-rose-400 mb-1"><i class="fa-solid fa-shield-halved mr-1"></i>Zayıf Yönler</p>
+                                        <ul id="avatar-weaknesses" class="text-slate-300 pl-4 list-disc text-xs space-y-1"></ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex gap-3 mt-4 flex-shrink-0">
+                                <button onclick="saveAvatarProfile()" class="flex-1 bg-gradient-to-r from-pink-600 to-rose-500 hover:from-pink-500 hover:to-rose-400 text-white py-2 rounded-xl font-medium transition-all shadow-lg shadow-pink-500/25 active:scale-95 text-sm">
+                                    <i class="fa-solid fa-check mr-2"></i>Profili Güncelle
+                                </button>
+                                <button onclick="document.getElementById('avatar-upload').click()" class="px-4 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-xl transition-all active:scale-95 group" title="Tekrar Yükle">
+                                    <i class="fa-solid fa-rotate-right group-hover:-rotate-90 transition-transform"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <script>
+                async function handleAvatarUpload(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+                    
+                    const reader = new FileReader();
+                    reader.onload = async function(e) {
+                        const base64Image = e.target.result;
+                        
+                        // UI Updates
+                        document.getElementById('avatar-upload-placeholder').classList.add('hidden');
+                        const previewImg = document.getElementById('avatar-preview-img');
+                        previewImg.src = base64Image;
+                        previewImg.classList.remove('hidden');
+                        
+                        document.getElementById('avatar-loading').classList.remove('hidden');
+                        document.getElementById('avatar-loading').classList.add('flex');
+                        document.getElementById('avatar-result-empty').classList.add('hidden');
+                        document.getElementById('avatar-result-content').classList.add('hidden');
+                        
+                        const loadingText = document.getElementById('avatar-loading-text');
+                        loadingText.innerText = "Yüz anahatları çıkarılıyor...";
+                        
+                        try {
+                            setTimeout(() => loadingText.innerText = "Sims evrenine bağlanıyor...", 2500);
+                            setTimeout(() => loadingText.innerText = "Kişilik analizi yapılıyor...", 5000);
+                            
+                            const token = localStorage.getItem('token');
+                            const res = await fetch('/api/avatar/generate', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    ...(token ? {'Authorization': 'Bearer ' + token} : {})
+                                },
+                                body: JSON.stringify({ imageBase64: base64Image })
+                            });
+                            
+                            const result = await res.json();
+                            
+                            document.getElementById('avatar-loading').classList.add('hidden');
+                            document.getElementById('avatar-loading').classList.remove('flex');
+                            
+                            if (result.success && result.analysis) {
+                                document.getElementById('avatar-result-content').classList.remove('hidden');
+                                document.getElementById('generated-avatar-img').src = result.avatarUrl;
+                                
+                                document.getElementById('avatar-personality-title').innerText = result.analysis.personality_type || 'Bilinmiyor';
+                                document.getElementById('avatar-vibe').innerText = result.analysis.vibe || 'Standart';
+                                
+                                const strengthsList = document.getElementById('avatar-strengths');
+                                strengthsList.innerHTML = '';
+                                (result.analysis.strengths || []).forEach(s => {
+                                    const li = document.createElement('li');
+                                    li.innerText = s;
+                                    strengthsList.appendChild(li);
+                                });
+                                
+                                const weaknessesList = document.getElementById('avatar-weaknesses');
+                                weaknessesList.innerHTML = '';
+                                (result.analysis.weaknesses || []).forEach(w => {
+                                    const li = document.createElement('li');
+                                    li.innerText = w;
+                                    weaknessesList.appendChild(li);
+                                });
+                                
+                                // Store temporarily
+                                window.tempAvatarData = {
+                                    avatarUrl: result.avatarUrl,
+                                    personality: result.analysis.personality_type
+                                };
+                            } else {
+                                throw new Error(result.error || "Bilinmeyen sunucu hatası");
+                            }
+                        } catch (error) {
+                            console.error(error);
+                            alert("Avatar oluşturulurken bir hata oluştu: " + error.message);
+                            document.getElementById('avatar-loading').classList.add('hidden');
+                            document.getElementById('avatar-loading').classList.remove('flex');
+                            document.getElementById('avatar-result-empty').classList.remove('hidden');
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                }
+                
+                async function saveAvatarProfile() {
+                    if (!window.tempAvatarData) return;
+                    try {
+                        const token = localStorage.getItem('token');
+                        if (!token) {
+                            alert('Lütfen profilinize eklemek için giriş yapın.');
+                            return;
+                        }
+                        
+                        const res = await fetch('/api/update-profile', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': 'Bearer ' + token
+                            },
+                            body: JSON.stringify({
+                                avatarUrl: window.tempAvatarData.avatarUrl,
+                                // Memory was a previously tracked field
+                                memory: "Kullanıcı Kişiliği: " + window.tempAvatarData.personality
+                            })
+                        });
+                        
+                        const result = await res.json();
+                        if (result.success) {
+                            // Update global profile picture if in UI
+                            const currentProfilePic = document.getElementById('user-avatar');
+                            if (currentProfilePic) currentProfilePic.src = window.tempAvatarData.avatarUrl;
+                            
+                            const userStr = localStorage.getItem('user');
+                            if (userStr) {
+                                let userObj = JSON.parse(userStr);
+                                userObj.avatarUrl = window.tempAvatarData.avatarUrl;
+                                localStorage.setItem('user', JSON.stringify(userObj));
+                                if(typeof updateProfileUI === 'function') updateProfileUI();
+                            }
+                            
+                            if (window.Swal) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Profil Güncellendi!',
+                                    text: 'Yeni avatarınız ve kişilik skorlarınız profilinize yansıtıldı.',
+                                    background: '#0F172A',
+                                    color: '#fff',
+                                    confirmButtonColor: '#0F766E'
+                                });
+                            } else {
+                                alert("Avatar ve profil başarıyla güncellendi!");
+                            }
+                        } else {
+                            alert(result.error || "Profil güncellenemedi.");
+                        }
+                    } catch (error) {
+                        console.error(error);
+                        alert("Bir hata meydana geldi.");
+                    }
+                }
+            </script>
         </div>
 
         <!-- Chat Section (Claude Style) -->
