@@ -15,7 +15,7 @@ async function searchYouTubeVideo(query) {
     if (!YOUTUBE_API_KEY) return null;
     try {
         const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=1&q=${encodeURIComponent(query)}&relevanceLanguage=tr&key=${YOUTUBE_API_KEY}`;
-        const res = await fetch(url);
+        const res = await fetch(url, { headers: { 'Referer': 'https://han-ai.dev/' } });
         if (!res.ok) return null;
         const data = await res.json();
         if (data.items && data.items.length > 0) {
