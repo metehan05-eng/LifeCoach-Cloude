@@ -20,6 +20,7 @@ def main():
             
         payload = json.loads(input_data)
         base64_image = payload.get("imageBase64")
+        user_prompt = payload.get("prompt", "")
         
         if not base64_image:
             print(json.dumps({"error": "Resim verisi eksik."}))
@@ -53,8 +54,11 @@ def main():
 - Style (casual, modern, sporty, etc.)
 
 Based on these features and a general vibe, assign a Personality type (e.g., "Strategist", "Builder", "Explorer"), Strengths (e.g., "focus", "creativity"), and Weaknesses.
+"""
+        if user_prompt:
+            prompt += f"\n\nUSER'S DESIRED CHARACTER TRAITS: {user_prompt}\n(IMPORTANT: Incorporate these traits into the final personality analysis, strengths, weaknesses, and vibe. Adapt the character specifically to these requested traits!)\n"
 
-Return ONLY structured JSON in the exact format below, with NO markdown formatting, NO backticks, and NO additional text:
+        prompt += """\nReturn ONLY structured JSON in the exact format below, with NO markdown formatting, NO backticks, and NO additional text:
 {
   "face_shape": "oval",
   "skin_tone": "medium",
