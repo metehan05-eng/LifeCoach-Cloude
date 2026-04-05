@@ -9,6 +9,30 @@ if (GEMINI_API_KEY) {
     genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 }
 
+const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
+
+async function searchYouTubeVideo(query) {
+    if (!YOUTUBE_API_KEY) return null;
+    try {
+        const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=1&q=${encodeURIComponent(query)}&relevanceLanguage=tr&key=${YOUTUBE_API_KEY}`;
+        const res = await fetch(url);
+        if (!res.ok) return null;
+        const data = await res.json();
+        if (data.items && data.items.length > 0) {
+            const item = data.items[0];
+            return {
+                videoId: item.id.videoId,
+                title: item.snippet.title,
+                channel: item.snippet.channelTitle,
+                thumbnail: item.snippet.thumbnails?.medium?.url || ''
+            };
+        }
+    } catch (err) {
+        console.error('YouTube check error:', err);
+    }
+    return null;
+}
+
 // Helper: Authenticate token
 function authenticateToken(req) {
     const authHeader = req.headers['authorization'];
@@ -71,9 +95,13 @@ Yanıt formatı (Markdown kullan):
 2. **Konunun açıklaması**.
 3. **Kod Örneği** (Markdown formatında, hedefe uygunsa).
 4. **Kod Örneğinin Açıklaması**.
-5. **Günlük Motivasyon ve Görev** (Motive edici bir kapanış).
+7. **Günlük Motivasyon ve Görev** (Motive edici bir kapanış).
 
-Yanıt dili Türkçe olmalı.`;
+---
+SEARCH_QUERY: [Bu konuyu öğrenmek için YouTube'da aranacak Türkçe arama terimi]
+---
+
+Yanıt dili Türkçe olmalı. En sona mutlaka SEARCH_QUERY ifadesini bırakıp konuya özel aranacak kelimeyi tam olarak verin.`;
 
         try {
             const model = genAI.getGenerativeModel({
@@ -86,9 +114,18 @@ Yanıt dili Türkçe olmalı.`;
             });
             
             const result = await model.generateContent(userPrompt);
-            const briefing = result.response.text().trim();
+            const aiText = result.response.text().trim();
             
-            return res.status(200).json({ briefing });
+            let searchQuery = `${title} dersi türkçe`;
+            const sqMatch = aiText.match(/SEARCH_QUERY:\s*(.+)/i);
+            if (sqMatch && sqMatch[1]) {
+                searchQuery = sqMatch[1].trim();
+            }
+            
+            const briefing = aiText.replace(/SEARCH_QUERY:\s*.+/gi, '').replace(/---+\s*$/g, '').trim();
+            const video = await searchYouTubeVideo(searchQuery);
+            
+            return res.status(200).json({ briefing, video });
             
         } catch (aiError) {
             console.error('AI briefing generation error:', aiError);
