@@ -459,12 +459,43 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
 
         const finalSystemPrompt = memoryContext + systemPrompt;
         
-        // 4. AI Cevabı
+        // ENHANCED: Emotion Analysis and Prompt Adaptation
+        let adaptedSystemPrompt = finalSystemPrompt;
+        let emotionData = null;
+        
+        try {
+            // Analyze user's emotional state from their message
+            const emotionRes = await fetch(
+                new URL('/api/emotion-analysis', process.env.NEXTAUTH_URL || 'http://localhost:3000').toString(),
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'adaptPrompt',
+                        text: message,
+                        basePrompt: finalSystemPrompt
+                    })
+                }
+            );
+            
+            if (emotionRes.ok) {
+                const emotionResult = await emotionRes.json();
+                if (emotionResult.success) {
+                    adaptedSystemPrompt = emotionResult.adaptedPrompt;
+                    emotionData = emotionResult.analysis;
+                }
+            }
+        } catch (e) {
+            console.log('[Emotion] Analysis skipped:', e.message);
+            // Continue with original prompt if emotion analysis fails
+        }
+        
+        // 4. AI Cevabı (with emotion-adapted prompt)
         const aiResponse = await callGemini([
-            { "role": "system", "content": finalSystemPrompt },
+            { "role": "system", "content": adaptedSystemPrompt },
             ...(history || []),
             { "role": "user", "content": message }
-        ], finalSystemPrompt);
+        ], adaptedSystemPrompt);
 
         // 5. Veritabanı Güncelleme (Kullanıcı varsa)
         let newSessionId = sessionId;
@@ -500,6 +531,28 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
                 session.messages.push({ role: 'assistant', content: aiResponse });
                 
                 await setKVData('users', users);
+            }
+        }
+
+        // ENHANCED: Extract memory from this conversation turn
+        if (email && session && session.messages) {
+            try {
+                // Send memory extraction request (non-blocking, fire-and-forget)
+                fetch(new URL('/api/memory', process.env.NEXTAUTH_URL || 'http://localhost:3000').toString(), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${process.env.INTERNAL_API_KEY || ''}`
+                    },
+                    body: JSON.stringify({
+                        action: 'extract',
+                        messages: session.messages.slice(-10), // Last 10 messages for context
+                        sessionId: newSessionId,
+                        userId: userId || email
+                    })
+                }).catch(e => console.log('[Memory] Extraction skipped:', e.message));
+            } catch (e) {
+                console.log('[Memory] Could not trigger extraction:', e.message);
             }
         }
 
