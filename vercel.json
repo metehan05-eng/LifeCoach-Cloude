@@ -6,7 +6,7 @@
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/index.js" },
     { "source": "/ai-arena.html", "destination": "/ai-arena.html" },
-    { "source": "/((?!api|.*\\.).*)", "destination": "/life-coach-ui.html" }
+    { "source": "/((?!api|ai-arena|\\.html).*)", "destination": "/life-coach-ui.html" }
   ],
   "headers": [
     {
