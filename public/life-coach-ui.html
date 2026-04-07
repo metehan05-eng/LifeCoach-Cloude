@@ -259,6 +259,13 @@
                 flex-direction: column !important;
             }
 
+            /* AI Arena specific styling */
+            #section-arena:not(.hidden) {
+                display: flex !important;
+                flex-direction: column !important;
+                overflow-y: auto !important;
+            }
+
             /* Global box-sizing for mobile */
             * {
                 box-sizing: border-box !important;
@@ -3271,8 +3278,8 @@
             </div>
 
             <!-- AI Arena Section -->
-            <div id="section-arena" class="section-content hidden">
-                <div id="react-arena-root"></div>
+            <div id="section-arena" class="section-content hidden flex-col">
+                <div id="react-arena-root" style="width: 100%;"></div>
             </div>
 
             <!-- Goals Section -->
