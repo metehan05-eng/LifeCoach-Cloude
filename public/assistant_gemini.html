@@ -643,6 +643,149 @@
             header { padding-top: max(12px, env(safe-area-inset-top)); }
             .input-zone { padding-bottom: max(20px, env(safe-area-inset-bottom)); }
         }
+
+        /* ── ANALYSIS PANEL (Gemini-style) ────────── */
+        .analysis-panel {
+            margin-top: 16px;
+            border: 1px solid rgba(137, 180, 248, 0.2);
+            border-radius: 16px;
+            background: rgba(15, 23, 42, 0.8);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            animation: slideInRight 0.3s ease both;
+            max-width: 100%;
+        }
+
+        .analysis-panel-header {
+            padding: 14px 16px;
+            background: linear-gradient(135deg, rgba(137, 180, 248, 0.1), rgba(102, 156, 233, 0.05));
+            border-bottom: 1px solid rgba(137, 180, 248, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+        }
+
+        .analysis-panel-type {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: rgba(137, 180, 248, 0.15);
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            color: rgba(137, 180, 248, 0.9);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .analysis-panel-title {
+            flex: 1;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--ink);
+            letter-spacing: -0.01em;
+        }
+
+        .analysis-panel-action {
+            display: flex;
+            gap: 8px;
+        }
+
+        .analysis-panel-btn {
+            padding: 6px 12px;
+            background: transparent;
+            border: 1px solid rgba(137, 180, 248, 0.3);
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            color: rgba(137, 180, 248, 0.8);
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s, color 0.2s;
+            font-family: var(--font-body);
+        }
+
+        .analysis-panel-btn:hover {
+            background: rgba(137, 180, 248, 0.1);
+            border-color: rgba(137, 180, 248, 0.5);
+            color: rgba(137, 180, 248, 1);
+        }
+
+        .analysis-panel-content {
+            padding: 16px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--ink);
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .analysis-panel-content::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .analysis-panel-content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .analysis-panel-content::-webkit-scrollbar-thumb {
+            background: rgba(137, 180, 248, 0.2);
+            border-radius: 2px;
+        }
+
+        .analysis-panel-content::-webkit-scrollbar-thumb:hover {
+            background: rgba(137, 180, 248, 0.4);
+        }
+
+        /* Code block in analysis panel */
+        .analysis-panel-code {
+            background: rgba(30, 41, 59, 0.9);
+            border: 1px solid rgba(137, 180, 248, 0.1);
+            border-radius: 8px;
+            padding: 12px;
+            margin: 12px 0;
+            overflow-x: auto;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 12px;
+            color: #E2E8F0;
+            line-height: 1.5;
+        }
+
+        .analysis-panel-divider {
+            height: 1px;
+            background: rgba(137, 180, 248, 0.1);
+            margin: 12px 0;
+        }
+
+        .analysis-panel-result {
+            padding: 12px;
+            background: rgba(137, 180, 248, 0.05);
+            border-left: 3px solid rgba(137, 180, 248, 0.4);
+            border-radius: 0 6px 6px 0;
+            margin: 8px 0;
+            font-size: 13px;
+        }
+
+        @media (max-width: 640px) {
+            .analysis-panel {
+                margin-top: 12px;
+                border-radius: 12px;
+            }
+
+            .analysis-panel-header {
+                padding: 12px 14px;
+            }
+
+            .analysis-panel-content {
+                padding: 12px 14px;
+                max-height: 300px;
+            }
+
+            .analysis-panel-title {
+                font-size: 12px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -966,6 +1109,176 @@
         return div;
     }
 
+    // ── Analysis Panel Helpers ─────────────────────
+    function detectTaskType(text) {
+        const lowerText = text.toLowerCase();
+        
+        // Kod yazma / debugging görevleri
+        if (lowerText.match(/code|python|javascript|function|debug|fix|error|syntax|api|database|sql|regex|algorithm/)) {
+            return 'coding';
+        }
+        
+        // PowerPoint görevleri
+        if (lowerText.match(/powerpoint|pptx|sunum|slide|presentation|present|deck/)) {
+            return 'powerpoint';
+        }
+        
+        // Excel görevleri
+        if (lowerText.match(/excel|xlsx|spreadsheet|csv|data analysis|chart|formula|pivot|tablo|veri/)) {
+            return 'excel';
+        }
+        
+        // Sorun çözme görevleri
+        if (lowerText.match(/solve|solution|problem|how|why|what|analyz|explain|breakdown|step|approach|method|strategy/)) {
+            return 'problem-solving';
+        }
+        
+        return null;
+    }
+
+    function createAnalysisPanel(taskType, content = '') {
+        const panel = document.createElement('div');
+        panel.className = 'analysis-panel';
+        panel.dataset.taskType = taskType;
+
+        let typeIcon = '💻';
+        let typeLabel = 'Analysis';
+
+        switch(taskType) {
+            case 'coding':
+                typeIcon = '💻';
+                typeLabel = 'Code';
+                break;
+            case 'powerpoint':
+                typeIcon = '📊';
+                typeLabel = 'Presentation';
+                break;
+            case 'excel':
+                typeIcon = '📈';
+                typeLabel = 'Data';
+                break;
+            case 'problem-solving':
+                typeIcon = '🧩';
+                typeLabel = 'Solution';
+                break;
+        }
+
+        panel.innerHTML = `
+            <div class="analysis-panel-header">
+                <span class="analysis-panel-type">
+                    <span>${typeIcon}</span>
+                    <span>${typeLabel}</span>
+                </span>
+                <div class="analysis-panel-title">Analysis & Results</div>
+                <div class="analysis-panel-action">
+                    <button class="analysis-panel-btn" onclick="copyAnalysisPanel(this)">Copy</button>
+                    <button class="analysis-panel-btn" onclick="expandAnalysisPanel(this)">Expand</button>
+                </div>
+            </div>
+            <div class="analysis-panel-content" data-task-type="${taskType}">
+                ${content || getDefaultPanelContent(taskType)}
+            </div>
+        `;
+
+        return panel;
+    }
+
+    function getDefaultPanelContent(taskType) {
+        const defaults = {
+            'coding': `<div class="analysis-panel-code">
+                // Your code solution will appear here
+                function solve(problem) {
+                    // Implementation...
+                    return result;
+                }</div>
+                <div class="analysis-panel-result">✓ Code generated successfully</div>`,
+            'powerpoint': `<div style="padding:8px;background:rgba(137,180,248,0.05);border-radius:8px;margin:8px 0;">
+                <div style="font-weight:600;color:var(--ink);margin-bottom:8px;">📊 Presentation Structure</div>
+                <div style="font-size:13px;line-height:1.8;color:var(--ink-mid);">
+                    • Slide 1: Title & Introduction<br>
+                    • Slide 2-N: Content & Visuals<br>
+                    • Final: Summary & Call to Action
+                </div></div>
+                <div class="analysis-panel-result">✓ Presentation outline ready</div>`,
+            'excel': `<div style="padding:8px;background:rgba(137,180,248,0.05);border-radius:8px;margin:8px 0;">
+                <div style="font-weight:600;color:var(--ink);margin-bottom:8px;">📈 Data Structure</div>
+                <div class="analysis-panel-code" style="margin:8px 0;">Headers: Column A, Column B, Column C
+Data: 100 rows × 3 columns
+Features: Formulas, Charts, Pivot Tables</div></div>
+                <div class="analysis-panel-result">✓ Excel file prepared</div>`,
+            'problem-solving': `<div style="padding:8px;background:rgba(137,180,248,0.05);border-radius:8px;margin:8px 0;">
+                <div style="font-weight:600;color:var(--ink);margin-bottom:8px;">🧩 Solution Breakdown</div>
+                <div style="font-size:13px;line-height:1.8;color:var(--ink-mid);">
+                    <strong>Step 1:</strong> Understand the problem<br>
+                    <strong>Step 2:</strong> Identify key factors<br>
+                    <strong>Step 3:</strong> Develop approach<br>
+                    <strong>Step 4:</strong> Implement solution<br>
+                    <strong>Step 5:</strong> Verify results
+                </div></div>
+                <div class="analysis-panel-result">✓ Solution approach finalized</div>`
+        };
+
+        return defaults[taskType] || '<div class="analysis-panel-result">Analysis panel ready</div>';
+    }
+
+    function showAnalysisPanel(msgElement, taskType, content = '') {
+        // Remove existing panel if present
+        const existingPanel = msgElement?.querySelector('.analysis-panel');
+        if (existingPanel) {
+            existingPanel.remove();
+        }
+
+        const panel = createAnalysisPanel(taskType, content);
+
+        if (msgElement) {
+            const msgBody = msgElement.querySelector('.msg-body');
+            if (msgBody) {
+                // Insert after msg-text
+                const msgText = msgBody.querySelector('.msg-text');
+                if (msgText) {
+                    msgText.after(panel);
+                } else {
+                    msgBody.appendChild(panel);
+                }
+            }
+        }
+
+        scrollBottom();
+    }
+
+    function hideAnalysisPanel(msgElement) {
+        if (msgElement) {
+            const panel = msgElement.querySelector('.analysis-panel');
+            if (panel) {
+                panel.remove();
+            }
+        }
+    }
+
+    function copyAnalysisPanel(btn) {
+        const panel = btn.closest('.analysis-panel');
+        const content = panel?.querySelector('.analysis-panel-content')?.innerText || '';
+        
+        if (content) {
+            navigator.clipboard.writeText(content).then(() => {
+                btn.textContent = 'Copied!';
+                setTimeout(() => {
+                    btn.textContent = 'Copy';
+                }, 2000);
+            });
+        }
+    }
+
+    function expandAnalysisPanel(btn) {
+        const panel = btn.closest('.analysis-panel');
+        const content = panel?.querySelector('.analysis-panel-content');
+        
+        if (content) {
+            content.style.maxHeight = content.style.maxHeight === 'none' ? '400px' : 'none';
+            btn.textContent = btn.textContent === 'Expand' ? 'Collapse' : 'Expand';
+        }
+    }
+
     // ── Send ─────────────────────────────────────────
     async function sendMessage() {
         const text = msgInput.value.trim();
@@ -1056,6 +1369,12 @@
                 // Session ID'yi güncelle
                 if (data.sessionId) {
                     currentConversationId = data.sessionId;
+                }
+
+                // Detect task type and show analysis panel
+                const taskType = detectTaskType(text);
+                if (taskType) {
+                    showAnalysisPanel(currentMsgEl, taskType);
                 }
                 
                 // Action varsa dosya oluştur
