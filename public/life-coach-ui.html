@@ -11467,12 +11467,12 @@
             );
         };
 
-        // 5. AI Arena Component - Enhanced with Error Handling
+        // 5. AI Arena Component - Simple Version Without JSX
         let AIArena = null;
         try {
             AIArena = () => {
-                const [userStats, setUserStats] = React.useState({ total_xp: 4850, level: 5, current_xp: 850, arena_wins: 12 });
-                const [leaderboard, setLeaderboard] = React.useState([
+                const [userStats] = React.useState({ total_xp: 4850, level: 5, current_xp: 850, arena_wins: 12 });
+                const [leaderboard] = React.useState([
                     { username: 'EpicGamer', level: 12, total_xp: 28500, rank: 1, me: false },
                     { username: 'SkyWalker', level: 11, total_xp: 26200, rank: 2, me: false },
                     { username: 'CodeNinja', level: 10, total_xp: 24100, rank: 3, me: false },
@@ -11481,107 +11481,91 @@
                     { username: 'SilentHunter', level: 6, total_xp: 15200, rank: 6, me: false },
                     { username: 'YourName', level: 5, total_xp: 4850, rank: 7, me: true },
                 ]);
-                const [challenges, setChallenges] = React.useState([
+                const [challenges] = React.useState([
                     { id: 'challenge1', title: 'Sabah Rutini', xp_reward: 150, icon: 'fa-sun', description: '7:00 AM\'de kalkıp 30 dakika egzersiz yap' },
                     { id: 'challenge2', title: 'Su İçme Hedefi', xp_reward: 100, icon: 'fa-droplet', description: '8 bardak su için' },
                     { id: 'challenge3', title: 'Meditasyon', xp_reward: 125, icon: 'fa-spa', description: '10 dakika meditasyon yap' },
                     { id: 'challenge4', title: 'Okuma Maratonu', xp_reward: 200, icon: 'fa-book', description: 'Min. 30 sayfa kitap oku' },
                 ]);
-                const [loading, setLoading] = React.useState(false);
-                const [userRank] = React.useState(7);
+                const userRank = 7;
 
-                React.useEffect(() => {
-                    // Just use demo data - no async calls
-                    setLoading(false);
-                }, []);
-
-                return (
-                    <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '1rem' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '2.5rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-                                <div style={{ width: '64px', height: '64px', borderRadius: '1rem', background: 'linear-gradient(135deg, #ef4444 0%, #ea580c 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 30px rgba(239, 68, 68, 0.3)' }}>
-                                    <i className="fa-solid fa-fire-flame-curved" style={{ fontSize: '1.875rem', color: 'white' }}></i>
-                                </div>
-                                <div>
-                                    <h2 style={{ fontSize: '2.25rem', fontWeight: '900', color: 'white', textTransform: 'uppercase', letterSpacing: '0.025em', margin: '0 0 0.5rem 0' }}>AI ARENA</h2>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', animation: 'pulse 2s infinite' }}></span>
-                                        <p style={{ fontSize: '0.6875rem', fontWeight: '900', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>{leaderboard.length} Aktif Yarışmacı</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div style={{ background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '1rem', padding: '1.5rem', backdropFilter: 'blur(10px)' }}>
-                                <p style={{ fontSize: '0.625rem', fontWeight: '900', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 0.5rem 0', opacity: '0.6' }}>Mevcut Sıralaman</p>
-                                <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-                                    <span style={{ fontSize: '1.5rem', fontWeight: '900', color: 'white' }}>#{userRank}</span>
-                                    <span style={{ fontSize: '0.75rem', fontWeight: '900', color: '#14b8a6' }}>Level {userStats.level}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
-                            <div>
-                                <div style={{ background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '2rem', padding: '2rem', backdropFilter: 'blur(10px)', boxShadow: '0 25px 50px rgba(0, 0, 0, 0.5)' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
-                                        <h3 style={{ fontSize: '1.25rem', fontWeight: '900', color: 'white', display: 'flex', alignItems: 'center', gap: '0.75rem', margin: 0 }}>
-                                            <div style={{ width: '40px', height: '40px', borderRadius: '0.75rem', background: 'rgba(20, 184, 166, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                <i className="fa-solid fa-ranking-star" style={{ color: '#14b8a6', fontSize: '0.875rem' }}></i>
-                                            </div>
-                                            Global Liderler
-                                        </h3>
-                                    </div>
-
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                        {leaderboard.map((entry, index) => (
-                                            <div key={index} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', borderRadius: '1.5rem', background: entry.me ? 'rgba(20, 184, 166, 0.1)' : 'rgba(255, 255, 255, 0.05)', border: entry.me ? '1px solid rgba(20, 184, 166, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                                    <span style={{ width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '0.5rem', fontWeight: '900', background: index === 0 ? '#eab308' : index === 1 ? '#d1d5db' : index === 2 ? '#b45309' : 'transparent', color: index === 0 ? 'white' : index === 1 ? '#1f2937' : index === 2 ? 'white' : '#6b7280' }}>
-                                                        {index + 1}
-                                                    </span>
-                                                    <div>
-                                                        <p style={{ fontSize: '0.875rem', fontWeight: '900', color: 'white', textTransform: 'uppercase', margin: 0 }}>{entry.username}</p>
-                                                        <p style={{ fontSize: '0.625rem', color: '#9ca3af', fontWeight: '900', margin: 0 }}>Level {entry.level}</p>
-                                                    </div>
-                                                </div>
-                                                <div style={{ textAlign: 'right' }}>
-                                                    <p style={{ fontSize: '0.875rem', fontWeight: '900', color: 'white', margin: 0 }}>{entry.total_xp.toLocaleString()} XP</p>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                                <div style={{ background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '2rem', padding: '2rem', backdropFilter: 'blur(10px)', boxShadow: '0 25px 50px rgba(0, 0, 0, 0.5)' }}>
-                                    <h3 style={{ fontSize: '1.25rem', fontWeight: '900', color: 'white', margin: '0 0 1.5rem 0' }}>Aktif Görevler</h3>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                        {challenges.map((challenge) => (
-                                            <div key={challenge.id} style={{ padding: '1.25rem', borderRadius: '1.75rem', background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.2)', cursor: 'pointer', transition: 'all 0.3s ease' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                                                    <div style={{ width: '40px', height: '40px', borderRadius: '0.75rem', background: 'rgba(59, 130, 246, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3b82f6', fontSize: '1rem' }}>
-                                                        <i className={`fa-solid ${challenge.icon}`}></i>
-                                                    </div>
-                                                    <span style={{ fontSize: '0.625rem', fontWeight: '900', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.05em', background: 'rgba(59, 130, 246, 0.1)', padding: '0.25rem 0.5rem', borderRadius: '0.5rem' }}>+{challenge.xp_reward} XP</span>
-                                                </div>
-                                                <span style={{ fontSize: '0.8125rem', fontWeight: '900', color: 'white', textTransform: 'uppercase', letterSpacing: '0.025em', display: 'block', marginBottom: '0.25rem' }}>{challenge.title}</span>
-                                                <p style={{ fontSize: '0.625rem', color: '#9ca3af', fontWeight: '500', margin: 0, lineHeight: '1.5' }}>{challenge.description}</p>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                return React.createElement('div', { style: { maxWidth: '1280px', margin: '0 auto', padding: '1rem' } },
+                    React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '2.5rem' } },
+                        React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: '1.25rem' } },
+                            React.createElement('div', { style: { width: '64px', height: '64px', borderRadius: '1rem', background: 'linear-gradient(135deg, #ef4444 0%, #ea580c 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 30px rgba(239, 68, 68, 0.3)' } },
+                                React.createElement('i', { className: 'fa-solid fa-fire-flame-curved', style: { fontSize: '1.875rem', color: 'white' } })
+                            ),
+                            React.createElement('div', null,
+                                React.createElement('h2', { style: { fontSize: '2.25rem', fontWeight: '900', color: 'white', textTransform: 'uppercase', letterSpacing: '0.025em', margin: '0 0 0.5rem 0' } }, 'AI ARENA'),
+                                React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: '0.5rem' } },
+                                    React.createElement('span', { style: { width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', animation: 'pulse 2s infinite' } }),
+                                    React.createElement('p', { style: { fontSize: '0.6875rem', fontWeight: '900', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 } }, leaderboard.length + ' Aktif Yarışmacı')
+                                )
+                            )
+                        ),
+                        React.createElement('div', { style: { background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '1rem', padding: '1.5rem', backdropFilter: 'blur(10px)' } },
+                            React.createElement('p', { style: { fontSize: '0.625rem', fontWeight: '900', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 0.5rem 0', opacity: '0.6' } }, 'Mevcut Sıralaman'),
+                            React.createElement('div', { style: { display: 'flex', alignItems: 'baseline', gap: '0.5rem' } },
+                                React.createElement('span', { style: { fontSize: '1.5rem', fontWeight: '900', color: 'white' } }, '#' + userRank),
+                                React.createElement('span', { style: { fontSize: '0.75rem', fontWeight: '900', color: '#14b8a6' } }, 'Level ' + userStats.level)
+                            )
+                        )
+                    ),
+                    React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' } },
+                        React.createElement('div', null,
+                            React.createElement('div', { style: { background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '2rem', padding: '2rem', backdropFilter: 'blur(10px)', boxShadow: '0 25px 50px rgba(0, 0, 0, 0.5)' } },
+                                React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' } },
+                                    React.createElement('h3', { style: { fontSize: '1.25rem', fontWeight: '900', color: 'white', display: 'flex', alignItems: 'center', gap: '0.75rem', margin: 0 } },
+                                        React.createElement('div', { style: { width: '40px', height: '40px', borderRadius: '0.75rem', background: 'rgba(20, 184, 166, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' } },
+                                            React.createElement('i', { className: 'fa-solid fa-ranking-star', style: { color: '#14b8a6', fontSize: '0.875rem' } })
+                                        ),
+                                        'Global Liderler'
+                                    )
+                                ),
+                                React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: '1rem' } },
+                                    leaderboard.map((entry, index) => 
+                                        React.createElement('div', { key: index, style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', borderRadius: '1.5rem', background: entry.me ? 'rgba(20, 184, 166, 0.1)' : 'rgba(255, 255, 255, 0.05)', border: entry.me ? '1px solid rgba(20, 184, 166, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)' } },
+                                            React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: '1rem' } },
+                                                React.createElement('span', { style: { width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '0.5rem', fontWeight: '900', background: index === 0 ? '#eab308' : index === 1 ? '#d1d5db' : index === 2 ? '#b45309' : 'transparent', color: index === 0 ? 'white' : index === 1 ? '#1f2937' : index === 2 ? 'white' : '#6b7280' } }, index + 1),
+                                                React.createElement('div', null,
+                                                    React.createElement('p', { style: { fontSize: '0.875rem', fontWeight: '900', color: 'white', textTransform: 'uppercase', margin: 0 } }, entry.username),
+                                                    React.createElement('p', { style: { fontSize: '0.625rem', color: '#9ca3af', fontWeight: '900', margin: 0 } }, 'Level ' + entry.level)
+                                                )
+                                            ),
+                                            React.createElement('div', { style: { textAlign: 'right' } },
+                                                React.createElement('p', { style: { fontSize: '0.875rem', fontWeight: '900', color: 'white', margin: 0 } }, entry.total_xp.toLocaleString() + ' XP')
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        ),
+                        React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: '1.5rem' } },
+                            React.createElement('div', { style: { background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '2rem', padding: '2rem', backdropFilter: 'blur(10px)', boxShadow: '0 25px 50px rgba(0, 0, 0, 0.5)' } },
+                                React.createElement('h3', { style: { fontSize: '1.25rem', fontWeight: '900', color: 'white', margin: '0 0 1.5rem 0' } }, 'Aktif Görevler'),
+                                React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: '1rem' } },
+                                    challenges.map((challenge) =>
+                                        React.createElement('div', { key: challenge.id, style: { padding: '1.25rem', borderRadius: '1.75rem', background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.2)', cursor: 'pointer', transition: 'all 0.3s ease' } },
+                                            React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' } },
+                                                React.createElement('div', { style: { width: '40px', height: '40px', borderRadius: '0.75rem', background: 'rgba(59, 130, 246, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3b82f6', fontSize: '1rem' } },
+                                                    React.createElement('i', { className: 'fa-solid ' + challenge.icon })
+                                                ),
+                                                React.createElement('span', { style: { fontSize: '0.625rem', fontWeight: '900', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.05em', background: 'rgba(59, 130, 246, 0.1)', padding: '0.25rem 0.5rem', borderRadius: '0.5rem' } }, '+' + challenge.xp_reward + ' XP')
+                                            ),
+                                            React.createElement('span', { style: { fontSize: '0.8125rem', fontWeight: '900', color: 'white', textTransform: 'uppercase', letterSpacing: '0.025em', display: 'block', marginBottom: '0.25rem' } }, challenge.title),
+                                            React.createElement('p', { style: { fontSize: '0.625rem', color: '#9ca3af', fontWeight: '500', margin: 0, lineHeight: '1.5' } }, challenge.description)
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
                 );
             };
+            console.log('AI Arena component created successfully');
         } catch (error) {
-            console.error('AIArena component error:', error);
-            AIArena = () => (
-                <div style={{ padding: '2rem', textAlign: 'center', color: '#888' }}>
-                    <p>AI Arena bölümü yüklenmekte. Sayfayı yenileyin.</p>
-                </div>
-            );
+            console.error('AIArena component creation error:', error);
+            AIArena = () => React.createElement('div', { style: { padding: '2rem', textAlign: 'center', color: '#888' } }, React.createElement('p', null, 'AI Arena bölümü yüklenmekte...'));
         }
 
         // Mount all components
