@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaderboard - Esports Arena</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            background: linear-gradient(135deg, #ffd700, #ff8c00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #00d4ff, #7c3aed);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.4);
+        }
+
+        button.active {
+            background: linear-gradient(135deg, #ffd700, #ff8c00);
+        }
+
+        /* Filter Buttons */
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 10px 20px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .filter-btn:hover,
+        .filter-btn.active {
+            border-color: #ffd700;
+            background: rgba(255, 215, 0, 0.2);
+            color: #ffd700;
+        }
+
+        /* Main Content */
+        .leaderboard-container {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 0;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        /* Top 3 Podium */
+        .podium {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            padding: 30px 20px;
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 140, 0, 0.1));
+            border-bottom: 2px solid rgba(255, 215, 0, 0.3);
+        }
+
+        .medal-position {
+            text-align: center;
+            position: relative;
+        }
+
+        .medal-position.second {
+            order: 1;
+            transform: translateY(20px);
+        }
+
+        .medal-position.first {
+            order: 2;
+            transform: translateY(-40px);
+        }
+
+        .medal-position.third {
+            order: 3;
+            transform: translateY(40px);
+        }
+
+        .medal {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+
+        .player-name-podium {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+            color: #ffd700;
+        }
+
+        .player-xp-podium {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00d4ff, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 5px;
+        }
+
+        .player-rank-podium {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* Placing badge */
+        .placing-badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: linear-gradient(135deg, #ffd700, #ff8c00);
+            color: #1a1a2e;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        /* Rankings Table */
+        .rankings-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .rankings-table thead {
+            background: rgba(0, 212, 255, 0.1);
+            border-bottom: 2px solid rgba(0, 212, 255, 0.3);
+        }
+
+        .rankings-table th {
+            padding: 15px 20px;
+            text-align: left;
+            color: #00d4ff;
+            font-weight: 600;
+            font-size: 0.9rem;
+            letter-spacing: 0.5px;
+        }
+
+        .rankings-table tbody tr {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.3s ease;
+        }
+
+        .rankings-table tbody tr:hover {
+            background: rgba(0, 212, 255, 0.08);
+        }
+
+        .rankings-table td {
+            padding: 15px 20px;
+            font-size: 0.95rem;
+        }
+
+        /* Rank cell */
+        .rank-cell {
+            font-weight: 700;
+            width: 50px;
+        }
+
+        .rank-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 35px;
+            height: 35px;
+            background: rgba(0, 212, 255, 0.2);
+            border-radius: 8px;
+            color: #00d4ff;
+            font-weight: 700;
+        }
+
+        /* Player cell */
+        .player-cell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+        }
+
+        .player-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00d4ff, #7c3aed);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+
+        .player-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .player-name {
+            color: #fff;
+        }
+
+        .player-rank-badge {
+            font-size: 0.75rem;
+            background: rgba(255, 215, 0, 0.2);
+            color: #ffd700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            width: fit-content;
+        }
+
+        /* Trend cell */
+        .trend-cell {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #4ece47;
+        }
+
+        .trend-cell.down {
+            color: #ff6b6b;
+        }
+
+        .trend-cell.stable {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        /* XP display */
+        .xp-cell {
+            font-weight: 700;
+            background: linear-gradient(135deg, #00d4ff, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* User's own row highlighting */
+        .rankings-table tbody tr.user-row {
+            background: rgba(0, 212, 255, 0.15);
+            border-left: 4px solid #00d4ff;
+        }
+
+        .rankings-table tbody tr.user-row:hover {
+            background: rgba(0, 212, 255, 0.25);
+        }
+
+        /* User context card */
+        .user-context {
+            background: rgba(0, 212, 255, 0.1);
+            border: 2px solid rgba(0, 212, 255, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 30px 0;
+            display: none;
+        }
+
+        .user-context.visible {
+            display: block;
+        }
+
+        .user-context-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .user-context-header h2 {
+            color: #00d4ff;
+            font-size: 1.2rem;
+        }
+
+        .user-context-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+        }
+
+        .context-stat {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .context-stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #00d4ff;
+            margin-bottom: 5px;
+        }
+
+        .context-stat-label {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* Comparison cards */
+        .comparison-section {
+            display: none;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .comparison-section.visible {
+            display: block;
+        }
+
+        .comparison-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .comparison-card {
+            background: rgba(0, 212, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+        }
+
+        .comparison-card h3 {
+            color: #00d4ff;
+            margin-bottom: 10px;
+        }
+
+        .comparison-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.9rem;
+        }
+
+        .comparison-item:last-child {
+            border-bottom: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .podium {
+                grid-template-columns: 1fr;
+            }
+
+            .medal-position {
+                transform: translateY(0) !important;
+            }
+
+            .comparison-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .rankings-table th,
+            .rankings-table td {
+                padding: 10px 12px;
+                font-size: 0.85rem;
+            }
+
+            .player-cell {
+                gap: 8px;
+            }
+
+            .player-avatar {
+                width: 35px;
+                height: 35px;
+                font-size: 0.9rem;
+            }
+        }
+
+        /* Animation */
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .rankings-table tbody tr {
+            animation: slideInUp 0.3s ease forwards;
+        }
+
+        .rankings-table tbody tr:nth-child(odd) {
+            animation-delay: 0.1s;
+        }
+
+        .rankings-table tbody tr:nth-child(even) {
+            animation-delay: 0.2s;
+        }
+
+        /* Back button */
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .back-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(-5px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Back Button -->
+        <a href="/esports-dashboard.html" class="back-button">
+            ← Back to Dashboard
+        </a>
+
+        <!-- Header -->
+        <header>
+            <h1>🏆 Leaderboard</h1>
+            <div class="header-actions">
+                <button class="filter-btn" onclick="switchLeaderboard('all_time')" data-type="all_time">All Time</button>
+                <button class="filter-btn" onclick="switchLeaderboard('weekly')" data-type="weekly">Weekly</button>
+                <button class="filter-btn active" onclick="switchLeaderboard('daily')" data-type="daily">Daily</button>
+            </div>
+        </header>
+
+        <!-- Top 3 Podium -->
+        <div class="podium" id="podium">
+            <!-- Filled by JavaScript -->
+        </div>
+
+        <!-- User Context Card -->
+        <div class="user-context" id="userContext">
+            <div class="user-context-header">
+                <h2>📊 Your Position</h2>
+                <button onclick="viewComparison()">Compare 📈</button>
+            </div>
+            <div class="user-context-stats" id="userStats">
+                <!-- Filled by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Comparison Section -->
+        <div class="comparison-section" id="comparisonSection">
+            <h2 style="color: #00d4ff;">vs Nearby Competitors</h2>
+            <div class="comparison-cards" id="comparisonCards">
+                <!-- Filled by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Main Leaderboard Table -->
+        <div class="leaderboard-container">
+            <table class="rankings-table">
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">RANK</th>
+                        <th>PLAYER</th>
+                        <th style="width: 80px;">TREND</th>
+                        <th style="width: 120px;">XP</th>
+                        <th style="width: 80px;">WINS</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- Filled by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="/esports-effects.js"></script>
+    <script>
+        const API_BASE = '/api/esports';
+        let currentLeaderboard = 'daily';
+        let allPlayers = [];
+        let currentUser = null;
+
+        /**
+         * Load leaderboard data
+         */
+        async function loadLeaderboard(type = 'daily') {
+            try {
+                const res = await fetch(`${API_BASE}/leaderboard?action=getLeaderboard&type=${type}&limit=100`);
+                const data = await res.json();
+
+                if (data.success) {
+                    allPlayers = data.rankings;
+                    renderLeaderboard(type);
+                    loadUserContext();
+                }
+            } catch (error) {
+                console.error('Error loading leaderboard:', error);
+                loadMockData();
+            }
+        }
+
+        /**
+         * Load mock data for demo
+         */
+        function loadMockData() {
+            allPlayers = [
+                { rank: 1, username: 'ShadowNinja', xp: 15420, wins: 145, trend: 'up', tierName: 'Grandmaster' },
+                { rank: 2, username: 'RayOfSunset', xp: 14890, wins: 138, trend: 'up', tierName: 'Master' },
+                { rank: 3, username: 'EchoVoid', xp: 14150, wins: 132, trend: 'stable', tierName: 'Master' },
+                { rank: 4, username: 'TitanStrike', xp: 13420, wins: 128, trend: 'down', tierName: 'Diamond' },
+                { rank: 5, username: 'LunarEscape', xp: 12890, wins: 121, trend: 'up', tierName: 'Diamond' },
+                { rank: 6, username: 'VortexWolf', xp: 12150, wins: 115, trend: 'stable', tierName: 'Diamond' },
+                { rank: 7, username: 'PhantomBlade', xp: 11420, wins: 108, trend: 'down', tierName: 'Gold' },
+                { rank: 8, username: 'ZephyrWind', xp: 10890, wins: 101, trend: 'up', tierName: 'Gold' },
+                { rank: 9, username: 'InfernoBlaze', xp: 10150, wins: 95, trend: 'up', tierName: 'Gold' },
+                { rank: 10, username: 'You', xp: 8940, wins: 84, trend: 'up', tierName: 'Gold', isUser: true },
+            ];
+
+            currentUser = allPlayers[9];
+            renderLeaderboard('daily');
+            loadUserContext();
+        }
+
+        /**
+         * Render leaderboard
+         */
+        function renderLeaderboard(type) {
+            currentLeaderboard = type;
+
+            // Render podium (top 3)
+            renderPodium();
+
+            // Render table
+            renderTable();
+        }
+
+        /**
+         * Render top 3 podium
+         */
+        function renderPodium() {
+            const podium = document.getElementById('podium');
+            const topThree = allPlayers.slice(0, 3);
+
+            podium.innerHTML = topThree.map((player, idx) => {
+                const medals = ['🥇', '🥈', '🥉'];
+                const medals_en = ['first', 'second', 'third'];
+                
+                return `
+                    <div class="medal-position ${medals_en[idx]} medal-glow">
+                        <div class="medal">${medals[idx]}</div>
+                        <div class="placing-badge">${idx + 1}</div>
+                        <div class="player-name-podium">${player.username}</div>
+                        <div class="player-xp-podium">${player.xp.toLocaleString()} XP</div>
+                        <div class="player-rank-podium">${player.tierName}</div>
+                    </div>
+                `;
+            }).join('');
+
+            // Play podium sound after render
+            if (window.esportsEffects) {
+                setTimeout(() => {
+                    esportsEffects.playSound('victory', 0.3);
+                }, 100);
+            }
+        }
+
+        /**
+         * Render leaderboard table
+         */
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            
+            tbody.innerHTML = allPlayers.map((player, idx) => {
+                const trendIcons = {
+                    'up': '📈',
+                    'down': '📉',
+                    'stable': '➡️'
+                };
+
+                const trendClass = player.trend || 'stable';
+                const trendIcon = trendIcons[trendClass] || '➡️';
+
+                const isUserRow = player.isUser ? ' user-row' : '';
+
+                return `
+                    <tr${isUserRow}>
+                        <td class="rank-cell">
+                            <div class="rank-number">#${player.rank}</div>
+                        </td>
+                        <td>
+                            <div class="player-cell">
+                                <div class="player-avatar">${player.username.charAt(0)}</div>
+                                <div class="player-info">
+                                    <div class="player-name">${player.username}</div>
+                                    <div class="player-rank-badge">${player.tierName}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="trend-cell ${trendClass}">
+                                ${trendIcon}
+                            </div>
+                        </td>
+                        <td class="xp-cell">${player.xp.toLocaleString()}</td>
+                        <td>${player.wins}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        /**
+         * Load user context
+         */
+        function loadUserContext() {
+            if (!currentUser) return;
+
+            const userContext = document.getElementById('userContext');
+            userContext.classList.add('visible');
+
+            const userStats = document.getElementById('userStats');
+            userStats.innerHTML = `
+                <div class="context-stat">
+                    <div class="context-stat-value">#${currentUser.rank}</div>
+                    <div class="context-stat-label">YOUR RANK</div>
+                </div>
+                <div class="context-stat">
+                    <div class="context-stat-value">${currentUser.xp.toLocaleString()}</div>
+                    <div class="context-stat-label">TOTAL XP</div>
+                </div>
+                <div class="context-stat">
+                    <div class="context-stat-value">${currentUser.wins}</div>
+                    <div class="context-stat-label">WINS</div>
+                </div>
+                <div class="context-stat">
+                    <div class="context-stat-value">${Math.max(0, 100 - currentUser.rank)}</div>
+                    <div class="context-stat-label">TO TOP 100</div>
+                </div>
+            `;
+        }
+
+        /**
+         * View comparison
+         */
+        function viewComparison() {
+            if (!currentUser) return;
+
+            const userRank = currentUser.rank;
+            const above = allPlayers.find(p => p.rank === userRank - 1);
+            const below = allPlayers.find(p => p.rank === userRank + 1);
+
+            const comparisonCards = document.getElementById('comparisonCards');
+            comparisonCards.innerHTML = `
+                ${above ? `
+                    <div class="comparison-card">
+                        <h3>☝️ Above You: ${above.username}</h3>
+                        <div class="comparison-item">
+                            <span>XP Difference</span>
+                            <span style="color: #ff6b6b;">+${(above.xp - currentUser.xp).toLocaleString()}</span>
+                        </div>
+                        <div class="comparison-item">
+                            <span>Win Gap</span>
+                            <span style="color: #ff6b6b;">+${above.wins - currentUser.wins}</span>
+                        </div>
+                    </div>
+                ` : ''}
+                ${below ? `
+                    <div class="comparison-card">
+                        <h3>👇 Below You: ${below.username}</h3>
+                        <div class="comparison-item">
+                            <span>XP Difference</span>
+                            <span style="color: #4ece47;">+${(currentUser.xp - below.xp).toLocaleString()}</span>
+                        </div>
+                        <div class="comparison-item">
+                            <span>Win Gap</span>
+                            <span style="color: #4ece47;">+${currentUser.wins - below.wins}</span>
+                        </div>
+                    </div>
+                ` : ''}
+            `;
+
+            document.getElementById('comparisonSection').classList.add('visible');
+        }
+
+        /**
+         * Switch leaderboard type
+         */
+        function switchLeaderboard(type) {
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            loadLeaderboard(type);
+        }
+
+        // Load data on page load
+        window.addEventListener('load', () => {
+            loadMockData();
+        });
+    </script>
+</body>
+</html>
