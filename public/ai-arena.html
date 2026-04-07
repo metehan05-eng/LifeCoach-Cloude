@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Arena - LifeCoach</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #030712;
+            color: #e2e8f0;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #ef4444 0%, #ea580c 100%);
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 30px rgba(239, 68, 68, 0.3);
+            font-size: 2.5rem;
+            color: white;
+        }
+
+        .header-content h1 {
+            font-size: 2.5rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .header-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: #9ca3af;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .user-rank {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            backdrop-filter: blur(10px);
+            text-align: right;
+        }
+
+        .user-rank-label {
+            font-size: 0.75rem;
+            font-weight: 900;
+            color: #6b7280;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+
+        .user-rank-value {
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+            justify-content: flex-end;
+        }
+
+        .rank-number {
+            font-size: 2rem;
+            font-weight: 900;
+            color: white;
+        }
+
+        .rank-level {
+            font-size: 0.875rem;
+            font-weight: 900;
+            color: #14b8a6;
+        }
+
+        /* Grid Layout */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Card Style */
+        .card {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 2rem;
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .card-icon {
+            width: 50px;
+            height: 50px;
+            background: rgba(20, 184, 166, 0.2);
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #14b8a6;
+            font-size: 1.25rem;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: white;
+        }
+
+        /* Leaderboard */
+        .leaderboard-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.5rem;
+            border-radius: 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .leaderboard-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .leaderboard-item.current-user {
+            background: rgba(20, 184, 166, 0.1);
+            border-color: rgba(20, 184, 166, 0.3);
+        }
+
+        .leaderboard-left {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+        }
+
+        .rank-badge {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.75rem;
+            font-weight: 900;
+            font-size: 0.875rem;
+            color: white;
+        }
+
+        .rank-1 {
+            background: #fbbf24;
+            box-shadow: 0 0 20px rgba(251, 191, 36, 0.3);
+        }
+
+        .rank-2 {
+            background: #d1d5db;
+            color: #1f2937;
+        }
+
+        .rank-3 {
+            background: #ea580c;
+        }
+
+        .user-info h4 {
+            font-size: 0.875rem;
+            font-weight: 900;
+            color: white;
+            text-transform: uppercase;
+            margin-bottom: 0.25rem;
+        }
+
+        .user-info p {
+            font-size: 0.75rem;
+            color: #9ca3af;
+            font-weight: 900;
+        }
+
+        .leaderboard-right {
+            text-align: right;
+        }
+
+        .xp-value {
+            font-size: 1rem;
+            font-weight: 900;
+            color: white;
+        }
+
+        /* Challenges */
+        .challenge-item {
+            padding: 1.5rem;
+            border-radius: 1.5rem;
+            background: rgba(59, 130, 246, 0.05);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .challenge-item:hover {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: rgba(59, 130, 246, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .challenge-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .challenge-icon {
+            width: 45px;
+            height: 45px;
+            background: rgba(59, 130, 246, 0.2);
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #3b82f6;
+            font-size: 1.25rem;
+        }
+
+        .challenge-xp {
+            font-size: 0.75rem;
+            font-weight: 900;
+            color: #3b82f6;
+            background: rgba(59, 130, 246, 0.1);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            text-transform: uppercase;
+        }
+
+        .challenge-title {
+            font-size: 1rem;
+            font-weight: 900;
+            color: white;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+
+        .challenge-desc {
+            font-size: 0.8125rem;
+            color: #9ca3af;
+            font-weight: 500;
+            line-height: 1.5;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: #14b8a6;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #9ca3af;
+            text-transform: uppercase;
+            font-weight: 900;
+        }
+
+        /* Button */
+        .btn {
+            width: 100%;
+            padding: 1rem;
+            border: none;
+            border-radius: 0.75rem;
+            font-size: 0.9rem;
+            font-weight: 900;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #f08d27 0%, #d94d0a 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(245, 158, 11, 0.3);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #6b7280;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: #6b7280;
+            font-size: 0.875rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 2rem;">
+            <div class="header">
+                <div class="header-icon">
+                    <i class="fas fa-fire"></i>
+                </div>
+                <div class="header-content">
+                    <h1>AI Arena</h1>
+                    <div class="header-status">
+                        <span class="status-dot"></span>
+                        <span id="activeUsers">7 Aktif Yarışmacı</span>
+                    </div>
+                </div>
+            </div>
+            <div class="user-rank">
+                <div class="user-rank-label">Mevcut Sıralaman</div>
+                <div class="user-rank-value">
+                    <span class="rank-number">#7</span>
+                    <span class="rank-level">Level 5</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">4,850</div>
+                <div class="stat-label">Toplam XP</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">5</div>
+                <div class="stat-label">Seviye</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">850</div>
+                <div class="stat-label">Mevcut XP</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">12</div>
+                <div class="stat-label">Kazanılan Yarış</div>
+            </div>
+        </div>
+
+        <!-- Content Grid -->
+        <div class="content-grid">
+            <!-- Leaderboard -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">
+                        <i class="fas fa-ranking-star"></i>
+                    </div>
+                    <div class="card-title">Global Liderler</div>
+                </div>
+                <div id="leaderboard" style="max-height: 500px; overflow-y: auto;"></div>
+            </div>
+
+            <!-- Challenges -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon" style="background: rgba(168, 85, 247, 0.2); color: #a855f7;">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                    <div class="card-title">Aktif Görevler</div>
+                </div>
+                <div id="challenges" style="max-height: 500px; overflow-y: auto;"></div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>🎮 LifeCoach AI Arena - Yarışmak, Kazanmak, Büyümek 🚀</p>
+        </div>
+    </div>
+
+    <script>
+        // Demo Data
+        const leaderboardData = [
+            { rank: 1, username: 'EpicGamer', level: 12, xp: 28500, me: false },
+            { rank: 2, username: 'SkyWalker', level: 11, xp: 26200, me: false },
+            { rank: 3, username: 'CodeNinja', level: 10, xp: 24100, me: false },
+            { rank: 4, username: 'DragonSlayer', level: 8, xp: 19800, me: false },
+            { rank: 5, username: 'Phoenix', level: 7, xp: 17600, me: false },
+            { rank: 6, username: 'SilentHunter', level: 6, xp: 15200, me: false },
+            { rank: 7, username: 'YourName', level: 5, xp: 4850, me: true },
+        ];
+
+        const challengesData = [
+            { 
+                id: 1, 
+                icon: 'fa-sun', 
+                title: 'Sabah Rutini', 
+                xp: 150, 
+                description: '7:00 AM\'de kalkıp 30 dakika egzersiz yap' 
+            },
+            { 
+                id: 2, 
+                icon: 'fa-droplet', 
+                title: 'Su İçme Hedefi', 
+                xp: 100, 
+                description: '8 bardak su iç ve vücudunu hydrate et' 
+            },
+            { 
+                id: 3, 
+                icon: 'fa-spa', 
+                title: 'Meditasyon', 
+                xp: 125, 
+                description: '10 dakika meditasyon yap ve zihninizi sakinleştir' 
+            },
+            { 
+                id: 4, 
+                icon: 'fa-book', 
+                title: 'Okuma Maratonu', 
+                xp: 200, 
+                description: 'Min. 30 sayfa kitap oku veya öğren' 
+            },
+        ];
+
+        // Render Leaderboard
+        function renderLeaderboard() {
+            const container = document.getElementById('leaderboard');
+            container.innerHTML = leaderboardData.map(entry => `
+                <div class="leaderboard-item ${entry.me ? 'current-user' : ''}">
+                    <div class="leaderboard-left">
+                        <div class="rank-badge rank-${entry.rank > 3 ? 'other' : entry.rank}">
+                            ${entry.rank}
+                        </div>
+                        <div class="user-info">
+                            <h4>${entry.username}</h4>
+                            <p>Level ${entry.level}</p>
+                        </div>
+                    </div>
+                    <div class="leaderboard-right">
+                        <div class="xp-value">${entry.xp.toLocaleString()} XP</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Render Challenges
+        function renderChallenges() {
+            const container = document.getElementById('challenges');
+            container.innerHTML = challengesData.map(challenge => `
+                <div class="challenge-item">
+                    <div class="challenge-header">
+                        <div class="challenge-icon">
+                            <i class="fas ${challenge.icon}"></i>
+                        </div>
+                        <div class="challenge-xp">+${challenge.xp} XP</div>
+                    </div>
+                    <div class="challenge-title">${challenge.title}</div>
+                    <div class="challenge-desc">${challenge.description}</div>
+                </div>
+            `).join('');
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            renderLeaderboard();
+            renderChallenges();
+            console.log('✅ AI Arena Page Loaded Successfully');
+        });
+    </script>
+</body>
+</html>
