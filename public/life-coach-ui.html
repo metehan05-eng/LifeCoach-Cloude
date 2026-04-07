@@ -3095,6 +3095,20 @@
                         class="ml-auto text-[10px] px-2 py-0.5 rounded-md bg-yellow-500/20 text-yellow-400 font-bold border border-yellow-500/30 hidden shadow-[0_0_8px_rgba(234,179,8,0.2)]">Lv.1</span>
                 </button>
 
+                <!-- ⚡ Espor Arena -->
+                <button onclick="window.location.href='./esports-dashboard.html'; closeSidebarMobile();"
+                    class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all group relative"
+                    data-section="esports">
+                    <div
+                        class="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500/10 to-purple-400/5 border border-violet-500/20 group-hover:from-violet-500/20 group-hover:to-purple-400/10 group-hover:border-violet-500/30 transition-all shadow-md shadow-violet-500/10 group-hover:shadow-lg group-hover:shadow-violet-500/20">
+                        <i
+                            class="fa-solid fa-gamepad text-violet-400 text-[13px] group-hover:scale-110 transition-transform duration-300"></i>
+                    </div>
+                    <span class="text-sm font-medium group-hover:font-semibold transition-colors">⚡ Espor Arena</span>
+                    <span
+                        class="ml-auto text-[9px] px-1.5 py-0.5 rounded-md bg-violet-500/20 text-violet-400 font-bold border border-violet-500/30 shadow-[0_0_8px_rgba(139,92,246,0.2)]">YENİ</span>
+                </button>
+
                 <div class="px-3 pt-2 pb-1 mt-2 mb-1 border-t border-slate-700/50"></div>
 
                 <!-- Waffle Modu -->
@@ -11460,17 +11474,43 @@
             const [challenges, setChallenges] = React.useState([]);
             const [loading, setLoading] = React.useState(true);
             const [userRank, setUserRank] = React.useState(null);
+            const [showDemo, setShowDemo] = React.useState(false);
 
-            React.useEffect(() => {
-                loadArenaData();
-            }, []);
+            const getDemoLeaderboard = () => {
+                return [
+                    { username: 'EpicGamer', level: 12, total_xp: 28500, rank: 1, me: false },
+                    { username: 'SkyWalker', level: 11, total_xp: 26200, rank: 2, me: false },
+                    { username: 'CodeNinja', level: 10, total_xp: 24100, rank: 3, me: false },
+                    { username: 'DragonSlayer', level: 8, total_xp: 19800, rank: 4, me: false },
+                    { username: 'Phoenix', level: 7, total_xp: 17600, rank: 5, me: false },
+                    { username: 'SilentHunter', level: 6, total_xp: 15200, rank: 6, me: false },
+                    { username: 'YourName', level: 5, total_xp: 4850, rank: 7, me: true },
+                    { username: 'IceWizard', level: 4, total_xp: 12100, rank: 8, me: false },
+                    { username: 'FireBlast', level: 4, total_xp: 11500, rank: 9, me: false },
+                    { username: 'LunaEcho', level: 3, total_xp: 9200, rank: 10, me: false },
+                ];
+            };
+
+            const getDemoChallenges = () => {
+                return [
+                    { id: 'challenge1', title: 'Sabah Rutini', xp_reward: 150, icon: 'fa-sun', description: '7:00 AM\'de kalkıp 30 dakika egzersiz yap' },
+                    { id: 'challenge2', title: 'Su İçme Hedefi', xp_reward: 100, icon: 'fa-droplet', description: '8 bardak su için ve boy rasinı artır' },
+                    { id: 'challenge3', title: 'Meditasyon', xp_reward: 125, icon: 'fa-spa', description: '10 dakika meditasyon yap' },
+                    { id: 'challenge4', title: 'Okuma Maratonu', xp_reward: 200, icon: 'fa-book', description: 'Min. 30 sayfa kitap oku' },
+                ];
+            };
 
             const loadArenaData = async () => {
                 try {
                     const token = localStorage.getItem('token');
                     if (!token) {
-                        console.warn('AI Arena: No token found');
-                        setUserStats(null); // Reset to null when no token
+                        console.warn('AI Arena: No token found - showing demo');
+                        // Show demo data instead of empty
+                        setShowDemo(true);
+                        setUserStats({ total_xp: 4850, level: 5, current_xp: 850, arena_wins: 12 });
+                        setLeaderboard(getDemoLeaderboard());
+                        setChallenges(getDemoChallenges());
+                        setUserRank(7);
                         setLoading(false);
                         return;
                     }
@@ -11526,6 +11566,10 @@
                 }
             };
 
+            React.useEffect(() => {
+                loadArenaData();
+            }, []);
+
             if (loading) {
                 return (
                     <div className="max-w-5xl mx-auto p-4 md:p-0">
@@ -11537,7 +11581,7 @@
                 );
             }
 
-            if (!userStats) {
+            if (!userStats && !showDemo) {
                 return (
                     <div className="max-w-5xl mx-auto p-4 md:p-0">
                         <div className="text-center py-20">
@@ -11553,8 +11597,19 @@
                 label: challenge.title,
                 xp: `+${Math.round(challenge.xp_reward)} XP`,
                 icon: challenge.icon,
-                desc: challenge.description
+                desc: challenge.description,
+                color: ['teal', 'blue', 'purple', 'amber'][Math.floor(Math.random() * 4)]
             }));
+
+            const getColorStyles = (color) => {
+                const colorMap = {
+                    teal: { bg: 'rgba(20, 184, 166, 0.1)', border: 'rgba(20, 184, 166, 0.2)', hover: 'rgba(20, 184, 166, 0.5)', text: '#14B8A6' },
+                    blue: { bg: 'rgba(59, 130, 246, 0.1)', border: 'rgba(59, 130, 246, 0.2)', hover: 'rgba(59, 130, 246, 0.5)', text: '#3B82F6' },
+                    purple: { bg: 'rgba(168, 85, 247, 0.1)', border: 'rgba(168, 85, 247, 0.2)', hover: 'rgba(168, 85, 247, 0.5)', text: '#A855F7' },
+                    amber: { bg: 'rgba(245, 158, 11, 0.1)', border: 'rgba(245, 158, 11, 0.2)', hover: 'rgba(245, 158, 11, 0.5)', text: '#F59E0B' }
+                };
+                return colorMap[color] || colorMap.teal;
+            };
 
             return (
                 <div className="max-w-5xl mx-auto p-4 md:p-0">
@@ -11651,22 +11706,34 @@
                             </div>
 
                             <div className="space-y-4">
-                                {missions.map((mission) => (
-                                    <button
-                                        key={mission.id}
-                                        onClick={() => window.showSection && window.showSection(mission.id)}
-                                        className={`w-full p-5 rounded-3xl bg-gradient-to-br from-${mission.color}-500/10 to-transparent border border-${mission.color}-500/20 hover:border-${mission.color}-500/50 text-left transition-all group scale-active`}
-                                    >
-                                        <div className="flex items-center justify-between mb-3">
-                                            <div className={`w-10 h-10 rounded-xl bg-${mission.color}-500/20 flex items-center justify-center text-${mission.color}-400 group-hover:scale-110 transition-transform`}>
-                                                <i className={`fa-solid ${mission.icon} text-base`}></i>
+                                {missions.map((mission) => {
+                                    const colors = getColorStyles(mission.color);
+                                    return (
+                                        <button
+                                            key={mission.id}
+                                            onClick={() => window.showSection && window.showSection(mission.id)}
+                                            style={{
+                                                background: `linear-gradient(135deg, ${colors.bg} 0%, transparent 100%)`,
+                                                border: `1px solid ${colors.border}`,
+                                                transition: 'all 0.3s ease'
+                                            }}
+                                            onMouseEnter={(e) => e.target.style.borderColor = colors.hover}
+                                            onMouseLeave={(e) => e.target.style.borderColor = colors.border}
+                                            className="w-full p-5 rounded-3xl text-left transition-all group hover:scale-105"
+                                        >
+                                            <div className="flex items-center justify-between mb-3">
+                                                <div style={{ background: colors.bg, color: colors.text }} className="w-10 h-10 rounded-xl flex items-center justify-center text-base group-hover:scale-110 transition-transform">
+                                                    <i className={`fa-solid ${mission.icon}`}></i>
+                                                </div>
+                                                <span style={{ color: colors.text, background: colors.bg }} className="text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg">
+                                                    {mission.xp}
+                                                </span>
                                             </div>
-                                            <span className={`text-[10px] font-black text-${mission.color}-400 uppercase tracking-widest bg-${mission.color}-500/10 px-2 py-1 rounded-lg`}>{mission.xp}</span>
-                                        </div>
-                                        <span className="text-[13px] font-black text-white mb-1 block uppercase tracking-tight">{mission.label}</span>
-                                        <p className="text-[10px] text-slate-400 font-medium leading-tight">{mission.desc}</p>
-                                    </button>
-                                ))}
+                                            <span className="text-[13px] font-black text-white mb-1 block uppercase tracking-tight">{mission.label}</span>
+                                            <p className="text-[10px] text-slate-400 font-medium leading-tight">{mission.desc}</p>
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </div>
                     </div>
