@@ -2428,14 +2428,18 @@ app.post('/api/user-stats', authenticateToken, async (req, res) => {
             const xpGained = rewardType === 'daily_login' ? 10 :
                 rewardType === 'goal_complete' ? 50 :
                 rewardType === 'habit_streak' ? 30 :
+                rewardType === 'social_share' ? 100 :
                 rewardType === 'assistant_message' ? 10 : 10;
+                
+            const flameGained = rewardType === 'social_share' ? 100 : 1;
 
             stats.total_xp += xpGained;
             stats.level = Math.floor(stats.total_xp / 100) + 1;
-            stats.flameLevel += 1;
+            stats.flameLevel += flameGained;
             stats.history.push({
                 type: rewardType,
                 xp: xpGained,
+                flame: flameGained,
                 date: new Date().toISOString()
             });
         }

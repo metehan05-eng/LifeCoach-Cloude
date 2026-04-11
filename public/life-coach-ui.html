@@ -5707,6 +5707,20 @@
         }
 
         async function shareMessage(text, title = 'LifeCoach AI Paylaşımı') {
+            const rewardUser = () => {
+                if (window.StatsService) {
+                    window.StatsService.addReward('social_share').then(() => {
+                        if (window.showRewardNotification) {
+                            window.showRewardNotification(100, 100, 'default');
+                        }
+                        if (window.updateStatsDisplay) {
+                            window.updateStatsDisplay();
+                        }
+                        showToast('🔥 Paylaşım için 100 XP ve 100 Alev kazandın!', 'success');
+                    });
+                }
+            };
+
             if (navigator.share) {
                 try {
                     await navigator.share({
@@ -5715,6 +5729,7 @@
                         url: window.location.href
                     });
                     showToast('Paylaşıldı! 🚀');
+                    rewardUser();
                 } catch (err) {
                     if (err.name !== 'AbortError') {
                         console.error('Paylaşım hatası:', err);
@@ -5726,6 +5741,7 @@
                 const twitterUrl = `https://twitter.com/intent/tweet?text=${encodedText}`;
                 window.open(twitterUrl, '_blank');
                 showToast('Twitter/X paylaşım menüsü açılıyor... 🐦');
+                rewardUser();
             }
         }
 
@@ -5948,6 +5964,19 @@
                         await navigator.share(shareData);
                         showToast('✅ Paylaşım başarılı! 🎉', 'success');
                         console.log('[SHARE] Paylaşım başarılı!');
+                        
+                        // Ödül: Sosyal medyada paylaşım için 100 XP ve 100 Alev
+                        if (window.StatsService) {
+                            window.StatsService.addReward('social_share').then(() => {
+                                if (window.showRewardNotification) {
+                                    window.showRewardNotification(100, 100, 'default');
+                                }
+                                if (window.updateStatsDisplay) {
+                                    window.updateStatsDisplay();
+                                }
+                                showToast('🔥 Paylaşım için 100 Alev kazandın!', 'success');
+                            });
+                        }
                     } catch (shareErr) {
                         if (shareErr.name === 'AbortError') {
                             console.log('[SHARE] Kullanıcı iptal etti');
