@@ -8,6 +8,12 @@
 /*.html
   Cache-Control: no-cache, no-store, must-revalidate
 
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate
+  
+/worker.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
 # API endpoints - önbellek yok
 /api/*
   Cache-Control: no-cache, no-store, must-revalidate
