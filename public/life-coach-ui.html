@@ -4252,7 +4252,10 @@
                     <img id="social-persona-avatar" src="" class="w-20 h-20 rounded-full border-2 border-indigo-400/50 object-cover bg-slate-900 z-10" />
                     <div class="flex-1 z-10">
                         <div class="flex items-center gap-3 mb-1">
-                            <h3 class="text-lg font-bold text-white">Sosyal Profilim <span class="text-xs text-pink-400 border border-pink-400/30 rounded py-0.5 px-2 ml-1">Sims Karakteri</span></h3>
+                            <h3 class="text-lg font-bold text-white">Sosyal Profilim 
+                                <span id="social-unique-id" class="text-xs text-amber-400 bg-amber-400/10 border border-amber-400/30 rounded py-0.5 px-2 ml-1 hidden"></span>
+                                <span class="text-xs text-pink-400 border border-pink-400/30 rounded py-0.5 px-2 ml-1">Sims Karakteri</span>
+                            </h3>
                             <span id="social-persona-type" class="text-xs bg-indigo-500/30 text-indigo-200 px-2 py-0.5 rounded-full font-medium"></span>
                         </div>
                         <p id="social-persona-vibe" class="text-sm text-indigo-300/80 mb-2"></p>
@@ -10571,6 +10574,12 @@
                             document.getElementById('social-persona-vibe').innerText = uObj.simsCharacter.vibe || '';
                             document.getElementById('social-persona-strengths').innerText = (uObj.simsCharacter.strengths || []).join(', ') || 'Yok';
                             document.getElementById('social-persona-weaknesses').innerText = (uObj.simsCharacter.weaknesses || []).join(', ') || 'Yok';
+                            
+                            const idSpan = document.getElementById('social-unique-id');
+                            if (idSpan) {
+                                idSpan.innerText = `Senin Kodun: #${uObj.uniqueId || 'Yükleniyor...'}`;
+                                idSpan.classList.remove('hidden');
+                            }
                         }
                     }
 
