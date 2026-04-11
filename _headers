@@ -4,11 +4,20 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
 
+# HTML sayfaları - asla önbelleğe alınmamalı, her zaman taze gelsin
+/*.html
+  Cache-Control: no-cache, no-store, must-revalidate
+
+# API endpoints - önbellek yok
 /api/*
   Cache-Control: no-cache, no-store, must-revalidate
 
+# Statik dosyalar (css, js, resimler) - uzun süre önbellek
 /static/*
   Cache-Control: public, max-age=31536000, immutable
 
-/*
-  Cache-Control: public, max-age=31536000, immutable
+/*.js
+  Cache-Control: public, max-age=86400, must-revalidate
+
+/*.css
+  Cache-Control: public, max-age=86400, must-revalidate
