@@ -2078,6 +2078,158 @@ app.post('/api/deep-search', authenticateToken, async (req, res) => {
     } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
+// --- SOCIAL API (Study Groups & Partners) ---
+app.all('/api/social', authenticateToken, async (req, res) => {
+    try {
+        const userId = String(req.user.id); // Ensure string for consistency
+        const { type, action, id } = req.query;
+
+        if (type === 'groups') {
+            const groupsKV = await getKVData('study_groups') || {};
+            
+            // GET: List groups or get detail
+            if (req.method === 'GET') {
+                if (id) {
+                    if (action === 'messages') {
+                        // Return messages
+                        const group = groupsKV[id];
+                        if (!group) return res.status(404).json({ error: 'Grup bulunamadı' });
+                        if (!group.members.includes(userId)) return res.status(403).json({ error: 'Bu grupta değilsiniz' });
+                        return res.json({ messages: group.messages || [] });
+                    } else {
+                        // Group detail
+                        const group = groupsKV[id];
+                        if (!group) return res.status(404).json({ error: 'Grup bulunamadı' });
+                        return res.json({ group, isOwner: group.ownerId === userId });
+                    }
+                } else {
+                    // List all
+                    const publicGroups = Object.values(groupsKV).filter(g => g.isPublic || g.members.includes(userId));
+                    return res.json(publicGroups);
+                }
+            }
+
+            // POST: Create, Join, Leave, Message
+            if (req.method === 'POST') {
+                if (action === 'join') {
+                    const groupId = req.body.groupId;
+                    if (!groupsKV[groupId]) return res.status(404).json({ error: 'Grup bulunamadı' });
+                    if (!groupsKV[groupId].members.includes(userId)) {
+                        groupsKV[groupId].members.push(userId);
+                        await setKVData('study_groups', groupsKV);
+                    }
+                    return res.json({ success: true });
+                } else if (action === 'leave') {
+                    const groupId = id;
+                    if (!groupsKV[groupId]) return res.status(404).json({ error: 'Grup bulunamadı' });
+                    groupsKV[groupId].members = groupsKV[groupId].members.filter(m => m !== userId);
+                    await setKVData('study_groups', groupsKV);
+                    return res.json({ success: true });
+                } else if (action === 'message') {
+                    const groupId = id;
+                    const content = req.body.content;
+                    if (!groupsKV[groupId]) return res.status(404).json({ error: 'Grup bulunamadı' });
+                    if (!groupsKV[groupId].messages) groupsKV[groupId].messages = [];
+                    groupsKV[groupId].messages.push({
+                        senderId: req.user.email?.split('@')[0] || userId.substring(0, 5),
+                        content,
+                        timestamp: Date.now()
+                    });
+                    
+                    // Keep last 100 messages
+                    if (groupsKV[groupId].messages.length > 100) {
+                        groupsKV[groupId].messages = groupsKV[groupId].messages.slice(-100);
+                    }
+                    await setKVData('study_groups', groupsKV);
+                    return res.json({ success: true });
+                } else {
+                    // Create group
+                    const { name, description, subject, isPublic } = req.body;
+                    const newGroupId = 'g_' + Date.now();
+                    groupsKV[newGroupId] = {
+                        id: newGroupId,
+                        name,
+                        description,
+                        subject,
+                        isPublic: !!isPublic,
+                        ownerId: userId,
+                        members: [userId],
+                        messages: [],
+                        createdAt: Date.now()
+                    };
+                    await setKVData('study_groups', groupsKV);
+                    return res.json({ success: true, group: groupsKV[newGroupId] });
+                }
+            }
+
+            // PUT: Update settings
+            if (req.method === 'PUT') {
+                const groupId = id;
+                if (!groupsKV[groupId]) return res.status(404).json({ error: 'Grup bulunamadı' });
+                if (groupsKV[groupId].ownerId !== userId) return res.status(403).json({ error: 'Yetkisiz' });
+                
+                const { name, description, subject, isPublic } = req.body;
+                if (name) groupsKV[groupId].name = name;
+                if (description) groupsKV[groupId].description = description;
+                if (subject) groupsKV[groupId].subject = subject;
+                if (isPublic !== undefined) groupsKV[groupId].isPublic = isPublic;
+                
+                await setKVData('study_groups', groupsKV);
+                return res.json({ success: true });
+            }
+
+            // PATCH: Remove member
+            if (req.method === 'PATCH' && action === 'removeMember') {
+                const groupId = id;
+                const targetMember = req.body.memberId;
+                if (!groupsKV[groupId]) return res.status(404).json({ error: 'Grup bulunamadı' });
+                if (groupsKV[groupId].ownerId !== userId) return res.status(403).json({ error: 'Yetkisiz' });
+                
+                groupsKV[groupId].members = groupsKV[groupId].members.filter(m => m !== targetMember);
+                await setKVData('study_groups', groupsKV);
+                return res.json({ success: true });
+            }
+
+            // DELETE: Delete group
+            if (req.method === 'DELETE') {
+                const groupId = id;
+                if (!groupsKV[groupId]) return res.status(404).json({ error: 'Grup bulunamadı' });
+                if (groupsKV[groupId].ownerId !== userId) return res.status(403).json({ error: 'Yetkisiz' });
+                
+                delete groupsKV[groupId];
+                await setKVData('study_groups', groupsKV);
+                return res.json({ success: true });
+            }
+        } else if (type === 'partners') {
+            if (req.method === 'POST') {
+                const { partnerEmail, note } = req.body;
+                
+                // Fetch existing partners mapped by userId
+                const partnersKV = await getKVData('accountability_partners') || {};
+                if (!partnersKV[userId]) partnersKV[userId] = [];
+                
+                partnersKV[userId].push({
+                    email: partnerEmail,
+                    note,
+                    status: 'pending',
+                    addedAt: Date.now()
+                });
+                
+                await setKVData('accountability_partners', partnersKV);
+                return res.json({ success: true });
+            } else if (req.method === 'GET') {
+                const partnersKV = await getKVData('accountability_partners') || {};
+                return res.json(partnersKV[userId] || []);
+            }
+        }
+
+        res.status(400).json({ error: 'Bilinmeyen işlem / method' });
+    } catch (error) {
+        console.error("Social API Error:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // --- AI ARENA API (Supabase Integration) ---
 
 // Get user XP and level from database
