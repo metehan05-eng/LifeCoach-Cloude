@@ -20,49 +20,101 @@ function initThemeModal() {
     // Render Preset Themes
     const presetsDiv = document.getElementById('theme-presets');
     const presets = ThemeManager.getPresets();
-    
-    presetsDiv.innerHTML = presets.map(preset => `
-        <button onclick="selectPresetTheme('${preset.id}')" 
-            class="p-3 rounded-lg border-2 transition-all ${ThemeManager.currentTheme === preset.id ? 'border-cyan-500 bg-cyan-500/20' : 'border-white/10 bg-white/5 hover:bg-white/10'}">
+
+    presetsDiv.innerHTML = presets.map(preset => {
+        const isActive = ThemeManager.currentTheme === preset.id;
+        const primaryColor = preset.colors['primary'] || '#0F766E';
+        const tealColor = preset.colors['neon-teal'] || '#2DD4BF';
+        return `
+        <button onclick="selectPresetTheme('${preset.id}')"
+            class="p-3 rounded-xl border-2 transition-all duration-300 relative overflow-hidden group ${isActive ? 'border-opacity-100 scale-[1.03] shadow-lg' : 'border-white/10 bg-white/5 hover:bg-white/10 hover:scale-[1.02]'}"
+            style="${isActive ? `border-color: ${tealColor}; background: ${primaryColor}22; box-shadow: 0 0 16px ${tealColor}44;` : ''}">
             <div class="text-2xl mb-1">${preset.icon}</div>
-            <div class="text-xs font-semibold text-slate-300">${preset.name}</div>
+            <div class="text-xs font-semibold ${isActive ? 'text-white' : 'text-slate-300'}">${preset.name}</div>
+            <div class="flex gap-1 mt-2 justify-center">
+                ${Object.entries(preset.colors).slice(0, 4).map(([k, v]) => `<div class="w-3 h-3 rounded-full" style="background:${v}"></div>`).join('')}
+            </div>
+            ${isActive ? `<div class="absolute top-1 right-1 w-4 h-4 rounded-full flex items-center justify-center" style="background:${tealColor}"><i class="fa-solid fa-check text-black" style="font-size:8px"></i></div>` : ''}
         </button>
-    `).join('');
+    `}).join('');
 
     // Render Color Controls
     const colorsDiv = document.getElementById('theme-color-controls');
     const currentColors = ThemeManager.getCurrentColors();
     const colorKeys = Object.keys(ThemeManager.presets[ThemeManager.currentTheme]?.colors || {});
-    
-    colorsDiv.innerHTML = colorKeys.map(key => `
-        <div class="flex items-center gap-2">
-            <label class="text-xs font-semibold text-slate-400 uppercase flex-1">${key}</label>
-            <input type="color" id="color-${key}" value="${(currentColors[key] || '#000000').replace('var(-${key})', '#000000')}" 
-                onchange="changeThemeColor('${key}', this.value)" 
-                class="w-10 h-8 rounded cursor-pointer">
-            <input type="text" value="${(currentColors[key] || '#000000').replace('var(-${key})', '#000000')}" 
-                readonly class="w-20 px-2 py-1 text-xs bg-white/5 border border-white/10 rounded text-slate-300">
+    // Only show key visual colors (not bg-body, orb colors etc)
+    const visibleKeys = colorKeys.filter(k => !k.startsWith('orb') && k !== 'bg-body' && k !== 'deep-dark');
+
+    colorsDiv.innerHTML = visibleKeys.map(key => {
+        const val = currentColors[key] || '#000000';
+        const cleanVal = val.startsWith('#') ? val : '#000000';
+        const label = key.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        return `
+        <div class="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-all">
+            <label class="text-xs font-semibold text-slate-400 flex-1 truncate" title="${key}">${label}</label>
+            <div class="flex items-center gap-2">
+                <input type="color" id="color-${key}" value="${cleanVal}"
+                    onchange="changeThemeColor('${key}', this.value)"
+                    oninput="livePreviewColor('${key}', this.value)"
+                    class="w-9 h-8 rounded-lg cursor-pointer border-0 p-0.5 bg-transparent"
+                    style="outline: 1px solid rgba(255,255,255,0.15);">
+                <input type="text" id="colortext-${key}" value="${cleanVal}"
+                    onchange="changeThemeColor('${key}', this.value)"
+                    maxlength="7"
+                    class="w-20 px-2 py-1 text-xs bg-white/5 border border-white/10 rounded-lg text-slate-300 font-mono focus:outline-none focus:border-white/30">
+            </div>
         </div>
-    `).join('');
+    `}).join('');
+}
+
+// Live preview while dragging color picker (updates text input too)
+function livePreviewColor(colorKey, hexValue) {
+    const textInput = document.getElementById(`colortext-${colorKey}`);
+    if (textInput) textInput.value = hexValue;
+
+    if (!/^#[0-9A-F]{6}$/i.test(hexValue)) return;
+    document.documentElement.style.setProperty(`--${colorKey}`, hexValue);
+
+    // Live update orbs/mesh for visual feedback
+    const allColors = { ...(ThemeManager.presets[ThemeManager.currentTheme]?.colors || {}), ...ThemeManager.customTheme, [colorKey]: hexValue };
+    ThemeManager._updateMeshBg(allColors);
+    ThemeManager._updateOrbs(allColors);
 }
 
 // Select Preset Theme
 function selectPresetTheme(themeName) {
     ThemeManager.resetToPreset(themeName);
     initThemeModal();
-    showToast(`✨ Tema değiştirildi: ${ThemeManager.presets[themeName].name}`, 'success');
+    showToast(`✨ ${ThemeManager.presets[themeName].name} teması uygulandı!`, 'success');
 }
 
-// Change Individual Color
+// Change Individual Color (on change/blur)
 function changeThemeColor(colorKey, hexValue) {
+    if (!/^#[0-9A-F]{6}$/i.test(hexValue)) return;
     ThemeManager.setColor(colorKey, hexValue);
-    
-    // Update input display
-    const input = document.querySelector(`input[type="text"][value="${hexValue}"]`);
-    if (input) input.value = hexValue;
-    
-    // Update preview
-    initThemeModal();
+
+    // Sync both inputs
+    const picker = document.getElementById(`color-${colorKey}`);
+    const textInput = document.getElementById(`colortext-${colorKey}`);
+    if (picker) picker.value = hexValue;
+    if (textInput) textInput.value = hexValue;
+}
+
+// Save Theme — explicit save button action
+function saveTheme() {
+    ThemeManager.saveTheme();
+    showToast('💾 Tema kaydedildi!', 'success');
+
+    // Visual feedback on button
+    const btn = document.getElementById('theme-save-btn');
+    if (btn) {
+        btn.textContent = '✅ Kaydedildi!';
+        btn.style.background = 'linear-gradient(135deg, #059669, #10b981)';
+        setTimeout(() => {
+            btn.textContent = '💾 Kaydet';
+            btn.style.background = '';
+        }, 2000);
+    }
 }
 
 // Reset Theme to Default
@@ -85,7 +137,7 @@ function exportCurrentTheme() {
     link.download = `lifecoach-theme-${themeData.name}-${Date.now()}.json`;
     link.click();
     URL.revokeObjectURL(url);
-    showToast('📥 Tema indirildi!', 'success');
+    showToast('📥 Tema dosyası indirildi!', 'success');
 }
 
 // Import Theme from File
@@ -117,5 +169,7 @@ window.openThemeModal = openThemeModal;
 window.closeThemeModal = closeThemeModal;
 window.selectPresetTheme = selectPresetTheme;
 window.changeThemeColor = changeThemeColor;
+window.livePreviewColor = livePreviewColor;
+window.saveTheme = saveTheme;
 window.resetTheme = resetTheme;
 window.exportCurrentTheme = exportCurrentTheme;
