@@ -25,6 +25,156 @@ function closePartnerModal() {
     document.getElementById('partner-error').textContent = '';
 }
 
+// ===== FRIENDS & DM MANAGEMENT =====
+window.currentDMTargetId = null;
+
+function showFriendModal() {
+    document.getElementById('friend-modal').classList.remove('hidden');
+    document.getElementById('friend-modal').classList.add('flex');
+}
+
+function closeFriendModal() {
+    document.getElementById('friend-modal').classList.add('hidden');
+    document.getElementById('friend-modal').classList.remove('flex');
+    document.getElementById('friend-search-id').value = '';
+    closeDMChat(); // reset view
+}
+
+async function searchFriendProfile() {
+    const code = document.getElementById('friend-search-id').value.trim();
+    const errorEl = document.getElementById('friend-search-error');
+    const resultEl = document.getElementById('friend-search-result');
+    const token = localStorage.getItem('token');
+    
+    errorEl.classList.add('hidden');
+    resultEl.classList.add('hidden');
+    
+    if (!code || code.length !== 4) {
+        errorEl.textContent = 'Lütfen geçerli 4 haneli ID girin.';
+        errorEl.classList.remove('hidden');
+        return;
+    }
+
+    try {
+        const res = await fetch(`/api/social?type=friends&action=profile&uniqueId=${code}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        const data = await res.json();
+        
+        if (!res.ok || !data.profile) {
+            throw new Error(data.error || 'Kullanıcı bulunamadı.');
+        }
+
+        // Show profile
+        document.getElementById('friend-result-name').textContent = data.profile.name || 'Bilinmeyen Kullanıcı';
+        document.getElementById('friend-result-type').textContent = `ID #${data.profile.uniqueId}`;
+        
+        if (data.profile.avatar) {
+            document.getElementById('friend-result-icon').classList.add('hidden');
+            const img = document.getElementById('friend-result-avatar');
+            img.src = data.profile.avatar;
+            img.classList.remove('hidden');
+        } else {
+            document.getElementById('friend-result-icon').classList.remove('hidden');
+            document.getElementById('friend-result-avatar').classList.add('hidden');
+        }
+        
+        window.currentDMTargetId = data.profile.uniqueId;
+        resultEl.classList.remove('hidden');
+        
+    } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.classList.remove('hidden');
+    }
+}
+
+function startDMChat() {
+    document.getElementById('friend-search-result').classList.add('hidden');
+    document.getElementById('friend-search-id').parentElement.classList.add('hidden');
+    document.getElementById('dm-target-name').textContent = `Mesaj: #${window.currentDMTargetId}`;
+    
+    const dmSection = document.getElementById('friend-dm-section');
+    dmSection.classList.remove('hidden');
+    dmSection.classList.add('flex');
+    
+    loadFriendDMs();
+}
+
+function closeDMChat() {
+    document.getElementById('friend-dm-section').classList.add('hidden');
+    document.getElementById('friend-dm-section').classList.remove('flex');
+    document.getElementById('friend-search-id').parentElement.classList.remove('hidden');
+    document.getElementById('friend-search-result').classList.add('hidden');
+    window.currentDMTargetId = null;
+}
+
+async function loadFriendDMs() {
+    const token = localStorage.getItem('token');
+    const targetId = window.currentDMTargetId;
+    if (!targetId || !token) return;
+
+    try {
+        const res = await fetch(`/api/social?type=friends&action=dm&targetId=${targetId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        const data = await res.json();
+        const msgBox = document.getElementById('friend-dm-messages');
+        
+        if (!data.messages || data.messages.length === 0) {
+            msgBox.innerHTML = '<p class="text-center text-slate-500 text-xs mt-10">Henüz mesaj yok, merhaba de!</p>';
+            return;
+        }
+        
+        const uStr = localStorage.getItem('user');
+        const myId = uStr ? JSON.parse(uStr).id : 'missing';
+        
+        msgBox.innerHTML = data.messages.map(msg => {
+            const isMe = msg.senderId === myId;
+            return `
+                <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
+                    <div class="${isMe ? 'bg-amber-600' : 'bg-slate-700'} rounded-lg px-3 py-1.5 max-w-[80%]">
+                        <p class="text-xs font-bold ${isMe ? 'text-amber-200' : 'text-indigo-300'}">${isMe ? 'Sen' : msg.senderName}</p>
+                        <p class="text-white">${msg.content}</p>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+        msgBox.scrollTop = msgBox.scrollHeight;
+    } catch (err) {
+        console.error('Load DM error:', err);
+    }
+}
+
+async function sendFriendDM() {
+    const token = localStorage.getItem('token');
+    const targetId = window.currentDMTargetId;
+    const input = document.getElementById('friend-dm-input');
+    const content = input.value.trim();
+    
+    if (!content || !targetId || !token) return;
+
+    try {
+        const res = await fetch('/api/social?type=friends&action=dm', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ targetId, content })
+        });
+        
+        if (res.ok) {
+            input.value = '';
+            loadFriendDMs();
+        }
+    } catch (err) {
+        console.error('Send DM error:', err);
+    }
+}
+
 // Create Study Group
 async function createStudyGroup(event) {
     event.preventDefault();
