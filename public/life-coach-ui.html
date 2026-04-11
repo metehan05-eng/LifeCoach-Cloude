@@ -32,6 +32,9 @@
         integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
         crossorigin="anonymous" referrerpolicy="no-referrer">
 
+    <!-- Responsive UI Module - Mobile-First Optimization -->
+    <link rel="stylesheet" href="./responsive-ui.css">
+
     <!-- Google Fonts - Normal load (text rendering needed immediately) -->
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=Birthstone+Bounce:wght@400;500&display=swap"
@@ -51,6 +54,9 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="./lifeCoachServices.js"></script>
+    <script src="./group-manager.js"></script>
+    <script src="./theme-manager.js"></script>
+    <script src="./theme-ui.js"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -3192,9 +3198,9 @@
                 <div id="xp-badge-mobile"
                     class="hidden text-[10px] px-2 py-1 rounded-lg bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 font-black">
                     LV.1</div>
-                <button onclick="toggleDarkMode()"
-                    class="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-300 hover:text-white transition-all">
-                    <i class="fa-solid fa-moon text-sm"></i>
+                <button onclick="openThemeModal()"
+                    class="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-300 hover:text-white transition-all" title="Tema Özelleştir">
+                    <i class="fa-solid fa-palette text-sm"></i>
                 </button>
             </div>
         </header>
@@ -4262,9 +4268,104 @@
                     <i class="fa-solid fa-plus mr-2"></i>Yeni Grup Oluştur
                 </button>
 
-                <div id="groups-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div id="groups-list" class="responsive-grid">
                     <p class="text-slate-500 text-center col-span-full">Henüz grup yok. Yeni bir grup oluşturup başla!
                     </p>
+                </div>
+
+                <!-- Group Detail Container (Hidden by default) -->
+                <div id="group-detail-container" class="hidden">
+                    <div class="mb-6 flex items-center justify-between">
+                        <button onclick="backToGroupsList()" class="flex items-center gap-2 text-teal-400 hover:text-teal-300 text-sm font-semibold">
+                            <i class="fa-solid fa-arrow-left"></i> Gruplara Geri Dön
+                        </button>
+                        <div id="group-actions" class="flex gap-2"></div>
+                    </div>
+
+                    <div id="group-info-card" class="bg-gradient-to-br from-teal-900/30 to-cyan-900/20 border border-teal-500/20 rounded-2xl p-6 mb-6">
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="flex-1">
+                                <h2 id="group-detail-name" class="text-3xl font-bold text-white mb-2">Grup Adı</h2>
+                                <p id="group-detail-desc" class="text-slate-300 mb-3 text-lg">Açıklama</p>
+                                <div class="flex flex-wrap gap-3">
+                                    <span class="px-3 py-1 bg-teal-500/20 text-teal-300 rounded-full text-sm">
+                                        <i class="fa-solid fa-tag mr-2"></i><span id="group-detail-subject">Konu</span>
+                                    </span>
+                                    <span id="group-detail-type" class="px-3 py-1 rounded-full text-sm font-medium"></span>
+                                    <span class="px-3 py-1 bg-slate-500/20 text-slate-300 rounded-full text-sm">
+                                        👥 <span id="group-member-count">0</span> üye
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab Navigation -->
+                    <div class="flex gap-2 mb-6 border-b border-white/10">
+                        <button onclick="switchGroupTab('chat')" id="btn-chat-tab" class="px-4 py-3 border-b-2 border-teal-500 text-teal-400 font-semibold">
+                            💬 Sohbet
+                        </button>
+                        <button onclick="switchGroupTab('members')" id="btn-members-tab" class="px-4 py-3 border-b-2 border-transparent text-slate-400 font-semibold hover:text-white">
+                            👥 Üyeler
+                        </button>
+                        <button onclick="switchGroupTab('settings')" id="btn-settings-tab" id="btn-settings-tab-group" class="px-4 py-3 border-b-2 border-transparent text-slate-400 font-semibold hover:text-white">
+                            ⚙️ Ayarlar
+                        </button>
+                    </div>
+
+                    <!-- Chat Tab -->
+                    <div id="group-chat-tab" class="block">
+                        <div id="group-messages" class="bg-white/5 border border-white/10 rounded-xl p-4 h-80 overflow-y-auto mb-4 custom-scrollbar">
+                            <p class="text-slate-500 text-center">Mesaj yok. Sohbet başlat!</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <input type="text" id="group-message-input" placeholder="Grupta mesaj yaz..." 
+                                class="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-teal-500/50">
+                            <button onclick="sendGroupMessage()" class="px-4 py-3 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-all">
+                                <i class="fa-solid fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Members Tab -->
+                    <div id="group-members-tab" class="hidden">
+                        <div id="group-members-list" class="space-y-3">
+                            <p class="text-slate-500">Üye yok</p>
+                        </div>
+                    </div>
+
+                    <!-- Settings Tab (Admin Only) -->
+                    <div id="group-settings-tab" class="hidden">
+                        <div class="space-y-4">
+                            <div class="bg-white/5 border border-white/10 rounded-xl p-4">
+                                <h3 class="text-lg font-semibold text-white mb-4">Grup Bilgilerini Düzenle</h3>
+                                <input type="text" id="group-edit-name" placeholder="Grup adı" 
+                                    class="w-full px-4 py-2 mb-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-teal-500/50">
+                                <textarea id="group-edit-desc" placeholder="Açıklama" rows="3"
+                                    class="w-full px-4 py-2 mb-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-teal-500/50 resize-none"></textarea>
+                                <select id="group-edit-subject" class="w-full px-4 py-2 mb-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-teal-500/50">
+                                    <option>Programlama</option>
+                                    <option>Yazı</option>
+                                    <option>Matematik</option>
+                                    <option>Sanat</option>
+                                    <option>Spor</option>
+                                    <option>Genel</option>
+                                </select>
+                                <label class="flex items-center gap-3 cursor-pointer mb-4">
+                                    <input type="checkbox" id="group-edit-public" class="w-4 h-4">
+                                    <span class="text-slate-300">Grubu halka açık yap</span>
+                                </label>
+                                <div class="flex gap-2">
+                                    <button onclick="updateGroupSettings()" class="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all">
+                                        💾 Kaydet
+                                    </button>
+                                    <button onclick="deleteGroup()" class="flex-1 px-4 py-2 bg-red-500/80 text-white rounded-lg hover:bg-red-600 transition-all">
+                                        🗑️ Grubu Sil
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -4299,7 +4400,7 @@
                     </div>
                 </div>
 
-                <div id="partners-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div id="partners-list" class="responsive-grid">
                     <p class="text-slate-500 text-center col-span-full">Henüz partneriniz yok. Biri ekleyerek başla!</p>
                 </div>
 
@@ -4953,6 +5054,61 @@
         </div>
     </div>
 
+    <!-- Theme Customization Modal -->
+    <div id="theme-modal" class="fixed inset-0 modal-overlay hidden items-center justify-center z-50 p-4">
+        <div class="modal-card w-full max-w-2xl mx-auto p-6 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h3 class="text-2xl font-bold text-white font-display">🎨 Tema Özelleştir</h3>
+                    <p class="text-sm text-slate-400 mt-1">Uygulamanın renkini ve stilini kişiselleştir</p>
+                </div>
+                <button onclick="closeThemeModal()"
+                    class="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-all">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+
+            <!-- Preset Themes -->
+            <div class="mb-6">
+                <h4 class="text-sm font-semibold text-slate-300 mb-3">Hazır Temalar</h4>
+                <div id="theme-presets" class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <!-- Populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Custom Color Customization -->
+            <div class="mb-6">
+                <h4 class="text-sm font-semibold text-slate-300 mb-3">✏️ Renkler</h4>
+                <div id="theme-color-controls" class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white/5 p-4 rounded-xl border border-white/10">
+                    <!-- Populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Theme Preview -->
+            <div class="mb-6">
+                <h4 class="text-sm font-semibold text-slate-300 mb-3">👁️ Ön İzleme</h4>
+                <div class="grid grid-cols-3 gap-2 p-4 bg-white/5 rounded-xl border border-white/10">
+                    <div class="p-3 rounded-lg bg-[var(--primary)] text-white text-center text-xs font-bold">Primary</div>
+                    <div class="p-3 rounded-lg bg-[var(--secondary)] text-gray-900 text-center text-xs font-bold">Secondary</div>
+                    <div class="p-3 rounded-lg bg-[var(--accent)] text-gray-900 text-center text-xs font-bold">Accent</div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex gap-2 pt-4">
+                <button onclick="resetTheme()" class="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm font-medium transition-all">
+                    ↺ Sıfırla
+                </button>
+                <button onclick="exportCurrentTheme()" class="flex-1 px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded-lg text-sm font-medium transition-all">
+                    📤 İndir
+                </button>
+                <button onclick="closeThemeModal()" class="flex-1 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition-all">
+                    ✅ Hazır
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Goal Modal -->
     <div id="goal-modal" class="fixed inset-0 modal-overlay hidden items-center justify-center z-50 p-4">
         <div class="modal-card w-full max-w-md mx-auto p-6 max-h-[90vh] overflow-y-auto">
@@ -5347,6 +5503,88 @@
         </div>
     </div>
 
+    <!-- Group Creation Modal -->
+    <div id="group-modal" class="fixed inset-0 modal-overlay hidden items-center justify-center z-50 p-4">
+        <div class="modal-card w-full max-w-md mx-auto p-6 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-5">
+                <div>
+                    <h3 class="text-lg font-bold text-white font-display">Yeni Çalışma Grubu Oluştur</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Aynı hedefli arkadaşlarla birleş</p>
+                </div>
+                <button onclick="closeGroupModal()"
+                    class="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-all">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+
+            <form id="group-form" class="space-y-4" onsubmit="createStudyGroup(event)">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Grup Adı</label>
+                    <input type="text" id="group-name" class="modal-input" placeholder="Örn: Yazı Sınavı Grubu" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Açıklama</label>
+                    <textarea id="group-description" class="modal-input" rows="3" placeholder="Gürup hakkında bilgi..." required></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Konu</label>
+                    <select id="group-subject" class="modal-input" required>
+                        <option value="">Konu Seç</option>
+                        <option value="Programlama">Programlama</option>
+                        <option value="Yazı">Yazı</option>
+                        <option value="Matematik">Matematik</option>
+                        <option value="Sanat">Sanat</option>
+                        <option value="Spor">Spor</option>
+                        <option value="Sağlık">Sağlık</option>
+                        <option value="Müzik">Müzik</option>
+                        <option value="Genel">Genel</option>
+                    </select>
+                </div>
+                <label class="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" id="group-is-public" class="w-4 h-4" checked>
+                    <span class="text-sm font-medium text-slate-300">Grubu halka açık yap</span>
+                </label>
+                <div id="group-error" class="text-red-400 text-sm hidden bg-red-500/10 border border-red-500/20 rounded-xl p-3"></div>
+                <div class="flex gap-3 pt-1">
+                    <button type="button" onclick="closeGroupModal()" class="btn-secondary flex-1 py-2.5 text-sm font-medium">İptal</button>
+                    <button type="submit" class="btn-primary flex-1 py-2.5 text-sm">Oluştur</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Partner Modal -->
+    <div id="partner-modal" class="fixed inset-0 modal-overlay hidden items-center justify-center z-50 p-4">
+        <div class="modal-card w-full max-w-md mx-auto p-6 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-5">
+                <div>
+                    <h3 class="text-lg font-bold text-white font-display">💑 Hesap Verme Partneri Ekle</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Hedeflerinizde birbirini destekleyin</p>
+                </div>
+                <button onclick="closePartnerModal()"
+                    class="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-all">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+
+            <form id="partner-form" class="space-y-4" onsubmit="addAccountabilityPartner(event)">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Partner E-posta</label>
+                    <input type="email" id="partner-email" class="modal-input" placeholder="partner@email.com" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Açıklama</label>
+                    <textarea id="partner-note" class="modal-input" rows="3" placeholder="Neden bu kişi partner seçtiniz?"></textarea>
+                </div>
+                <div id="partner-error" class="text-red-400 text-sm hidden bg-red-500/10 border border-red-500/20 rounded-xl p-3"></div>
+                <div class="flex gap-3 pt-1">
+                    <button type="button" onclick="closePartnerModal()" class="btn-secondary flex-1 py-2.5 text-sm font-medium">İptal</button>
+                    <button type="submit" class="btn-primary flex-1 py-2.5 text-sm">Partner Ekle</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Toast Container -->
     <div id="toast-container"
         class="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none max-w-[calc(100vw-32px)]"></div>
@@ -5398,10 +5636,6 @@
             storage.set('theme', 'dark');
         }
         initTheme();
-
-        function toggleDarkMode() {
-            showToast('Sadece Dark Mode desteklenmektedir.', 'info');
-        }
 
         let isWelcomeVisible = false;
 
@@ -5953,8 +6187,8 @@
                                 <p class="text-xs text-slate-500 truncate">${user.email}</p>
                             </div>
                             <div class="flex items-center gap-1">
-                                <button onclick="toggleDarkMode()" class="auth-action-btn" title="Tema Değiştir">
-                                    <i class="fa-solid ${document.documentElement.classList.contains('dark') ? 'fa-sun' : 'fa-moon'} text-xs"></i>
+                                <button onclick="openThemeModal()" class="auth-action-btn" title="Tema Özelleştir">
+                                    <i class="fa-solid fa-palette text-xs"></i>
                                 </button>
                                 <button onclick="openSettings()" class="auth-action-btn" title="Ayarlar">
                                     <i class="fa-solid fa-gear text-xs"></i>
@@ -6013,13 +6247,6 @@
             storage.remove('user');
             storage.remove('token');
             window.location.reload();
-        }
-
-        function toggleDarkMode() {
-            document.documentElement.classList.toggle('dark');
-            const isDark = document.documentElement.classList.contains('dark');
-            storage.set('theme', isDark ? 'dark' : 'light');
-            checkAuth();
         }
 
         function toggleSidebar() {
