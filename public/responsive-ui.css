@@ -1,0 +1,472 @@
+/* ===== RESPONSIVE UI/UX OPTIMIZATION MODULE ===== */
+/* Mobile-First Approach - Optimize for all devices */
+
+/* ===== 1. ROOT RESPONSIVE VARIABLES ===== */
+:root {
+    /* Mobile First - Base sizes */
+    --page-padding: 1rem;
+    --section-gap: 1.5rem;
+    --card-gap: 1rem;
+    --button-height: 2.75rem;
+    --button-padding: 0.875rem 1rem;
+    --font-size-sm: 0.875rem;
+    --font-size-base: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.5rem;
+    --font-size-2xl: 1.875rem;
+    --font-size-3xl: 2.25rem;
+    /* Touch targets minimum 44-48px */
+    --touch-target: 3rem;
+}
+
+@media (min-width: 768px) {
+    :root {
+        --page-padding: 1.5rem;
+        --section-gap: 2rem;
+        --card-gap: 1.25rem;
+        --font-size-sm: 0.875rem;
+        --font-size-base: 1rem;
+        --font-size-lg: 1.125rem;
+        --font-size-xl: 1.5rem;
+        --font-size-2xl: 2rem;
+        --font-size-3xl: 2.5rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    :root {
+        --page-padding: 2rem;
+        --section-gap: 2.5rem;
+        --card-gap: 1.5rem;
+        --font-size-xl: 1.75rem;
+        --font-size-2xl: 2.25rem;
+        --font-size-3xl: 3rem;
+    }
+}
+
+/* ===== 2. RESPONSIVE GRID SYSTEM ===== */
+.responsive-grid {
+    display: grid;
+    gap: var(--card-gap);
+    grid-template-columns: 1fr;
+}
+
+/* Tablet: 2 columns */
+@media (min-width: 640px) {
+    .responsive-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .responsive-grid-no-wrap {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Desktop: 3 columns */
+@media (min-width: 1024px) {
+    .responsive-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* Desktop XL: 4 columns */
+@media (min-width: 1280px) {
+    .responsive-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* Full-width card classes */
+.card-full { grid-column: 1 / -1; }
+@media (min-width: 768px) {
+    .card-lg { grid-column: span 2; }
+}
+@media (min-width: 1024px) {
+    .card-lg { grid-column: span 2; }
+    .card-xl { grid-column: span 3; }
+}
+
+/* ===== 3. RESPONSIVE CONTAINERS ===== */
+.container-responsive {
+    width: 100%;
+    max-width: 100%;
+    padding: var(--page-padding);
+    margin: 0 auto;
+}
+
+@media (min-width: 640px) {
+    .container-responsive {
+        max-width: 640px;
+        margin: 0 auto;
+    }
+}
+
+@media (min-width: 768px) {
+    .container-responsive {
+        max-width: 768px;
+    }
+}
+
+@media (min-width: 1024px) {
+    .container-responsive {
+        max-width: 1024px;
+    }
+}
+
+@media (min-width: 1280px) {
+    .container-responsive {
+        max-width: 1280px;
+    }
+}
+
+/* ===== 4. TYPOGRAPHY RESPONSIVE ===== */
+h1 { font-size: var(--font-size-2xl); line-height: 1.3; }
+h2 { font-size: var(--font-size-xl); line-height: 1.4; }
+h3 { font-size: var(--font-size-lg); line-height: 1.4; }
+p { font-size: var(--font-size-base); line-height: 1.6; }
+small { font-size: var(--font-size-sm); }
+
+@media (min-width: 768px) {
+    h1 { font-size: var(--font-size-3xl); }
+    h2 { font-size: var(--font-size-2xl); }
+    h3 { font-size: var(--font-size-lg); }
+}
+
+/* ===== 5. TOUCH-FRIENDLY BUTTONS ===== */
+button, .btn, input[type="button"], input[type="submit"] {
+    min-height: var(--touch-target);
+    padding: var(--button-padding);
+    font-size: var(--font-size-base);
+    border-radius: 0.75rem;
+    transition: all 0.2s ease;
+    touch-action: manipulation;
+}
+
+button:active, .btn:active {
+    transform: scale(0.98);
+}
+
+@media (hover: hover) {
+    button:hover, .btn:hover {
+        transform: translateY(-2px);
+    }
+}
+
+/* ===== 6. RESPONSIVE INPUTS ===== */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+input[type="url"],
+textarea,
+select {
+    width: 100%;
+    padding: 0.75rem;
+    font-size: 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-color, rgba(255,255,255,0.1));
+    min-height: var(--touch-target);
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+textarea {
+    min-height: 6rem;
+    resize: vertical;
+}
+
+@media (max-width: 767px) {
+    input, textarea, select {
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+}
+
+/* ===== 7. RESPONSIVE MODALS ===== */
+.modal-responsive {
+    width: 100%;
+    max-width: calc(100vw - 2rem);
+    max-height: 90vh;
+    border-radius: 1rem;
+}
+
+@media (min-width: 640px) {
+    .modal-responsive {
+        max-width: 500px;
+    }
+}
+
+@media (min-width: 768px) {
+    .modal-responsive {
+        max-width: 600px;
+        border-radius: 1.5rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .modal-responsive {
+        max-width: 700px;
+    }
+}
+
+/* ===== 8. RESPONSIVE FLEX LAYOUTS ===== */
+.flex-responsive {
+    display: flex;
+    flex-direction: column;
+    gap: var(--card-gap);
+}
+
+@media (min-width: 640px) {
+    .flex-responsive {
+        flex-direction: row;
+    }
+    .flex-responsive > * {
+        flex: 1;
+    }
+}
+
+/* ===== 9. RESPONSIVE SECTION PADDING ===== */
+section, .section-responsive {
+    padding: var(--section-gap) var(--page-padding);
+}
+
+@media (min-width: 768px) {
+    section, .section-responsive {
+        padding: var(--section-gap) var(--page-padding);
+    }
+}
+
+/* ===== 10. MOBILE MENU SPACING ===== */
+@media (max-width: 767px) {
+    /* Extra bottom padding for fixed mobile navigation */
+    main, .main-content {
+        padding-bottom: 7rem;
+    }
+
+    body.chat-active {
+        overflow: hidden;
+    }
+}
+
+/* ===== 11. RESPONSIVE TABLES ===== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-sm);
+    overflow-x: auto;
+    display: block;
+}
+
+@media (min-width: 768px) {
+    table {
+        font-size: var(--font-size-base);
+        display: table;
+    }
+}
+
+thead, tbody, tfoot, tr, td, th {
+    display: block;
+}
+
+@media (min-width: 768px) {
+    thead, tbody, tfoot, tr, td, th {
+        display: table-cell;
+    }
+}
+
+tfoot {
+    display: none;
+}
+
+@media (min-width: 768px) {
+    tfoot {
+        display: table-footer-group;
+    }
+}
+
+td, th {
+    padding: 0.75rem;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+@media (max-width: 767px) {
+    tr {
+        margin-bottom: 1rem;
+        display: block;
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+    }
+
+    td {
+        display: block;
+        text-align: right;
+        padding-left: 50%;
+        position: relative;
+    }
+
+    td:before {
+        content: attr(data-label);
+        position: absolute;
+        left: 0;
+        font-weight: bold;
+        text-align: left;
+    }
+}
+
+/* ===== 12. RESPONSIVE IMAGES ===== */
+img, video, canvas {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+picture {
+    display: block;
+}
+
+/* ===== 13. RESPONSIVE SPACING UTILITIES ===== */
+.gap-responsive { gap: var(--card-gap); }
+.p-responsive { padding: var(--page-padding); }
+.p-section { padding: var(--section-gap) var(--page-padding); }
+.m-responsive { margin: var(--card-gap); }
+
+/* ===== 14. HIDE/SHOW RESPONSIVE ===== */
+.hide-mobile {
+    display: none !important;
+}
+
+.hide-tablet {
+    display: block !important;
+}
+
+.hide-desktop {
+    display: block !important;
+}
+
+@media (min-width: 640px) {
+    .hide-tablet {
+        display: none !important;
+    }
+}
+
+@media (min-width: 1024px) {
+    .hide-desktop {
+        display: none !important;
+    }
+}
+
+@media (min-width: 768px) {
+    .hide-mobile {
+        display: block !important;
+    }
+}
+
+/* ===== 15. ORIENTATION ===== */
+@media (orientation: landscape) and (max-height: 500px) {
+    .hide-landscape {
+        display: none !important;
+    }
+
+    /* Reduce padding on landscape mobile */
+    :root {
+        --page-padding: 0.75rem;
+        --section-gap: 1rem;
+    }
+}
+
+/* ===== 16. SAFE AREA / NOTCH SUPPORT ===== */
+@supports (padding: max(0px)) {
+    body {
+        padding-left: max(1rem, env(safe-area-inset-left));
+        padding-right: max(1rem, env(safe-area-inset-right));
+        padding-top: max(1rem, env(safe-area-inset-top));
+        padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    }
+
+    .safe-area-top {
+        padding-top: max(0.5rem, env(safe-area-inset-top));
+    }
+
+    .safe-area-bottom {
+        padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+    }
+}
+
+/* ===== 17. PERFORMANCE: SMOOTH SCROLLING ===== */
+html {
+    scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+    
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ===== 18. RESPONSIVE PRINT STYLES ===== */
+@media print {
+    * {
+        background: transparent !important;
+        color: black !important;
+        text-shadow: none !important;
+        box-shadow: none !important;
+    }
+
+    button, a[href]:after {
+        cursor: default;
+    }
+
+    .no-print {
+        display: none !important;
+    }
+
+    body {
+        padding: 0;
+        margin: 0;
+    }
+}
+
+/* ===== 19. ACCESSIBILITY IMPROVEMENTS ===== */
+:focus-visible {
+    outline: 3px solid var(--neon-cyan, #22D3EE);
+    outline-offset: 2px;
+    border-radius: 0.25rem;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.3);
+}
+
+/* ===== 20. RESPONSIVE Z-INDEX STACK ===== */
+.z-mobile-nav { z-index: 99; }
+.z-modal { z-index: 100; }
+.z-modal-backdrop { z-index: 99; }
+.z-tooltip { z-index: 101; }
+.z-notification { z-index: 102; }
+
+/* ===== BREAKPOINT REFERENCE ===== */
+/*
+Mobile: < 640px
+Tablet: 640px - 1023px
+Desktop: 1024px - 1279px
+Desktop XL: >= 1280px
+
+Common breakpoints:
+- 320px: Small phone
+- 375px: iPhone
+- 425px: Medium phone
+- 640px: Large phone/Tablet start
+- 768px: Tablet
+- 1024px: Desktop
+- 1280px: Large desktop
+- 1536px: XL desktop
+*/

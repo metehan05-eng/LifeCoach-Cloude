@@ -19,6 +19,8 @@ function authenticateToken(req) {
 // In-memory stores
 const studyGroups = {};
 const accountabilityPartnerships = {};
+const groupMessages = {};
+const groupMembers = {};
 
 export default async function handler(req, res) {
   const user = authenticateToken(req);
@@ -187,7 +189,7 @@ export default async function handler(req, res) {
     try {
       const { partnerId, message, progress } = req.body;
       
-      if (!userPartnerships[userId]) {
+      if (!accountabilityPartnerships[userId]) {
         return res.status(404).json({ error: 'Partnerlik bulunamadı' });
       }
       
@@ -214,6 +216,233 @@ export default async function handler(req, res) {
     } catch (err) {
       console.error('CheckIn error:', err);
       return res.status(500).json({ error: 'Check-in kaydedilemedi' });
+    }
+  }
+
+  // ===== GROUP MANAGEMENT ENDPOINTS =====
+
+  // GET /api/social?type=groups&id=groupId - Get specific group details
+  if (req.method === 'GET' && req.query.type === 'groups' && req.query.id) {
+    try {
+      const groupId = req.query.id;
+      const group = studyGroups[groupId];
+      
+      if (!group) {
+        return res.status(404).json({ error: 'Grup bulunamadı' });
+      }
+      
+      if (!group.members.includes(userId) && group.ownerId !== userId) {
+        return res.status(403).json({ error: 'Bu gruba erişim izni yok' });
+      }
+      
+      return res.status(200).json({
+        success: true,
+        group: group,
+        isMember: group.members.includes(userId),
+        isOwner: group.ownerId === userId
+      });
+    } catch (err) {
+      console.error('Group GET details error:', err);
+      return res.status(500).json({ error: 'Grup detayları alınamadı' });
+    }
+  }
+
+  // PUT /api/social?type=groups&id=groupId - Update group details
+  if (req.method === 'PUT' && req.query.type === 'groups' && req.query.id) {
+    try {
+      const groupId = req.query.id;
+      const group = studyGroups[groupId];
+      
+      if (!group) {
+        return res.status(404).json({ error: 'Grup bulunamadı' });
+      }
+      
+      if (group.ownerId !== userId) {
+        return res.status(403).json({ error: 'Sadece grup sahibi düzenleyebilir' });
+      }
+      
+      const { name, description, subject, isPublic } = req.body;
+      
+      if (name) group.name = name;
+      if (description) group.description = description;
+      if (subject) group.subject = subject;
+      if (isPublic !== undefined) group.isPublic = isPublic;
+      group.updatedAt = new Date().toISOString();
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Grup başarıyla güncellendi',
+        group: group
+      });
+    } catch (err) {
+      console.error('Group PUT error:', err);
+      return res.status(500).json({ error: 'Grup güncellenemedi' });
+    }
+  }
+
+  // DELETE /api/social?type=groups&id=groupId - Delete group
+  if (req.method === 'DELETE' && req.query.type === 'groups' && req.query.id) {
+    try {
+      const groupId = req.query.id;
+      const group = studyGroups[groupId];
+      
+      if (!group) {
+        return res.status(404).json({ error: 'Grup bulunamadı' });
+      }
+      
+      if (group.ownerId !== userId) {
+        return res.status(403).json({ error: 'Sadece grup sahibi silebilir' });
+      }
+      
+      delete studyGroups[groupId];
+      if (groupMessages[groupId]) delete groupMessages[groupId];
+      if (groupMembers[groupId]) delete groupMembers[groupId];
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Grup silindi'
+      });
+    } catch (err) {
+      console.error('Group DELETE error:', err);
+      return res.status(500).json({ error: 'Grup silinemedi' });
+    }
+  }
+
+  // PATCH /api/social?type=groups&id=groupId&action=removeMember - Remove member from group
+  if (req.method === 'PATCH' && req.query.type === 'groups' && req.query.id && req.query.action === 'removeMember') {
+    try {
+      const groupId = req.query.id;
+      const { memberId } = req.body;
+      const group = studyGroups[groupId];
+      
+      if (!group) {
+        return res.status(404).json({ error: 'Grup bulunamadı' });
+      }
+      
+      if (group.ownerId !== userId && memberId !== userId) {
+        return res.status(403).json({ error: 'Üyeyi çıkarma izni yok' });
+      }
+      
+      const index = group.members.indexOf(memberId);
+      if (index > -1) {
+        group.members.splice(index, 1);
+        group.totalMembers = group.members.length;
+      }
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Üye gruptan çıkarıldı',
+        group: group
+      });
+    } catch (err) {
+      console.error('Member removal error:', err);
+      return res.status(500).json({ error: 'Üye çıkarılamadı' });
+    }
+  }
+
+  // ===== GROUP MESSAGING ENDPOINTS =====
+
+  // POST /api/social?type=groups&id=groupId&action=message - Send message to group
+  if (req.method === 'POST' && req.query.type === 'groups' && req.query.id && req.query.action === 'message') {
+    try {
+      const groupId = req.query.id;
+      const group = studyGroups[groupId];
+      
+      if (!group) {
+        return res.status(404).json({ error: 'Grup bulunamadı' });
+      }
+      
+      if (!group.members.includes(userId)) {
+        return res.status(403).json({ error: 'Sadece grup üyeleri mesaj gönderebilir' });
+      }
+      
+      const { content, messageType = 'text' } = req.body;
+      
+      if (!content) {
+        return res.status(400).json({ error: 'Mesaj içeriği gerekli' });
+      }
+      
+      if (!groupMessages[groupId]) {
+        groupMessages[groupId] = [];
+      }
+      
+      const message = {
+        id: Math.random().toString(36).substr(2, 9),
+        senderId: userId,
+        content,
+        messageType, // 'text', 'image', 'document'
+        timestamp: new Date().toISOString(),
+        reactions: {}
+      };
+      
+      groupMessages[groupId].push(message);
+      
+      return res.status(201).json({
+        success: true,
+        message: 'Mesaj gönderildi',
+        data: message
+      });
+    } catch (err) {
+      console.error('Message POST error:', err);
+      return res.status(500).json({ error: 'Mesaj gönderilemedi' });
+    }
+  }
+
+  // GET /api/social?type=groups&id=groupId&action=messages - Get group messages
+  if (req.method === 'GET' && req.query.type === 'groups' && req.query.id && req.query.action === 'messages') {
+    try {
+      const groupId = req.query.id;
+      const group = studyGroups[groupId];
+      
+      if (!group) {
+        return res.status(404).json({ error: 'Grup bulunamadı' });
+      }
+      
+      if (!group.members.includes(userId)) {
+        return res.status(403).json({ error: 'Sadece grup üyeleri mesajları görebilir' });
+      }
+      
+      const messages = groupMessages[groupId] || [];
+      const limit = req.query.limit ? parseInt(req.query.limit) : 50;
+      
+      return res.status(200).json({
+        success: true,
+        messages: messages.slice(-limit),
+        count: messages.length
+      });
+    } catch (err) {
+      console.error('Messages GET error:', err);
+      return res.status(500).json({ error: 'Mesajlar alınamadı' });
+    }
+  }
+
+  // POST /api/social?type=groups&id=groupId&action=leave - Leave group
+  if (req.method === 'POST' && req.query.type === 'groups' && req.query.id && req.query.action === 'leave') {
+    try {
+      const groupId = req.query.id;
+      const group = studyGroups[groupId];
+      
+      if (!group) {
+        return res.status(404).json({ error: 'Grup bulunamadı' });
+      }
+      
+      if (group.ownerId === userId) {
+        return res.status(400).json({ error: 'Grup sahibi grubu terk edemez. Grubu silmek istiyorsanız silebilirsiniz' });
+      }
+      
+      const index = group.members.indexOf(userId);
+      if (index > -1) {
+        group.members.splice(index, 1);
+        group.totalMembers = group.members.length;
+      }
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Gruptan ayrıldın'
+      });
+    } catch (err) {
+      console.error('Leave group error:', err);
+      return res.status(500).json({ error: 'Gruppadan ayrılamadı' });
     }
   }
   
