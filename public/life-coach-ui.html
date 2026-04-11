@@ -4266,10 +4266,16 @@
                     </div>
                 </div>
 
-                <button onclick="showGroupModal()"
-                    class="mb-6 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold rounded-xl hover:from-cyan-400 hover:to-blue-400 transition-all">
-                    <i class="fa-solid fa-plus mr-2"></i>Yeni Grup Oluştur
-                </button>
+                <div class="flex flex-wrap gap-4 mb-6">
+                    <button onclick="showGroupModal()"
+                        class="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold rounded-xl hover:from-cyan-400 hover:to-blue-400 transition-all">
+                        <i class="fa-solid fa-users-viewfinder mr-2"></i>Yeni Grup Oluştur
+                    </button>
+                    <button onclick="showFriendModal()"
+                        class="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold rounded-xl hover:from-amber-400 hover:to-orange-400 transition-all shadow-lg shadow-orange-500/20 shadow-glow">
+                        <i class="fa-solid fa-user-plus mr-2"></i>Arkadaş Bul & Mesajlaş
+                    </button>
+                </div>
 
                 <div id="groups-list" class="responsive-grid">
                     <p class="text-slate-500 text-center col-span-full">Henüz grup yok. Yeni bir grup oluşturup başla!
@@ -5512,6 +5518,64 @@
                     <button type="submit" class="btn-primary flex-1 py-2.5 text-sm">Oluştur</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Friend & DM Modal -->
+    <div id="friend-modal" class="fixed inset-0 modal-overlay hidden items-center justify-center z-50 p-4">
+        <div class="modal-card w-full max-w-lg mx-auto p-6 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-5">
+                <div>
+                    <h3 class="text-lg font-bold text-white font-display">Arkadaş Bul & Mesajlaş</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">4 Haneli Eşsiz Kod ile arama yap</p>
+                </div>
+                <button onclick="closeFriendModal()" class="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-all">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+
+            <!-- Araba Bölümü -->
+            <div class="mb-6 flex gap-3 flex-wrap">
+                <input type="text" id="friend-search-id" class="modal-input flex-1" placeholder="Kod: Yalnızca 4 Hane (örn: 1423)">
+                <button onclick="searchFriendProfile()" class="px-5 py-2 bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl text-white font-semibold flex items-center shadow-lg shadow-orange-500/20 active:scale-95 transition-all">
+                    <i class="fa-solid fa-magnifying-glass mr-2"></i> Ara
+                </button>
+            </div>
+            
+            <div id="friend-search-error" class="hidden my-2 text-sm text-red-400 bg-red-400/10 p-2 rounded-lg"></div>
+
+            <!-- Profil Sonucu -->
+            <div id="friend-search-result" class="hidden mb-6 bg-white/5 border border-white/10 rounded-xl p-4 flex flex-col items-center">
+                <div class="w-16 h-16 rounded-full bg-slate-700 flex items-center justify-center overflow-hidden border-2 border-indigo-400/50 mb-3" id="friend-result-avatar-container">
+                    <i class="fa-solid fa-user text-3xl text-slate-400" id="friend-result-icon"></i>
+                    <img id="friend-result-avatar" class="hidden w-full h-full object-cover">
+                </div>
+                <h4 id="friend-result-name" class="text-lg font-bold text-white">İsim</h4>
+                <p id="friend-result-type" class="text-xs text-indigo-300 font-medium bg-indigo-500/20 px-3 py-1 rounded-full mt-1">Free</p>
+                
+                <button onclick="startDMChat()" class="mt-4 px-6 py-2 bg-gradient-to-r from-teal-500 to-emerald-500 rounded-xl font-bold text-white shadow-lg focus:scale-95 transition-all w-full flex justify-center items-center">
+                    <i class="fa-solid fa-message mr-2"></i> Mesaj Gönder
+                </button>
+            </div>
+
+            <!-- DM Chat Kutu (Hidden until chat started) -->
+            <div id="friend-dm-section" class="hidden flex-col h-72 border border-white/10 rounded-xl bg-white/5 overflow-hidden">
+                <div class="bg-white/10 p-2 px-3 border-b border-white/10 flex justify-between items-center shadow-md pb-2">
+                    <span class="text-sm font-semibold text-white" id="dm-target-name">Mesaj</span>
+                    <button onclick="closeDMChat()" class="text-slate-400 hover:text-white text-xs"><i class="fa-solid fa-arrow-left mr-1"></i>Aramaya Dön</button>
+                </div>
+                <!-- Chat Messages -->
+                <div id="friend-dm-messages" class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar text-sm">
+                    <p class="text-center text-slate-500 text-xs mt-10">Henüz mesaj yok</p>
+                </div>
+                <!-- Chat Input -->
+                <div class="p-2 bg-white/5 border-t border-white/10 flex gap-2">
+                    <input type="text" id="friend-dm-input" class="flex-1 bg-white/5 text-white text-sm outline-none border border-white/10 rounded-lg px-3 py-1.5 focus:border-amber-500" placeholder="Mesajınız">
+                    <button onclick="sendFriendDM()" class="px-3 bg-amber-500 text-white rounded-lg hover:bg-amber-400 transition-all font-semibold flex items-center">
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
