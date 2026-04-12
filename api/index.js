@@ -10,6 +10,8 @@ dotenv.config(); // Also load .env if it exists
 
 // Now import everything else
 import express from 'express';
+import { Server as SocketIOServer } from 'socket.io';
+import { createServer } from 'http';
 import cors from 'cors';
 import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
@@ -25,6 +27,15 @@ import { spawn } from 'child_process';
 import fs from 'fs';
 
 const app = express();
+const httpServer = createServer(app);
+const io = new SocketIOServer(httpServer, { cors: { origin: '*' } });
+app.set('io', io);
+
+io.on('connection', (socket) => {
+    socket.on('join_room', (roomId) => {
+        socket.join(roomId);
+    });
+});
 
 // Middleware
 app.use(cors());
@@ -2109,11 +2120,17 @@ app.all('/api/social', authenticateToken, async (req, res) => {
             if (req.method === 'GET') {
                 if (id) {
                     if (action === 'messages') {
-                        // Return messages
+                        const channelId = req.query.channelId;
                         const group = groupsKV[id];
                         if (!group) return res.status(404).json({ error: 'Grup bulunamadı' });
                         if (!group.members.includes(userId)) return res.status(403).json({ error: 'Bu grupta değilsiniz' });
-                        return res.json({ messages: group.messages || [] });
+                        
+                        let targetMessages = group.messages || [];
+                        if (channelId && group.channels) {
+                            const c = group.channels.find(ch => ch.id === channelId);
+                            if (c) targetMessages = c.messages || [];
+                        }
+                        return res.json({ messages: targetMessages });
                     } else {
                         // Group detail
                         const group = groupsKV[id];
@@ -2132,17 +2149,22 @@ app.all('/api/social', authenticateToken, async (req, res) => {
                 if (action === 'join') {
                     const groupId = req.body.groupId;
                     if (!groupsKV[groupId]) return res.status(404).json({ error: 'Grup bulunamadı' });
-                    
                     if (!groupsKV[groupId].members.includes(userId)) {
-                        // Maksimum Katılımcı Güvenlik Kontrolü (Sınır: 60 Kişi)
-                        if (groupsKV[groupId].members.length >= 60) {
-                            return res.status(403).json({ error: 'Grup maksimum 60 kişilik kapasiteye ulaşmıştır.' });
-                        }
-                        
+                        if (groupsKV[groupId].members.length >= 60) return res.status(403).json({ error: 'Grup maksimum 60 kişilik kapasiteye ulaşmıştır.' });
                         groupsKV[groupId].members.push(userId);
                         await setKVData('study_groups', groupsKV);
                     }
                     return res.json({ success: true });
+                } else if (action === 'joinByCode') {
+                    const joinCode = req.body.joinCode;
+                    const group = Object.values(groupsKV).find(g => g.joinCode === joinCode);
+                    if (!group) return res.status(404).json({ error: 'Grup bulunamadı' });
+                    if (!group.members.includes(userId)) {
+                        if (group.members.length >= 60) return res.status(403).json({ error: 'Grup maksimum 60 kişilik kapasiteye ulaşmıştır.' });
+                        group.members.push(userId);
+                        await setKVData('study_groups', groupsKV);
+                    }
+                    return res.json({ success: true, groupId: group.id });
                 } else if (action === 'leave') {
                     const groupId = id;
                     if (!groupsKV[groupId]) return res.status(404).json({ error: 'Grup bulunamadı' });
@@ -2151,33 +2173,60 @@ app.all('/api/social', authenticateToken, async (req, res) => {
                     return res.json({ success: true });
                 } else if (action === 'message') {
                     const groupId = id;
-                    const content = req.body.content;
+                    const { content, channelId } = req.body;
                     if (!groupsKV[groupId]) return res.status(404).json({ error: 'Grup bulunamadı' });
-                    if (!groupsKV[groupId].messages) groupsKV[groupId].messages = [];
-                    groupsKV[groupId].messages.push({
+                    
+                    const msg = {
                         senderId: req.user.email?.split('@')[0] || userId.substring(0, 5),
                         content,
                         timestamp: Date.now()
-                    });
-                    
-                    // Keep last 100 messages
-                    if (groupsKV[groupId].messages.length > 100) {
-                        groupsKV[groupId].messages = groupsKV[groupId].messages.slice(-100);
+                    };
+
+                    let targetRoom = groupId;
+                    if (channelId && groupsKV[groupId].channels) {
+                        const channel = groupsKV[groupId].channels.find(c => c.id === channelId);
+                        if (channel && channel.type === 'text') {
+                            if (!channel.messages) channel.messages = [];
+                            channel.messages.push(msg);
+                            if (channel.messages.length > 200) channel.messages = channel.messages.slice(-200);
+                            targetRoom = `${groupId}_${channelId}`;
+                        }
+                    } else {
+                        if (!groupsKV[groupId].messages) groupsKV[groupId].messages = [];
+                        groupsKV[groupId].messages.push(msg);
+                        if (groupsKV[groupId].messages.length > 100) groupsKV[groupId].messages = groupsKV[groupId].messages.slice(-100);
+                    }
+
+                    if (req.app.get('io')) {
+                        req.app.get('io').to(targetRoom).emit('new_message', msg);
                     }
                     await setKVData('study_groups', groupsKV);
                     return res.json({ success: true });
                 } else {
                     // Create group
-                    const { name, description, subject, isPublic } = req.body;
+                    const { name, description, subject, isPublic, avatarUrl } = req.body;
                     const newGroupId = 'g_' + Date.now();
+                    
+                    let joinCode = Math.floor(1000 + Math.random() * 9000).toString();
+                    while(Object.values(groupsKV).some(g => g.joinCode === joinCode)) {
+                        joinCode = Math.floor(1000 + Math.random() * 9000).toString();
+                    }
+
                     groupsKV[newGroupId] = {
                         id: newGroupId,
+                        joinCode,
                         name,
+                        avatarUrl: avatarUrl || `https://api.dicebear.com/7.x/shapes/svg?seed=${newGroupId}`,
                         description,
                         subject,
                         isPublic: !!isPublic,
                         ownerId: userId,
                         members: [userId],
+                        channels: [
+                            { id: 'genel', name: 'Genel Sohbet', type: 'text', messages: [] },
+                            { id: 'yardim', name: 'Yardımlaşma', type: 'text', messages: [] },
+                            { id: 'sesli', name: 'Sesli Çalışma', type: 'voice' }
+                        ],
                         messages: [],
                         createdAt: Date.now()
                     };
@@ -3325,7 +3374,7 @@ export default app;
 const isProduction = process.env.VERCEL || process.env.NODE_ENV === 'production';
 if (!isProduction) {
     const PORT = process.env.PORT || 3004;
-    app.listen(PORT, () => {
+    httpServer.listen(PORT, () => {
         console.log(`\n✅ API Sunucusu http://localhost:${PORT} adresinde çalışıyor`);
         console.log(`📁 Yerel Depolama: ./data/\n`);
     });
