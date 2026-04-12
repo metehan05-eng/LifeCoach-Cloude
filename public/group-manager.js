@@ -1,4 +1,28 @@
-// ===== STUDY GROUP MANAGEMENT MODULE =====
+// ===== STUDY GROUP MANAGEMENT MODULE (DISCORD STYLE) =====
+let socket;
+window.currentGroupId = null;
+window.currentChannelId = 'genel';
+window.currentGroupIsOwner = false;
+
+// Initialize Socket.io
+function initGroupSocket() {
+    if (socket) return;
+    try {
+        socket = io();
+        socket.on('new_message', (msg) => {
+            appendMessageToUI(msg);
+        });
+        
+        socket.on('connect', () => {
+            if (window.currentGroupId) {
+                const room = window.currentChannelId === 'genel' ? window.currentGroupId : `${window.currentGroupId}_${window.currentChannelId}`;
+                socket.emit('join_room', room);
+            }
+        });
+    } catch (e) {
+        console.error('Socket initialization failed:', e);
+    }
+}
 
 // Modal Management Functions
 function showGroupModal() {
@@ -177,7 +201,7 @@ async function sendFriendDM() {
 
 // Create Study Group
 async function createStudyGroup(event) {
-    event.preventDefault();
+    if(event) event.preventDefault();
     const token = localStorage.getItem('token');
     
     if (!token) {
@@ -189,7 +213,8 @@ async function createStudyGroup(event) {
         name: document.getElementById('group-name').value,
         description: document.getElementById('group-description').value,
         subject: document.getElementById('group-subject').value,
-        isPublic: document.getElementById('group-is-public').checked
+        isPublic: document.getElementById('group-is-public').checked,
+        avatarUrl: document.getElementById('group-avatar-preview').src
     };
 
     if (!formData.name || !formData.description || !formData.subject) {
@@ -225,7 +250,6 @@ async function createStudyGroup(event) {
 // Join Study Group
 async function joinStudyGroup(groupId) {
     const token = localStorage.getItem('token');
-    
     if (!token) {
         showToast('Lütfen giriş yapın', 'error');
         return;
@@ -242,10 +266,7 @@ async function joinStudyGroup(groupId) {
         });
 
         const data = await res.json();
-
-        if (!res.ok) {
-            throw new Error(data.error || 'Gruba katılamadı');
-        }
+        if (!res.ok) throw new Error(data.error || 'Gruba katılamadı');
 
         showToast('✅ Gruba başarıyla katıldınız!', 'success');
         loadStudyGroups();
@@ -256,152 +277,184 @@ async function joinStudyGroup(groupId) {
     }
 }
 
+async function joinGroupByCode() {
+    const code = document.getElementById('group-join-code-input').value.trim();
+    const token = localStorage.getItem('token');
+    
+    if (!code || code.length !== 4) {
+        showToast('4 haneli geçerli bir kod girin!', 'error');
+        return;
+    }
+
+    try {
+        const res = await fetch('/api/social?type=groups&action=joinByCode', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ joinCode: code })
+        });
+        
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Grup bulunamadı veya katılamadı');
+        
+        showToast('✅ Grubun kodunu çözdün! Başarıyla katıldın.', 'success');
+        document.getElementById('group-join-code-input').value = '';
+        loadStudyGroups();
+        viewGroupDetail(data.groupId);
+    } catch (err) {
+        showToast(err.message, 'error');
+    }
+}
+
 // View Group Details
 async function viewGroupDetail(groupId) {
     const token = localStorage.getItem('token');
-    
-    if (!token) {
-        showToast('Lütfen giriş yapın', 'error');
-        return;
-    }
+    if (!token) return;
 
     try {
         const res = await fetch(`/api/social?type=groups&id=${groupId}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
 
-        if (!res.ok) {
-            throw new Error('Grup bulunamadı');
-        }
+        if (!res.ok) throw new Error('Grup bulunamadı');
 
         const data = await res.json();
         const group = data.group;
         const isOwner = data.isOwner;
 
-        // Hide list, show detail
-        document.getElementById('groups-list').classList.add('hidden');
-        document.getElementById('group-detail-container').classList.remove('hidden');
-
-        // Fill group info
-        document.getElementById('group-detail-name').textContent = group.name;
-        document.getElementById('group-detail-desc').textContent = group.description;
-        document.getElementById('group-detail-subject').textContent = group.subject || 'Genel';
-        document.getElementById('group-member-count').textContent = group.members.length;
-        
-        const typeSpan = document.getElementById('group-detail-type');
-        typeSpan.className = group.isPublic ? 'px-3 py-1 bg-green-500/20 text-green-300 rounded-full text-sm font-medium' : 'px-3 py-1 bg-blue-500/20 text-blue-300 rounded-full text-sm font-medium';
-        typeSpan.textContent = group.isPublic ? '🔓 Halka Açık' : '🔒 Özel';
-
-        // Show/hide admin actions
-        const actionDiv = document.getElementById('group-actions');
-        if (isOwner) {
-            actionDiv.innerHTML = `
-                <button onclick="switchGroupTab('settings')" class="px-3 py-1 bg-yellow-500/20 text-yellow-400 rounded-lg text-sm hover:bg-yellow-500/30">⚙️ Ayarlar</button>
-                <button onclick="leaveGroup('${groupId}')" class="px-3 py-1 bg-red-500/20 text-red-400 rounded-lg text-sm hover:bg-red-500/30">🚪 Çık</button>
-            `;
-        } else {
-            actionDiv.innerHTML = `<button onclick="leaveGroup('${groupId}')" class="px-3 py-1 bg-red-500/20 text-red-400 rounded-lg text-sm hover:bg-red-500/30">🚪 Grubdan Çık</button>`;
-        }
-
-        // Load members
-        loadGroupMembers(groupId, group.members);
-
-        // Load messages
-        loadGroupMessages(groupId);
-
-        // Store current group ID for later use
         window.currentGroupId = groupId;
         window.currentGroupIsOwner = isOwner;
+        window.currentChannelId = 'genel'; // default channel
 
-        // Setup settings form if owner
+        // Update UI
+        document.getElementById('groups-list').classList.add('hidden');
+        document.getElementById('group-detail-container').classList.remove('hidden');
+        document.getElementById('group-detail-container').classList.add('flex');
+
+        document.getElementById('group-detail-name').textContent = group.name;
+        document.getElementById('group-join-id-copy').textContent = `ID: #${group.joinCode || '0000'}`;
+        document.getElementById('group-member-count').textContent = group.members.length;
+        
+        // Show/hide gear icon
+        const gear = document.getElementById('btn-settings-tab-icon');
+        if (isOwner) gear.classList.remove('hidden');
+        else gear.classList.add('hidden');
+
+        // Sidebar User Info
+        const uStr = localStorage.getItem('user');
+        if (uStr) {
+            const u = JSON.parse(uStr);
+            document.getElementById('social-mini-avatar').src = u.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.name}`;
+            document.getElementById('social-mini-name').textContent = u.name;
+        }
+
+        // Render Channels
+        renderChannels(group.channels || []);
+
+        // Initialize Socket
+        initGroupSocket();
+        socket.emit('join_room', groupId);
+
+        // Load messages for default channel
+        loadGroupMessages(groupId, 'genel');
+
+        // Setup settings form
         if (isOwner) {
             document.getElementById('group-edit-name').value = group.name;
             document.getElementById('group-edit-desc').value = group.description;
-            document.getElementById('group-edit-subject').value = group.subject || 'Genel';
             document.getElementById('group-edit-public').checked = group.isPublic;
         }
 
     } catch (err) {
-        console.error('View group detail error:', err);
-        showToast(err.message || 'Hata oluştu', 'error');
+        console.error('View group error:', err);
+        showToast(err.message, 'error');
+    }
+}
+
+function renderChannels(channels) {
+    const textContainer = document.getElementById('group-text-channels');
+    const voiceContainer = document.getElementById('group-voice-channels');
+    
+    textContainer.innerHTML = '';
+    voiceContainer.innerHTML = '';
+
+    if (channels.length === 0) {
+        // Fallback if no channels exist (for old groups)
+        channels = [
+            { id: 'genel', name: 'Genel Sohbet', type: 'text' },
+            { id: 'yardim', name: 'Yardımlaşma', type: 'text' },
+            { id: 'sesli', name: 'Sesli Çalışma', type: 'voice' }
+        ];
+    }
+
+    channels.forEach(ch => {
+        const isActive = window.currentChannelId === ch.id;
+        const html = `
+            <div onclick="switchGroupChannel('${ch.id}', '${ch.type}', '${ch.name}')" 
+                class="flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer transition-all ${isActive ? 'bg-slate-800 text-white' : 'text-slate-500 hover:bg-white/5 hover:text-slate-300'}">
+                <i class="fa-solid ${ch.type === 'text' ? 'fa-hashtag' : 'fa-volume-high'} text-xs opacity-50"></i>
+                <span class="text-xs font-medium truncate">${ch.name}</span>
+            </div>
+        `;
+        if (ch.type === 'text') textContainer.insertAdjacentHTML('beforeend', html);
+        else voiceContainer.insertAdjacentHTML('beforeend', html);
+    });
+}
+
+function switchGroupChannel(channelId, type, name) {
+    if (type === 'voice') {
+        showToast('🔊 Sesli kanal özelliği çok yakında! WebRTC entegrasyonu üzerinde çalışıyoruz.', 'info');
+        return;
+    }
+
+    window.currentChannelId = channelId;
+    document.getElementById('current-channel-name').textContent = name;
+    document.getElementById('group-message-input').placeholder = `#${name} kanalına mesaj gönder...`;
+    
+    // Join socket room
+    if (socket) {
+        const room = channelId === 'genel' ? window.currentGroupId : `${window.currentGroupId}_${channelId}`;
+        socket.emit('join_room', room);
+    }
+
+    // Refresh Sidebar to show active state
+    loadStudyGroups().then(() => {
+        // Actually we need to re-render channels but we'll do it from local cache or re-fetch group
+        fetchGroupAndRefetchChannels();
+    });
+
+    loadGroupMessages(window.currentGroupId, channelId);
+}
+
+async function fetchGroupAndRefetchChannels() {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`/api/social?type=groups&id=${window.currentGroupId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (res.ok) {
+        const data = await res.json();
+        renderChannels(data.group.channels || []);
     }
 }
 
 // Back to Groups List
 function backToGroupsList() {
     document.getElementById('group-detail-container').classList.add('hidden');
+    document.getElementById('group-detail-container').classList.remove('flex');
     document.getElementById('groups-list').classList.remove('hidden');
-    document.getElementById('group-chat-tab').classList.remove('hidden');
-    document.getElementById('group-members-tab').classList.add('hidden');
-    document.getElementById('group-settings-tab').classList.add('hidden');
     window.currentGroupId = null;
-}
-
-// Switch between tabs
-function switchGroupTab(tabName) {
-    // Hide all tabs
-    document.getElementById('group-chat-tab').classList.add('hidden');
-    document.getElementById('group-members-tab').classList.add('hidden');
-    document.getElementById('group-settings-tab').classList.add('hidden');
-
-    // Remove active styling from all buttons
-    document.getElementById('btn-chat-tab').classList.remove('border-teal-500', 'text-teal-400');
-    document.getElementById('btn-members-tab').classList.remove('border-teal-500', 'text-teal-400');
-    document.getElementById('btn-settings-tab-group').classList.remove('border-teal-500', 'text-teal-400');
-
-    // Show selected tab
-    if (tabName === 'chat') {
-        document.getElementById('group-chat-tab').classList.remove('hidden');
-        document.getElementById('btn-chat-tab').classList.add('border-teal-500', 'text-teal-400');
-    } else if (tabName === 'members') {
-        document.getElementById('group-members-tab').classList.remove('hidden');
-        document.getElementById('btn-members-tab').classList.add('border-teal-500', 'text-teal-400');
-    } else if (tabName === 'settings') {
-        if (!window.currentGroupIsOwner) {
-            showToast('Sadece grup sahibi ayarları değiştirebilir', 'error');
-            return;
-        }
-        document.getElementById('group-settings-tab').classList.remove('hidden');
-        document.getElementById('btn-settings-tab-group').classList.add('border-teal-500', 'text-teal-400');
-    }
-}
-
-// Load Group Members
-function loadGroupMembers(groupId, members) {
-    const membersList = document.getElementById('group-members-list');
-    
-    if (!members || members.length === 0) {
-        membersList.innerHTML = '<p class="text-slate-500">Üye yok</p>';
-        return;
-    }
-
-    membersList.innerHTML = members.map(memberId => `
-        <div class="flex items-center justify-between bg-white/5 border border-white/10 rounded-lg p-3">
-            <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center text-white text-sm font-bold">
-                    ${memberId[0].toUpperCase()}
-                </div>
-                <span class="text-slate-300 text-sm">${memberId}</span>
-            </div>
-            <div class="flex gap-1">
-                ${window.currentGroupIsOwner && memberId !== 'owner' ? `
-                    <button onclick="removeGroupMember('${groupId}', '${memberId}')" class="text-red-400 hover:text-red-300 text-xs">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                ` : ''}
-            </div>
-        </div>
-    `).join('');
+    window.currentChannelId = 'genel';
 }
 
 // Load Group Messages
-async function loadGroupMessages(groupId) {
+async function loadGroupMessages(groupId, channelId = 'genel') {
     const token = localStorage.getItem('token');
-    
     if (!token) return;
 
     try {
-        const res = await fetch(`/api/social?type=groups&id=${groupId}&action=messages&limit=50`, {
+        const res = await fetch(`/api/social?type=groups&id=${groupId}&action=messages&channelId=${channelId}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
 
@@ -409,40 +462,61 @@ async function loadGroupMessages(groupId) {
 
         const data = await res.json();
         const messages = data.messages || [];
-
         const messagesDiv = document.getElementById('group-messages');
         
+        messagesDiv.innerHTML = '';
         if (messages.length === 0) {
-            messagesDiv.innerHTML = '<p class="text-slate-500 text-center">Henüz mesaj yok. Sohbet başlat!</p>';
-            return;
+            messagesDiv.innerHTML = '<p class="text-slate-500 text-center py-10 text-xs">Bu kanalda henüz mesaj yok. İlk mesajı sen gönder!</p>';
+        } else {
+            messages.forEach(msg => appendMessageToUI(msg, false));
         }
 
-        messagesDiv.innerHTML = messages.map(msg => `
-            <div class="mb-3 text-sm">
-                <p class="text-teal-400 text-xs font-semibold">${msg.senderId}</p>
-                <p class="text-slate-300 bg-white/5 p-2 rounded mt-1">${msg.content}</p>
-                <p class="text-slate-500 text-xs mt-1">${new Date(msg.timestamp).toLocaleTimeString('tr-TR')}</p>
-            </div>
-        `).join('');
-
-        // Scroll to bottom
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
     } catch (err) {
         console.error('Load messages error:', err);
     }
 }
 
+function appendMessageToUI(msg, scroll = true) {
+    const messagesDiv = document.getElementById('group-messages');
+    if (!messagesDiv) return;
+
+    // Check if message belongs to current channel (this is simplified as socket room handles segregation)
+    
+    const time = new Date(msg.timestamp).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+    const avatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${msg.senderId}`;
+    
+    const html = `
+        <div class="flex items-start gap-4 group hover:bg-white/3 p-1 rounded-lg transition-all animate-fade-in">
+            <img src="${avatar}" class="w-10 h-10 rounded-xl bg-slate-700 p-0.5 mt-0.5">
+            <div class="flex-1 overflow-hidden">
+                <div class="flex items-center gap-2">
+                    <span class="text-teal-400 font-bold text-sm">${msg.senderId}</span>
+                    <span class="text-[10px] text-slate-500">${time}</span>
+                </div>
+                <p class="text-slate-300 text-sm break-words">${msg.content}</p>
+            </div>
+        </div>
+    `;
+    
+    // Remove "no messages" placeholder if exists
+    if (messagesDiv.querySelector('.text-slate-500')) {
+        messagesDiv.innerHTML = '';
+    }
+    
+    messagesDiv.insertAdjacentHTML('beforeend', html);
+    if (scroll) messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
 // Send Group Message
 async function sendGroupMessage() {
     const token = localStorage.getItem('token');
     const groupId = window.currentGroupId;
+    const channelId = window.currentChannelId;
     const input = document.getElementById('group-message-input');
     const content = input.value.trim();
 
-    if (!token || !groupId || !content) {
-        showToast('Mesaj boş olamaz', 'error');
-        return;
-    }
+    if (!token || !groupId || !content) return;
 
     try {
         const res = await fetch(`/api/social?type=groups&id=${groupId}&action=message`, {
@@ -451,16 +525,14 @@ async function sendGroupMessage() {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ content })
+            body: JSON.stringify({ content, channelId })
         });
 
         if (!res.ok) throw new Error('Mesaj gönderilemedi');
-
         input.value = '';
-        loadGroupMessages(groupId);
+        // No need to call loadGroupMessages here as socket will emit it back
     } catch (err) {
-        console.error('Send message error:', err);
-        showToast(err.message || 'Hata oluştu', 'error');
+        showToast(err.message, 'error');
     }
 }
 
@@ -469,15 +541,11 @@ async function updateGroupSettings() {
     const token = localStorage.getItem('token');
     const groupId = window.currentGroupId;
 
-    if (!token || !groupId || !window.currentGroupIsOwner) {
-        showToast('Yetkisiz işlem', 'error');
-        return;
-    }
+    if (!token || !groupId || !window.currentGroupIsOwner) return;
 
     const formData = {
         name: document.getElementById('group-edit-name').value,
         description: document.getElementById('group-edit-desc').value,
-        subject: document.getElementById('group-edit-subject').value,
         isPublic: document.getElementById('group-edit-public').checked
     };
 
@@ -494,10 +562,10 @@ async function updateGroupSettings() {
         if (!res.ok) throw new Error('Ayarlar güncellenemedi');
 
         showToast('✅ Grup ayarları güncellendi', 'success');
+        document.getElementById('group-settings-tab').classList.add('hidden');
         viewGroupDetail(groupId);
     } catch (err) {
-        console.error('Update settings error:', err);
-        showToast(err.message || 'Hata oluştu', 'error');
+        showToast(err.message, 'error');
     }
 }
 
@@ -505,15 +573,9 @@ async function updateGroupSettings() {
 async function deleteGroup() {
     const token = localStorage.getItem('token');
     const groupId = window.currentGroupId;
+    if (!token || !groupId || !window.currentGroupIsOwner) return;
 
-    if (!token || !groupId || !window.currentGroupIsOwner) {
-        showToast('Yetkisiz işlem', 'error');
-        return;
-    }
-
-    if (!confirm('Grubu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')) {
-        return;
-    }
+    if (!confirm('Grubu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')) return;
 
     try {
         const res = await fetch(`/api/social?type=groups&id=${groupId}`, {
@@ -527,23 +589,15 @@ async function deleteGroup() {
         backToGroupsList();
         loadStudyGroups();
     } catch (err) {
-        console.error('Delete group error:', err);
-        showToast(err.message || 'Hata oluştu', 'error');
+        showToast(err.message, 'error');
     }
 }
 
 // Leave Group
 async function leaveGroup(groupId) {
     const token = localStorage.getItem('token');
-
-    if (!token) {
-        showToast('Lütfen giriş yapın', 'error');
-        return;
-    }
-
-    if (!confirm('Gruptan çıkmak istediğinizden emin misiniz?')) {
-        return;
-    }
+    if (!token) return;
+    if (!confirm('Gruptan çıkmak istediğinizden emin misiniz?')) return;
 
     try {
         const res = await fetch(`/api/social?type=groups&id=${groupId}&action=leave`, {
@@ -557,53 +611,48 @@ async function leaveGroup(groupId) {
         backToGroupsList();
         loadStudyGroups();
     } catch (err) {
-        console.error('Leave group error:', err);
-        showToast(err.message || 'Hata oluştu', 'error');
+        showToast(err.message, 'error');
     }
 }
 
-// Remove Member from Group
-async function removeGroupMember(groupId, memberId) {
-    const token = localStorage.getItem('token');
-
-    if (!token || !window.currentGroupIsOwner) {
-        showToast('Yetkisiz işlem', 'error');
-        return;
-    }
-
-    if (!confirm('Bu üyeyi gruptan çıkarmak istediğinizden emin misiniz?')) {
-        return;
-    }
-
-    try {
-        const res = await fetch(`/api/social?type=groups&id=${groupId}&action=removeMember`, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ memberId })
-        });
-
-        if (!res.ok) throw new Error('Üye çıkarılamadı');
-
-        showToast('✅ Üye gruptan çıkarıldı', 'success');
-        viewGroupDetail(groupId);
-    } catch (err) {
-        console.error('Remove member error:', err);
-        showToast(err.message || 'Hata oluştu', 'error');
+// Tab Switching logic updated for Discord style (overlay/sidebar)
+function switchGroupTab(tabName) {
+    if (tabName === 'members') {
+        const m = document.getElementById('group-members-tab');
+        m.classList.toggle('hidden');
+    } else if (tabName === 'settings') {
+        const s = document.getElementById('group-settings-tab');
+        s.classList.toggle('hidden');
     }
 }
 
-// Add Accountability Partner
+// Load Group Members
+function loadGroupMembers(groupId, members) {
+    const membersList = document.getElementById('group-members-list');
+    if (!members || members.length === 0) {
+        membersList.innerHTML = '<p class="text-slate-500 text-xs">Üye yok</p>';
+        return;
+    }
+
+    membersList.innerHTML = members.map(memberId => `
+        <div class="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-all cursor-pointer">
+            <div class="relative">
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${memberId}" class="w-8 h-8 rounded-full bg-slate-700">
+                <div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-slate-900 rounded-full"></div>
+            </div>
+            <div class="overflow-hidden">
+                <p class="text-xs text-slate-300 font-bold truncate">${memberId}</p>
+                <p class="text-[9px] text-slate-500">Çevrimiçi</p>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Friend & Partner Management
 async function addAccountabilityPartner(event) {
-    event.preventDefault();
+    if(event) event.preventDefault();
     const token = localStorage.getItem('token');
-
-    if (!token) {
-        showToast('Lütfen giriş yapın', 'error');
-        return;
-    }
+    if (!token) return;
 
     const formData = {
         partnerEmail: document.getElementById('partner-email').value,
@@ -621,29 +670,38 @@ async function addAccountabilityPartner(event) {
         });
 
         const data = await res.json();
-
-        if (!res.ok) {
-            throw new Error(data.error || 'Partner eklenemedi');
-        }
+        if (!res.ok) throw new Error(data.error || 'Partner eklenemedi');
 
         showToast('✅ Hesap verme partneri eklendi!', 'success');
         closePartnerModal();
         loadAccountability();
     } catch (err) {
-        console.error('Add partner error:', err);
-        document.getElementById('partner-error').textContent = err.message || 'Hata oluştu';
+        document.getElementById('partner-error').textContent = err.message;
+        document.getElementById('partner-error').classList.remove('hidden');
     }
 }
 
-// Initialize form submits
+// Global Event Listeners
 document.addEventListener('DOMContentLoaded', () => {
     const groupForm = document.getElementById('group-form');
-    if (groupForm) {
-        groupForm.addEventListener('submit', createStudyGroup);
-    }
+    if (groupForm) groupForm.addEventListener('submit', createStudyGroup);
 
     const partnerForm = document.getElementById('partner-form');
-    if (partnerForm) {
-        partnerForm.addEventListener('submit', addAccountabilityPartner);
+    if (partnerForm) partnerForm.addEventListener('submit', addAccountabilityPartner);
+    
+    // Message input enter key support
+    const msgInput = document.getElementById('group-message-input');
+    if (msgInput) {
+        msgInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendGroupMessage();
+        });
+    }
+
+    // Join code input enter support
+    const joinInput = document.getElementById('group-join-code-input');
+    if (joinInput) {
+        joinInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') joinGroupByCode();
+        });
     }
 });
