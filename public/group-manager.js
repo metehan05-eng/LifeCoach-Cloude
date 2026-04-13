@@ -270,7 +270,8 @@ async function joinStudyGroup(groupId) {
 
         showToast('✅ Gruba başarıyla katıldınız!', 'success');
         loadStudyGroups();
-        viewGroupDetail(groupId);
+        // Hemen sohbeti aç
+        window.open(`./group-chat.html?groupId=${groupId}`, '_blank', 'width=1200,height=800');
     } catch (err) {
         console.error('Join group error:', err);
         showToast(err.message || 'Hata oluştu', 'error');
@@ -302,7 +303,8 @@ async function joinGroupByCode() {
         showToast('✅ Grubun kodunu çözdün! Başarıyla katıldın.', 'success');
         document.getElementById('group-join-code-input').value = '';
         loadStudyGroups();
-        viewGroupDetail(data.groupId);
+        // Hemen sohbeti aç
+        window.open(`./group-chat.html?groupId=${data.groupId}`, '_blank', 'width=1200,height=800');
     } catch (err) {
         showToast(err.message, 'error');
     }
