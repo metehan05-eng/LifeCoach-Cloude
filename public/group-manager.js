@@ -270,8 +270,8 @@ async function joinStudyGroup(groupId) {
 
         showToast('✅ Gruba başarıyla katıldınız!', 'success');
         loadStudyGroups();
-        // Hemen sohbeti aç
-        window.open(`./group-chat.html?groupId=${groupId}`, '_blank', 'width=1200,height=800');
+        // Hemen odaya gir (SPA içi)
+        viewGroupDetail(groupId);
     } catch (err) {
         console.error('Join group error:', err);
         showToast(err.message || 'Hata oluştu', 'error');
@@ -303,8 +303,8 @@ async function joinGroupByCode() {
         showToast('✅ Grubun kodunu çözdün! Başarıyla katıldın.', 'success');
         document.getElementById('group-join-code-input').value = '';
         loadStudyGroups();
-        // Hemen sohbeti aç
-        window.open(`./group-chat.html?groupId=${data.groupId}`, '_blank', 'width=1200,height=800');
+        // Hemen odaya gir (SPA içi)
+        viewGroupDetail(data.groupId);
     } catch (err) {
         showToast(err.message, 'error');
     }
@@ -343,6 +343,9 @@ async function viewGroupDetail(groupId) {
         const gear = document.getElementById('btn-settings-tab-icon');
         if (isOwner) gear.classList.remove('hidden');
         else gear.classList.add('hidden');
+
+        // Load Members
+        loadGroupMembers(groupId, data.group.memberDetails || group.members);
 
         // Sidebar User Info
         const uStr = localStorage.getItem('user');
@@ -636,18 +639,27 @@ function loadGroupMembers(groupId, members) {
         return;
     }
 
-    membersList.innerHTML = members.map(memberId => `
-        <div class="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-all cursor-pointer">
-            <div class="relative">
-                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${memberId}" class="w-8 h-8 rounded-full bg-slate-700">
-                <div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-slate-900 rounded-full"></div>
+    document.getElementById('group-member-count').textContent = members.length;
+
+    membersList.innerHTML = members.map(m => {
+        const mId = typeof m === 'object' ? m.id : m;
+        const status = typeof m === 'object' ? m.status : { text: 'Çevrimiçi', emoji: '🟢' };
+        
+        return `
+            <div class="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-all cursor-pointer">
+                <div class="relative">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${mId}" class="w-8 h-8 rounded-full bg-slate-700">
+                    <div class="absolute bottom-0 right-0 text-[8px] flex items-center justify-center bg-slate-900 rounded-full w-3.5 h-3.5 border border-white/10">
+                        ${status.emoji}
+                    </div>
+                </div>
+                <div class="overflow-hidden">
+                    <p class="text-xs text-slate-300 font-bold truncate">${mId}</p>
+                    <p class="text-[9px] text-slate-500">${status.text}</p>
+                </div>
             </div>
-            <div class="overflow-hidden">
-                <p class="text-xs text-slate-300 font-bold truncate">${memberId}</p>
-                <p class="text-[9px] text-slate-500">Çevrimiçi</p>
-            </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 // Friend & Partner Management
