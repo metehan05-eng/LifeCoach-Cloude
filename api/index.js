@@ -766,39 +766,58 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
             userMessageParts.unshift({ text: userTextMessage }); // Metni her zaman başa koy
         }
 
-        // --- AI Model Logic (Gemini Only) ---
+        // --- AI Model Logic (Gemini with Robust Retry & 429 Handling) ---
         let aiResponse;
         let usedModel;
 
-        const gemini15Pro = "gemini-1.5-pro";  // En güçlü: Gemini 1.5 Pro
-        const gemini15Flash = "gemini-1.5-flash";  // Hızlı: Gemini 1.5 Flash
-        const geminiProLatest = "gemini-pro-latest";                // Yedek: Gemini Pro
+        const mainModel = "gemini-1.5-pro";
+        const fastModel = "gemini-1.5-flash";
+        const experimentalModel = "gemini-2.0-flash-exp"; // "Gemini 3" hissiyatı için en yeni model
+
+        async function callWithRetry(modelName, parts, systemPrompt, history, maxRetries = 2) {
+            let attempt = 0;
+            while (attempt <= maxRetries) {
+                try {
+                    console.log(`[AI] Deneniyor: ${modelName} (Deneme ${attempt + 1})`);
+                    const model = genAI.getGenerativeModel({ model: modelName, systemInstruction: systemPrompt });
+                    const chat = model.startChat({ 
+                        history: history, 
+                        generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } 
+                    });
+                    const result = await chat.sendMessage(parts);
+                    return { text: result.response.text(), model: modelName };
+                } catch (error) {
+                    const isRateLimit = error.message?.includes('429') || error.status === 429;
+                    if (isRateLimit && attempt < maxRetries) {
+                        const waitTime = Math.pow(2, attempt) * 2000; // 2s, 4s...
+                        console.warn(`[AI] Kota doldu (429). ${waitTime}ms bekleniyor...`);
+                        await new Promise(resolve => setTimeout(resolve, waitTime));
+                        attempt++;
+                        continue;
+                    }
+                    throw error;
+                }
+            }
+        }
 
         try {
-            // 1. Gemini 3.1 Pro Preview (En güçlü - dosya oluşturma için optimize)
-            console.log(`[AI] Gemini Deneniyor: ${gemini15Pro}`);
-            const model = genAI.getGenerativeModel({ model: gemini15Pro, systemInstruction: finalSystemPrompt });
-            const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } });
-            const result = await chat.sendMessage(userMessageParts);
-            aiResponse = result.response.text();
-            usedModel = gemini15Pro;
-        } catch (error) {
-            console.warn(`[AI] ${gemini15Pro} başarısız. YEDEK: ${gemini15Flash}`);
+            // 1. Önce en yeni "experimental" modeli dene (Gemini 3 talebi için)
+            const result = await callWithRetry(experimentalModel, userMessageParts, finalSystemPrompt, chatHistory);
+            aiResponse = result.text;
+            usedModel = result.model;
+        } catch (err1) {
+            console.warn(`[AI] ${experimentalModel} başarısız:`, err1.message);
             try {
-                // 2. Gemini 1.5 Flash (Hızlı yedek)
-                const model = genAI.getGenerativeModel({ model: gemini15Flash, systemInstruction: finalSystemPrompt });
-                const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } });
-                const result = await chat.sendMessage(userMessageParts);
-                aiResponse = result.response.text();
-                usedModel = gemini15Flash;
-            } catch (finalError) {
-                console.warn(`[AI] Son çare: ${geminiProLatest}`);
-                // 3. Gemini Pro Latest (Son çare)
-                const model = genAI.getGenerativeModel({ model: geminiProLatest, systemInstruction: finalSystemPrompt });
-                const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } });
-                const result = await chat.sendMessage(userMessageParts);
-                aiResponse = result.response.text();
-                usedModel = geminiProLatest;
+                // 2. Pro modelini dene
+                const result = await callWithRetry(mainModel, userMessageParts, finalSystemPrompt, chatHistory);
+                aiResponse = result.text;
+                usedModel = result.model;
+            } catch (err2) {
+                console.warn(`[AI] ${mainModel} başarısız:`, err2.message);
+                // 3. Flash modelini dene (Son çare)
+                const result = await callWithRetry(fastModel, userMessageParts, finalSystemPrompt, chatHistory);
+                aiResponse = result.text;
+                usedModel = result.model;
             }
         }
 
