@@ -212,7 +212,9 @@ async function createStudyGroup(event) {
         description: document.getElementById('group-description').value,
         subject: document.getElementById('group-subject').value,
         isPublic: document.getElementById('group-is-public').checked,
-        avatarUrl: document.getElementById('group-avatar-preview').src
+        avatarUrl: document.getElementById('group-avatar-preview').src,
+        noLinks: document.getElementById('group-no-links').checked,
+        noAds: document.getElementById('group-no-ads').checked
     };
 
     if (!formData.name || !formData.description || !formData.subject) {
@@ -368,6 +370,11 @@ async function viewGroupDetail(groupId) {
             document.getElementById('group-edit-name').value = group.name;
             document.getElementById('group-edit-desc').value = group.description;
             document.getElementById('group-edit-public').checked = group.isPublic;
+            
+            if (group.rules) {
+                document.getElementById('group-edit-no-links').checked = group.rules.noLinks;
+                document.getElementById('group-edit-no-ads').checked = group.rules.noAds;
+            }
         }
 
     } catch (err) {
@@ -587,7 +594,9 @@ async function updateGroupSettings() {
     const formData = {
         name: document.getElementById('group-edit-name').value,
         description: document.getElementById('group-edit-desc').value,
-        isPublic: document.getElementById('group-edit-public').checked
+        isPublic: document.getElementById('group-edit-public').checked,
+        noLinks: document.getElementById('group-edit-no-links').checked,
+        noAds: document.getElementById('group-edit-no-ads').checked
     };
 
     try {
