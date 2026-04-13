@@ -65,6 +65,15 @@ io.on('connection', (socket) => {
 });
 
 // Middleware
+// Security Middlewares
+app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    next();
+});
+
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
@@ -218,6 +227,40 @@ const optionalAuth = (req, res, next) => {
         next(); // Hata olsa da devam et
     });
 };
+
+// Security: Simple HTML Sanitizer to prevent XSS
+function sanitize(text) {
+    if (typeof text !== 'string') return text;
+    return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+// Security: Simple Profanity & sensitive word filter
+function filterProfanity(text) {
+    if (typeof text !== 'string') return text;
+    const badWords = ['küfür1', 'küfür2', 'hack', 'script', 'eval', 'process.env']; // Örnek kelimeler
+    let filtered = text;
+    badWords.forEach(word => {
+        const reg = new RegExp(word, 'gi');
+        filtered = filtered.replace(reg, '***');
+    });
+    return filtered;
+}
+
+// Security: In-memory store for rate limiting
+const userLastActionTime = {};
+
+function rateLimit(userId, limitMs = 2000) {
+    const now = Date.now();
+    if (userLastActionTime[userId] && (now - userLastActionTime[userId] < limitMs)) {
+        return false; // Çok hızlı işlem
+    }
+    userLastActionTime[userId] = now;
+    return true;
+}
 
 // Auth: Token'ı doğrular ve kullanıcıyı ekler. Token yoksa veya geçersizse hata döner.
 const authenticateToken = (req, res, next) => {
@@ -2247,8 +2290,13 @@ app.all('/api/social', authenticateToken, async (req, res) => {
                     }
                 } else {
                     // List all
-                    const publicGroups = Object.values(groupsKV).filter(g => g.isPublic || g.members.includes(userId));
-                    return res.json(publicGroups);
+                    // Filtrering: Eğer kullanıcı bu gruptan BANLANMIŞSA, grup hiç gözükmesin
+                    const filteredGroups = Object.values(groupsKV).filter(g => {
+                        const isBanned = g.bannedUsers && g.bannedUsers.includes(userId);
+                        return !isBanned;
+                    });
+                    
+                    return res.json(filteredGroups);
                 }
             }
 
@@ -2281,12 +2329,46 @@ app.all('/api/social', authenticateToken, async (req, res) => {
                     return res.json({ success: true });
                 } else if (action === 'message') {
                     const groupId = id;
-                    const { content, channelId } = req.body;
-                    if (!groupsKV[groupId]) return res.status(404).json({ error: 'Grup bulunamadı' });
+                    const group = groupsKV[groupId];
+                    if (!group) return res.status(404).json({ error: 'Grup bulunamadı' });
                     
+                    // GÜVENLİK: Kara Liste Kontrolü
+                    if (group.bannedUsers && group.bannedUsers.includes(userId)) {
+                        return res.status(403).json({ error: 'Bu gruptan kalıcı olarak men edildiniz!' });
+                    }
+
+                    if (!group.members.includes(userId)) return res.status(403).json({ error: 'Bu gruba mesaj atma yetkiniz yok' });
+                    
+                    if (!rateLimit(userId, 2000)) {
+                        return res.status(429).json({ error: 'Çok hızlı mesaj gönderiyorsunuz.' });
+                    }
+
+                    const sanitizedContent = sanitize(content);
+                    const filteredContent = filterProfanity(sanitizedContent);
+                    const isSwearing = sanitizedContent !== filteredContent;
+
+                    // OTOMATİK MODERASYON: Küfür Sayacı
+                    if (isSwearing) {
+                        if (!group.violationCounts) group.violationCounts = {};
+                        group.violationCounts[userId] = (group.violationCounts[userId] || 0) + 1;
+
+                        // 60. Küfürde Ban At
+                        if (group.violationCounts[userId] >= 60) {
+                            if (!group.bannedUsers) group.bannedUsers = [];
+                            group.bannedUsers.push(userId);
+                            // Üyelerden çıkar
+                            group.members = group.members.filter(id => id !== userId);
+                            await setKVData('study_groups', groupsKV);
+                            return res.status(403).json({ error: '60 ihlal sınırı aşıldı! Gruptan kalıcı olarak kovuldunuz.' });
+                        }
+                        
+                        // Güncel sayacı kaydetmek için (ban olmasa bile puan artışını kaydet)
+                        await setKVData('study_groups', groupsKV);
+                    }
+
                     const msg = {
                         senderId: req.user.email?.split('@')[0] || userId.substring(0, 5),
-                        content,
+                        content: filteredContent,
                         timestamp: Date.now()
                     };
 
@@ -2326,9 +2408,14 @@ app.all('/api/social', authenticateToken, async (req, res) => {
                     if (!group) return res.status(404).json({ error: 'Grup bulunamadı' });
                     if (group.ownerId !== userId) return res.status(403).json({ error: 'Sadece yönetici grubu güncelleyebilir' });
 
-                    if (name) group.name = name;
-                    if (description) group.description = description;
-                    if (avatarData) group.avatarUrl = avatarData; // Base64 image
+                    if (name) group.name = sanitize(name); // GÜVENLİK
+                    if (description) group.description = sanitize(description); // GÜVENLİK
+                    if (avatarData) {
+                        // Resim verisi base64 ise sadece format kontrolü yap (XSS önlemi)
+                        if (avatarData.startsWith('data:image/')) {
+                            group.avatarUrl = avatarData;
+                        }
+                    }
                     
                     groupsKV[groupId] = group;
                     await setKVData('study_groups', groupsKV);

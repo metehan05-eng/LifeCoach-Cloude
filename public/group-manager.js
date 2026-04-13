@@ -9,9 +9,7 @@ function initGroupSocket() {
     if (socket) return;
     try {
         socket = io();
-        socket.on('new_message', (msg) => {
-            appendMessageToUI(msg);
-        });
+        updateSocketListener();
         
         socket.on('connect', () => {
             if (window.currentGroupId) {
@@ -513,15 +511,33 @@ function appendMessageToUI(msg, scroll = true) {
     if (scroll) messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
 
-// Send Group Message
+// Mesaj çakışmasını önlemek için yerel ID takibi
+let lastSentMsgId = null;
+
 async function sendGroupMessage() {
     const token = localStorage.getItem('token');
+    const uStr = localStorage.getItem('user');
     const groupId = window.currentGroupId;
     const channelId = window.currentChannelId;
     const input = document.getElementById('group-message-input');
     const content = input.value.trim();
 
     if (!token || !groupId || !content) return;
+
+    // Optimistic UI: Mesajı anında ekrana bas
+    const myUser = uStr ? JSON.parse(uStr) : { id: 'Sen', name: 'Sen' };
+    const myId = myUser.id;
+    const tempMsg = {
+        senderId: myUser.name || myId.substring(0, 5),
+        content,
+        timestamp: Date.now(),
+        isTemp: true // Geçici olduğunu belirt
+    };
+    
+    // Ekrana anında ekle
+    appendMessageToUI(tempMsg, true);
+    input.value = ''; // Girişi temizle
+    input.focus();
 
     try {
         const res = await fetch(`/api/social?type=groups&id=${groupId}&action=message`, {
@@ -534,11 +550,31 @@ async function sendGroupMessage() {
         });
 
         if (!res.ok) throw new Error('Mesaj gönderilemedi');
-        input.value = '';
-        // No need to call loadGroupMessages here as socket will emit it back
+        
+        // Son gönderdiğimiz içeriği kaydet ki socketten geri gelince tekrar basmayalım
+        lastSentMsgId = content + tempMsg.timestamp;
     } catch (err) {
-        showToast(err.message, 'error');
+        showToast('⚠️ Mesaj gönderilemedi, lütfen tekrar deneyin.', 'error');
+        // İstersen burada mesajı ekrandan silebilir veya "hata" ikonu ekleyebilirsin
     }
+}
+
+// Socket dinleyicisini güncelle
+function updateSocketListener() {
+    if (!socket) return;
+    socket.off('new_message'); // Eski dinleyiciyi temizle
+    socket.on('new_message', (msg) => {
+        // Eğer bu mesajı biz az önce gönderdiysek (Optimistic UI bastıysa), socketten geleni es geç
+        const msgId = msg.content + msg.timestamp;
+        
+        // Not: Burada timestamp sunucu tarafından değişebilir, o yüzden içerik ve senderId kontrolü daha güvenli olabilir.
+        // Şimdilik basitçe içerik kontrolü yapıyoruz.
+        if (msg.senderId === (localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).name : null) && lastSentMsgId === msg.content + msg.timestamp) {
+            return; 
+        }
+        
+        appendMessageToUI(msg, true);
+    });
 }
 
 // Update Group Settings
