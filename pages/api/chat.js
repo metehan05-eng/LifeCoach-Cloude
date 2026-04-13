@@ -90,8 +90,8 @@ async function callGemini(messages, systemPrompt) {
         throw new Error("GEMINI_API_KEY ayarlanmamış");
     }
     
-    const gemini31Pro = "gemini-3.1-pro-preview";
-    const gemini31FlashLite = "gemini-3.1-flash-lite-preview";
+    const gemini31Pro = "gemini-1.5-pro";
+    const gemini31FlashLite = "gemini-1.5-flash";
     const geminiProLatest = "gemini-pro-latest";
     
     // Mesajları Gemini formatına çevir

@@ -18,7 +18,7 @@ async function generateStructuredGoalBreakdown(goalTitle, goalDescription, exist
 
   try {
     const model = genAI.getGenerativeModel({
-      model: "gemini-3.1-pro-preview" // Use more powerful model for complex breakdown
+      model: "gemini-1.5-pro" // Use more powerful model for complex breakdown
     });
 
     const existingGoalsStr = existingGoals.length > 0 
@@ -154,7 +154,7 @@ async function refineGoalBreakdown(goalBreakdown, feedback) {
 
   try {
     const model = genAI.getGenerativeModel({
-      model: "gemini-3.1-flash-lite-preview"
+      model: "gemini-1.5-flash"
     });
 
     const refinePrompt = `Based on this feedback, refine the goal breakdown. Return ONLY valid JSON (no markdown).
@@ -197,7 +197,7 @@ async function generateGoalCheckInPrompt(goal, weekNumber) {
 
   try {
     const model = genAI.getGenerativeModel({
-      model: "gemini-3.1-flash-lite-preview"
+      model: "gemini-1.5-flash"
     });
 
     const checkInPrompt = `Create personalized check-in questions for someone working on this goal at week ${weekNumber}.

@@ -20,7 +20,7 @@ async function analyzeEmotionFromText(text) {
 
   try {
     const model = genAI.getGenerativeModel({
-      model: "gemini-3.1-flash-lite-preview"
+      model: "gemini-1.5-flash"
     });
 
     const analysisPrompt = `Analyze this text and extract emotional signals. Return ONLY a JSON object, no markdown wrapper.
