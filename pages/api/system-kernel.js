@@ -268,7 +268,7 @@ async function generateSystemPriority(userContext) {
         return getFallbackPriority(userContext);
     }
     
-    const gemini31FlashLite = "gemini-3.1-flash-lite-preview";
+    const gemini31FlashLite = "gemini-1.5-flash";
     
     const systemPrompt = `Sen bir Life OS (Yaşam İşletim Sistemi) çekirdeğisin. Kullanıcının mevcut durumuna ve aktif hedeflerine bakarak, o anki en önemli öncelikli görevi belirlemelisin.
 

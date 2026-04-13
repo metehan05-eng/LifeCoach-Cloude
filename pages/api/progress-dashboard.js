@@ -19,7 +19,7 @@ async function generateProgressInsights(userStats) {
 
   try {
     const model = genAI.getGenerativeModel({
-      model: "gemini-3.1-pro-preview"
+      model: "gemini-1.5-pro"
     });
 
     const insightPrompt = `You are a data analyst and life coach. Analyze this user's progress data and provide meaningful insights. Return ONLY valid JSON (no markdown).

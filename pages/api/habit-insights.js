@@ -97,7 +97,7 @@ async function getHabitAIInsights(habitName, habitDescription, patternData, next
 
   try {
     const model = genAI.getGenerativeModel({
-      model: "gemini-3.1-flash-lite-preview"
+      model: "gemini-1.5-flash"
     });
 
     const insightPrompt = `You are a habit coach. Provide ONE specific, actionable improvement for this habit. Return ONLY valid JSON (no markdown).
@@ -182,7 +182,7 @@ async function generateStreakMotivations(currentStreak, longestStreak, habitName
 
   try {
     const model = genAI.getGenerativeModel({
-      model: "gemini-3.1-flash-lite-preview"
+      model: "gemini-1.5-flash"
     });
 
     const motivationPrompt = `Generate short motivations for this habit streak. ONLY return JSON (no markdown).

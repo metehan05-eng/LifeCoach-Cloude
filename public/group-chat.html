@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LifeCoach AI - Grup Sohbeti</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background: #030712; color: white; -webkit-font-smoothing: antialiased; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="h-screen flex overflow-hidden">
+    <!-- Sidebar -->
+    <div class="w-64 bg-slate-950 border-r border-white/10 flex flex-col h-full">
+        <div class="p-4 border-b border-white/5 bg-slate-900/50 flex items-center justify-between">
+            <h2 id="group-name" class="font-bold truncate text-sm">Grup Yükleniyor...</h2>
+            <span id="group-code" class="text-[10px] text-slate-500 font-mono bg-white/5 px-2 py-0.5 rounded">#0000</span>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto p-3 space-y-6 custom-scrollbar">
+            <div>
+                <p class="text-[10px] font-bold text-slate-500 px-2 mb-2 uppercase tracking-widest">Metin Kanalları</p>
+                <div id="text-channels" class="space-y-1"></div>
+            </div>
+
+            <div>
+                <p class="text-[10px] font-bold text-slate-500 px-2 mb-2 uppercase tracking-widest">Sesli Kanallar</p>
+                <div id="voice-channels" class="space-y-1"></div>
+            </div>
+        </div>
+
+        <!-- User Info -->
+        <div class="p-3 bg-slate-900 border-t border-white/10 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <img id="user-avatar" src="" class="w-8 h-8 rounded-full border border-teal-500/30">
+                <div class="overflow-hidden">
+                     <p id="user-name" class="text-xs font-bold truncate">Yükleniyor...</p>
+                     <p class="text-[9px] text-green-400">Çevrimiçi</p>
+                </div>
+            </div>
+            <button onclick="window.close()" class="w-7 h-7 flex items-center justify-center text-slate-500 hover:text-red-400">
+                <i class="fa-solid fa-power-off text-xs"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col relative bg-slate-900">
+        <!-- Header -->
+        <div class="h-14 bg-slate-900/80 backdrop-blur-md border-b border-white/10 flex items-center justify-between px-6 z-10">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-hashtag text-slate-500"></i>
+                <h3 id="current-channel-name" class="font-semibold">Genel</h3>
+                <span id="voice-status" class="hidden flex items-center gap-2 text-[10px] bg-green-500/10 text-green-400 px-2 py-0.5 rounded-full border border-green-500/20">
+                    <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span> Sesli Bağlantı Aktif
+                </span>
+            </div>
+            <div class="flex items-center gap-4">
+                <button onclick="toggleMembers()" class="text-slate-400 hover:text-white transition-colors"><i class="fa-solid fa-users"></i></button>
+                <button id="leave-voice-btn" onclick="leaveVoiceChannel()" class="hidden px-3 py-1 bg-red-500/20 text-red-400 text-xs font-bold rounded-lg border border-red-500/20 hover:bg-red-500/30 transition-all">Sesten Ayrıl</button>
+            </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div id="chat-section" class="flex-1 flex overflow-hidden">
+            <div class="flex-1 flex flex-col min-w-0">
+                <div id="messages-container" class="flex-1 p-6 overflow-y-auto space-y-4 custom-scrollbar">
+                    <!-- Messages will be injected here -->
+                </div>
+                
+                <!-- Input Area -->
+                <div class="p-4 pt-0">
+                    <div class="relative flex items-center bg-slate-800/50 border border-white/5 rounded-2xl p-1 focus-within:border-teal-500/30 transition-all">
+                        <button class="p-3 text-slate-500 hover:text-white transition-colors"><i class="fa-solid fa-circle-plus"></i></button>
+                        <input type="text" id="message-input" placeholder="Mesaj gönder..." 
+                            class="flex-1 bg-transparent border-none outline-none py-3 px-2 text-sm text-white placeholder-slate-500">
+                        <button onclick="sendMessage()" class="p-3 bg-teal-500 text-white rounded-xl hover:bg-teal-400 transition-all shadow-lg shadow-teal-500/20">
+                            <i class="fa-solid fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Members Sidebar -->
+            <div id="members-sidebar" class="w-60 bg-slate-950/50 border-l border-white/10 p-4 space-y-4 hidden md:block overflow-y-auto custom-scrollbar">
+                <h4 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Üyeler — <span id="member-count">0</span></h4>
+                <div id="members-list" class="space-y-3"></div>
+            </div>
+        </div>
+
+        <!-- Voice Area (Hidden) -->
+        <div id="voice-overlay" class="hidden absolute inset-0 bg-slate-950/95 z-20 flex flex-col items-center justify-center p-10">
+             <div class="grid grid-cols-2 md:grid-cols-3 gap-6 w-full max-w-4xl" id="voice-users">
+                 <!-- Voice participants -->
+             </div>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const groupId = urlParams.get('groupId');
+        const token = localStorage.getItem('token');
+        let socket;
+        let currentChannelId = 'genel';
+        let myId = '';
+        let peer;
+        let myStream;
+        let peers = {};
+
+        if (!groupId || !token) {
+            alert('Grup ID veya Token eksik!');
+            window.close();
+        }
+
+        async function init() {
+            // Get user info
+            const uStr = localStorage.getItem('user');
+            if (uStr) {
+                const u = JSON.parse(uStr);
+                myId = u.id;
+                document.getElementById('user-avatar').src = u.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.name}`;
+                document.getElementById('user-name').textContent = u.name;
+            }
+
+            // Socket.io
+            socket = io({ auth: { token } });
+            
+            socket.on('connect', () => {
+                socket.emit('join_room', groupId);
+                loadGroupData();
+            });
+
+            socket.on('new_message', (msg) => {
+                // Simplified: only show if for current channel
+                // In a real app, you'd check msg.channelId
+                appendMessage(msg);
+            });
+
+            socket.on('user_joined_voice', (userId, peerId) => {
+                if(userId !== myId) connectToNewUser(peerId, userId);
+            });
+
+            socket.on('user_left_voice', (userId) => {
+                removeVoiceUser(userId);
+            });
+
+            // Input listener
+            document.getElementById('message-input').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') sendMessage();
+            });
+        }
+
+        async function loadGroupData() {
+            try {
+                const res = await fetch(`/api/social?type=groups&id=${groupId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                const group = data.group;
+
+                document.getElementById('group-name').textContent = group.name;
+                document.getElementById('group-code').textContent = `#${group.joinCode || '0000'}`;
+                document.getElementById('member-count').textContent = group.members.length;
+
+                renderChannels(group.channels || []);
+                renderMembers(group.members || []);
+                loadMessages('genel');
+            } catch (e) { console.error(e); }
+        }
+
+        function renderChannels(channels) {
+            const txtCont = document.getElementById('text-channels');
+            const vCont = document.getElementById('voice-channels');
+            txtCont.innerHTML = ''; vCont.innerHTML = '';
+
+            channels.forEach(ch => {
+                const isActive = currentChannelId === ch.id;
+                const html = `
+                    <div onclick="switchChannel('${ch.id}', '${ch.type}', '${ch.name}')" 
+                        class="flex items-center gap-3 px-3 py-2 rounded-xl cursor-pointer transition-all ${isActive ? 'bg-teal-500/20 text-teal-400 border border-teal-500/20' : 'text-slate-400 hover:bg-white/5 hover:text-white'}">
+                        <i class="fa-solid ${ch.type === 'text' ? 'fa-hashtag' : 'fa-volume-high'} text-xs"></i>
+                        <span class="text-xs font-semibold truncate">${ch.name}</span>
+                    </div>
+                `;
+                if (ch.type === 'text') txtCont.insertAdjacentHTML('beforeend', html);
+                else vCont.insertAdjacentHTML('beforeend', html);
+            });
+        }
+
+        function renderMembers(members) {
+            const list = document.getElementById('members-list');
+            list.innerHTML = members.map(m => `
+                <div class="flex items-center gap-3 group translate-all hover:bg-white/5 p-1 rounded-lg">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${m}" class="w-8 h-8 rounded-full bg-slate-800">
+                    <div class="overflow-hidden">
+                        <p class="text-[11px] font-bold text-slate-300 truncate">${m}</p>
+                        <p class="text-[9px] text-slate-500">Çevrimiçi</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function loadMessages(channelId) {
+            try {
+                const res = await fetch(`/api/social?type=groups&id=${groupId}&action=messages&channelId=${channelId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                const cont = document.getElementById('messages-container');
+                cont.innerHTML = '';
+                if (data.messages.length === 0) {
+                    cont.innerHTML = '<div class="h-full flex flex-col items-center justify-center opacity-30"><i class="fa-solid fa-comments text-4xl mb-2"></i><p class="text-xs">Henüz mesaj yok</p></div>';
+                } else {
+                    data.messages.forEach(msg => appendMessage(msg));
+                }
+                cont.scrollTop = cont.scrollHeight;
+            } catch (e) { console.error(e); }
+        }
+
+        function appendMessage(msg) {
+            const cont = document.getElementById('messages-container');
+            if(cont.querySelector('.opacity-30')) cont.innerHTML = '';
+            
+            const time = new Date(msg.timestamp).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+            const isMe = msg.senderId === myId;
+            
+            const html = `
+                <div class="flex items-start gap-3 animate-fade-in group">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${msg.senderId}" class="w-10 h-10 rounded-2xl bg-slate-800 p-0.5">
+                    <div class="flex-1 overflow-hidden">
+                        <div class="flex items-center gap-2 mb-0.5">
+                            <span class="text-xs font-bold ${isMe ? 'text-teal-400' : 'text-slate-200'}">${msg.senderId}</span>
+                            <span class="text-[9px] text-slate-600">${time}</span>
+                        </div>
+                        <p class="text-sm text-slate-300 leading-relaxed break-words">${msg.content}</p>
+                    </div>
+                </div>
+            `;
+            cont.insertAdjacentHTML('beforeend', html);
+            cont.scrollTop = cont.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('message-input');
+            const content = input.value.trim();
+            if (!content) return;
+
+            try {
+                const res = await fetch(`/api/social?type=groups&id=${groupId}&action=message`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ content, channelId: currentChannelId })
+                });
+                if (res.ok) input.value = '';
+            } catch (e) { console.error(e); }
+        }
+
+        function switchChannel(id, type, name) {
+            if (type === 'voice') {
+                joinVoiceChannel(id, name);
+                return;
+            }
+            currentChannelId = id;
+            document.getElementById('current-channel-name').textContent = name;
+            document.getElementById('message-input').placeholder = `#${name} kanalına mesaj gönder...`;
+            socket.emit('join_room', id === 'genel' ? groupId : `${groupId}_${id}`);
+            loadMessages(id);
+            document.getElementById('voice-overlay').classList.add('hidden');
+        }
+
+        // --- WEB RTC / VOICE LOGIC ---
+        async function joinVoiceChannel(id, name) {
+            try {
+                myStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                document.getElementById('voice-status').classList.remove('hidden');
+                document.getElementById('leave-voice-btn').classList.remove('hidden');
+                document.getElementById('voice-overlay').classList.remove('hidden');
+                
+                peer = new Peer(undefined, {
+                    host: location.hostname,
+                    port: location.port || (location.protocol === 'https:' ? 443 : 80),
+                    path: '/peerjs'
+                });
+
+                peer.on('open', id => {
+                    socket.emit('join_voice', { groupId, channelId: id, peerId: id, userId: myId });
+                });
+
+                peer.on('call', call => {
+                    call.answer(myStream);
+                    const audio = document.createElement('audio');
+                    call.on('stream', userStream => {
+                        addAudioStream(audio, userStream, call.peer);
+                    });
+                });
+
+                addVoiceUserUI(myId, true);
+            } catch (e) {
+                alert('Mikrofon erişimi reddedildi veya hata oluştu.');
+            }
+        }
+
+        function addAudioStream(audio, stream, peerId) {
+            audio.srcObject = stream;
+            audio.addEventListener('loadedmetadata', () => audio.play());
+            peers[peerId] = { audio };
+        }
+
+        function connectToNewUser(peerId, userId) {
+            const call = peer.call(peerId, myStream);
+            const audio = document.createElement('audio');
+            call.on('stream', userStream => {
+                addAudioStream(audio, userStream, peerId);
+            });
+            call.on('close', () => audio.remove());
+            addVoiceUserUI(userId);
+        }
+
+        function addVoiceUserUI(userId, isMe = false) {
+            const cont = document.getElementById('voice-users');
+            if (document.getElementById(`voice-user-${userId}`)) return;
+
+            const html = `
+                <div id="voice-user-${userId}" class="flex flex-col items-center p-6 bg-slate-800/50 rounded-3xl border border-white/5 animate-fade-in relative overflow-hidden group">
+                     <div class="absolute inset-0 bg-teal-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                     <div class="relative">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}" class="w-24 h-24 rounded-full border-4 border-slate-700 bg-slate-700 shadow-2xl">
+                        <div class="absolute bottom-2 right-2 w-5 h-5 bg-teal-500 rounded-full border-2 border-slate-900 flex items-center justify-center">
+                            <i class="fa-solid fa-microphone text-[8px] text-white"></i>
+                        </div>
+                     </div>
+                     <p class="mt-4 font-bold text-slate-200">${userId} ${isMe ? '(Sen)' : ''}</p>
+                     <p class="text-[10px] text-teal-400 uppercase tracking-widest font-bold">Konuşuyor</p>
+                </div>
+            `;
+            cont.insertAdjacentHTML('beforeend', html);
+        }
+
+        function removeVoiceUser(userId) {
+            const el = document.getElementById(`voice-user-${userId}`);
+            if (el) el.remove();
+        }
+
+        function leaveVoiceChannel() {
+            if (myStream) myStream.getTracks().forEach(t => t.stop());
+            if (peer) peer.destroy();
+            socket.emit('leave_voice', { groupId, userId: myId });
+            document.getElementById('voice-status').classList.add('hidden');
+            document.getElementById('leave-voice-btn').classList.add('hidden');
+            document.getElementById('voice-overlay').classList.add('hidden');
+            document.getElementById('voice-users').innerHTML = '';
+        }
+
+        function toggleMembers() {
+            document.getElementById('members-sidebar').classList.toggle('hidden');
+        }
+
+        init();
+    </script>
+</body>
+</html>

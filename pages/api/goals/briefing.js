@@ -76,7 +76,7 @@ export default async function handler(req, res) {
             return res.status(200).json({ briefing: fallbackBriefing });
         }
         
-        const gemini31FlashLite = "gemini-3.1-flash-lite-preview";
+        const gemini31FlashLite = "gemini-1.5-flash";
         
         const systemPrompt = `Sen profesyonel ve teknik bir yaşam koçusun. Kullanıcının hedefi doğrultusunda teknik detaylar, yol haritası ve kod örnekleri içeren günlük rehberlik sağlarsın.`;
 

@@ -12,6 +12,7 @@ dotenv.config(); // Also load .env if it exists
 import express from 'express';
 import { Server as SocketIOServer } from 'socket.io';
 import { createServer } from 'http';
+import { PeerServer } from 'peer';
 import cors from 'cors';
 import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
@@ -31,9 +32,35 @@ const httpServer = createServer(app);
 const io = new SocketIOServer(httpServer, { cors: { origin: '*' } });
 app.set('io', io);
 
+// PeerJS Server
+const peerServer = PeerServer({ port: 9000, path: '/peerjs' });
+console.log('📡 PeerJS Sunucusu 9000 portunda aktif');
+
+io.use((socket, next) => {
+    const token = socket.handshake.auth.token;
+    if (token) {
+        jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key', (err, decoded) => {
+            if (err) return next(new Error('Authentication error'));
+            socket.user = decoded;
+            next();
+        });
+    } else {
+        next(new Error('Authentication error'));
+    }
+});
+
 io.on('connection', (socket) => {
     socket.on('join_room', (roomId) => {
         socket.join(roomId);
+    });
+
+    socket.on('join_voice', ({ groupId, channelId, peerId, userId }) => {
+        socket.join(`voice_${groupId}_${channelId}`);
+        socket.to(`voice_${groupId}_${channelId}`).emit('user_joined_voice', userId, peerId);
+    });
+
+    socket.on('leave_voice', ({ groupId, userId }) => {
+        socket.broadcast.emit('user_left_voice', userId);
     });
 });
 
@@ -98,10 +125,10 @@ async function generateAIResponse(prompt, history = []) {
         throw new Error('AI not configured - GEMINI_API_KEY is missing');
     }
 
-    const gemini31FlashLite = "gemini-3.1-flash-lite-preview";
+    const gemini15Flash = "gemini-1.5-flash";
 
     const model = genAI.getGenerativeModel({
-        model: gemini31FlashLite,
+        model: gemini15Flash,
         generationConfig: {
             temperature: 0.7,
             maxOutputTokens: 800
@@ -559,7 +586,7 @@ You must output a json-action for it:
 }
 \`\`\`
 The Python engine will automatically generate charts based on the 'eq_data' provided.
-You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI. (Operating on Gemini 3.1 Pro)
+You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI. (Operating on Gemini 1.5 Pro)
 ${memoryInjection}
 ${personaInjection}
 ${modeInjection}
@@ -740,27 +767,27 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
         let aiResponse;
         let usedModel;
 
-        const gemini31Pro = "gemini-3.1-pro-preview";  // En güçlü: Gemini 3.1 Pro (dosya oluşturma için optimize)
-        const gemini31FlashLite = "gemini-3.1-flash-lite-preview";  // Hızlı: Gemini 3.1 Flash Lite
+        const gemini15Pro = "gemini-1.5-pro";  // En güçlü: Gemini 1.5 Pro
+        const gemini15Flash = "gemini-1.5-flash";  // Hızlı: Gemini 1.5 Flash
         const geminiProLatest = "gemini-pro-latest";                // Yedek: Gemini Pro
 
         try {
             // 1. Gemini 3.1 Pro Preview (En güçlü - dosya oluşturma için optimize)
-            console.log(`[AI] Gemini Deneniyor: ${gemini31Pro}`);
-            const model = genAI.getGenerativeModel({ model: gemini31Pro, systemInstruction: finalSystemPrompt });
+            console.log(`[AI] Gemini Deneniyor: ${gemini15Pro}`);
+            const model = genAI.getGenerativeModel({ model: gemini15Pro, systemInstruction: finalSystemPrompt });
             const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } });
             const result = await chat.sendMessage(userMessageParts);
             aiResponse = result.response.text();
-            usedModel = gemini31Pro;
+            usedModel = gemini15Pro;
         } catch (error) {
-            console.warn(`[AI] ${gemini31Pro} başarısız. YEDEK: ${gemini31FlashLite}`);
+            console.warn(`[AI] ${gemini15Pro} başarısız. YEDEK: ${gemini15Flash}`);
             try {
-                // 2. Gemini 3.1 Flash Lite (Hızlı yedek)
-                const model = genAI.getGenerativeModel({ model: gemini31FlashLite, systemInstruction: finalSystemPrompt });
+                // 2. Gemini 1.5 Flash (Hızlı yedek)
+                const model = genAI.getGenerativeModel({ model: gemini15Flash, systemInstruction: finalSystemPrompt });
                 const chat = model.startChat({ history: chatHistory, generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } });
                 const result = await chat.sendMessage(userMessageParts);
                 aiResponse = result.response.text();
-                usedModel = gemini31FlashLite;
+                usedModel = gemini15Flash;
             } catch (finalError) {
                 console.warn(`[AI] Son çare: ${geminiProLatest}`);
                 // 3. Gemini Pro Latest (Son çare)
@@ -3207,7 +3234,7 @@ app.post('/api/generate-audio', authenticateToken, async (req, res) => {
         console.log(`[Audio] Generating audio for text: ${text.substring(0, 50)}...`);
 
         try {
-            const audioModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash-native-audio-latest" });
+            const audioModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
             const result = await audioModel.generateContent({
                 contents: [{
@@ -3228,7 +3255,7 @@ app.post('/api/generate-audio', authenticateToken, async (req, res) => {
                 return res.json({
                     success: true,
                     audioData: `data:${audioPart.inlineData.mimeType};base64,${audioPart.inlineData.data}`,
-                    model: "gemini-2.5-flash-native-audio-latest",
+                    model: "gemini-1.5-flash",
                     text: text
                 });
             } else {

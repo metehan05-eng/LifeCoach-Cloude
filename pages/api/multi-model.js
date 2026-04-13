@@ -20,8 +20,8 @@ async function callGemini(prompt, systemPrompt = '') {
 
   try {
     const models = [
-      "gemini-3.1-pro-preview",
-      "gemini-3.1-flash-lite-preview",
+      "gemini-1.5-pro",
+      "gemini-1.5-flash",
       "gemini-pro-latest"
     ];
 
@@ -147,13 +147,13 @@ async function callClaude(prompt, systemPrompt = '', model = 'claude-3-opus-2024
  */
 function selectOptimalModel(useCase = 'general', userPreference = null) {
   const modelMap = {
-    'fast_response': { provider: 'google', model: 'gemini-3.1-flash-lite-preview' },
+    'fast_response': { provider: 'google', model: 'gemini-1.5-flash' },
     'high_quality': { provider: 'openai', model: 'gpt-4-turbo' },
     'creative': { provider: 'anthropic', model: 'claude-3-opus-20240229' },
     'technical': { provider: 'openai', model: 'gpt-4-turbo' },
     'emotional': { provider: 'anthropic', model: 'claude-3-sonnet-20240229' },
-    'balanced': { provider: 'google', model: 'gemini-3.1-pro-preview' },
-    'general': { provider: 'google', model: 'gemini-3.1-pro-preview' }
+    'balanced': { provider: 'google', model: 'gemini-1.5-pro' },
+    'general': { provider: 'google', model: 'gemini-1.5-pro' }
   };
 
   // User preference overrides
@@ -170,10 +170,10 @@ function selectOptimalModel(useCase = 'general', userPreference = null) {
 async function multiModelCall(prompt, systemPrompt = '', preferredModel = null, useCase = 'general') {
   const fallbackChain = [
     preferredModel || selectOptimalModel(useCase),
-    { provider: 'google', model: 'gemini-3.1-pro-preview' },
+    { provider: 'google', model: 'gemini-1.5-pro' },
     { provider: 'openai', model: 'gpt-4-turbo' },
     { provider: 'anthropic', model: 'claude-3-sonnet-20240229' },
-    { provider: 'google', model: 'gemini-3.1-flash-lite-preview' }
+    { provider: 'google', model: 'gemini-1.5-flash' }
   ];
 
   const attemptedModels = [];
@@ -221,8 +221,8 @@ function getAvailableModels() {
     google: {
       available: !!process.env.GEMINI_API_KEY,
       models: [
-        { id: 'gemini-3.1-pro-preview', name: 'Gemini Pro 3.1', performance: 'best', speed: 'medium' },
-        { id: 'gemini-3.1-flash-lite-preview', name: 'Gemini Flash 3.1 Lite', performance: 'good', speed: 'fast' },
+        { id: 'gemini-1.5-pro', name: 'Gemini Pro 3.1', performance: 'best', speed: 'medium' },
+        { id: 'gemini-1.5-flash', name: 'Gemini Flash 3.1 Lite', performance: 'good', speed: 'fast' },
         { id: 'gemini-pro-latest', name: 'Gemini Pro Latest', performance: 'good', speed: 'medium' }
       ]
     },

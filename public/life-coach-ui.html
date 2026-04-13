@@ -10723,21 +10723,21 @@
                     const data = await res.json();
                     let groups = data.groups || data || [];
 
-                    // Mock data fallback
-                    if (!groups || groups.length === 0) {
-                        groups = [
-                            { id: '1', name: 'JavaScript Öğrenen Grup', subject: 'Programlama', description: 'JS öğrenenler için beraber çalışma grubu', isPublic: true, members: ['Ali', 'Ayşe'] },
-                            { id: '2', name: 'Hedef Takip Grubu', subject: 'Motivasyon', description: 'Hedeflerimizi birlikte takip ediyoruz', isPublic: false, members: ['user'] }
-                        ];
-                    }
-
                     const groupsList = document.getElementById('groups-list');
                     if (!groups || groups.length === 0) {
-                        groupsList.innerHTML = '<p class="text-slate-500 text-center col-span-full">Henüz grup yok. Yeni bir grup oluşturup başla!</p>';
+                        groupsList.innerHTML = '<p class="text-slate-500 text-center col-span-full py-20 bg-white/5 rounded-3xl border border-dashed border-white/10">Henüz bir grubun yok. <br><span class="text-xs opacity-50">Yeni bir grup oluşturarak veya kodla katılarak başla!</span></p>';
                         return;
                     }
 
-                    groupsList.innerHTML = groups.map(group => `
+                    // Reuse uStr from above or re-fetch only if needed
+                    const myId = uStr ? JSON.parse(uStr).id : null;
+
+                    groupsList.innerHTML = groups.map(group => {
+                        const isMember = (group.members || []).includes(myId);
+                        const btnText = isMember ? 'GİREBİLR <i class="fa-solid fa-door-open ml-1"></i>' : 'KATIL <i class="fa-solid fa-arrow-right ml-1"></i>';
+                        const btnAction = isMember ? `window.open('./group-chat.html?groupId=${group.id}', '_blank', 'width=1200,height=800')` : `joinStudyGroup('${group.id}')`;
+                        
+                        return `
                         <div class="bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-white/5 rounded-2xl p-5 hover:border-teal-500/30 transition-all hover:scale-[1.02] shadow-xl group">
                             <div class="flex items-start gap-4 mb-4">
                                 <img src="${group.avatarUrl || `https://api.dicebear.com/7.x/shapes/svg?seed=${group.id}`}" 
@@ -10761,12 +10761,12 @@
                                      ${(group.members || []).slice(0,3).map(m => `<div class="w-6 h-6 rounded-full border-2 border-slate-900 bg-teal-500 flex items-center justify-center text-[10px] text-white font-bold">${m[0]}</div>`).join('')}
                                      ${(group.members || []).length > 3 ? `<div class="w-6 h-6 rounded-full border-2 border-slate-900 bg-slate-800 flex items-center justify-center text-[8px] text-slate-400">+${group.members.length-3}</div>` : ''}
                                 </div>
-                                <button onclick="viewGroupDetail('${group.id}')" class="px-4 py-2 bg-teal-500 hover:bg-teal-400 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-teal-500/20">
-                                    KATIL <i class="fa-solid fa-arrow-right ml-1"></i>
+                                <button onclick="${btnAction}" class="px-4 py-2 ${isMember ? 'bg-indigo-600 hover:bg-indigo-500' : 'bg-teal-500 hover:bg-teal-400'} text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-teal-500/20">
+                                    ${btnText}
                                 </button>
                             </div>
                         </div>
-                    `).join('');
+                    `;}).join('');
                 } catch (err) {
                     console.error('loadStudyGroups error:', err);
                     document.getElementById('groups-list').innerHTML = '<p class="text-slate-400 text-center col-span-full">📚 Demo verisi gösteriliyor</p>';
