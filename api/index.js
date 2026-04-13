@@ -70,6 +70,7 @@ app.use(express.json({ limit: '50mb' }));
 
 // --- AYARLAR ve SABİTLER ---
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "GOOGLE_CLIENT_ID_BURAYA";
 const JWT_SECRET = process.env.JWT_SECRET || 'gizli-anahtar-degistir';
@@ -163,6 +164,41 @@ const RATE_LIMIT_CONFIG = {
 
 // In-memory store for rate limiting
 const messageStore = new Map();
+
+// --- DEEPSEEK HELPER ---
+async function callDeepSeek(prompt, history = [], systemPrompt = "") {
+    if (!DEEPSEEK_API_KEY) throw new Error("DeepSeek API Key ayarlanmamış.");
+    
+    const messages = [];
+    if (systemPrompt) messages.push({ role: "system", content: systemPrompt });
+    
+    history.forEach(msg => {
+        messages.push({ role: msg.role === "model" ? "assistant" : msg.role, content: msg.parts[0].text });
+    });
+    
+    messages.push({ role: "user", content: prompt });
+
+    const response = await fetch("https://api.deepseek.com/chat/completions", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${DEEPSEEK_API_KEY}`
+        },
+        body: JSON.stringify({
+            model: "deepseek-chat",
+            messages: messages,
+            stream: false
+        })
+    });
+
+    if (!response.ok) {
+        const err = await response.json();
+        throw new Error(`DeepSeek Hatası: ${err.error?.message || response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+}
 
 // --- MIDDLEWARE TANIMLAMALARI ---
 
@@ -814,10 +850,23 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
                 usedModel = result.model;
             } catch (err2) {
                 console.warn(`[AI] ${mainModel} başarısız:`, err2.message);
-                // 3. Flash modelini dene (Son çare)
-                const result = await callWithRetry(fastModel, userMessageParts, finalSystemPrompt, chatHistory);
-                aiResponse = result.text;
-                usedModel = result.model;
+                try {
+                    // 3. Flash modelini dene (Son çare)
+                    const result = await callWithRetry(fastModel, userMessageParts, finalSystemPrompt, chatHistory);
+                    aiResponse = result.text;
+                    usedModel = result.model;
+                } catch (err3) {
+                    console.warn(`[AI] Tüm Gemini modelleri başarısız oldu. DeepSeek deneniyor...`);
+                    try {
+                        // 4. Gemini tamamen çöktüyse DeepSeek'e başvur
+                        const deepSeekResponse = await callDeepSeek(userTextMessage, chatHistory, finalSystemPrompt);
+                        aiResponse = deepSeekResponse;
+                        usedModel = "DeepSeek-Chat (Fallback)";
+                    } catch (dsError) {
+                        console.error("[AI] DeepSeek de başarısız:", dsError.message);
+                        throw err3; // Orijinal hatayı fırlat ki döngü kırılsın
+                    }
+                }
             }
         }
 
