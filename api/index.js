@@ -125,29 +125,32 @@ async function generateAIResponse(prompt, history = []) {
         throw new Error('AI not configured - GEMINI_API_KEY is missing');
     }
 
-    const gemini15Flash = "gemini-1.5-flash";
+    const models = ["gemini-1.5-flash", "gemini-pro"];
+    let lastError;
 
-    const model = genAI.getGenerativeModel({
-        model: gemini15Flash,
-        generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 800
+    for (const modelName of models) {
+        try {
+            console.log(`[AI-Briefing] Deneniyor: ${modelName}`);
+            const model = genAI.getGenerativeModel({
+                model: modelName,
+                generationConfig: { temperature: 0.7, maxOutputTokens: 2000 }
+            });
+
+            const chatHistory = history.map(msg => ({
+                role: msg.role === 'assistant' ? 'model' : 'user',
+                parts: [{ text: msg.content }]
+            }));
+
+            const chat = model.startChat({ history: chatHistory });
+            const result = await chat.sendMessage(prompt);
+            return result.response.text();
+        } catch (error) {
+            console.warn(`[AI-Briefing] ${modelName} başarısız:`, error.message);
+            lastError = error;
         }
-    });
+    }
 
-    // Convert history to Gemini format
-    const chatHistory = history.map(msg => ({
-        role: msg.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: msg.content }]
-    }));
-
-    const chat = model.startChat({
-        history: chatHistory,
-        generationConfig: { maxOutputTokens: 800, temperature: 0.7 }
-    });
-
-    const result = await chat.sendMessage(prompt);
-    return result.response.text();
+    throw new Error(`AI üretimi başarısız: ${lastError.message}`);
 }
 
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
@@ -2713,13 +2716,15 @@ app.post('/api/user-stats', authenticateToken, async (req, res) => {
         const { rewardType, action, consumeType } = req.body;
 
         // Get current stats
-        let stats = await getKVData(`user_stats:${userId}`) || {
+        const defaultStats = {
             user_id: userId,
             total_xp: 0,
             level: 1,
             flameLevel: 0,
             history: []
         };
+        const existingStats = await getKVData(`user_stats:${userId}`);
+        let stats = { ...defaultStats, ...(existingStats || {}) };
 
         if (action === 'consume' && consumeType) {
             // Handle flame consumption
