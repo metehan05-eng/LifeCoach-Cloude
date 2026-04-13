@@ -10848,8 +10848,8 @@
                     groupsList.innerHTML = groups.map(group => {
                         const isMember = (group.members || []).includes(myId);
                         const btnText = isMember ? 'GİRİŞ YAP <i class="fa-solid fa-door-open ml-1"></i>' : 'KATIL <i class="fa-solid fa-arrow-right ml-1"></i>';
-                        const btnAction = isMember ? `window.open('./group-chat.html?groupId=${group.id}', '_blank', 'width=1200,height=800')` : `joinStudyGroup('${group.id}')`;
-                        const cardClick = isMember ? `onclick="${btnAction}" style="cursor:pointer;"` : '';
+                        const btnAction = isMember ? `viewGroupDetail('${group.id}')` : `joinStudyGroup('${group.id}')`;
+                        const cardClick = isMember ? `onclick="viewGroupDetail('${group.id}')" style="cursor:pointer;"` : '';
                         
                         return `
                         <div ${cardClick} class="bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-white/5 rounded-2xl p-5 hover:border-teal-500/30 transition-all hover:scale-[1.02] shadow-xl group relative overflow-hidden">
