@@ -2233,7 +2233,17 @@ app.all('/api/social', authenticateToken, async (req, res) => {
                         // Group detail
                         const group = groupsKV[id];
                         if (!group) return res.status(404).json({ error: 'Grup bulunamadı' });
-                        return res.json({ group, isOwner: group.ownerId === userId });
+                        
+                        // Her üye için durum bilgilerini topla
+                        const memberDetails = await Promise.all((group.members || []).map(async (mId) => {
+                            const status = await getKVData(`user_status:${mId}`) || { text: 'Çevrimiçi', emoji: '🟢' };
+                            return { id: mId, status };
+                        }));
+
+                        return res.json({ 
+                            group: { ...group, memberDetails }, 
+                            isOwner: group.ownerId === userId 
+                        });
                     }
                 } else {
                     // List all
@@ -2298,8 +2308,31 @@ app.all('/api/social', authenticateToken, async (req, res) => {
                     if (req.app.get('io')) {
                         req.app.get('io').to(targetRoom).emit('new_message', msg);
                     }
+                        await setKVData('study_groups', groupsKV);
+                        return res.json({ success: true });
+                    } else if (action === 'kick') {
+                    const { groupId, targetUserId } = req.body;
+                    const group = groupsKV[groupId];
+                    if (!group) return res.status(404).json({ error: 'Grup bulunamadı' });
+                    if (group.ownerId !== userId) return res.status(403).json({ error: 'Sadece grup yöneticisi üye atabilir' });
+                    
+                    group.members = (group.members || []).filter(m => m !== targetUserId);
+                    groupsKV[groupId] = group;
                     await setKVData('study_groups', groupsKV);
-                    return res.json({ success: true });
+                    return res.json({ success: true, message: 'Üye gruptan atıldı' });
+                } else if (action === 'update') {
+                    const { groupId, name, description, avatarData } = req.body;
+                    const group = groupsKV[groupId];
+                    if (!group) return res.status(404).json({ error: 'Grup bulunamadı' });
+                    if (group.ownerId !== userId) return res.status(403).json({ error: 'Sadece yönetici grubu güncelleyebilir' });
+
+                    if (name) group.name = name;
+                    if (description) group.description = description;
+                    if (avatarData) group.avatarUrl = avatarData; // Base64 image
+                    
+                    groupsKV[groupId] = group;
+                    await setKVData('study_groups', groupsKV);
+                    return res.json({ success: true, group });
                 } else {
                     // Create group
                     const { name, description, subject, isPublic, avatarUrl } = req.body;
@@ -2757,6 +2790,29 @@ app.get('/api/arena/challenges', authenticateToken, async (req, res) => {
 });
 
 // --- USER STATS API (Flame/XP System) ---
+// --- USER STATUS API ---
+app.get('/api/user/status', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const status = await getKVData(`user_status:${userId}`) || { text: 'Çevrimiçi', emoji: '🟢' };
+        res.json(status);
+    } catch (error) {
+        res.status(500).json({ error: 'Durum alınamadı' });
+    }
+});
+
+app.post('/api/user/status', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { text, emoji } = req.body;
+        const status = { text, emoji, updatedAt: new Date().toISOString() };
+        await setKVData(`user_status:${userId}`, status);
+        res.json({ success: true, status });
+    } catch (error) {
+        res.status(500).json({ error: 'Durum güncellenemedi' });
+    }
+});
+
 app.get('/api/user-stats', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.id;
