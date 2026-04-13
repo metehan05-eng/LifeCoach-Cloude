@@ -177,14 +177,14 @@ const messageStore = new Map();
 // --- DEEPSEEK HELPER ---
 async function callDeepSeek(prompt, history = [], systemPrompt = "") {
     if (!DEEPSEEK_API_KEY) throw new Error("DeepSeek API Key ayarlanmamış.");
-    
+
     const messages = [];
     if (systemPrompt) messages.push({ role: "system", content: systemPrompt });
-    
+
     history.forEach(msg => {
         messages.push({ role: msg.role === "model" ? "assistant" : msg.role, content: msg.parts[0].text });
     });
-    
+
     messages.push({ role: "user", content: prompt });
 
     const response = await fetch("https://api.deepseek.com/chat/completions", {
@@ -249,6 +249,21 @@ function filterProfanity(text) {
     });
     return filtered;
 }
+
+// Security: LifeCoach Guard - Threat Detection
+function detectThreats(text) {
+    if (typeof text !== 'string') return false;
+    const lethalThreats = ['öldüreceğim', 'vuracağım', 'katil', 'dark web', 'hack', 'terör', 'patlat', 'bombala', 'saldır', 'saldırgan',];
+    return lethalThreats.some(threat => text.toLowerCase().includes(threat));
+}
+
+// Security: Link & Ad Detection
+function isLinkOrAd(text) {
+    const linkRegex = /(https?:\/\/[^\s]+)|(www\.[^\s]+)/gi;
+    const adKeywords = ['satılık', 'satın al', 'tıklayın', 'discord.gg', 't.me'];
+    return linkRegex.test(text) || adKeywords.some(ad => text.toLowerCase().includes(ad));
+}
+
 
 // Security: In-memory store for rate limiting
 const userLastActionTime = {};
@@ -859,9 +874,9 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
                 try {
                     console.log(`[AI] Deneniyor: ${modelName} (Deneme ${attempt + 1})`);
                     const model = genAI.getGenerativeModel({ model: modelName, systemInstruction: systemPrompt });
-                    const chat = model.startChat({ 
-                        history: history, 
-                        generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } 
+                    const chat = model.startChat({
+                        history: history,
+                        generationConfig: { maxOutputTokens: 4000, temperature: 0.7 }
                     });
                     const result = await chat.sendMessage(parts);
                     return { text: result.response.text(), model: modelName };
@@ -1091,7 +1106,7 @@ app.post('/api/register', async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(password, 10);
         const userId = crypto.randomUUID();
-        
+
         let uniqueId;
         while (true) {
             uniqueId = Math.floor(1000 + Math.random() * 9000).toString();
@@ -1204,7 +1219,7 @@ app.post('/api/auth/google', async (req, res) => {
         if (!user) {
             const userId = crypto.randomUUID();
             let uniqueId = Math.floor(1000 + Math.random() * 9000).toString();
-            
+
             user = {
                 id: userId,
                 uniqueId,
@@ -1223,7 +1238,7 @@ app.post('/api/auth/google', async (req, res) => {
             user.avatar = payload.picture;
             await setKVData(`user:${email}`, user);
         }
-        
+
         // Mevcut kullanıcılarda uniqueId yoksa otomatik oluştur
         if (user && !user.uniqueId) {
             user.uniqueId = Math.floor(1000 + Math.random() * 9000).toString();
@@ -1285,13 +1300,13 @@ app.post('/api/update-profile', authenticateToken, async (req, res) => {
         user.name = newName || user.name;
         if (newAvatar !== undefined) user.avatar = newAvatar;
         if (persona !== undefined) user.persona = persona;
-        
+
         // Detailed memory fields
         if (!user.memoryData) user.memoryData = {};
         if (job !== undefined) user.memoryData.job = job;
         if (goal !== undefined) user.memoryData.goal = goal;
         if (notes !== undefined) user.memoryData.notes = notes;
-        
+
         // General text memory for injection in chat
         user.memory = `AD: ${user.name}\nMESLEK: ${user.memoryData.job || 'Bilinmiyor'}\nHEDEF: ${user.memoryData.goal || 'Bilinmiyor'}\nNOTLAR: ${user.memoryData.notes || 'Yok'}`;
 
@@ -2256,7 +2271,7 @@ app.all('/api/social', authenticateToken, async (req, res) => {
 
         if (type === 'groups') {
             const groupsKV = await getKVData('study_groups') || {};
-            
+
             // GET: List groups or get detail
             if (req.method === 'GET') {
                 if (id) {
@@ -2265,7 +2280,7 @@ app.all('/api/social', authenticateToken, async (req, res) => {
                         const group = groupsKV[id];
                         if (!group) return res.status(404).json({ error: 'Grup bulunamadı' });
                         if (!group.members.includes(userId)) return res.status(403).json({ error: 'Bu grupta değilsiniz' });
-                        
+
                         let targetMessages = group.messages || [];
                         if (channelId && group.channels) {
                             const c = group.channels.find(ch => ch.id === channelId);
@@ -2276,16 +2291,16 @@ app.all('/api/social', authenticateToken, async (req, res) => {
                         // Group detail
                         const group = groupsKV[id];
                         if (!group) return res.status(404).json({ error: 'Grup bulunamadı' });
-                        
+
                         // Her üye için durum bilgilerini topla
                         const memberDetails = await Promise.all((group.members || []).map(async (mId) => {
                             const status = await getKVData(`user_status:${mId}`) || { text: 'Çevrimiçi', emoji: '🟢' };
                             return { id: mId, status };
                         }));
 
-                        return res.json({ 
-                            group: { ...group, memberDetails }, 
-                            isOwner: group.ownerId === userId 
+                        return res.json({
+                            group: { ...group, memberDetails },
+                            isOwner: group.ownerId === userId
                         });
                     }
                 } else {
@@ -2295,7 +2310,7 @@ app.all('/api/social', authenticateToken, async (req, res) => {
                         const isBanned = g.bannedUsers && g.bannedUsers.includes(userId);
                         return !isBanned;
                     });
-                    
+
                     return res.json(filteredGroups);
                 }
             }
@@ -2331,16 +2346,46 @@ app.all('/api/social', authenticateToken, async (req, res) => {
                     const groupId = id;
                     const group = groupsKV[groupId];
                     if (!group) return res.status(404).json({ error: 'Grup bulunamadı' });
-                    
+
                     // GÜVENLİK: Kara Liste Kontrolü
                     if (group.bannedUsers && group.bannedUsers.includes(userId)) {
-                        return res.status(403).json({ error: 'Bu gruptan kalıcı olarak men edildiniz!' });
+                        return res.status(403).json({ error: 'LifeCoach Guard: Bu gruptan kalıcı olarak men edildiniz!' });
+                    }
+
+                    // GÜVENLİK: Susturma (Timeout) Kontrolü
+                    if (group.timeouts && group.timeouts[userId]) {
+                        const expiry = group.timeouts[userId];
+                        if (Date.now() < expiry) {
+                            const remaining = Math.ceil((expiry - Date.now()) / (1000 * 60 * 60));
+                            return res.status(403).json({ error: `Ceza: Kural ihlali nedeniyle ${remaining} saat boyunca mesaj gönderemezsiniz.` });
+                        } else {
+                            delete group.timeouts[userId]; // Süre bittiyse temizle
+                        }
                     }
 
                     if (!group.members.includes(userId)) return res.status(403).json({ error: 'Bu gruba mesaj atma yetkiniz yok' });
-                    
+
                     if (!rateLimit(userId, 2000)) {
                         return res.status(429).json({ error: 'Çok hızlı mesaj gönderiyorsunuz.' });
+                    }
+
+                    // --- LIFE COACH GUARD: KRİTİK KORUMA ---
+                    if (detectThreats(content)) {
+                        if (!group.bannedUsers) group.bannedUsers = [];
+                        group.bannedUsers.push(userId);
+                        group.members = group.members.filter(id => id !== userId);
+                        await setKVData('study_groups', groupsKV);
+                        return res.status(403).json({ error: 'LifeCoach Guard: Tehdit içeren mesaj tespit edildi! Gruptan kalıcı olarak yasaklandınız.' });
+                    }
+
+                    // --- ADMIN KURALLARI: LİNK VE REKLAM ---
+                    if (group.rules && (group.rules.noLinks || group.rules.noAds)) {
+                        if (isLinkOrAd(content)) {
+                            if (!group.timeouts) group.timeouts = {};
+                            group.timeouts[userId] = Date.now() + (5 * 60 * 60 * 1000); // 5 Saat Ceza
+                            await setKVData('study_groups', groupsKV);
+                            return res.status(403).json({ error: 'Bu grupta link veya reklam paylaşmak yasaktır! 5 saat susturuldunuz.' });
+                        }
                     }
 
                     const sanitizedContent = sanitize(content);
@@ -2361,7 +2406,7 @@ app.all('/api/social', authenticateToken, async (req, res) => {
                             await setKVData('study_groups', groupsKV);
                             return res.status(403).json({ error: '60 ihlal sınırı aşıldı! Gruptan kalıcı olarak kovuldunuz.' });
                         }
-                        
+
                         // Güncel sayacı kaydetmek için (ban olmasa bile puan artışını kaydet)
                         await setKVData('study_groups', groupsKV);
                     }
@@ -2390,14 +2435,14 @@ app.all('/api/social', authenticateToken, async (req, res) => {
                     if (req.app.get('io')) {
                         req.app.get('io').to(targetRoom).emit('new_message', msg);
                     }
-                        await setKVData('study_groups', groupsKV);
-                        return res.json({ success: true });
-                    } else if (action === 'kick') {
+                    await setKVData('study_groups', groupsKV);
+                    return res.json({ success: true });
+                } else if (action === 'kick') {
                     const { groupId, targetUserId } = req.body;
                     const group = groupsKV[groupId];
                     if (!group) return res.status(404).json({ error: 'Grup bulunamadı' });
                     if (group.ownerId !== userId) return res.status(403).json({ error: 'Sadece grup yöneticisi üye atabilir' });
-                    
+
                     group.members = (group.members || []).filter(m => m !== targetUserId);
                     groupsKV[groupId] = group;
                     await setKVData('study_groups', groupsKV);
@@ -2416,17 +2461,17 @@ app.all('/api/social', authenticateToken, async (req, res) => {
                             group.avatarUrl = avatarData;
                         }
                     }
-                    
+
                     groupsKV[groupId] = group;
                     await setKVData('study_groups', groupsKV);
                     return res.json({ success: true, group });
                 } else {
                     // Create group
-                    const { name, description, subject, isPublic, avatarUrl } = req.body;
+                    const { name, description, subject, isPublic, avatarUrl, noLinks, noAds } = req.body;
                     const newGroupId = 'g_' + Date.now();
-                    
+
                     let joinCode = Math.floor(1000 + Math.random() * 9000).toString();
-                    while(Object.values(groupsKV).some(g => g.joinCode === joinCode)) {
+                    while (Object.values(groupsKV).some(g => g.joinCode === joinCode)) {
                         joinCode = Math.floor(1000 + Math.random() * 9000).toString();
                     }
 
@@ -2458,13 +2503,13 @@ app.all('/api/social', authenticateToken, async (req, res) => {
                 const groupId = id;
                 if (!groupsKV[groupId]) return res.status(404).json({ error: 'Grup bulunamadı' });
                 if (groupsKV[groupId].ownerId !== userId) return res.status(403).json({ error: 'Yetkisiz' });
-                
+
                 const { name, description, subject, isPublic } = req.body;
                 if (name) groupsKV[groupId].name = name;
                 if (description) groupsKV[groupId].description = description;
                 if (subject) groupsKV[groupId].subject = subject;
                 if (isPublic !== undefined) groupsKV[groupId].isPublic = isPublic;
-                
+
                 await setKVData('study_groups', groupsKV);
                 return res.json({ success: true });
             }
@@ -2475,7 +2520,7 @@ app.all('/api/social', authenticateToken, async (req, res) => {
                 const targetMember = req.body.memberId;
                 if (!groupsKV[groupId]) return res.status(404).json({ error: 'Grup bulunamadı' });
                 if (groupsKV[groupId].ownerId !== userId) return res.status(403).json({ error: 'Yetkisiz' });
-                
+
                 groupsKV[groupId].members = groupsKV[groupId].members.filter(m => m !== targetMember);
                 await setKVData('study_groups', groupsKV);
                 return res.json({ success: true });
@@ -2486,7 +2531,7 @@ app.all('/api/social', authenticateToken, async (req, res) => {
                 const groupId = id;
                 if (!groupsKV[groupId]) return res.status(404).json({ error: 'Grup bulunamadı' });
                 if (groupsKV[groupId].ownerId !== userId) return res.status(403).json({ error: 'Yetkisiz' });
-                
+
                 delete groupsKV[groupId];
                 await setKVData('study_groups', groupsKV);
                 return res.json({ success: true });
@@ -2494,18 +2539,18 @@ app.all('/api/social', authenticateToken, async (req, res) => {
         } else if (type === 'partners') {
             if (req.method === 'POST') {
                 const { partnerEmail, note } = req.body;
-                
+
                 // Fetch existing partners mapped by userId
                 const partnersKV = await getKVData('accountability_partners') || {};
                 if (!partnersKV[userId]) partnersKV[userId] = [];
-                
+
                 partnersKV[userId].push({
                     email: partnerEmail,
                     note,
                     status: 'pending',
                     addedAt: Date.now()
                 });
-                
+
                 await setKVData('accountability_partners', partnersKV);
                 return res.json({ success: true });
             } else if (req.method === 'GET') {
@@ -2516,50 +2561,50 @@ app.all('/api/social', authenticateToken, async (req, res) => {
             if (req.method === 'GET' && action === 'profile') {
                 const searchId = req.query.uniqueId;
                 if (!searchId) return res.status(400).json({ error: 'Arama ID gerekli' });
-                
+
                 // Note: Linear search in KV is slow for production, but works for mock DB
                 // Usually we'd maintain an index `user:uniqueId:${id}`
-                const users = await getKVData('all_users_index') || []; 
+                const users = await getKVData('all_users_index') || [];
                 // Since this is mock DB without index, let's create a proxy search or assume we saved it.
                 // In a real database we'd do a select by uniqueId. We'll simulate finding it:
-                return res.json({ 
-                    success: true, 
-                    profile: { uniqueId: searchId, name: 'Bilinmeyen Kullanıcı (Kayıtlı değil)', type: 'free' } 
+                return res.json({
+                    success: true,
+                    profile: { uniqueId: searchId, name: 'Bilinmeyen Kullanıcı (Kayıtlı değil)', type: 'free' }
                 });
             }
-            
+
             // 1-e-1 Özel ve Güvenli Mesajlaşma (DM)
             const dmsKV = await getKVData('direct_messages') || {};
-            
+
             // GET /api/social?type=friends&action=dm&targetId=1234
             if (req.method === 'GET' && action === 'dm') {
                 const targetId = req.query.targetId;
                 const conversationId = [userId, targetId].sort().join('_');
-                
+
                 if (!dmsKV[conversationId]) dmsKV[conversationId] = [];
                 return res.json({ messages: dmsKV[conversationId] });
             }
-            
+
             // POST /api/social?type=friends&action=dm
             if (req.method === 'POST' && action === 'dm') {
                 const { targetId, content } = req.body;
                 if (!targetId || !content) return res.status(400).json({ error: 'Eksik bilgi' });
-                
+
                 const conversationId = [userId, targetId].sort().join('_');
                 if (!dmsKV[conversationId]) dmsKV[conversationId] = [];
-                
+
                 dmsKV[conversationId].push({
                     senderId: userId,
                     senderName: req.user.email?.split('@')[0],
                     content,
                     timestamp: Date.now()
                 });
-                
+
                 // Güvenlik sınırlandırması: Maksimum 200 mesaj tutulur
                 if (dmsKV[conversationId].length > 200) {
                     dmsKV[conversationId] = dmsKV[conversationId].slice(-200);
                 }
-                
+
                 await setKVData('direct_messages', dmsKV);
                 return res.json({ success: true });
             }
@@ -2946,10 +2991,10 @@ app.post('/api/user-stats', authenticateToken, async (req, res) => {
             // Handle reward
             const xpGained = rewardType === 'daily_login' ? 10 :
                 rewardType === 'goal_complete' ? 50 :
-                rewardType === 'habit_streak' ? 30 :
-                rewardType === 'social_share' ? 100 :
-                rewardType === 'assistant_message' ? 10 : 10;
-                
+                    rewardType === 'habit_streak' ? 30 :
+                        rewardType === 'social_share' ? 100 :
+                            rewardType === 'assistant_message' ? 10 : 10;
+
             const flameGained = rewardType === 'social_share' ? 100 : 1;
 
             stats.total_xp += xpGained;
@@ -3549,45 +3594,45 @@ app.post('/api/avatar/generate', authenticateToken, async (req, res) => {
         if (!imageBase64) {
             return res.status(400).json({ error: 'Resim verisi eksik.' });
         }
-        
+
         const pyPath = path.join(process.cwd(), 'venv/bin/python3');
         const scriptPath = path.join(process.cwd(), 'api/avatar.py');
-        
+
         const pythonProcess = spawn(pyPath, [scriptPath], {
             env: { ...process.env } // Pass environment variables including GEMINI_API_KEY
         });
-        
+
         let outputData = '';
         let errorData = '';
-        
+
         pythonProcess.stdout.on('data', (data) => {
             outputData += data.toString();
         });
-        
+
         pythonProcess.stderr.on('data', (data) => {
             errorData += data.toString();
         });
-        
+
         pythonProcess.on('close', (code) => {
             if (code !== 0) {
                 console.error("Python Error (Avatar):", errorData);
                 return res.status(500).json({ error: 'Python script error', details: errorData });
             }
-            
+
             try {
                 // Find JSON output (python script prints json dumped obj)
                 const result = JSON.parse(outputData.trim());
                 if (result.error) {
                     return res.status(500).json({ error: result.error });
                 }
-                
+
                 res.json(result);
             } catch (err) {
                 console.error("Parse error:", err, "Raw Output:", outputData);
                 res.status(500).json({ error: 'Output parse error' });
             }
         });
-        
+
         // Write the payload to python script stdin
         pythonProcess.stdin.write(JSON.stringify({ imageBase64 }));
         pythonProcess.stdin.end();
