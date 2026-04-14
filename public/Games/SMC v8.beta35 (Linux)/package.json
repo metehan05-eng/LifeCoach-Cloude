@@ -1,0 +1,20 @@
+{
+	"name": "Super Mario Construct",
+	"id": "com.levelsharesquare.supermarioconstruct",
+	"app-icon": "www/icons/icon-512.png",
+	"window": {
+		"window-icon": "www/icons/icon-16.png",
+		"title": "Super Mario Construct",
+		"width": 416,
+		"height": 240,
+		"start-up-fullscreen": false,
+		"caption": true,
+		"resizable": true
+	},
+	"enable-devtools": false,
+	"project-details": {
+		"name": "Super Mario Construct",
+		"version": "v8.beta35"
+	},
+	"exported-properties": {}
+}
