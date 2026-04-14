@@ -5,6 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 
 let genAI;
 if (GEMINI_API_KEY) {
@@ -83,17 +84,59 @@ async function checkRateLimit(req, ip, fingerprint, userId) {
     return { allowed: true, plan };
 }
 
-// --- GEMINI ÇAĞRISI ---
+// --- DEEPSEEK ÇAĞRISI ---
+async function callDeepSeek(messages, systemPrompt) {
+    if (!DEEPSEEK_API_KEY) {
+        throw new Error("DEEPSEEK_API_KEY ayarlanmamış");
+    }
 
+    const chatMessages = [];
+    if (systemPrompt) {
+        chatMessages.push({ role: "system", content: systemPrompt });
+    }
+
+    // Mesajları DeepSeek formatına çevir
+    messages.filter(m => m.role !== 'system').forEach(msg => {
+        chatMessages.push({
+            role: msg.role === 'assistant' ? 'assistant' : 'user',
+            content: msg.content
+        });
+    });
+
+    const response = await fetch("https://api.deepseek.com/chat/completions", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${DEEPSEEK_API_KEY}`,
+        },
+        body: JSON.stringify({
+            "model": "deepseek-chat",
+            "messages": chatMessages,
+            "temperature": 0.7,
+            "max_tokens": 4000,
+            "stream": false
+        })
+    });
+
+    if (!response.ok) {
+        const err = await response.json();
+        throw new Error(`DeepSeek Hatası: ${err.error?.message || response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+}
+
+// --- GEMINI ÇAĞRISI (Yedek) ---
 async function callGemini(messages, systemPrompt) {
     if (!genAI) {
         throw new Error("GEMINI_API_KEY ayarlanmamış");
     }
-    
+
     const gemini31Pro = "gemini-1.5-pro";
     const gemini31FlashLite = "gemini-1.5-flash";
     const geminiProLatest = "gemini-pro-latest";
-    
+
     // Mesajları Gemini formatına çevir
     const chatHistory = messages
         .filter(m => m.role !== 'system')
@@ -101,18 +144,18 @@ async function callGemini(messages, systemPrompt) {
             role: msg.role === 'assistant' ? 'model' : 'user',
             parts: [{ text: msg.content }]
         }));
-    
+
     const userMessage = messages.filter(m => m.role === 'user').pop();
-    
+
     try {
         // 1. Gemini 3.1 Pro
-        const model = genAI.getGenerativeModel({ 
-            model: gemini31Pro, 
-            systemInstruction: systemPrompt 
+        const model = genAI.getGenerativeModel({
+            model: gemini31Pro,
+            systemInstruction: systemPrompt
         });
-        const chat = model.startChat({ 
-            history: chatHistory.slice(0, -1), 
-            generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } 
+        const chat = model.startChat({
+            history: chatHistory.slice(0, -1),
+            generationConfig: { maxOutputTokens: 4000, temperature: 0.7 }
         });
         const result = await chat.sendMessage(userMessage?.content || '');
         return result.response.text();
@@ -120,26 +163,26 @@ async function callGemini(messages, systemPrompt) {
         console.warn(`[AI] ${gemini31Pro} başarısız. YEDEK: ${gemini31FlashLite}`);
         try {
             // 2. Gemini 3.1 Flash Lite
-            const model = genAI.getGenerativeModel({ 
-                model: gemini31FlashLite, 
-                systemInstruction: systemPrompt 
+            const model = genAI.getGenerativeModel({
+                model: gemini31FlashLite,
+                systemInstruction: systemPrompt
             });
-            const chat = model.startChat({ 
-                history: chatHistory.slice(0, -1), 
-                generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } 
+            const chat = model.startChat({
+                history: chatHistory.slice(0, -1),
+                generationConfig: { maxOutputTokens: 4000, temperature: 0.7 }
             });
             const result = await chat.sendMessage(userMessage?.content || '');
             return result.response.text();
         } catch (finalError) {
             console.warn(`[AI] Son çare: ${geminiProLatest}`);
             // 3. Gemini Pro Latest
-            const model = genAI.getGenerativeModel({ 
-                model: geminiProLatest, 
-                systemInstruction: systemPrompt 
+            const model = genAI.getGenerativeModel({
+                model: geminiProLatest,
+                systemInstruction: systemPrompt
             });
-            const chat = model.startChat({ 
-                history: chatHistory.slice(0, -1), 
-                generationConfig: { maxOutputTokens: 4000, temperature: 0.7 } 
+            const chat = model.startChat({
+                history: chatHistory.slice(0, -1),
+                generationConfig: { maxOutputTokens: 4000, temperature: 0.7 }
             });
             const result = await chat.sendMessage(userMessage?.content || '');
             return result.response.text();
@@ -147,12 +190,40 @@ async function callGemini(messages, systemPrompt) {
     }
 }
 
+// --- AKILLI AI ÇAĞRISI (Önce DeepSeek, sonra Gemini) ---
+async function callAI(messages, systemPrompt) {
+    // 1. Önce DeepSeek'i dene
+    if (DEEPSEEK_API_KEY) {
+        try {
+            console.log(`[AI-Chat] DeepSeek deneniyor...`);
+            const response = await callDeepSeek(messages, systemPrompt);
+            console.log(`[AI-Chat] DeepSeek başarılı`);
+            return response;
+        } catch (error) {
+            console.error(`[AI-Chat] DeepSeek hatası:`, error.message);
+            console.log(`[AI-Chat] Gemini yedek sistemine geçiliyor...`);
+        }
+    }
+
+    // 2. DeepSeek yoksa veya hata verirse Gemini'yi dene
+    if (genAI) {
+        try {
+            const response = await callGemini(messages, systemPrompt);
+            return response;
+        } catch (error) {
+            console.error(`[AI-Chat] Gemini hatası:`, error.message);
+        }
+    }
+
+    throw new Error('AI servisi kullanılamıyor - DeepSeek/Gemini API Key eksik veya hatalı');
+}
+
 // --- HELPER: ÖZETLEME ---
 async function summarizeConversation(messages) {
     if (!messages || messages.length === 0) return "";
     const conversationText = messages.map(m => `${m.role}: ${m.content}`).join('\n');
     try {
-        const summary = await callGemini([
+        const summary = await callAI([
             { "role": "system", "content": "Summarize the following conversation very briefly (1-2 sentences). Only provide the summary, nothing else." },
             { "role": "user", "content": `Conversation to summarize:\n\n${conversationText}` }
         ], "You are a helpful assistant that summarizes conversations.");
@@ -491,7 +562,7 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
         }
         
         // 4. AI Cevabı (with emotion-adapted prompt)
-        const aiResponse = await callGemini([
+        const aiResponse = await callAI([
             { "role": "system", "content": adaptedSystemPrompt },
             ...(history || []),
             { "role": "user", "content": message }
@@ -517,7 +588,7 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
                     };
                     // Başlık oluşturma (Opsiyonel, basit tutuldu)
                     try {
-                        const titleText = await callGemini([
+                        const titleText = await callAI([
                             { "role": "system", "content": "Write a very short title (3-5 words). No quotes." },
                             { "role": "user", "content": `User: ${message}\nAI: ${aiResponse}` }
                         ], "You are a helpful assistant that creates short titles.");

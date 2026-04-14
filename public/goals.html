@@ -167,7 +167,7 @@
         .task-text { color: #cbd5e1; font-size: 0.9rem; line-height: 1.5; }
 
         /* ── YouTube section ── */
-        #yt-player-wrap {
+        #ytPlayerWrap {
             width: 100%;
             aspect-ratio: 16/9;
             border-radius: 16px;
@@ -175,7 +175,7 @@
             background: #000;
             margin-top: 16px;
         }
-        #yt-player-wrap iframe { width: 100%; height: 100%; border: none; }
+        #ytPlayerWrap iframe { width: 100%; height: 100%; border: none; }
 
         /* ── Progress bar ── */
         .prog-bar { height: 6px; background: rgba(255,255,255,0.07); border-radius: 99px; overflow: hidden; }
@@ -549,15 +549,13 @@
                 <i class="fa-brands fa-youtube text-red-500 mr-1"></i>
                 <strong class="text-white">${video.title || searchQuery}</strong>
                 ${video.channel ? `<span class="text-slate-500 text-xs ml-2">• ${video.channel}</span>` : ''}`;
-            // Embed player
+            // Embed player directly
             ytWrap.innerHTML = `
-                <div id="yt-player-wrap">
-                    <iframe
-                        src="https://www.youtube.com/embed/${video.videoId}?rel=0&modestbranding=1"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                        allowfullscreen>
-                    </iframe>
-                </div>`;
+                <iframe
+                    src="https://www.youtube.com/embed/${video.videoId}?rel=0&modestbranding=1"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowfullscreen>
+                </iframe>`;
             searchBtn.style.display = 'none';
         } else {
             // No video found — show search button
