@@ -1,0 +1,8 @@
+{
+    "c2dictionary": true,
+    "data": {
+        "generalTiles": "mainBlocks|pipes|objPipes|water|lava|poison|cryo|electricity|spikes|climbables|conveyors|doors",
+        "objects": "mainObjects|powerUps|platforms|switches|goals|advanced|envChangers",
+        "enemies": "mainEnemies|shellEnemies|waterEnemies|castleEnemies|ghostEnemies|artillery|moles|chucks|plantEnemies|dinoEnemies|fieryEnemies|yiEnemies|wonderEnemies|poweredEnemies|bosses"
+    }
+}
