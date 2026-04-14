@@ -3391,50 +3391,18 @@
                             </div>
                         </div>
 
-                        <!-- SMC - Super Mario Construct Game Card -->
-                        <div class="bg-gradient-to-br from-red-500/10 to-orange-600/5 border border-red-500/20 rounded-2xl overflow-hidden hover:border-red-400/50 transition-all group cursor-pointer" onclick="openSMCGame()">
-                            <div class="aspect-video bg-gradient-to-br from-[#e53] to-[#1a1a2e] relative overflow-hidden">
-                                <!-- SMC Game Preview -->
-                                <div class="absolute inset-0 flex items-center justify-center">
-                                    <div class="text-center">
-                                        <div class="text-6xl mb-2">🏗️</div>
-                                        <div class="text-white font-bold text-lg">Super Mario Construct</div>
-                                        <div class="text-white/70 text-sm">Construct 3 Engine</div>
-                                    </div>
-                                </div>
-                                <!-- Play Button Overlay -->
-                                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                    <div class="w-16 h-16 rounded-full bg-red-500 flex items-center justify-center transform scale-75 group-hover:scale-100 transition-transform">
-                                        <i class="fa-solid fa-play text-white text-2xl ml-1"></i>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="p-4">
-                                <h3 class="font-semibold text-white mb-1">Super Mario Construct</h3>
-                                <p class="text-xs text-slate-400 mb-3">Gelişmiş Mario oyun motoru! Daha fazla özellik, bölüm ve mekanik. itch.io'dan import edildi.</p>
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-2">
-                                        <span class="text-xs px-2 py-1 rounded-lg bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">
-                                            <i class="fa-solid fa-star mr-1"></i>+15 XP/dakika
-                                        </span>
-                                    </div>
-                                    <span class="text-xs text-slate-500"> HAN AI </span>
-                                </div>
-                            </div>
-                        </div>
-
                         <!-- More Games Coming Soon Card -->
                         <div class="bg-gradient-to-br from-slate-500/10 to-slate-600/5 border border-slate-500/20 rounded-2xl overflow-hidden opacity-60">
                             <div class="aspect-video bg-gradient-to-br from-slate-700 to-slate-800 relative flex items-center justify-center">
                                 <div class="text-center">
                                     <div class="text-4xl mb-2">🎲</div>
-                                    <div class="text-slate-400 font-medium">RACETHEODDS</div>
-                                    <div class="text-slate-500 text-sm">WebGL export gerekli</div>
+                                    <div class="text-slate-400 font-medium">Yeni Oyunlar</div>
+                                    <div class="text-slate-500 text-sm">Çok yakında...</div>
                                 </div>
                             </div>
                             <div class="p-4">
-                                <h3 class="font-semibold text-slate-400 mb-1">RACETHEODDS</h3>
-                                <p class="text-xs text-slate-500">Bu oyun için WebGL build gerekli. Şu an sadece masaüstü versiyonu mevcut.</p>
+                                <h3 class="font-semibold text-slate-400 mb-1">Daha Fazla Oyun</h3>
+                                <p class="text-xs text-slate-500">Yeni mini oyunlar üzerinde çalışıyoruz. Takipte kalın!</p>
                             </div>
                         </div>
                     </div>
@@ -12466,80 +12434,9 @@
             }
         }
 
-        // ========== SMC GAME FUNCTIONS ==========
-        let smcGameXPInterval = null;
-        let smcPlayTime = 0;
-
-        function openSMCGame() {
-            const modal = document.getElementById('smc-game-modal');
-            const iframe = document.getElementById('smc-game-iframe');
-            
-            // Reset tracking
-            smcPlayTime = 0;
-            
-            // Load the game
-            iframe.src = './smc-game/index.html';
-            
-            // Show modal
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            
-            // Start XP tracking
-            startSMCXPTracking();
-            
-            showToast('🏗️ Super Mario Construct başladı! İyi eğlenceler!', 'success');
-        }
-
-        function closeSMCGame() {
-            const modal = document.getElementById('smc-game-modal');
-            const iframe = document.getElementById('smc-game-iframe');
-            
-            // Stop XP tracking
-            stopSMCXPTracking();
-            
-            // Give final XP based on play time
-            calculateSMCFinalXP();
-            
-            // Hide modal
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-            
-            // Stop the game
-            iframe.src = 'about:blank';
-        }
-
-        function startSMCXPTracking() {
-            // Award XP every minute
-            smcGameXPInterval = setInterval(() => {
-                smcPlayTime++;
-                // Every minute = 15 XP
-                if (smcPlayTime % 60 === 0) {
-                    addXP(15, 'SMC Oyun Süresi');
-                    showToast(`⏱️ ${smcPlayTime/60} dakika oynadın! +15 XP`, 'success');
-                }
-            }, 1000);
-        }
-
-        function stopSMCXPTracking() {
-            if (smcGameXPInterval) {
-                clearInterval(smcGameXPInterval);
-                smcGameXPInterval = null;
-            }
-        }
-
-        function calculateSMCFinalXP() {
-            // Bonus XP for total play time
-            const minutesPlayed = Math.floor(smcPlayTime / 60);
-            const bonusXP = minutesPlayed * 5;
-            if (bonusXP > 0) {
-                addXP(bonusXP, 'SMC Oyun Bonusu');
-                showToast(`🏆 ${minutesPlayed} dakika oynadın! Bonus: +${bonusXP} XP`, 'success');
-            }
-        }
-
         // Make functions globally available
-        window.openSMCGame = openSMCGame;
-        window.closeSMCGame = closeSMCGame;
+        window.openSMCGame = () => showToast('Yeni oyunlar yakında eklenecek!', 'info');
+        window.closeSMCGame = () => {};
     </script>
 </body>
 </html>

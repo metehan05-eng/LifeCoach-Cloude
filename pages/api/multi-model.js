@@ -9,7 +9,9 @@ import fetch from 'node-fetch'; // For external API calls
 // Initialize Gemini
 let genAI = null;
 if (process.env.GEMINI_API_KEY) {
-  genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+  genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY, {
+    apiEndpoint: 'https://generativelanguage.googleapis.com/v1beta'
+  });
 }
 
 /**
@@ -69,9 +71,10 @@ async function callGemini(prompt, systemPrompt = '') {
 
   try {
     const models = [
+      "gemini-2.5-flash-preview-04-17",
+      "gemini-2.0-flash",
       "gemini-1.5-pro",
-      "gemini-1.5-flash",
-      "gemini-pro-latest"
+      "gemini-1.5-flash"
     ];
 
     for (const modelName of models) {
@@ -196,13 +199,13 @@ async function callClaude(prompt, systemPrompt = '', model = 'claude-3-opus-2024
  */
 function selectOptimalModel(useCase = 'general', userPreference = null) {
   const modelMap = {
-    'fast_response': { provider: 'deepseek', model: 'deepseek-chat' },
-    'high_quality': { provider: 'deepseek', model: 'deepseek-chat' },
-    'creative': { provider: 'anthropic', model: 'claude-3-opus-20240229' },
-    'technical': { provider: 'deepseek', model: 'deepseek-chat' },
-    'emotional': { provider: 'anthropic', model: 'claude-3-sonnet-20240229' },
-    'balanced': { provider: 'deepseek', model: 'deepseek-chat' },
-    'general': { provider: 'deepseek', model: 'deepseek-chat' }
+    'fast_response': { provider: 'google', model: 'gemini-2.5-flash-preview-04-17' },
+    'high_quality': { provider: 'google', model: 'gemini-2.5-flash-preview-04-17' },
+    'creative': { provider: 'google', model: 'gemini-2.5-flash-preview-04-17' },
+    'technical': { provider: 'google', model: 'gemini-2.5-flash-preview-04-17' },
+    'emotional': { provider: 'google', model: 'gemini-2.5-flash-preview-04-17' },
+    'balanced': { provider: 'google', model: 'gemini-2.5-flash-preview-04-17' },
+    'general': { provider: 'google', model: 'gemini-2.5-flash-preview-04-17' }
   };
 
   // User preference overrides
@@ -219,7 +222,8 @@ function selectOptimalModel(useCase = 'general', userPreference = null) {
 async function multiModelCall(prompt, systemPrompt = '', preferredModel = null, useCase = 'general') {
   const fallbackChain = [
     preferredModel || selectOptimalModel(useCase),
-    { provider: 'deepseek', model: 'deepseek-chat' },
+    { provider: 'google', model: 'gemini-2.5-flash-preview-04-17' },
+    { provider: 'google', model: 'gemini-2.0-flash' },
     { provider: 'google', model: 'gemini-1.5-pro' },
     { provider: 'openai', model: 'gpt-4-turbo' },
     { provider: 'anthropic', model: 'claude-3-sonnet-20240229' },
@@ -280,9 +284,10 @@ function getAvailableModels() {
     google: {
       available: !!process.env.GEMINI_API_KEY,
       models: [
-        { id: 'gemini-1.5-pro', name: 'Gemini Pro 3.1', performance: 'best', speed: 'medium' },
-        { id: 'gemini-1.5-flash', name: 'Gemini Flash 3.1 Lite', performance: 'good', speed: 'fast' },
-        { id: 'gemini-pro-latest', name: 'Gemini Pro Latest', performance: 'good', speed: 'medium' }
+        { id: 'gemini-2.5-flash-preview-04-17', name: 'Gemini 2.5 Flash', performance: 'excellent', speed: 'fast' },
+        { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', performance: 'excellent', speed: 'fast' },
+        { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', performance: 'best', speed: 'medium' },
+        { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', performance: 'good', speed: 'fast' }
       ]
     },
     openai: {
