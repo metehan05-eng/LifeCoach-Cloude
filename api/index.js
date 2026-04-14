@@ -135,22 +135,43 @@ async function generateAIResponse(prompt, history = []) {
         throw new Error('AI not configured - GEMINI_API_KEY is missing');
     }
 
-    const models = ["gemini-1.5-flash", "gemini-pro"];
+    // Extract system prompt if present in history
+    let systemInstruction = "";
+    const filteredHistory = [];
+    
+    for (const msg of history) {
+        if (msg.role === 'system') {
+            systemInstruction = msg.content;
+        } else {
+            filteredHistory.push(msg);
+        }
+    }
+
+    const models = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro-latest"];
     let lastError;
 
     for (const modelName of models) {
         try {
             console.log(`[AI-Briefing] Deneniyor: ${modelName}`);
-            const model = genAI.getGenerativeModel({
+            
+            const modelConfig = {
                 model: modelName,
                 generationConfig: { temperature: 0.7, maxOutputTokens: 2000 }
-            });
+            };
 
-            const chatHistory = history.map(msg => ({
+            // Only add systemInstruction if it's not empty (older models might not support it, but 1.5 does)
+            if (systemInstruction) {
+                modelConfig.systemInstruction = systemInstruction;
+            }
+
+            const model = genAI.getGenerativeModel(modelConfig);
+
+            const chatHistory = filteredHistory.map(msg => ({
                 role: msg.role === 'assistant' ? 'model' : 'user',
                 parts: [{ text: msg.content }]
             }));
 
+            // startChat expects alternating roles. If history is empty, it's fine.
             const chat = model.startChat({ history: chatHistory });
             const result = await chat.sendMessage(prompt);
             return result.response.text();
