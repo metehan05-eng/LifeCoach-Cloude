@@ -138,7 +138,7 @@ async function generateAIResponse(prompt, history = []) {
     // Extract system prompt if present in history
     let systemInstruction = "";
     const filteredHistory = [];
-    
+
     for (const msg of history) {
         if (msg.role === 'system') {
             systemInstruction = msg.content;
@@ -147,13 +147,13 @@ async function generateAIResponse(prompt, history = []) {
         }
     }
 
-    const models = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro-latest"];
+    const models = ["gemini-1.5-flash", "gemini-2.0-flash-exp", "gemini-1.5-pro"];
     let lastError;
 
     for (const modelName of models) {
         try {
             console.log(`[AI-Briefing] Deneniyor: ${modelName}`);
-            
+
             const modelConfig = {
                 model: modelName,
                 generationConfig: { temperature: 0.7, maxOutputTokens: 2000 }
