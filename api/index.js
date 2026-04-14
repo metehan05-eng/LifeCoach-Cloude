@@ -1878,17 +1878,40 @@ app.post('/api/goals', authenticateToken, async (req, res) => {
 
         const allGoals = await getKVData('goals');
         const userGoals = allGoals[userId] || [];
+
+        // ── Hedef Oluştururken DeepSeek ile Akıllı Analiz Al
+        let aiDetails = "Hedef planı hazırlanıyor...";
+        try {
+            const prompt = `Yeni bir hedef oluşturdum: "${title}". Bu hedef için kısa bir motivasyon cümlesi ve 3 ana mihenk taşı belirle. (DeepSeek Analizi)`;
+            aiDetails = await generateAIResponse(prompt, [
+                { role: 'system', content: 'Sen profesyonel bir başarı ve verimlilik koçusun.' }
+            ]);
+        } catch (err) {
+            console.warn("[AI-Goal] Başlangıç analizi başarısız:", err.message);
+            aiDetails = "Analiz şu an yapılamıyor, ancak hedefiniz kaydedildi.";
+        }
+
         const newGoal = {
-            id: Date.now().toString(), title, type, description: description || '',
-            progress: 0, status: 'in-progress', targetDate: targetDate || null,
-            completions: [], // Günlük takipler için
-            createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
+            id: Date.now().toString(),
+            title,
+            type,
+            description: description || '',
+            aiDetails: aiDetails,
+            progress: 0,
+            status: 'in-progress',
+            targetDate: targetDate || null,
+            completions: [],
+            briefings: {}, // Yol haritaları buraya kaydedilecek
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
         };
+
         userGoals.push(newGoal);
         allGoals[userId] = userGoals;
         await setKVData('goals', allGoals);
         res.status(201).json(newGoal);
     } catch (error) {
+        console.error("Hedef oluşturma hatası:", error);
         res.status(500).json({ error: 'Hedef oluşturma hatası' });
     }
 });
