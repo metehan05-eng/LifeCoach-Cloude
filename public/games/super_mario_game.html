@@ -564,18 +564,19 @@ function update() {
     mario.vx *= 0.8;
   }
 
-  if ((keys['Space'] || keys['ArrowUp'] || keys['KeyW'] || keys['jump']) && mario.onGround) {
-    mario.vy = JUMP_FORCE;
-    mario.onGround = false;
-    playJumpSound();
-  }
-
   mario.x += mario.vx;
   mario.y += mario.vy;
   if (mario.x < 0) mario.x = 0;
 
   // Tile collision
   resolvePlatformCollision(mario, allTiles);
+
+  // Jump after collision check so onGround is properly set
+  if ((keys['Space'] || keys['ArrowUp'] || keys['KeyW'] || keys['jump']) && mario.onGround) {
+    mario.vy = JUMP_FORCE;
+    mario.onGround = false;
+    playJumpSound();
+  }
 
   // Pipe collision (solid)
   for (const p of pipes) {
