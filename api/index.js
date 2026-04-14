@@ -131,52 +131,63 @@ async function searchYouTubeVideo(query) {
 
 // Helper function to generate AI response for goals briefing
 async function generateAIResponse(prompt, history = []) {
-    if (!genAI) {
-        throw new Error('AI not configured - GEMINI_API_KEY is missing');
-    }
-
-    // Extract system prompt if present in history
-    let systemInstruction = "";
-    const filteredHistory = [];
-
-    for (const msg of history) {
-        if (msg.role === 'system') {
-            systemInstruction = msg.content;
-        } else {
-            filteredHistory.push(msg);
+    // 1. Önce DeepSeek'i dene (Kullanıcı tercihi)
+    if (DEEPSEEK_API_KEY) {
+        try {
+            console.log(`[AI-Briefing] DeepSeek deneniyor...`);
+            let systemMsg = "Sen Türkçe içerik üreten uzman bir eğitim koçusun.";
+            const dsHistory = [];
+            
+            for (const msg of history) {
+                if (msg.role === 'system') {
+                    systemMsg = msg.content;
+                } else {
+                    // callDeepSeek'in beklediği format (role: model/user)
+                    dsHistory.push({
+                        role: msg.role === 'assistant' ? 'model' : 'user',
+                        parts: [{ text: msg.content }]
+                    });
+                }
+            }
+            
+            const response = await callDeepSeek(prompt, dsHistory, systemMsg);
+            if (response) return response;
+        } catch (error) {
+            console.warn(`[AI-Briefing] DeepSeek başarısız:`, error.message);
         }
     }
 
-    const models = [
-        "gemini-1.5-flash",
-        "gemini-1.5-flash-latest",
-        "gemini-1.5-pro-latest",
-        "gemini-1.5-pro"
-    ];
+    // 2. DeepSeek yoksa veya hata verirse Gemini modellerini dene (Yedek)
+    if (!genAI) {
+        throw new Error('AI not configured - Gemini/DeepSeek API Key eksik');
+    }
+
+    const models = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro-latest"];
     let lastError;
 
     for (const modelName of models) {
         try {
-            console.log(`[AI-Briefing] Deneniyor: ${modelName}`);
+            console.log(`[AI-Briefing] Gemini deneniyor: ${modelName}`);
+            
+            let systemInstruction = "";
+            const filteredGeminiHistory = [];
+            for (const msg of history) {
+                if (msg.role === 'system') systemInstruction = msg.content;
+                else filteredGeminiHistory.push(msg);
+            }
 
             const modelConfig = {
                 model: modelName,
                 generationConfig: { temperature: 0.7, maxOutputTokens: 2000 }
             };
-
-            // Only add systemInstruction if it's not empty (older models might not support it, but 1.5 does)
-            if (systemInstruction) {
-                modelConfig.systemInstruction = systemInstruction;
-            }
+            if (systemInstruction) modelConfig.systemInstruction = systemInstruction;
 
             const model = genAI.getGenerativeModel(modelConfig);
-
-            const chatHistory = filteredHistory.map(msg => ({
+            const chatHistory = filteredGeminiHistory.map(msg => ({
                 role: msg.role === 'assistant' ? 'model' : 'user',
                 parts: [{ text: msg.content }]
             }));
 
-            // startChat expects alternating roles. If history is empty, it's fine.
             const chat = model.startChat({ history: chatHistory });
             const result = await chat.sendMessage(prompt);
             return result.response.text();
@@ -886,69 +897,72 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
             userMessageParts.unshift({ text: userTextMessage }); // Metni her zaman başa koy
         }
 
-        // --- AI Model Logic (Gemini with Robust Retry & 429 Handling) ---
+        // --- AI Model Logic (DeepSeek First, Gemini Fallback) ---
         let aiResponse;
         let usedModel;
 
         const mainModel = "gemini-1.5-pro";
         const fastModel = "gemini-1.5-flash";
-        const experimentalModel = "gemini-2.0-flash-exp"; // "Gemini 3" hissiyatı için en yeni model
+        const experimentalModel = "gemini-2.0-flash-exp";
 
-        async function callWithRetry(modelName, parts, systemPrompt, history, maxRetries = 2) {
-            let attempt = 0;
-            while (attempt <= maxRetries) {
-                try {
-                    console.log(`[AI] Deneniyor: ${modelName} (Deneme ${attempt + 1})`);
-                    const model = genAI.getGenerativeModel({ model: modelName, systemInstruction: systemPrompt });
-                    const chat = model.startChat({
-                        history: history,
-                        generationConfig: { maxOutputTokens: 4000, temperature: 0.7 }
-                    });
-                    const result = await chat.sendMessage(parts);
-                    return { text: result.response.text(), model: modelName };
-                } catch (error) {
-                    const isRateLimit = error.message?.includes('429') || error.status === 429;
-                    if (isRateLimit && attempt < maxRetries) {
-                        const waitTime = Math.pow(2, attempt) * 2000; // 2s, 4s...
-                        console.warn(`[AI] Kota doldu (429). ${waitTime}ms bekleniyor...`);
-                        await new Promise(resolve => setTimeout(resolve, waitTime));
-                        attempt++;
-                        continue;
-                    }
-                    throw error;
-                }
+        // 1. Önce DeepSeek'i dene (Sadece metin mesajları için)
+        const hasImage = userMessageParts.some(p => p.inlineData);
+        if (DEEPSEEK_API_KEY && !hasImage) {
+            try {
+                console.log(`[AI] DeepSeek deneniyor (Sohbet)...`);
+                aiResponse = await callDeepSeek(userTextMessage, chatHistory, finalSystemPrompt);
+                usedModel = "deepseek-chat";
+            } catch (dsErr) {
+                console.warn(`[AI] DeepSeek başarısız (Sohbet):`, dsErr.message);
             }
         }
 
-        try {
-            // 1. Önce en yeni "experimental" modeli dene (Gemini 3 talebi için)
-            const result = await callWithRetry(experimentalModel, userMessageParts, finalSystemPrompt, chatHistory);
-            aiResponse = result.text;
-            usedModel = result.model;
-        } catch (err1) {
-            console.warn(`[AI] ${experimentalModel} başarısız:`, err1.message);
+        // 2. Eğer DeepSeek başarısız olduysa veya resim varsa Gemini Retrial Chain
+        if (!aiResponse) {
+            async function callWithRetry(modelName, parts, systemPrompt, history, maxRetries = 2) {
+                let attempt = 0;
+                while (attempt <= maxRetries) {
+                    try {
+                        console.log(`[AI] Gemini deneniyor: ${modelName} (Deneme ${attempt + 1})`);
+                        const model = genAI.getGenerativeModel({ model: modelName, systemInstruction: systemPrompt });
+                        const chat = model.startChat({
+                            history: history,
+                            generationConfig: { maxOutputTokens: 4000, temperature: 0.7 }
+                        });
+                        const result = await chat.sendMessage(parts);
+                        return { text: result.response.text(), model: modelName };
+                    } catch (error) {
+                        const isRateLimit = error.message?.includes('429') || error.status === 429;
+                        if (isRateLimit && attempt < maxRetries) {
+                            const waitTime = Math.pow(2, attempt) * 2000;
+                            console.warn(`[AI] Gemini kota doldu, bekleniyor...`);
+                            await new Promise(resolve => setTimeout(resolve, waitTime));
+                            attempt++;
+                            continue;
+                        }
+                        throw error;
+                    }
+                }
+            }
+
             try {
-                // 2. Pro modelini dene
-                const result = await callWithRetry(mainModel, userMessageParts, finalSystemPrompt, chatHistory);
+                const result = await callWithRetry(experimentalModel, userMessageParts, finalSystemPrompt, chatHistory);
                 aiResponse = result.text;
                 usedModel = result.model;
-            } catch (err2) {
-                console.warn(`[AI] ${mainModel} başarısız:`, err2.message);
+            } catch (err1) {
+                console.warn(`[AI] ${experimentalModel} başarısız:`, err1.message);
                 try {
-                    // 3. Flash modelini dene (Son çare)
-                    const result = await callWithRetry(fastModel, userMessageParts, finalSystemPrompt, chatHistory);
+                    const result = await callWithRetry(mainModel, userMessageParts, finalSystemPrompt, chatHistory);
                     aiResponse = result.text;
                     usedModel = result.model;
-                } catch (err3) {
-                    console.warn(`[AI] Tüm Gemini modelleri başarısız oldu. DeepSeek deneniyor...`);
+                } catch (err2) {
+                    console.warn(`[AI] ${mainModel} başarısız:`, err2.message);
                     try {
-                        // 4. Gemini tamamen çöktüyse DeepSeek'e başvur
-                        const deepSeekResponse = await callDeepSeek(userTextMessage, chatHistory, finalSystemPrompt);
-                        aiResponse = deepSeekResponse;
-                        usedModel = "DeepSeek-Chat (Fallback)";
-                    } catch (dsError) {
-                        console.error("[AI] DeepSeek de başarısız:", dsError.message);
-                        throw err3; // Orijinal hatayı fırlat ki döngü kırılsın
+                        const result = await callWithRetry(fastModel, userMessageParts, finalSystemPrompt, chatHistory);
+                        aiResponse = result.text;
+                        usedModel = result.model;
+                    } catch (err3) {
+                        throw new Error("Tüm yapay zeka modelleri başarısız oldu.");
                     }
                 }
             }
