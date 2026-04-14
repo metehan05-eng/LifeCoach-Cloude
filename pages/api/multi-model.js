@@ -3,13 +3,62 @@ import fetch from 'node-fetch'; // For external API calls
 
 /**
  * Multi-Model AI Provider Support
- * Supports: Gemini, OpenAI, Anthropic Claude, Fallbacks
+ * Supports: DeepSeek, Gemini, OpenAI, Anthropic Claude, Fallbacks
  */
 
 // Initialize Gemini
 let genAI = null;
 if (process.env.GEMINI_API_KEY) {
   genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+}
+
+/**
+ * Call DeepSeek AI
+ */
+async function callDeepSeek(prompt, systemPrompt = '', model = 'deepseek-chat') {
+  if (!process.env.DEEPSEEK_API_KEY) {
+    throw new Error('DeepSeek API key not configured');
+  }
+
+  try {
+    const messages = [];
+    if (systemPrompt) {
+      messages.push({ role: 'system', content: systemPrompt });
+    }
+    messages.push({ role: 'user', content: prompt });
+
+    const response = await fetch('https://api.deepseek.com/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: model,
+        messages: messages,
+        temperature: 0.7,
+        max_tokens: 2000,
+        stream: false
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error?.message || 'DeepSeek API error');
+    }
+
+    const data = await response.json();
+
+    return {
+      provider: 'deepseek',
+      model: model,
+      text: data.choices[0]?.message?.content || ''
+    };
+
+  } catch (error) {
+    console.error("DeepSeek call error:", error);
+    throw error;
+  }
 }
 
 /**
@@ -147,13 +196,13 @@ async function callClaude(prompt, systemPrompt = '', model = 'claude-3-opus-2024
  */
 function selectOptimalModel(useCase = 'general', userPreference = null) {
   const modelMap = {
-    'fast_response': { provider: 'google', model: 'gemini-1.5-flash' },
-    'high_quality': { provider: 'openai', model: 'gpt-4-turbo' },
+    'fast_response': { provider: 'deepseek', model: 'deepseek-chat' },
+    'high_quality': { provider: 'deepseek', model: 'deepseek-chat' },
     'creative': { provider: 'anthropic', model: 'claude-3-opus-20240229' },
-    'technical': { provider: 'openai', model: 'gpt-4-turbo' },
+    'technical': { provider: 'deepseek', model: 'deepseek-chat' },
     'emotional': { provider: 'anthropic', model: 'claude-3-sonnet-20240229' },
-    'balanced': { provider: 'google', model: 'gemini-1.5-pro' },
-    'general': { provider: 'google', model: 'gemini-1.5-pro' }
+    'balanced': { provider: 'deepseek', model: 'deepseek-chat' },
+    'general': { provider: 'deepseek', model: 'deepseek-chat' }
   };
 
   // User preference overrides
@@ -170,6 +219,7 @@ function selectOptimalModel(useCase = 'general', userPreference = null) {
 async function multiModelCall(prompt, systemPrompt = '', preferredModel = null, useCase = 'general') {
   const fallbackChain = [
     preferredModel || selectOptimalModel(useCase),
+    { provider: 'deepseek', model: 'deepseek-chat' },
     { provider: 'google', model: 'gemini-1.5-pro' },
     { provider: 'openai', model: 'gpt-4-turbo' },
     { provider: 'anthropic', model: 'claude-3-sonnet-20240229' },
@@ -188,7 +238,9 @@ async function multiModelCall(prompt, systemPrompt = '', preferredModel = null, 
 
       let response;
       
-      if (modelConfig.provider === 'google') {
+      if (modelConfig.provider === 'deepseek') {
+        response = await callDeepSeek(prompt, systemPrompt, modelConfig.model);
+      } else if (modelConfig.provider === 'google') {
         response = await callGemini(prompt, systemPrompt);
       } else if (modelConfig.provider === 'openai') {
         response = await callOpenAI(prompt, systemPrompt, modelConfig.model);
@@ -218,6 +270,13 @@ async function multiModelCall(prompt, systemPrompt = '', preferredModel = null, 
  */
 function getAvailableModels() {
   const models = {
+    deepseek: {
+      available: !!process.env.DEEPSEEK_API_KEY,
+      models: [
+        { id: 'deepseek-chat', name: 'DeepSeek Chat', performance: 'excellent', speed: 'fast' },
+        { id: 'deepseek-coder', name: 'DeepSeek Coder', performance: 'excellent', speed: 'fast' }
+      ]
+    },
     google: {
       available: !!process.env.GEMINI_API_KEY,
       models: [
@@ -292,7 +351,9 @@ export default async function handler(req, res) {
 
       let response;
 
-      if (provider === 'google') {
+      if (provider === 'deepseek') {
+        response = await callDeepSeek(prompt, systemPrompt || '', preferredModel?.model || 'deepseek-chat');
+      } else if (provider === 'google') {
         response = await callGemini(prompt, systemPrompt || '');
       } else if (provider === 'openai') {
         response = await callOpenAI(prompt, systemPrompt || '', preferredModel?.model || 'gpt-4-turbo');
