@@ -134,27 +134,33 @@ async function generateAIResponse(prompt, history = []) {
     // 1. Önce DeepSeek'i dene (Kullanıcı tercihi)
     if (DEEPSEEK_API_KEY) {
         try {
-            console.log(`[AI-Briefing] DeepSeek deneniyor...`);
+            console.log(`[AI-Status] DeepSeek API Key algılandı. İstek gönderiliyor...`);
             let systemMsg = "Sen Türkçe içerik üreten uzman bir eğitim koçusun.";
             const dsHistory = [];
-            
+
             for (const msg of history) {
                 if (msg.role === 'system') {
                     systemMsg = msg.content;
                 } else {
-                    // callDeepSeek'in beklediği format (role: model/user)
                     dsHistory.push({
                         role: msg.role === 'assistant' ? 'model' : 'user',
                         parts: [{ text: msg.content }]
                     });
                 }
             }
-            
+
             const response = await callDeepSeek(prompt, dsHistory, systemMsg);
-            if (response) return response;
+            if (response) {
+                console.log(`[AI-Status] DeepSeek yanıtı başarılı.`);
+                return response;
+            }
         } catch (error) {
-            console.warn(`[AI-Briefing] DeepSeek başarısız:`, error.message);
+            console.error(`[AI-Status] DeepSeek hatası:`, error.message);
+            console.log(`[AI-Status] Gemini yedek sistemine geçiliyor...`);
         }
+    } else {
+        console.warn(`[AI-Status] DEEPSEEK_API_KEY bulunamadı! Lütfen Vercel panelinden ekleyin.`);
+        console.log(`[AI-Status] Varsayılan olarak Gemini kullanılıyor...`);
     }
 
     // 2. DeepSeek yoksa veya hata verirse Gemini modellerini dene (Yedek)
@@ -168,7 +174,7 @@ async function generateAIResponse(prompt, history = []) {
     for (const modelName of models) {
         try {
             console.log(`[AI-Briefing] Gemini deneniyor: ${modelName}`);
-            
+
             let systemInstruction = "";
             const filteredGeminiHistory = [];
             for (const msg of history) {
@@ -228,12 +234,12 @@ async function callDeepSeek(prompt, history = [], systemPrompt = "") {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${DEEPSEEK_API_KEY}`
+            "Authorization": `Bearer ${DEEPSEEK_API_KEY}`,
         },
         body: JSON.stringify({
-            model: "deepseek-chat",
-            messages: messages,
-            stream: false
+            "model": "deepseek-chat",
+            "messages": messages,
+            "stream": false
         })
     });
 
