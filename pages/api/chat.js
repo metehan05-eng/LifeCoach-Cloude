@@ -5,11 +5,12 @@ import { createClient } from '@supabase/supabase-js';
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 
 let genAI;
 if (GEMINI_API_KEY) {
-    genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+    genAI = new GoogleGenerativeAI(GEMINI_API_KEY, {
+        apiEndpoint: 'https://generativelanguage.googleapis.com/v1beta'
+    });
 }
 
 // --- LİMİT SİSTEMİ (KV Tabanlı) ---
@@ -84,58 +85,19 @@ async function checkRateLimit(req, ip, fingerprint, userId) {
     return { allowed: true, plan };
 }
 
-// --- DEEPSEEK ÇAĞRISI ---
-async function callDeepSeek(messages, systemPrompt) {
-    if (!DEEPSEEK_API_KEY) {
-        throw new Error("DEEPSEEK_API_KEY ayarlanmamış");
-    }
-
-    const chatMessages = [];
-    if (systemPrompt) {
-        chatMessages.push({ role: "system", content: systemPrompt });
-    }
-
-    // Mesajları DeepSeek formatına çevir
-    messages.filter(m => m.role !== 'system').forEach(msg => {
-        chatMessages.push({
-            role: msg.role === 'assistant' ? 'assistant' : 'user',
-            content: msg.content
-        });
-    });
-
-    const response = await fetch("https://api.deepseek.com/chat/completions", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${DEEPSEEK_API_KEY}`,
-        },
-        body: JSON.stringify({
-            "model": "deepseek-chat",
-            "messages": chatMessages,
-            "temperature": 0.7,
-            "max_tokens": 4000,
-            "stream": false
-        })
-    });
-
-    if (!response.ok) {
-        const err = await response.json();
-        throw new Error(`DeepSeek Hatası: ${err.error?.message || response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data.choices[0].message.content;
-}
-
-// --- GEMINI ÇAĞRISI (Yedek) ---
+// --- GEMINI ÇAĞRISI ---
 async function callGemini(messages, systemPrompt) {
     if (!genAI) {
         throw new Error("GEMINI_API_KEY ayarlanmamış");
     }
 
-    const gemini31Pro = "gemini-1.5-pro";
-    const gemini31FlashLite = "gemini-1.5-flash";
-    const geminiProLatest = "gemini-pro-latest";
+    // Gemini modelleri - önce gemini-2.5-flash-preview-04-17 dene
+    const models = [
+        "gemini-2.5-flash-preview-04-17",
+        "gemini-2.0-flash",
+        "gemini-1.5-pro",
+        "gemini-1.5-flash"
+    ];
 
     // Mesajları Gemini formatına çevir
     const chatHistory = messages
@@ -147,24 +109,12 @@ async function callGemini(messages, systemPrompt) {
 
     const userMessage = messages.filter(m => m.role === 'user').pop();
 
-    try {
-        // 1. Gemini 3.1 Pro
-        const model = genAI.getGenerativeModel({
-            model: gemini31Pro,
-            systemInstruction: systemPrompt
-        });
-        const chat = model.startChat({
-            history: chatHistory.slice(0, -1),
-            generationConfig: { maxOutputTokens: 4000, temperature: 0.7 }
-        });
-        const result = await chat.sendMessage(userMessage?.content || '');
-        return result.response.text();
-    } catch (error) {
-        console.warn(`[AI] ${gemini31Pro} başarısız. YEDEK: ${gemini31FlashLite}`);
+    // Modelleri sırayla dene
+    for (const modelName of models) {
         try {
-            // 2. Gemini 3.1 Flash Lite
+            console.log(`[AI] ${modelName} deneniyor...`);
             const model = genAI.getGenerativeModel({
-                model: gemini31FlashLite,
+                model: modelName,
                 systemInstruction: systemPrompt
             });
             const chat = model.startChat({
@@ -172,50 +122,31 @@ async function callGemini(messages, systemPrompt) {
                 generationConfig: { maxOutputTokens: 4000, temperature: 0.7 }
             });
             const result = await chat.sendMessage(userMessage?.content || '');
+            console.log(`[AI] ${modelName} başarılı`);
             return result.response.text();
-        } catch (finalError) {
-            console.warn(`[AI] Son çare: ${geminiProLatest}`);
-            // 3. Gemini Pro Latest
-            const model = genAI.getGenerativeModel({
-                model: geminiProLatest,
-                systemInstruction: systemPrompt
-            });
-            const chat = model.startChat({
-                history: chatHistory.slice(0, -1),
-                generationConfig: { maxOutputTokens: 4000, temperature: 0.7 }
-            });
-            const result = await chat.sendMessage(userMessage?.content || '');
-            return result.response.text();
+        } catch (error) {
+            console.warn(`[AI] ${modelName} başarısız. Sonraki model deneniyor...`);
+            continue;
         }
     }
+
+    throw new Error('Tüm Gemini modelleri başarısız oldu');
 }
 
-// --- AKILLI AI ÇAĞRISI (Önce DeepSeek, sonra Gemini) ---
+// --- AI ÇAĞRISI (Gemini öncelikli) ---
 async function callAI(messages, systemPrompt) {
-    // 1. Önce DeepSeek'i dene
-    if (DEEPSEEK_API_KEY) {
-        try {
-            console.log(`[AI-Chat] DeepSeek deneniyor...`);
-            const response = await callDeepSeek(messages, systemPrompt);
-            console.log(`[AI-Chat] DeepSeek başarılı`);
-            return response;
-        } catch (error) {
-            console.error(`[AI-Chat] DeepSeek hatası:`, error.message);
-            console.log(`[AI-Chat] Gemini yedek sistemine geçiliyor...`);
-        }
-    }
-
-    // 2. DeepSeek yoksa veya hata verirse Gemini'yi dene
     if (genAI) {
         try {
+            console.log(`[AI-Chat] Gemini-2.5-flash deneniyor...`);
             const response = await callGemini(messages, systemPrompt);
+            console.log(`[AI-Chat] Gemini başarılı`);
             return response;
         } catch (error) {
             console.error(`[AI-Chat] Gemini hatası:`, error.message);
         }
     }
 
-    throw new Error('AI servisi kullanılamıyor - DeepSeek/Gemini API Key eksik veya hatalı');
+    throw new Error('AI servisi kullanılamıyor - Gemini API Key eksik veya hatalı');
 }
 
 // --- HELPER: ÖZETLEME ---

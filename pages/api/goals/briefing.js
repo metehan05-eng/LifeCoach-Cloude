@@ -3,52 +3,21 @@ import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'gizli-anahtar-degistir';
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 
 let genAI;
 if (GEMINI_API_KEY) {
-    genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+    genAI = new GoogleGenerativeAI(GEMINI_API_KEY, {
+        apiEndpoint: 'https://generativelanguage.googleapis.com/v1beta'
+    });
 }
 
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
-// DeepSeek API çağrısı
-async function callDeepSeek(prompt, systemPrompt = "") {
-    if (!DEEPSEEK_API_KEY) throw new Error("DeepSeek API Key ayarlanmamış.");
-
-    const messages = [];
-    if (systemPrompt) messages.push({ role: "system", content: systemPrompt });
-    messages.push({ role: "user", content: prompt });
-
-    const response = await fetch("https://api.deepseek.com/chat/completions", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${DEEPSEEK_API_KEY}`,
-        },
-        body: JSON.stringify({
-            "model": "deepseek-chat",
-            "messages": messages,
-            "temperature": 0.7,
-            "max_tokens": 2000,
-            "stream": false
-        })
-    });
-
-    if (!response.ok) {
-        const err = await response.json();
-        throw new Error(`DeepSeek Hatası: ${err.error?.message || response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data.choices[0].message.content;
-}
-
-// Gemini API çağrısı (yedek)
+// Gemini API çağrısı
 async function callGemini(prompt, systemPrompt = "") {
     if (!genAI) throw new Error('Gemini API key not configured');
 
-    const models = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro-latest"];
+    const models = ["gemini-2.5-flash-preview-04-17", "gemini-2.0-flash", "gemini-1.5-flash"];
 
     for (const modelName of models) {
         try {
@@ -72,32 +41,20 @@ async function callGemini(prompt, systemPrompt = "") {
     throw new Error('All Gemini models failed');
 }
 
-// Akıllı AI çağrısı - önce DeepSeek, sonra Gemini
+// AI çağrısı - Gemini öncelikli
 async function generateAIContent(prompt, systemPrompt = "") {
-    // 1. Önce DeepSeek'i dene
-    if (DEEPSEEK_API_KEY) {
-        try {
-            console.log(`[AI-Briefing] DeepSeek deneniyor...`);
-            const response = await callDeepSeek(prompt, systemPrompt);
-            console.log(`[AI-Briefing] DeepSeek başarılı`);
-            return response;
-        } catch (error) {
-            console.error(`[AI-Briefing] DeepSeek hatası:`, error.message);
-            console.log(`[AI-Briefing] Gemini yedek sistemine geçiliyor...`);
-        }
-    }
-
-    // 2. DeepSeek yoksa veya hata verirse Gemini'yi dene
     if (genAI) {
         try {
+            console.log(`[AI-Briefing] Gemini-2.5-flash deneniyor...`);
             const response = await callGemini(prompt, systemPrompt);
+            console.log(`[AI-Briefing] Gemini başarılı`);
             return response;
         } catch (error) {
             console.error(`[AI-Briefing] Gemini hatası:`, error.message);
         }
     }
 
-    throw new Error('AI servisi kullanılamıyor - DeepSeek/Gemini API Key eksik veya hatalı');
+    throw new Error('AI servisi kullanılamıyor - Gemini API Key eksik veya hatalı');
 }
 
 async function searchYouTubeVideo(query) {
