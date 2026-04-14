@@ -3154,6 +3154,20 @@
                         class="ml-auto text-[9px] px-1.5 py-0.5 rounded-md bg-violet-500/20 text-violet-400 font-bold border border-violet-500/30 shadow-[0_0_8px_rgba(139,92,246,0.2)]">YENİ</span>
                 </button>
 
+                <!-- Mini Oyunlar -->
+                <button onclick="showSection('games'); closeSidebarMobile();"
+                    class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all group"
+                    data-section="games">
+                    <div
+                        class="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-pink-500/10 to-rose-400/5 border border-pink-500/20 group-hover:from-pink-500/20 group-hover:to-rose-400/10 group-hover:border-pink-500/30 transition-all shadow-md shadow-pink-500/10 group-hover:shadow-lg group-hover:shadow-pink-500/20">
+                        <i
+                            class="fa-solid fa-dice text-pink-400 text-[13px] group-hover:scale-110 transition-transform duration-300"></i>
+                    </div>
+                    <span class="text-sm font-medium group-hover:font-semibold transition-colors">Mini Oyunlar</span>
+                    <span
+                        class="ml-auto text-[9px] px-1.5 py-0.5 rounded-md bg-pink-500/20 text-pink-400 font-bold border border-pink-500/30 shadow-[0_0_8px_rgba(236,72,153,0.2)]">XP</span>
+                </button>
+
                 <div class="px-3 pt-2 pb-1 mt-2 mb-1 border-t border-slate-700/50"></div>
 
                 <!-- Waffle Modu -->
@@ -3311,6 +3325,15 @@
                             <h3 class="font-semibold text-white mb-1">Waffle</h3>
                             <p class="text-xs text-slate-400">AI ile keşfet</p>
                         </button>
+                        <button onclick="showSection('games');"
+                            class="bg-gradient-to-br from-pink-500/20 to-rose-600/10 border border-pink-500/20 rounded-2xl p-5 text-left hover:border-pink-400/50 transition-all group">
+                            <div
+                                class="w-10 h-10 rounded-xl bg-pink-500/20 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-gamepad text-pink-400"></i>
+                            </div>
+                            <h3 class="font-semibold text-white mb-1">Mini Oyunlar</h3>
+                            <p class="text-xs text-slate-400">Oyna ve XP kazan</p>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -3318,6 +3341,109 @@
             <!-- AI Arena Section -->
             <div id="section-arena" class="section-content hidden flex-col">
                 <div id="react-arena-root" style="width: 100%;"></div>
+            </div>
+
+            <!-- Mini Games Section -->
+            <div id="section-games" class="section-content hidden flex-col">
+                <div class="max-w-5xl mx-auto w-full">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                        <div>
+                            <h2 class="text-3xl font-bold text-white font-display mb-2">Mini Oyunlar 🎮</h2>
+                            <p class="text-slate-400 text-sm">Oyna, eğlen ve XP kazan!</p>
+                        </div>
+                        <div class="flex items-center gap-2 bg-pink-500/10 border border-pink-500/20 rounded-xl px-4 py-2">
+                            <i class="fa-solid fa-trophy text-pink-400"></i>
+                            <span class="text-sm text-pink-400 font-medium">Oyun Oynayarak XP Kazan</span>
+                        </div>
+                    </div>
+
+                    <!-- Games Grid -->
+                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Super Mario Game Card -->
+                        <div class="bg-gradient-to-br from-pink-500/10 to-rose-600/5 border border-pink-500/20 rounded-2xl overflow-hidden hover:border-pink-400/50 transition-all group cursor-pointer" onclick="openMarioGame()">
+                            <div class="aspect-video bg-gradient-to-br from-[#5c94fc] to-[#1a1a2e] relative overflow-hidden">
+                                <!-- Mario Game Preview/Screenshot -->
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <div class="text-center">
+                                        <div class="text-6xl mb-2">🍄</div>
+                                        <div class="text-white font-bold text-lg">Super Mario</div>
+                                        <div class="text-white/70 text-sm">Platformer</div>
+                                    </div>
+                                </div>
+                                <!-- Play Button Overlay -->
+                                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                    <div class="w-16 h-16 rounded-full bg-pink-500 flex items-center justify-center transform scale-75 group-hover:scale-100 transition-transform">
+                                        <i class="fa-solid fa-play text-white text-2xl ml-1"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="p-4">
+                                <h3 class="font-semibold text-white mb-1">Super Mario Platformer</h3>
+                                <p class="text-xs text-slate-400 mb-3">Klasik Mario tarzı platform oyunu. Coin topla, düşmanlardan kaç ve seviyeleri tamamla!</p>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs px-2 py-1 rounded-lg bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">
+                                            <i class="fa-solid fa-star mr-1"></i>+10 XP/seviye
+                                        </span>
+                                    </div>
+                                    <span class="text-xs text-slate-500">Mobil uyumlu</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- More Games Coming Soon Card -->
+                        <div class="bg-gradient-to-br from-slate-500/10 to-slate-600/5 border border-slate-500/20 rounded-2xl overflow-hidden opacity-60">
+                            <div class="aspect-video bg-gradient-to-br from-slate-700 to-slate-800 relative flex items-center justify-center">
+                                <div class="text-center">
+                                    <div class="text-4xl mb-2">🎲</div>
+                                    <div class="text-slate-400 font-medium">Yeni Oyunlar</div>
+                                    <div class="text-slate-500 text-sm">Çok yakında...</div>
+                                </div>
+                            </div>
+                            <div class="p-4">
+                                <h3 class="font-semibold text-slate-400 mb-1">Daha Fazla Oyun</h3>
+                                <p class="text-xs text-slate-500">Yeni mini oyunlar üzerinde çalışıyoruz. Takipte kalın!</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- XP Info Card -->
+                    <div class="mt-8 bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-amber-500/10 border border-white/10 rounded-2xl p-6">
+                        <h3 class="font-semibold text-white mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-gift text-pink-400"></i>
+                            Nasıl XP Kazanılır?
+                        </h3>
+                        <div class="grid md:grid-cols-3 gap-4">
+                            <div class="flex items-center gap-3 bg-white/5 rounded-xl p-3">
+                                <div class="w-10 h-10 rounded-lg bg-yellow-500/20 flex items-center justify-center">
+                                    <i class="fa-solid fa-coins text-yellow-400"></i>
+                                </div>
+                                <div>
+                                    <div class="text-sm font-medium text-white">Coin Topla</div>
+                                    <div class="text-xs text-slate-400">Her coin +1 XP</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3 bg-white/5 rounded-xl p-3">
+                                <div class="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                                    <i class="fa-solid fa-flag-checkered text-emerald-400"></i>
+                                </div>
+                                <div>
+                                    <div class="text-sm font-medium text-white">Seviye Tamamla</div>
+                                    <div class="text-xs text-slate-400">Her seviye +10 XP</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3 bg-white/5 rounded-xl p-3">
+                                <div class="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                                    <i class="fa-solid fa-crown text-purple-400"></i>
+                                </div>
+                                <div>
+                                    <div class="text-sm font-medium text-white">Yüksek Skor</div>
+                                    <div class="text-xs text-slate-400">Bonus XP kazan</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Goals Section -->
@@ -12201,6 +12327,171 @@
                 console.error('Component mounting error:', error);
             }
         });
+
+        // ========== MINI GAMES SYSTEM ==========
+        let marioGameXPInterval = null;
+        let currentMarioScore = 0;
+        let currentMarioLevel = 1;
+
+        // Open Mario Game Modal
+        function openMarioGame() {
+            const modal = document.getElementById('mario-game-modal');
+            const iframe = document.getElementById('mario-game-iframe');
+            
+            // Reset tracking
+            currentMarioScore = 0;
+            currentMarioLevel = 1;
+            
+            // Load the game
+            iframe.src = './mario_platformer_game.html';
+            
+            // Show modal
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            // Start XP tracking (check every 5 seconds for progress)
+            startMarioXPTracking();
+            
+            showToast('🎮 Mario oyunu başladı! İyi eğlenceler!', 'success');
+        }
+
+        // Close Mario Game Modal
+        function closeMarioGame() {
+            const modal = document.getElementById('mario-game-modal');
+            const iframe = document.getElementById('mario-game-iframe');
+            
+            // Stop XP tracking
+            stopMarioXPTracking();
+            
+            // Give final XP based on score
+            calculateFinalXP();
+            
+            // Hide modal
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            
+            // Stop the game
+            iframe.src = 'about:blank';
+        }
+
+        // Track XP while playing
+        function startMarioXPTracking() {
+            // Try to get score from game iframe every 3 seconds
+            marioGameXPInterval = setInterval(() => {
+                try {
+                    const iframe = document.getElementById('mario-game-iframe');
+                    if (iframe && iframe.contentWindow) {
+                        // Access game variables from iframe
+                        const gameScore = iframe.contentWindow.score || 0;
+                        const gameLevel = iframe.contentWindow.level || 1;
+                        
+                        // Award XP for level completion
+                        if (gameLevel > currentMarioLevel) {
+                            const levelDiff = gameLevel - currentMarioLevel;
+                            const xpGain = levelDiff * 10;
+                            addXP(xpGain, `Mario Seviye ${gameLevel} Tamamlandı`);
+                            showToast(`🎯 Seviye ${gameLevel} tamamlandı! +${xpGain} XP`, 'success');
+                            currentMarioLevel = gameLevel;
+                        }
+                        
+                        // Award XP for collecting coins (every 10 coins = 1 XP)
+                        const coinDiff = Math.floor(gameScore / 10) - Math.floor(currentMarioScore / 10);
+                        if (coinDiff > 0) {
+                            const coinXP = coinDiff * 1;
+                            addXP(coinXP, 'Mario Coin Toplama');
+                            currentMarioScore = gameScore;
+                        }
+                    }
+                } catch (e) {
+                    // Cross-origin or other error - silently ignore
+                }
+            }, 3000);
+        }
+
+        function stopMarioXPTracking() {
+            if (marioGameXPInterval) {
+                clearInterval(marioGameXPInterval);
+                marioGameXPInterval = null;
+            }
+        }
+
+        function calculateFinalXP() {
+            try {
+                const iframe = document.getElementById('mario-game-iframe');
+                if (iframe && iframe.contentWindow) {
+                    const finalScore = iframe.contentWindow.score || 0;
+                    const finalLevel = iframe.contentWindow.level || 1;
+                    
+                    // Bonus XP for total play
+                    const bonusXP = Math.floor(finalScore / 50) + (finalLevel * 5);
+                    if (bonusXP > 0) {
+                        addXP(bonusXP, 'Mario Oyun Bonusu');
+                        showToast(`🎮 Oyun sona erdi! Bonus: +${bonusXP} XP`, 'success');
+                    }
+                }
+            } catch (e) {
+                // Silent fail
+            }
+        }
+
+        // Make functions globally available
+        window.openMarioGame = openMarioGame;
+        window.closeMarioGame = closeMarioGame;
     </script>
+
+    <!-- Mario Game Modal -->
+    <div id="mario-game-modal" class="hidden fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="w-full max-w-5xl bg-[#1a1a2e] rounded-2xl overflow-hidden shadow-2xl border border-pink-500/30">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between p-4 bg-gradient-to-r from-pink-500/20 to-rose-600/10 border-b border-pink-500/20">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-pink-500/20 flex items-center justify-center">
+                        <span class="text-2xl">🍄</span>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-white">Super Mario Platformer</h3>
+                        <p class="text-xs text-pink-400">Coin topla ve seviyeleri tamamla - XP kazan!</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="hidden md:flex items-center gap-2 text-xs text-slate-400 bg-white/5 px-3 py-1.5 rounded-lg">
+                        <span>← → Hareket</span>
+                        <span class="text-slate-600">|</span>
+                        <span>↑ Zıpla</span>
+                    </div>
+                    <button onclick="closeMarioGame()" class="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Game Container -->
+            <div class="relative">
+                <iframe id="mario-game-iframe" src="about:blank" class="w-full h-[70vh] md:h-[600px] border-0 bg-[#5c94fc]"></iframe>
+                
+                <!-- Mobile Controls Hint -->
+                <div class="md:hidden absolute bottom-4 left-4 right-4 bg-black/60 backdrop-blur-sm rounded-xl p-3 text-center text-white text-sm">
+                    <p>Ekrandaki butonları kullanarak oynayabilirsiniz</p>
+                </div>
+            </div>
+            
+            <!-- Modal Footer -->
+            <div class="p-4 bg-[#0f172a] border-t border-white/10 flex items-center justify-between">
+                <div class="flex items-center gap-4 text-sm">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-coins text-yellow-400"></i>
+                        <span class="text-slate-400">Her 10 Coin = <span class="text-yellow-400 font-bold">+1 XP</span></span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-flag text-emerald-400"></i>
+                        <span class="text-slate-400">Her Seviye = <span class="text-emerald-400 font-bold">+10 XP</span></span>
+                    </div>
+                </div>
+                <button onclick="closeMarioGame()" class="px-4 py-2 bg-pink-500 hover:bg-pink-600 text-white rounded-lg font-medium transition-colors">
+                    Oyunu Bitir
+                </button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
