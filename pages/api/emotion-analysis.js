@@ -1,14 +1,12 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { callGeminiWithFallback } from '@/lib/gemini-multi-api';
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const genAI = GEMINI_API_KEY ? new GoogleGenerativeAI(GEMINI_API_KEY) : null;
+console.log('[Emotion-Analysis] Multi-API Key sistemi aktif');
 
 /**
  * Analyze emotional state from text using AI
- * Returns: sentiment, confidence, energy_level, stress_level, recommended_tone
  */
 async function analyzeEmotionFromText(text) {
-  if (!genAI || !text) {
+  if (!text) {
     return {
       sentiment: 'neutral',
       confidence: 0,
@@ -19,11 +17,7 @@ async function analyzeEmotionFromText(text) {
   }
 
   try {
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash"
-    });
-
-    const analysisPrompt = `Analyze this text and extract emotional signals. Return ONLY a JSON object, no markdown wrapper.
+    const prompt = `Analyze this text and extract emotional signals. Return ONLY a JSON object, no markdown wrapper.
 
 RETURN THIS JSON STRUCTURE:
 {
@@ -41,17 +35,17 @@ RETURN THIS JSON STRUCTURE:
 Text to analyze:
 ${text}`;
 
-    const result = await model.generateContent(analysisPrompt);
-    const responseText = result.response.text();
-    
-    // Clean markdown
-    const jsonText = responseText
+    const response = await callGeminiWithFallback(prompt, "", {
+      model: "gemini-2.0-flash",
+      maxOutputTokens: 1000
+    });
+
+    const jsonText = response
       .replace(/```json\n?/g, '')
       .replace(/```\n?/g, '')
       .trim();
 
-    const analysis = JSON.parse(jsonText);
-    return analysis;
+    return JSON.parse(jsonText);
 
   } catch (error) {
     console.error("Emotion analysis error:", error);
@@ -73,7 +67,6 @@ function adaptSystemPromptForEmotion(basePrompt, emotionAnalysis) {
 
   let emotionAdaptation = '';
 
-  // Handle stressed user
   if (emotionAnalysis.stress_level > 7) {
     emotionAdaptation = `
 ⚠️ USER APPEARS STRESSED - COACHING ADJUSTMENT:
@@ -85,7 +78,6 @@ function adaptSystemPromptForEmotion(basePrompt, emotionAnalysis) {
 `;
   }
 
-  // Handle low energy/exhausted
   if (emotionAnalysis.energy_level < 3) {
     emotionAdaptation = `
 😴 USER APPEARS EXHAUSTED - COACHING ADJUSTMENT:
@@ -97,7 +89,6 @@ function adaptSystemPromptForEmotion(basePrompt, emotionAnalysis) {
 `;
   }
 
-  // Handle highly motivated
   if (emotionAnalysis.energy_level > 8 && emotionAnalysis.sentiment === 'positive') {
     emotionAdaptation = `
 🔥 USER APPEARS HIGHLY MOTIVATED - COACHING ADJUSTMENT:
@@ -109,7 +100,6 @@ function adaptSystemPromptForEmotion(basePrompt, emotionAnalysis) {
 `;
   }
 
-  // Handle negative sentiment
   if (emotionAnalysis.sentiment === 'negative' && emotionAnalysis.needs_comfort) {
     emotionAdaptation = `
 💙 USER APPEARS STRUGGLING - COACHING ADJUSTMENT:
@@ -121,7 +111,6 @@ function adaptSystemPromptForEmotion(basePrompt, emotionAnalysis) {
 `;
   }
 
-  // Handle mixed/confused
   if (emotionAnalysis.sentiment === 'mixed') {
     emotionAdaptation = `
 🤔 USER APPEARS CONFUSED/CONFLICTED - COACHING ADJUSTMENT:
@@ -185,7 +174,6 @@ export default async function handler(req, res) {
     }
 
     if (action === 'analyze') {
-      // Analyze emotion
       const analysis = await analyzeEmotionFromText(text);
       const tips = await generateEmotionAwareResponseTips(analysis);
 
@@ -197,7 +185,6 @@ export default async function handler(req, res) {
     }
 
     if (action === 'adaptPrompt') {
-      // Analyze and adapt prompt
       if (!basePrompt) {
         return res.status(400).json({ error: 'basePrompt parameter required with adaptPrompt action' });
       }

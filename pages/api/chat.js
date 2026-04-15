@@ -1,19 +1,10 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { getKVData, setKVData } from '../../lib/db';
 import { createClient } from '@supabase/supabase-js';
+import { callGeminiWithFallback, callGeminiChatWithFallback } from '@/lib/gemini-multi-api';
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta';
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash-preview-04-17';
-
-let genAI;
-if (GEMINI_API_KEY) {
-    genAI = new GoogleGenerativeAI(GEMINI_API_KEY, {
-        apiEndpoint: GEMINI_API_ENDPOINT
-    });
-}
+console.log('[Chat] Multi-API Key sistemi aktif');
 
 // --- LİMİT SİSTEMİ (KV Tabanlı) ---
 
@@ -87,63 +78,39 @@ async function checkRateLimit(req, ip, fingerprint, userId) {
     return { allowed: true, plan };
 }
 
-// --- GEMINI ÇAĞRISI ---
-async function callGemini(messages, systemPrompt) {
-    if (!genAI) {
-        throw new Error("GEMINI_API_KEY ayarlanmamış");
-    }
-
-    // Gemini modeli: sadece Gemini 2.5
-    const models = [GEMINI_MODEL];
-
-    // Mesajları Gemini formatına çevir
-    const chatHistory = messages
-        .filter(m => m.role !== 'system')
-        .map(msg => ({
-            role: msg.role === 'assistant' ? 'model' : 'user',
-            parts: [{ text: msg.content }]
-        }));
-
-    const userMessage = messages.filter(m => m.role === 'user').pop();
-
-    // Modelleri sırayla dene
-    for (const modelName of models) {
-        try {
-            console.log(`[AI] ${modelName} deneniyor...`);
-            const model = genAI.getGenerativeModel({
-                model: modelName,
-                systemInstruction: systemPrompt
-            });
-            const chat = model.startChat({
-                history: chatHistory.slice(0, -1),
-                generationConfig: { maxOutputTokens: 4000, temperature: 0.7 }
-            });
-            const result = await chat.sendMessage(userMessage?.content || '');
-            console.log(`[AI] ${modelName} başarılı`);
-            return result.response.text();
-        } catch (error) {
-            console.warn(`[AI] ${modelName} başarısız. Sonraki model deneniyor...`);
-            continue;
-        }
-    }
-
-    throw new Error('Tüm Gemini modelleri başarısız oldu');
-}
-
-// --- AI ÇAĞRISI (Gemini öncelikli) ---
+// --- AI ÇAĞRISI (Multi-API Key sistemi ile) ---
 async function callAI(messages, systemPrompt) {
-    if (genAI) {
-        try {
-            console.log(`[AI-Chat] Gemini-2.5-flash deneniyor...`);
-            const response = await callGemini(messages, systemPrompt);
-            console.log(`[AI-Chat] Gemini başarılı`);
-            return response;
-        } catch (error) {
-            console.error(`[AI-Chat] Gemini hatası:`, error.message);
-        }
-    }
+    try {
+        console.log(`[AI-Chat] Gemini çağrısı yapılıyor...`);
+        
+        // Mesajları Gemini formatına çevir
+        const chatHistory = messages
+            .filter(m => m.role !== 'system')
+            .map(msg => ({
+                role: msg.role === 'assistant' ? 'model' : 'user',
+                content: msg.content
+            }));
 
-    throw new Error('AI servisi kullanılamıyor - Gemini API Key eksik veya hatalı');
+        const userMessage = messages.filter(m => m.role === 'user').pop();
+        
+        // Son mesajı ayır
+        const lastMessage = chatHistory.pop();
+        
+        const response = await callGeminiChatWithFallback(
+            [...chatHistory, lastMessage],
+            systemPrompt,
+            {
+                model: "gemini-2.0-flash",
+                maxOutputTokens: 4000
+            }
+        );
+        
+        console.log(`[AI-Chat] Başarılı`);
+        return response;
+    } catch (error) {
+        console.error(`[AI-Chat] Hata:`, error.message);
+        throw error;
+    }
 }
 
 // --- HELPER: ÖZETLEME ---

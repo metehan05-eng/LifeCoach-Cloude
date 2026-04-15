@@ -1,66 +1,25 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import jwt from 'jsonwebtoken';
+import { callGeminiWithFallback } from '@/lib/gemini-multi-api';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'gizli-anahtar-degistir';
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-
-let genAI;
-if (GEMINI_API_KEY) {
-    genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-    console.log('[Gemini] API initialized');
-}
-
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
-// Gemini API çağrısı
-async function callGemini(prompt, systemPrompt = "") {
-    if (!genAI) throw new Error('Gemini API key not configured');
+console.log('[Briefing] Multi-API Key sistemi aktif');
 
-    const models = [
-        "gemini-2.0-flash",
-        "gemini-1.5-flash"
-    ];
-
-    for (const modelName of models) {
-        try {
-            const modelConfig = {
-                model: modelName,
-                generationConfig: {
-                    temperature: 0.7,
-                    maxOutputTokens: 2000
-                }
-            };
-            
-            if (systemPrompt) {
-                modelConfig.systemInstruction = systemPrompt;
-            }
-
-            const model = genAI.getGenerativeModel(modelConfig);
-            const result = await model.generateContent(prompt);
-            return result.response.text();
-        } catch (e) {
-            console.warn(`[Gemini] ${modelName} failed:`, e.message);
-            continue;
-        }
-    }
-
-    throw new Error('All Gemini models failed');
-}
-
-// AI çağrısı - Gemini
+// AI çağrısı - Multi-API Key sistemi ile
 async function generateAIContent(prompt, systemPrompt = "") {
-    if (genAI) {
-        try {
-            console.log(`[AI-Briefing] Gemini deneniyor...`);
-            const response = await callGemini(prompt, systemPrompt);
-            console.log(`[AI-Briefing] Gemini başarılı`);
-            return response;
-        } catch (error) {
-            console.error(`[AI-Briefing] Gemini hatası:`, error.message);
-        }
+    try {
+        console.log(`[AI-Briefing] Gemini çağrısı yapılıyor...`);
+        const response = await callGeminiWithFallback(prompt, systemPrompt, {
+            model: "gemini-2.0-flash",
+            maxOutputTokens: 2000
+        });
+        console.log(`[AI-Briefing] Başarılı`);
+        return response;
+    } catch (error) {
+        console.error(`[AI-Briefing] Hata:`, error.message);
+        throw error;
     }
-
-    throw new Error('AI servisi kullanılamıyor - Gemini API Key eksik veya hatalı');
 }
 
 async function searchYouTubeVideo(query) {

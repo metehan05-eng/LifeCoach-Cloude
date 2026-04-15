@@ -1,396 +1,103 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import fetch from 'node-fetch'; // For external API calls
+import { callGeminiWithFallback } from '@/lib/gemini-multi-api';
+
+console.log('[Multi-Model] Multi-API Key sistemi aktif');
 
 /**
  * Multi-Model AI Provider Support
- * Supports: DeepSeek, Gemini, OpenAI, Anthropic Claude, Fallbacks
+ * Gemini Multi-Key System - Automatically rotates through API keys when one runs out
  */
 
-// Initialize Gemini
-let genAI = null;
-if (process.env.GEMINI_API_KEY) {
-  genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY, {
-    apiEndpoint: 'https://generativelanguage.googleapis.com/v1beta'
-  });
-}
+// Model listesi
+const MODELS = [
+    { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', provider: 'google', performance: 'excellent', speed: 'fast' },
+    { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', provider: 'google', performance: 'good', speed: 'fast' }
+];
 
-/**
- * Call DeepSeek AI
- */
-async function callDeepSeek(prompt, systemPrompt = '', model = 'deepseek-chat') {
-  if (!process.env.DEEPSEEK_API_KEY) {
-    throw new Error('DeepSeek API key not configured');
-  }
-
-  try {
-    const messages = [];
-    if (systemPrompt) {
-      messages.push({ role: 'system', content: systemPrompt });
-    }
-    messages.push({ role: 'user', content: prompt });
-
-    const response = await fetch('https://api.deepseek.com/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: model,
-        messages: messages,
-        temperature: 0.7,
-        max_tokens: 2000,
-        stream: false
-      })
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || 'DeepSeek API error');
-    }
-
-    const data = await response.json();
-
-    return {
-      provider: 'deepseek',
-      model: model,
-      text: data.choices[0]?.message?.content || ''
-    };
-
-  } catch (error) {
-    console.error("DeepSeek call error:", error);
-    throw error;
-  }
-}
-
-/**
- * Call Google Gemini
- */
-async function callGemini(prompt, systemPrompt = '') {
-  if (!genAI) throw new Error('Gemini API key not configured');
-
-  try {
-    const models = [
-      "gemini-2.5-flash-preview-04-17",
-      "gemini-2.0-flash",
-      "gemini-1.5-pro",
-      "gemini-1.5-flash"
-    ];
-
-    for (const modelName of models) {
-      try {
-        const model = genAI.getGenerativeModel({
-          model: modelName,
-          systemInstruction: systemPrompt
-        });
-
-        const result = await model.generateContent(prompt);
-        return {
-          provider: 'google',
-          model: modelName,
-          text: result.response.text()
-        };
-      } catch (e) {
-        console.warn(`[Gemini] ${modelName} failed, trying next...`);
-        continue;
-      }
-    }
-
-    throw new Error('All Gemini models failed');
-
-  } catch (error) {
-    console.error("Gemini call error:", error);
-    throw error;
-  }
-}
-
-/**
- * Call OpenAI GPT models
- */
-async function callOpenAI(prompt, systemPrompt = '', model = 'gpt-4-turbo') {
-  if (!process.env.OPENAI_API_KEY) {
-    throw new Error('OpenAI API key not configured');
-  }
-
-  try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: model,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: prompt }
-        ],
-        temperature: 0.7,
-        max_tokens: 2000
-      })
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || 'OpenAI API error');
-    }
-
-    const data = await response.json();
-
-    return {
-      provider: 'openai',
-      model: model,
-      text: data.choices[0]?.message?.content || ''
-    };
-
-  } catch (error) {
-    console.error("OpenAI call error:", error);
-    throw error;
-  }
-}
-
-/**
- * Call Anthropic Claude
- */
-async function callClaude(prompt, systemPrompt = '', model = 'claude-3-opus-20240229') {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    throw new Error('Anthropic API key not configured');
-  }
-
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: model,
-        max_tokens: 2000,
-        system: systemPrompt,
-        messages: [
-          { role: 'user', content: prompt }
-        ]
-      })
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || 'Anthropic API error');
-    }
-
-    const data = await response.json();
-
-    return {
-      provider: 'anthropic',
-      model: model,
-      text: data.content[0]?.text || ''
-    };
-
-  } catch (error) {
-    console.error("Claude call error:", error);
-    throw error;
-  }
-}
-
-/**
- * Smart model selector - choose best model based on use case
- */
-function selectOptimalModel(useCase = 'general', userPreference = null) {
-  const modelMap = {
-    'fast_response': { provider: 'google', model: 'gemini-2.5-flash-preview-04-17' },
-    'high_quality': { provider: 'google', model: 'gemini-2.5-flash-preview-04-17' },
-    'creative': { provider: 'google', model: 'gemini-2.5-flash-preview-04-17' },
-    'technical': { provider: 'google', model: 'gemini-2.5-flash-preview-04-17' },
-    'emotional': { provider: 'google', model: 'gemini-2.5-flash-preview-04-17' },
-    'balanced': { provider: 'google', model: 'gemini-2.5-flash-preview-04-17' },
-    'general': { provider: 'google', model: 'gemini-2.5-flash-preview-04-17' }
-  };
-
-  // User preference overrides
-  if (userPreference && userPreference !== 'auto') {
-    return userPreference;
-  }
-
-  return modelMap[useCase] || modelMap['general'];
-}
-
-/**
- * Multi-model call with fallback chain
- */
-async function multiModelCall(prompt, systemPrompt = '', preferredModel = null, useCase = 'general') {
-  const fallbackChain = [
-    preferredModel || selectOptimalModel(useCase),
-    { provider: 'google', model: 'gemini-2.5-flash-preview-04-17' },
-    { provider: 'google', model: 'gemini-2.0-flash' },
-    { provider: 'google', model: 'gemini-1.5-pro' },
-    { provider: 'openai', model: 'gpt-4-turbo' },
-    { provider: 'anthropic', model: 'claude-3-sonnet-20240229' },
-    { provider: 'google', model: 'gemini-1.5-flash' }
-  ];
-
-  const attemptedModels = [];
-
-  for (const modelConfig of fallbackChain) {
-    try {
-      const key = `${modelConfig.provider}:${modelConfig.model}`;
-      
-      // Avoid trying same model twice
-      if (attemptedModels.includes(key)) continue;
-      attemptedModels.push(key);
-
-      let response;
-      
-      if (modelConfig.provider === 'deepseek') {
-        response = await callDeepSeek(prompt, systemPrompt, modelConfig.model);
-      } else if (modelConfig.provider === 'google') {
-        response = await callGemini(prompt, systemPrompt);
-      } else if (modelConfig.provider === 'openai') {
-        response = await callOpenAI(prompt, systemPrompt, modelConfig.model);
-      } else if (modelConfig.provider === 'anthropic') {
-        response = await callClaude(prompt, systemPrompt, modelConfig.model);
-      } else {
-        continue;
-      }
-
-      return {
-        success: true,
-        ...response,
-        attemptedModels
-      };
-
-    } catch (error) {
-      console.warn(`[MultiModel] ${modelConfig.provider}:${modelConfig.model} failed - ${error.message}`);
-      continue;
-    }
-  }
-
-  throw new Error('All AI models failed. Please check API configurations.');
-}
-
-/**
- * Get available models info
- */
-function getAvailableModels() {
-  const models = {
-    deepseek: {
-      available: !!process.env.DEEPSEEK_API_KEY,
-      models: [
-        { id: 'deepseek-chat', name: 'DeepSeek Chat', performance: 'excellent', speed: 'fast' },
-        { id: 'deepseek-coder', name: 'DeepSeek Coder', performance: 'excellent', speed: 'fast' }
-      ]
-    },
+// Provider listesi
+const PROVIDERS = {
     google: {
-      available: !!process.env.GEMINI_API_KEY,
-      models: [
-        { id: 'gemini-2.5-flash-preview-04-17', name: 'Gemini 2.5 Flash', performance: 'excellent', speed: 'fast' },
-        { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', performance: 'excellent', speed: 'fast' },
-        { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', performance: 'best', speed: 'medium' },
-        { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', performance: 'good', speed: 'fast' }
-      ]
-    },
-    openai: {
-      available: !!process.env.OPENAI_API_KEY,
-      models: [
-        { id: 'gpt-4-turbo', name: 'GPT-4 Turbo', performance: 'excellent', speed: 'medium' },
-        { id: 'gpt-4', name: 'GPT-4', performance: 'excellent', speed: 'slow' },
-        { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', performance: 'good', speed: 'fast' }
-      ]
-    },
-    anthropic: {
-      available: !!process.env.ANTHROPIC_API_KEY,
-      models: [
-        { id: 'claude-3-opus-20240229', name: 'Claude 3 Opus', performance: 'excellent', speed: 'medium' },
-        { id: 'claude-3-sonnet-20240229', name: 'Claude 3 Sonnet', performance: 'good', speed: 'fast' },
-        { id: 'claude-3-haiku-20240307', name: 'Claude 3 Haiku', performance: 'good', speed: 'fast' }
-      ]
+        name: 'Google Gemini',
+        models: MODELS
     }
-  };
+};
 
-  return models;
+/**
+ * AI Çağrısı - Multi-Key sistemi ile
+ */
+async function callAI(prompt, systemPrompt = '', options = {}) {
+    const { preferredModel } = options;
+    
+    try {
+        const response = await callGeminiWithFallback(prompt, systemPrompt, {
+            model: preferredModel || 'gemini-2.0-flash',
+            maxOutputTokens: 2000,
+            temperature: 0.7
+        });
+        
+        return {
+            provider: 'google',
+            model: preferredModel || 'gemini-2.0-flash',
+            text: response
+        };
+    } catch (error) {
+        console.error("[Multi-Model] AI call failed:", error.message);
+        throw error;
+    }
+}
+
+/**
+ * Model listesini döndür
+ */
+function getModels() {
+    return MODELS;
+}
+
+/**
+ * Provider listesini döndür
+ */
+function getProviders() {
+    return PROVIDERS;
 }
 
 /**
  * API Handler
  */
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  try {
-    const { 
-      action, 
-      prompt, 
-      systemPrompt, 
-      preferredModel,
-      useCase,
-      provider
-    } = req.body;
-
-    if (action === 'query') {
-      // Multi-model intelligent query
-      if (!prompt) {
-        return res.status(400).json({ error: 'prompt parameter required' });
-      }
-
-      const response = await multiModelCall(
-        prompt,
-        systemPrompt || '',
-        preferredModel,
-        useCase || 'general'
-      );
-
-      return res.status(200).json({
-        success: true,
-        ...response
-      });
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    if (action === 'querySpecific') {
-      // Query specific provider/model
-      if (!prompt || !provider) {
-        return res.status(400).json({ error: 'prompt and provider parameters required' });
-      }
+    try {
+        const { action, prompt, systemPrompt, model } = req.body;
 
-      let response;
+        if (action === 'models') {
+            return res.status(200).json({
+                success: true,
+                models: getModels(),
+                providers: getProviders()
+            });
+        }
 
-      if (provider === 'deepseek') {
-        response = await callDeepSeek(prompt, systemPrompt || '', preferredModel?.model || 'deepseek-chat');
-      } else if (provider === 'google') {
-        response = await callGemini(prompt, systemPrompt || '');
-      } else if (provider === 'openai') {
-        response = await callOpenAI(prompt, systemPrompt || '', preferredModel?.model || 'gpt-4-turbo');
-      } else if (provider === 'anthropic') {
-        response = await callClaude(prompt, systemPrompt || '', preferredModel?.model || 'claude-3-opus-20240229');
-      } else {
-        return res.status(400).json({ error: 'Unknown provider' });
-      }
+        if (action === 'call') {
+            if (!prompt) {
+                return res.status(400).json({ error: 'prompt parameter required' });
+            }
 
-      return res.status(200).json({
-        success: true,
-        ...response
-      });
+            const result = await callAI(prompt, systemPrompt || '', { preferredModel: model });
+
+            return res.status(200).json({
+                success: true,
+                ...result
+            });
+        }
+
+        return res.status(400).json({ error: 'Invalid action' });
+
+    } catch (error) {
+        console.error("Multi-Model API error:", error);
+        return res.status(500).json({ 
+            error: error.message,
+            success: false
+        });
     }
-
-    if (action === 'getAvailable') {
-      // Get available models
-      const available = getAvailableModels();
-
-      return res.status(200).json({
-        success: true,
-        available
-      });
-    }
-
-    return res.status(400).json({ error: 'Invalid action' });
-
-  } catch (error) {
-    console.error("Multi-model API error:", error);
-    return res.status(500).json({ 
-      error: error.message,
-      success: false
-    });
-  }
 }

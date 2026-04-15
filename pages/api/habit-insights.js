@@ -1,7 +1,6 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { callGeminiWithFallback } from '@/lib/gemini-multi-api';
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const genAI = GEMINI_API_KEY ? new GoogleGenerativeAI(GEMINI_API_KEY) : null;
+console.log('[Habit-Insights] Multi-API Key sistemi aktif');
 
 /**
  * Analyze habit patterns from history
@@ -17,10 +16,8 @@ function analyzeHabitPattern(completionHistory, habitName) {
     };
   }
 
-  // Sort dates
   const dates = completionHistory.sort().map(d => new Date(d));
   
-  // Current streak
   let currentStreak = 0;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -38,7 +35,6 @@ function analyzeHabitPattern(completionHistory, habitName) {
     }
   }
 
-  // Longest streak
   let longestStreak = 1;
   let temp = 1;
   for (let i = 1; i < dates.length; i++) {
@@ -51,14 +47,12 @@ function analyzeHabitPattern(completionHistory, habitName) {
     }
   }
 
-  // Completion rate (last 30 days)
   const thirtyDaysAgo = new Date(today);
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
   
   const recentCompletions = dates.filter(d => d >= thirtyDaysAgo).length;
   const completionRate = Math.round((recentCompletions / 30) * 100);
 
-  // Pattern detection
   let pattern = 'irregular';
   if (completionRate >= 85) pattern = 'consistent';
   else if (completionRate >= 70) pattern = 'mostly_consistent';
@@ -87,20 +81,8 @@ function analyzeHabitPattern(completionHistory, habitName) {
  * Get AI insights for habit
  */
 async function getHabitAIInsights(habitName, habitDescription, patternData, nextOptimalTime) {
-  if (!genAI) {
-    return {
-      insight: 'AI service unavailable',
-      suggestion: '',
-      motivation: ''
-    };
-  }
-
   try {
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash"
-    });
-
-    const insightPrompt = `You are a habit coach. Provide ONE specific, actionable improvement for this habit. Return ONLY valid JSON (no markdown).
+    const prompt = `You are a habit coach. Provide ONE specific, actionable improvement for this habit. Return ONLY valid JSON (no markdown).
 
 Habit: ${habitName}
 Description: ${habitDescription}
@@ -121,10 +103,12 @@ Return this JSON structure:
     "nextLevel": "Challenge to deepen this habit"
 }`;
 
-    const result = await model.generateContent(insightPrompt);
-    const responseText = result.response.text();
-    
-    const jsonText = responseText
+    const response = await callGeminiWithFallback(prompt, "", {
+      model: "gemini-2.0-flash",
+      maxOutputTokens: 1500
+    });
+
+    const jsonText = response
       .replace(/```json\n?/g, '')
       .replace(/```\n?/g, '')
       .trim();
@@ -146,11 +130,9 @@ Return this JSON structure:
  */
 function predictOptimalTime(completionHistory, dayOfWeek = null) {
   if (!completionHistory || completionHistory.length === 0) {
-    return '09:00'; // default morning
+    return '09:00';
   }
 
-  // Analyze time patterns from completion history
-  // This is simplified - in real implementation, would track times too
   const completions = completionHistory.map(d => new Date(d));
   const dayGroups = {};
 
@@ -159,33 +141,19 @@ function predictOptimalTime(completionHistory, dayOfWeek = null) {
     dayGroups[day] = (dayGroups[day] || 0) + 1;
   });
 
-  // Most common completion day suggests when user is most active
   const mostCommonDay = Object.keys(dayGroups).reduce((a, b) => 
     dayGroups[a] > dayGroups[b] ? a : b
   );
 
-  // Use morning if most completions are early, evening if late patterns
-  // Simplified heuristic
-  return '09:00'; // Default suggestion
+  return '09:00';
 }
 
 /**
  * Generate habit streak motivations
  */
 async function generateStreakMotivations(currentStreak, longestStreak, habitName) {
-  if (!genAI) {
-    return {
-      current: 'Keep it up!',
-      nextMilestone: 'Aim for your next goal!'
-    };
-  }
-
   try {
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash"
-    });
-
-    const motivationPrompt = `Generate short motivations for this habit streak. ONLY return JSON (no markdown).
+    const prompt = `Generate short motivations for this habit streak. ONLY return JSON (no markdown).
 
 Habit: ${habitName}
 Current Streak: ${currentStreak} days
@@ -199,10 +167,12 @@ Return this structure:
     "personalBestChallenge": "Challenge to beat their personal best"
 }`;
 
-    const result = await model.generateContent(motivationPrompt);
-    const responseText = result.response.text();
-    
-    const jsonText = responseText
+    const response = await callGeminiWithFallback(prompt, "", {
+      model: "gemini-2.0-flash",
+      maxOutputTokens: 800
+    });
+
+    const jsonText = response
       .replace(/```json\n?/g, '')
       .replace(/```\n?/g, '')
       .trim();
@@ -239,7 +209,6 @@ export default async function handler(req, res) {
     }
 
     if (action === 'analyze') {
-      // Analyze habit pattern
       const pattern = analyzeHabitPattern(completionHistory || [], habitName);
       const optimalTime = predictOptimalTime(completionHistory || []);
       
@@ -267,7 +236,6 @@ export default async function handler(req, res) {
     }
 
     if (action === 'generateMotivation') {
-      // Just generate motivation for streak
       if (!completionHistory) {
         return res.status(400).json({ error: 'completionHistory parameter required' });
       }
