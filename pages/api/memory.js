@@ -1,17 +1,12 @@
 import jwt from 'jsonwebtoken';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { callGeminiWithFallback } from '@/lib/gemini-multi-api';
 import { createClient } from '@supabase/supabase-js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'gizli-anahtar-degistir';
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-let genAI;
-if (GEMINI_API_KEY) {
-  genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-}
+console.log('[Memory] Multi-API Key sistemi aktif');
 
-// Helper: Authenticate token
 function authenticateToken(req) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -26,22 +21,17 @@ function authenticateToken(req) {
 }
 
 /**
- * ENHANCED: Extract detailed memory from conversation using AI
+ * Extract detailed memory from conversation using AI
  */
 async function extractMemoryFromConversation(messages) {
   if (!messages || messages.length === 0) return null;
-  if (!genAI) return null;
   
   const conversationText = messages
     .map(m => `${m.role}: ${m.content}`)
     .join('\n');
 
   try {
-    const model = genAI.getGenerativeModel({ 
-      model: "gemini-2.0-flash"
-    });
-
-    const extractionPrompt = `Analyze this conversation and extract ONLY valid information. Return ONLY a JSON object, no markdown, no text wrapper.
+    const prompt = `Analyze this conversation and extract ONLY valid information. Return ONLY a JSON object, no markdown, no text wrapper.
 
 # EXTRACTION RULES:
 1. Extract user's STATED goals (not speculated)
@@ -64,11 +54,12 @@ RETURN THIS JSON STRUCTURE ONLY:
 Conversation:
 ${conversationText}`;
 
-    const result = await model.generateContent(extractionPrompt);
-    const responseText = result.response.text();
-    
-    // Clean response - remove markdown code blocks
-    const jsonText = responseText
+    const response = await callGeminiWithFallback(prompt, "", {
+      model: "gemini-2.0-flash",
+      maxOutputTokens: 1500
+    });
+
+    const jsonText = response
       .replace(/```json\n?/g, '')
       .replace(/```\n?/g, '')
       .trim();
@@ -124,11 +115,9 @@ async function storeUserMemory(userId, extraction, sessionId) {
 
 /**
  * Retrieve User Memory Profile
- * Geçmiş memories'den composite user profile oluştur
  */
 async function getUserMemoryProfile(userId) {
   try {
-    // Son 5 memories'i al
     const { data: memories, error } = await supabase
       .from('conversation_memories')
       .select('*')
@@ -140,7 +129,6 @@ async function getUserMemoryProfile(userId) {
       return null;
     }
 
-    // Aggregate memories
     const profile = {
       allGoals: [],
       allPainPoints: [],
@@ -152,7 +140,6 @@ async function getUserMemoryProfile(userId) {
       lastUpdated: memories[0]?.created_at
     };
 
-    // Consolidate data
     memories.forEach(mem => {
       if (mem.user_goals) profile.allGoals.push(...mem.user_goals);
       if (mem.pain_points) profile.allPainPoints.push(...mem.pain_points);
@@ -160,13 +147,11 @@ async function getUserMemoryProfile(userId) {
       if (mem.topics_focused) profile.topTopics.push(...mem.topics_focused);
     });
 
-    // Get most common & deduplicate
     profile.allGoals = [...new Set(profile.allGoals)].slice(0, 5);
     profile.allPainPoints = [...new Set(profile.allPainPoints)].slice(0, 5);
     profile.allInsights = [...new Set(profile.allInsights)].slice(0, 5);
     profile.topTopics = [...new Set(profile.topTopics)].slice(0, 3);
 
-    // Get dominant communication style
     const commStyles = memories
       .filter(m => m.communication_preference)
       .map(m => m.communication_preference);
@@ -177,7 +162,6 @@ async function getUserMemoryProfile(userId) {
         ).pop()
       : 'neutral';
 
-    // Get emotional trend (most recent)
     const tones = memories
       .filter(m => m.emotional_tone)
       .map(m => m.emotional_tone);
@@ -197,7 +181,7 @@ async function buildMemoryEnhancedPrompt(userId, basePrompt) {
   const profile = await getUserMemoryProfile(userId);
 
   if (!profile) {
-    return basePrompt; // Fallback to base
+    return basePrompt;
   }
 
   const memoryContext = `
@@ -215,8 +199,6 @@ IMPORTANT: Reference this profile to provide more personalized, consistent coach
   return memoryContext + '\n' + basePrompt;
 }
 
-// --- API HANDLER ---
-
 export default async function handler(req, res) {
   const user = authenticateToken(req);
   
@@ -226,7 +208,6 @@ export default async function handler(req, res) {
   
   const userId = user.id;
   
-  // GET /api/memory - Get user's memory profile
   if (req.method === 'GET') {
     try {
       const profile = await getUserMemoryProfile(userId);
@@ -242,13 +223,11 @@ export default async function handler(req, res) {
     }
   }
   
-  // POST /api/memory - Extract and store memory from conversation
   if (req.method === 'POST') {
     try {
       const { action, messages, sessionId, basePrompt } = req.body;
 
       if (action === 'extract') {
-        // Extract memory from conversation
         const extraction = await extractMemoryFromConversation(messages);
         
         if (extraction) {
@@ -262,7 +241,6 @@ export default async function handler(req, res) {
       }
 
       if (action === 'buildPrompt') {
-        // Build memory-enhanced prompt
         const enhanced = await buildMemoryEnhancedPrompt(userId, basePrompt || '');
         return res.status(200).json({ 
           success: true, 
@@ -277,7 +255,6 @@ export default async function handler(req, res) {
     }
   }
   
-  // DELETE /api/memory - Clear memory
   if (req.method === 'DELETE') {
     try {
       const { data, error } = await supabase

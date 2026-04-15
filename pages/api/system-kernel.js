@@ -1,14 +1,10 @@
 import { getKVData, setKVData } from '../../lib/db.js';
 import jwt from 'jsonwebtoken';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { callGeminiWithFallback } from '@/lib/gemini-multi-api';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'gizli-anahtar-degistir';
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-let genAI;
-if (GEMINI_API_KEY) {
-    genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-}
+console.log('[System-Kernel] Multi-API Key sistemi aktif');
 
 // Helper: Authenticate token
 function authenticateToken(req) {
@@ -264,10 +260,6 @@ function getDefaultContext(userId) {
 // ==================== AI-KERNEL (DECISION ENGINE) ====================
 
 async function generateSystemPriority(userContext) {
-    if (!genAI) {
-        return getFallbackPriority(userContext);
-    }
-    
     const userPrompt = `Sen bir Life OS (Yaşam İşletim Sistemi) çekirdeğisin. JSON formatında yanıt ver.
 
 Kontekst verilerini analiz et:
@@ -300,18 +292,11 @@ ${JSON.stringify(userContext, null, 2)}
 Şimdi bu kullanıcı için SYSTEM PRIORITY belirle. JSON formatında yanıt ver.`;
 
     try {
-        const model = genAI.getGenerativeModel({
+        const response = await callGeminiWithFallback(userPrompt, "", {
             model: "gemini-2.0-flash",
-            generationConfig: {
-                temperature: 0.7,
-                maxOutputTokens: 800,
-                responseMimeType: "application/json"
-            }
+            maxOutputTokens: 800
         });
-        
-        const result = await model.generateContent(userPrompt);
-        const response = result.response.text();
-        
+
         const priorityData = JSON.parse(response);
         
         priorityData.generatedAt = new Date().toISOString();

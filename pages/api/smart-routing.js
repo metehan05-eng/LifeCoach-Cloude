@@ -1,9 +1,7 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { callGeminiWithFallback } from '@/lib/gemini-multi-api';
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const genAI = GEMINI_API_KEY ? new GoogleGenerativeAI(GEMINI_API_KEY) : null;
+console.log('[Smart-Routing] Multi-API Key sistemi aktif');
 
-// Coaching modes mapping
 const COACHING_MODES = {
   mentor: {
     id: 'mentor',
@@ -38,27 +36,15 @@ const COACHING_MODES = {
 };
 
 /**
- * AI-powered smart routing - decide best coaching mode for context
+ * AI-powered smart routing
  */
 async function smartlyRouteCoachingMode(userMessage, conversationContext = {}) {
-  if (!genAI) {
-    return {
-      recommendedMode: 'mentor',
-      confidence: 0.5,
-      reason: 'AI unavailable - defaulting to mentor'
-    };
-  }
-
   try {
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash"
-    });
-
     const contextStr = conversationContext.emotionalState 
       ? `User's emotional state: ${conversationContext.emotionalState}`
       : '';
 
-    const routingPrompt = `You are an expert at matching coaching approaches to user needs.
+    const prompt = `You are an expert at matching coaching approaches to user needs.
 
 Based on this message, determine the BEST coaching mode. Return ONLY valid JSON (no markdown).
 
@@ -83,16 +69,17 @@ Return this JSON:
     "adaptations": ["specific instruction 1", "specific instruction 2"]
 }`;
 
-    const result = await model.generateContent(routingPrompt);
-    const responseText = result.response.text();
-    
-    const jsonText = responseText
+    const response = await callGeminiWithFallback(prompt, "", {
+      model: "gemini-2.0-flash",
+      maxOutputTokens: 1000
+    });
+
+    const jsonText = response
       .replace(/```json\n?/g, '')
       .replace(/```\n?/g, '')
       .trim();
 
-    const recommendation = JSON.parse(jsonText);
-    return recommendation;
+    return JSON.parse(jsonText);
 
   } catch (error) {
     console.error("Smart routing error:", error);
@@ -105,12 +92,10 @@ Return this JSON:
 }
 
 /**
- * Multi-turn mode routing - remember user preference but adapt as needed
+ * Multi-turn mode routing
  */
 async function dynamicModeSelection(userMessage, userPreferencedMode = null, conversationHistory = []) {
-  // If user has strong preference, respect it 80% of the time
   if (userPreferencedMode) {
-    // Check if this message needs a different approach
     const needsEmotionalSupport = /sad|angry|depressed|hopeless|overwhelmed|struggling/.test(userMessage.toLowerCase());
     const needsMotivation = /stuck|procrastinating|lazy|unmotivated|can't|not/.test(userMessage.toLowerCase());
     
@@ -130,7 +115,6 @@ async function dynamicModeSelection(userMessage, userPreferencedMode = null, con
       };
     }
     
-    // Otherwise stick to preference
     return {
       selectedMode: userPreferencedMode,
       reason: 'Using user\'s preferred coaching mode',
@@ -138,7 +122,6 @@ async function dynamicModeSelection(userMessage, userPreferencedMode = null, con
     };
   }
 
-  // No preference - use smart routing
   const routing = await smartlyRouteCoachingMode(userMessage, {
     conversationHistoryLength: conversationHistory.length
   });
@@ -173,7 +156,6 @@ export default async function handler(req, res) {
     }
 
     if (action === 'smartRoute') {
-      // AI-powered routing
       const recommendation = await smartlyRouteCoachingMode(
         userMessage,
         conversationContext || {}
@@ -186,7 +168,6 @@ export default async function handler(req, res) {
     }
 
     if (action === 'dynamicSelect') {
-      // Dynamic selection with user preference
       const selection = await dynamicModeSelection(
         userMessage,
         userPreferencedMode,
@@ -200,7 +181,6 @@ export default async function handler(req, res) {
     }
 
     if (action === 'getModes') {
-      // Get all coaching modes
       return res.status(200).json({
         success: true,
         modes: Object.values(COACHING_MODES)

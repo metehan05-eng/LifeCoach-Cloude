@@ -1,31 +1,16 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const genAI = GEMINI_API_KEY ? new GoogleGenerativeAI(GEMINI_API_KEY) : null;
+import { callGeminiWithFallback } from '@/lib/gemini-multi-api';
 
 /**
  * Generate structured goal breakdown using AI
  * Creates subgoals, milestones, timeline, risks, motivation
  */
 async function generateStructuredGoalBreakdown(goalTitle, goalDescription, existingGoals = []) {
-  if (!genAI) {
-    return {
-      mainGoal: goalTitle,
-      status: 'error',
-      message: 'AI not available'
-    };
-  }
-
   try {
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash"
-    });
-
     const existingGoalsStr = existingGoals.length > 0 
       ? `User's other active goals:\n${existingGoals.map(g => `- ${g}`).join('\n')}\n\n`
       : '';
 
-    const breakdownPrompt = `You are an expert life coach and strategic planning specialist.
+    const prompt = `You are an expert life coach and strategic planning specialist.
 
 Create a detailed, actionable breakdown for this goal. Return ONLY a valid JSON object (no markdown wrapper).
 
@@ -118,11 +103,12 @@ IMPORTANT:
 6. XP rewards should be balanced
 7. Milestones should be at 25%, 50%, 75%, 100% progress points`;
 
-    const result = await model.generateContent(breakdownPrompt);
-    const responseText = result.response.text();
-    
-    // Clean markdown
-    const jsonText = responseText
+    const response = await callGeminiWithFallback(prompt, "", {
+      model: "gemini-2.0-flash",
+      maxOutputTokens: 4000
+    });
+
+    const jsonText = response
       .replace(/```json\n?/g, '')
       .replace(/```\n?/g, '')
       .trim();
@@ -148,16 +134,8 @@ IMPORTANT:
  * Refine existing goal breakdown
  */
 async function refineGoalBreakdown(goalBreakdown, feedback) {
-  if (!genAI) {
-    return goalBreakdown;
-  }
-
   try {
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash"
-    });
-
-    const refinePrompt = `Based on this feedback, refine the goal breakdown. Return ONLY valid JSON (no markdown).
+    const prompt = `Based on this feedback, refine the goal breakdown. Return ONLY valid JSON (no markdown).
 
 Current breakdown:
 ${JSON.stringify(goalBreakdown, null, 2)}
@@ -167,10 +145,12 @@ ${feedback}
 
 Make adjustments to subgoals, timeline, and difficulty as needed while maintaining the full JSON structure.`;
 
-    const result = await model.generateContent(refinePrompt);
-    const responseText = result.response.text();
-    
-    const jsonText = responseText
+    const response = await callGeminiWithFallback(prompt, "", {
+      model: "gemini-2.0-flash",
+      maxOutputTokens: 3000
+    });
+
+    const jsonText = response
       .replace(/```json\n?/g, '')
       .replace(/```\n?/g, '')
       .trim();
@@ -186,21 +166,10 @@ Make adjustments to subgoals, timeline, and difficulty as needed while maintaini
 
 /**
  * Generate goal check-in prompt
- * What to reflect on while working on goal
  */
 async function generateGoalCheckInPrompt(goal, weekNumber) {
-  if (!genAI) {
-    return {
-      weekPrompts: []
-    };
-  }
-
   try {
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash"
-    });
-
-    const checkInPrompt = `Create personalized check-in questions for someone working on this goal at week ${weekNumber}.
+    const prompt = `Create personalized check-in questions for someone working on this goal at week ${weekNumber}.
 
 Goal: ${JSON.stringify(goal)}
 
@@ -217,10 +186,12 @@ Return ONLY valid JSON with this structure:
     "motivationBoost": "Encouraging message"
 }`;
 
-    const result = await model.generateContent(checkInPrompt);
-    const responseText = result.response.text();
-    
-    const jsonText = responseText
+    const response = await callGeminiWithFallback(prompt, "", {
+      model: "gemini-2.0-flash",
+      maxOutputTokens: 1500
+    });
+
+    const jsonText = response
       .replace(/```json\n?/g, '')
       .replace(/```\n?/g, '')
       .trim();
@@ -249,7 +220,6 @@ export default async function handler(req, res) {
     }
 
     if (action === 'breakdown') {
-      // Generate goal breakdown
       const breakdown = await generateStructuredGoalBreakdown(
         goalTitle,
         goalDescription || '',
@@ -260,7 +230,6 @@ export default async function handler(req, res) {
     }
 
     if (action === 'refine') {
-      // Refine existing breakdown
       if (!goalBreakdown || !feedback) {
         return res.status(400).json({ error: 'goalBreakdown and feedback parameters required for refine action' });
       }
@@ -274,7 +243,6 @@ export default async function handler(req, res) {
     }
 
     if (action === 'checkIn') {
-      // Generate check-in prompt for specific week
       if (!goalBreakdown || !weekNumber) {
         return res.status(400).json({ error: 'goalBreakdown and weekNumber parameters required for checkIn action' });
       }

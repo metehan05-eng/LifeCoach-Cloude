@@ -1,13 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { callGeminiWithFallback } from '@/lib/gemini-multi-api';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_ANON_KEY
 );
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const genAI = GEMINI_API_KEY ? new GoogleGenerativeAI(GEMINI_API_KEY) : null;
+console.log('[Esports-Commentator] Multi-API Key sistemi aktif');
 
 /**
  * Predefined commentator templates
@@ -149,19 +148,10 @@ function generateGeneralCommentary(context = {}) {
 }
 
 /**
- * AI-powered commentary generation (using Gemini for more dynamic messages)
+ * AI-powered commentary generation (using Multi-Key Gemini system)
  */
 async function generateAICommentary(event, context = {}) {
-  if (!genAI) {
-    // Fallback to template-based
-    return generateCommentaryFallback(event, context);
-  }
-
   try {
-    const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash"
-    });
-
     const eventDescriptions = {
       streak: `User ${context.username} has completed ${context.count} tasks in a row`,
       rankUp: `User ${context.username} just reached ${context.rank} rank!`,
@@ -179,8 +169,12 @@ Event: ${eventText}
 
 Reply only with the commentary line, no explanation.`;
 
-    const result = await model.generateContent(prompt);
-    return result.response.text().trim();
+    const response = await callGeminiWithFallback(prompt, "", {
+      model: "gemini-2.0-flash",
+      maxOutputTokens: 200
+    });
+    
+    return response.trim();
 
   } catch (error) {
     console.error("AI commentary error:", error);
