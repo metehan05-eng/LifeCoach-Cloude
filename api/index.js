@@ -82,8 +82,8 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta';
 // Gemini Modelleri - Yedek zincir için öncelik sırasına göre
 const GEMINI_MODELS = [
-    process.env.GEMINI_MODEL || 'gemini-1.5-pro',
-    'gemini-1.5-flash'
+    process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite-preview',
+    'gemini-3.1-pro-preview'
 ];
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "GOOGLE_CLIENT_ID_BURAYA";
