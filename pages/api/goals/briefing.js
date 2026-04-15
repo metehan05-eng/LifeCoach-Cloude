@@ -18,7 +18,8 @@ async function generateAIContent(prompt, systemPrompt = "") {
         return response;
     } catch (error) {
         console.error(`[AI-Briefing] Hata:`, error.message);
-        throw error;
+        // Hata durumunda fallback döndür
+        return null;
     }
 }
 
@@ -81,12 +82,6 @@ export default async function handler(req, res) {
         const completionCount = Array.isArray(completions) ? completions.length : 0;
         const currentProgress = progress || 0;
         
-        // If no AI is configured, return fallback advice
-        if (!genAI) {
-            const fallbackBriefing = generateFallbackBriefing(title, description);
-            return res.status(200).json({ briefing: fallbackBriefing });
-        }
-
         const systemPrompt = `Sen profesyonel ve teknik bir yaşam koçusun. Kullanıcının hedefi doğrultusunda teknik detaylar, yol haritası ve kod örnekleri içeren günlük rehberlik sağlarsın.`;
 
         const userPrompt = `Hedef: ${title}
@@ -115,6 +110,16 @@ Yanıt dili Türkçe olmalı. En sona mutlaka SEARCH_QUERY ifadesini bırakıp k
         try {
             const aiText = await generateAIContent(userPrompt, systemPrompt);
             
+            // AI başarısız olursa fallback kullan
+            if (!aiText) {
+                const fallback = generateFallbackBriefing(title, description);
+                return res.status(200).json({ 
+                    briefing: fallback,
+                    video: null,
+                    isFallback: true
+                });
+            }
+            
             let searchQuery = `${title} dersi türkçe`;
             const sqMatch = aiText.match(/SEARCH_QUERY:\s*(.+)/i);
             if (sqMatch && sqMatch[1]) {
@@ -128,18 +133,24 @@ Yanıt dili Türkçe olmalı. En sona mutlaka SEARCH_QUERY ifadesini bırakıp k
             
         } catch (aiError) {
             console.error('AI briefing generation error:', aiError);
-            // Show error to user so they know what happened
-            return res.status(500).json({
-                error: `AI üretimi başarısız: ${aiError.message}. Lütfen API anahtarlarınızı kontrol edin.`,
-                briefing: generateFallbackBriefing(title, description)
+            // Fallback döndür
+            const fallback = generateFallbackBriefing(title, description);
+            return res.status(200).json({
+                briefing: fallback,
+                video: null,
+                isFallback: true,
+                error: aiError.message
             });
         }
         
     } catch (error) {
         console.error('Goal briefing error:', error);
-        return res.status(500).json({ 
-            error: 'AI önerisi alınırken hata oluştu',
-            briefing: 'Bu hedef için çalışmaya başlamanın en iyi yolu, küçük ve somut bir adım atmaktır. Başarı seninle!'
+        const fallback = generateFallbackBriefing(title, description);
+        return res.status(200).json({ 
+            briefing: fallback,
+            video: null,
+            isFallback: true,
+            error: error.message
         });
     }
 }

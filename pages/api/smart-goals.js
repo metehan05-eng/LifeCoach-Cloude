@@ -108,26 +108,69 @@ IMPORTANT:
       maxOutputTokens: 4000
     });
 
+    if (!response) {
+      console.warn("[Smart-Goals] AI returned empty response, using fallback");
+      return generateFallbackBreakdown(goalTitle, goalDescription);
+    }
+
     const jsonText = response
       .replace(/```json\n?/g, '')
       .replace(/```\n?/g, '')
       .trim();
 
-    const breakdown = JSON.parse(jsonText);
-    
-    return {
-      success: true,
-      ...breakdown
-    };
+    try {
+      const breakdown = JSON.parse(jsonText);
+      return {
+        success: true,
+        ...breakdown
+      };
+    } catch (parseError) {
+      console.error("JSON parse error:", parseError);
+      return generateFallbackBreakdown(goalTitle, goalDescription);
+    }
 
   } catch (error) {
     console.error("Goal breakdown error:", error);
-    return {
-      mainGoal: goalTitle,
-      status: 'error',
-      message: error.message
-    };
+    return generateFallbackBreakdown(goalTitle, goalDescription);
   }
+}
+
+// Fallback breakdown generator
+function generateFallbackBreakdown(goalTitle, goalDescription) {
+  return {
+    success: true,
+    mainGoal: goalTitle,
+    goalSummary: goalDescription || "Bu hedefe ulaşmak için çalışmaya devam edin.",
+    timelineWeeks: 8,
+    difficulty: "medium",
+    priority: "medium",
+    subgoals: [
+      { id: 1, title: "Hedefi planla", description: "Adımlarını belirle", weekTarget: 1, xpReward: 50, difficulty: "easy" },
+      { id: 2, title: "İlk adımı at", description: "Başla ve ilerle", weekTarget: 2, xpReward: 50, difficulty: "medium" },
+      { id: 3, title: "Gelişimi kontrol et", description: "İlerlemeni değerlendir", weekTarget: 4, xpReward: 100, difficulty: "medium" },
+      { id: 4, title: "Tamamla", description: "Hedefini bitir", weekTarget: 8, xpReward: 200, difficulty: "hard" }
+    ],
+    milestones: [
+      { week: 2, target: "İlk ilerleme", xpReward: 50, celebration: "İyi gidiyorsun! 🎉", checkpoints: ["Plan yapıldı", "İlk adım atıldı"] },
+      { week: 4, target: "Yarı yol", xpReward: 100, celebration: "Yarısını bitirdin! 🔥", checkpoints: ["İlerleme kaydedildi"] },
+      { week: 8, target: "Hedefe ulaşıldı!", xpReward: 200, celebration: "Başardın! 🏆", checkpoints: ["Hedef tamamlandı"] }
+    ],
+    dailyHabits: [
+      { habit: "Günde 30 dk ayır", frequency: "daily", duration: "30 dk", impact: "İlerleme için gerekli" }
+    ],
+    riskAnalysis: [
+      { risk: "Motivasyon kaybı", likelihood: "medium", impact: "İlerleme yavaşlar", mitigation: "Küçük başarıları kutla" }
+    ],
+    successMetrics: ["Hedefe ulaşıldı", "İlerleme kaydedildi"],
+    motivationReminders: ["Başarı seninle!", "Devam et!"],
+    potentialObstacles: [
+      { obstacle: "Zaman yetersizliği", preventionStrategy: "Her gün küçük adımlar at" }
+    ],
+    dependencyGoals: [],
+    celebrationPlan: "Hedefini tamamladığında kendini ödüllendir!",
+    confidenceScore: 0.7,
+    isFallback: true
+  };
 }
 
 /**
@@ -150,13 +193,23 @@ Make adjustments to subgoals, timeline, and difficulty as needed while maintaini
       maxOutputTokens: 3000
     });
 
+    if (!response) {
+      console.warn("[Smart-Goals] Refine AI returned empty, keeping original");
+      return goalBreakdown;
+    }
+
     const jsonText = response
       .replace(/```json\n?/g, '')
       .replace(/```\n?/g, '')
       .trim();
 
-    const refined = JSON.parse(jsonText);
-    return refined;
+    try {
+      const refined = JSON.parse(jsonText);
+      return refined;
+    } catch (parseError) {
+      console.error("JSON parse error in refine:", parseError);
+      return goalBreakdown;
+    }
 
   } catch (error) {
     console.error("Goal refinement error:", error);
@@ -191,16 +244,44 @@ Return ONLY valid JSON with this structure:
       maxOutputTokens: 1500
     });
 
+    if (!response) {
+      console.warn("[Smart-Goals] CheckIn AI returned empty, using fallback");
+      return {
+        weekNumber: weekNumber,
+        reflectionQuestions: [
+          "Bu hafta neyi başardın?",
+          "Bir sonraki hafta için ne planlıyorsun?"
+        ],
+        actionItems: ["Hedefe odaklan", "Küçük adımlar at"],
+        motivationBoost: "Devam et, başarı yakın! 💪"
+      };
+    }
+
     const jsonText = response
       .replace(/```json\n?/g, '')
       .replace(/```\n?/g, '')
       .trim();
 
-    return JSON.parse(jsonText);
+    try {
+      return JSON.parse(jsonText);
+    } catch (parseError) {
+      console.error("JSON parse error in checkIn:", parseError);
+      return {
+        weekNumber: weekNumber,
+        reflectionQuestions: ["İlerleme kaydettin mi?"],
+        actionItems: ["Devam et!"],
+        motivationBoost: "Başarı seninle!"
+      };
+    }
 
   } catch (error) {
     console.error("Check-in generation error:", error);
-    return { weekPrompts: [] };
+    return {
+      weekNumber: weekNumber,
+      reflectionQuestions: ["Bugün ne yaptın?"],
+      actionItems: ["Hedefe odaklan"],
+      motivationBoost: "Devam et! 💪"
+    };
   }
 }
 
