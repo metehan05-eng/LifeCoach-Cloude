@@ -268,9 +268,7 @@ async function generateSystemPriority(userContext) {
         return getFallbackPriority(userContext);
     }
     
-    const gemini31FlashLite = "gemini-1.5-flash";
-    
-    const systemPrompt = `Sen bir Life OS (Yaşam İşletim Sistemi) çekirdeğisin. Kullanıcının mevcut durumuna ve aktif hedeflerine bakarak, o anki en önemli öncelikli görevi belirlemelisin.
+    const userPrompt = `Sen bir Life OS (Yaşam İşletim Sistemi) çekirdeğisin. JSON formatında yanıt ver.
 
 Kontekst verilerini analiz et:
 - Enerji seviyesi (1-10): Düşük enerjide zor görevler yerine kolay/rahatlatıcı görevler öner
@@ -288,26 +286,22 @@ YANIT FORMATI (JSON):
         "type": "goal|habit|reflection|focus|rest",
         "reasoning": "Neden bu görev öncelikli? (1 cümle)",
         "estimatedTime": "X dk",
-        "energyRequired": 1-10,
+        "energyRequired": 5,
         "difficulty": "easy|medium|hard",
-        "flameReward": sayı,
-        "xpReward": sayı
+        "flameReward": 10,
+        "xpReward": 10
     },
-    "suggestions": [
-        "İlk adım için öneri 1",
-        "İlk adım için öneri 2"
-    ]
-}`;
+    "suggestions": ["İlk adım için öneri 1"]
+}
 
-    const contextPrompt = `KULLANICI KONTEKSTİ:
+KULLANICI KONTEKSTİ:
 ${JSON.stringify(userContext, null, 2)}
 
-Şimdi bu kullanıcı için SYSTEM PRIORITY belirle.`;
+Şimdi bu kullanıcı için SYSTEM PRIORITY belirle. JSON formatında yanıt ver.`;
 
     try {
         const model = genAI.getGenerativeModel({
-            model: gemini31FlashLite,
-            systemInstruction: systemPrompt,
+            model: "gemini-2.0-flash",
             generationConfig: {
                 temperature: 0.7,
                 maxOutputTokens: 800,
@@ -315,13 +309,11 @@ ${JSON.stringify(userContext, null, 2)}
             }
         });
         
-        const result = await model.generateContent(contextPrompt);
+        const result = await model.generateContent(userPrompt);
         const response = result.response.text();
         
-        // Parse JSON response
         const priorityData = JSON.parse(response);
         
-        // Add metadata
         priorityData.generatedAt = new Date().toISOString();
         priorityData.contextSnapshot = {
             energyLevel: userContext.energyLevel,
