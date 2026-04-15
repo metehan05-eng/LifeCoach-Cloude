@@ -48,7 +48,7 @@
     <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js" defer></script>
-
+    
     <!-- React & Babel -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -2239,9 +2239,9 @@
 
         /* Override for chat section - needs row layout on desktop */
         @media (min-width: 768px) {
-            #section-chat {
-                flex-direction: row !important;
-                height: 100% !important;
+        #section-chat {
+            flex-direction: row !important;
+            height: 100% !important;
             }
         }
 
@@ -3204,22 +3204,22 @@
                     <span
                         class="ml-auto text-[9px] px-2 py-1 rounded-md bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black shadow-[0_2px_8px_rgba(245,158,11,0.4)] relative z-10 uppercase tracking-wider group-hover:shadow-[0_4px_12px_rgba(245,158,11,0.6)] transition-all">Üret</span>
                 </button>
-                </nav>
-            </div>
+            </nav>
+        </div>
 
-            <!-- Glow Divider -->
-            <div class="px-4 pb-2">
-                <div class="glow-divider"></div>
-            </div>
+        <!-- Glow Divider -->
+        <div class="px-4 pb-2">
+            <div class="glow-divider"></div>
+        </div>
 
             <!-- Discipline Badge Removed -->
 
 
 
-            <!-- Auth Section -->
-            <div class="p-4 border-t border-white/5" id="auth-container">
-                <!-- JS ile doldurulacak -->
-            </div>
+        <!-- Auth Section -->
+        <div class="p-4 border-t border-white/5" id="auth-container">
+            <!-- JS ile doldurulacak -->
+        </div>
     </aside>
 
     <!-- Main Content -->
@@ -3268,7 +3268,7 @@
 
                     <!-- React Dashboard Stats Root -->
                     <div id="react-dashboard-stats-root" class="mb-8"></div>
-
+                    
                     <!-- Quick Actions -->
                     <div class="grid md:grid-cols-3 gap-4">
                         <button onclick="showSection('goals');"
@@ -3384,6 +3384,38 @@
                                     <div class="flex items-center gap-2">
                                         <span class="text-xs px-2 py-1 rounded-lg bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">
                                             <i class="fa-solid fa-star mr-1"></i>+10 XP/seviye
+                                        </span>
+                                    </div>
+                                    <span class="text-xs text-slate-500">Mobil uyumlu</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Flipper Bird Game Card -->
+                        <div class="bg-gradient-to-br from-blue-500/10 to-purple-600/5 border border-blue-500/20 rounded-2xl overflow-hidden hover:border-blue-400/50 transition-all group cursor-pointer" onclick="openFlipperBirdGame()">
+                            <div class="aspect-video bg-gradient-to-br from-blue-400 to-purple-600 relative overflow-hidden">
+                                <!-- Flipper Bird Game Preview/Screenshot -->
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <div class="text-center">
+                                        <div class="text-6xl mb-2">🐦</div>
+                                        <div class="text-white font-bold text-lg">Flipper Bird</div>
+                                        <div class="text-white/70 text-sm">Flappy Game</div>
+                                    </div>
+                                </div>
+                                <!-- Play Button Overlay -->
+                                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                    <div class="w-16 h-16 rounded-full bg-blue-500 flex items-center justify-center transform scale-75 group-hover:scale-100 transition-transform">
+                                        <i class="fa-solid fa-play text-white text-2xl ml-1"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="p-4">
+                                <h3 class="font-semibold text-white mb-1">Flipper Bird</h3>
+                                <p class="text-xs text-slate-400 mb-3">Pipe'lerden geçerek yüksek skor yap! Kuşu kontrol et ve engellerden kaç!</p>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs px-2 py-1 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                                            <i class="fa-solid fa-star mr-1"></i>+1 XP/10 skor
                                         </span>
                                     </div>
                                     <span class="text-xs text-slate-500">Mobil uyumlu</span>
@@ -3706,7 +3738,7 @@
                     <div
                         class="bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 rounded-2xl p-6 mb-8 text-center">
                         <h3 class="text-lg font-bold text-white mb-4 flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-radio text-indigo-400"></i> AI Focus Radio
+                             <i class="fa-solid fa-radio text-indigo-400"></i> AI Focus Radio
                         </h3>
                         <div class="flex justify-center gap-4">
                             <button onclick="playFocusBeats('lofi')"
@@ -4268,8 +4300,8 @@
                                     <!-- Bread (Hidden initially) -->
                                     <div id="waffle-bread-icon" class="hidden text-7xl animate-bounce drop-shadow-2xl">
                                         🍞</div>
-                                </div>
                             </div>
+                        </div>
 
                             <!-- Steam -->
                             <div class="absolute -top-6 flex gap-2">
@@ -4277,7 +4309,7 @@
                                 <span
                                     class="block w-2 h-12 bg-white/20 blur-sm rounded-full animate-ping delay-300"></span>
                             </div>
-                        </div>
+                    </div>
 
                         <div class="text-amber-400 font-bold mb-2 text-xl tracking-wide" id="waffle-status-text">
                             Waffle fırında pişiyor...
@@ -4294,49 +4326,49 @@
                             </h3>
                             <div class="h-px bg-white/5 flex-1"></div>
                         </div>
-                        <div id="waffle-gallery"
+                    <div id="waffle-gallery"
                             class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 auto-rows-max">
                             <!-- Üretilen görseller buraya eklenecek -->
                         </div>
                     </div>
-                    <!-- Çıktılar buraya eklenecek -->
-                    <div id="waffle-empty-state"
-                        class="col-span-1 md:col-span-2 lg:col-span-2 flex flex-col items-center justify-center py-16 text-slate-500 bg-white/5 rounded-3xl border border-white/5 border-dashed">
-                        <i class="fa-solid fa-image text-4xl mb-4 opacity-50"></i>
-                        <p>Henüz waffle üretilmedi. Denemek için yukarıya bir şeyler yazın!</p>
+                        <!-- Çıktılar buraya eklenecek -->
+                        <div id="waffle-empty-state"
+                            class="col-span-1 md:col-span-2 lg:col-span-2 flex flex-col items-center justify-center py-16 text-slate-500 bg-white/5 rounded-3xl border border-white/5 border-dashed">
+                            <i class="fa-solid fa-image text-4xl mb-4 opacity-50"></i>
+                            <p>Henüz waffle üretilmedi. Denemek için yukarıya bir şeyler yazın!</p>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Smart Coach Section -->
-        <div id="section-coach" class="section-content hidden flex-col">
-            <div class="max-w-4xl mx-auto w-full">
-                <div class="mb-8">
-                    <h2 class="text-3xl font-bold text-white font-display mb-2">Smart Coach 🧠</h2>
-                    <p class="text-slate-400 text-sm">Kişisel yapay zeka koçun</p>
-                </div>
+            <!-- Smart Coach Section -->
+            <div id="section-coach" class="section-content hidden flex-col">
+                <div class="max-w-4xl mx-auto w-full">
+                    <div class="mb-8">
+                        <h2 class="text-3xl font-bold text-white font-display mb-2">Smart Coach 🧠</h2>
+                        <p class="text-slate-400 text-sm">Kişisel yapay zeka koçun</p>
+                    </div>
 
-                <!-- Score Display -->
-                <div
-                    class="bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-2xl p-6 mb-6">
+                    <!-- Score Display -->
+                    <div
+                        class="bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-2xl p-6 mb-6">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-                        <div>
-                            <h3 class="text-lg font-semibold text-white">Verimlilik Puanın</h3>
-                            <p class="text-sm text-slate-400">Yapay zeka tarafından hesaplandı</p>
+                            <div>
+                                <h3 class="text-lg font-semibold text-white">Verimlilik Puanın</h3>
+                                <p class="text-sm text-slate-400">Yapay zeka tarafından hesaplandı</p>
+                            </div>
+                            <div class="text-right">
+                                <div id="coach-score" class="text-5xl font-bold text-amber-400">0</div>
+                                <div id="coach-grade" class="text-sm text-slate-400">/ 100</div>
+                            </div>
                         </div>
-                        <div class="text-right">
-                            <div id="coach-score" class="text-5xl font-bold text-amber-400">0</div>
-                            <div id="coach-grade" class="text-sm text-slate-400">/ 100</div>
+                        <div class="h-3 bg-white/10 rounded-full overflow-hidden">
+                            <div id="coach-progress-bar"
+                                class="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full transition-all duration-1000"
+                                style="width: 0%"></div>
                         </div>
+                        <div id="coach-summary" class="mt-4 text-slate-300 text-sm"></div>
                     </div>
-                    <div class="h-3 bg-white/10 rounded-full overflow-hidden">
-                        <div id="coach-progress-bar"
-                            class="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full transition-all duration-1000"
-                            style="width: 0%"></div>
-                    </div>
-                    <div id="coach-summary" class="mt-4 text-slate-300 text-sm"></div>
-                </div>
 
                 <!-- Deep Analysis Card - 100 Flame -->
                 <div
@@ -4375,22 +4407,22 @@
                     </div>
                 </div>
 
-                <!-- Insights -->
-                <div class="space-y-4 mb-6" id="coach-insights">
-                    <!-- Insights will be loaded dynamically -->
-                </div>
+                    <!-- Insights -->
+                    <div class="space-y-4 mb-6" id="coach-insights">
+                        <!-- Insights will be loaded dynamically -->
+                    </div>
 
-                <!-- AI Recommendations -->
-                <div class="bg-white/5 border border-white/10 rounded-xl p-4">
-                    <h3 class="text-lg font-semibold text-white mb-4">
-                        <i class="fa-solid fa-lightbulb text-amber-400 mr-2"></i>Öneriler
-                    </h3>
-                    <div id="recommendations-list" class="space-y-3">
-                        <p class="text-slate-500 text-sm text-center py-4">Öneriler yükleniyor...</p>
+                    <!-- AI Recommendations -->
+                    <div class="bg-white/5 border border-white/10 rounded-xl p-4">
+                        <h3 class="text-lg font-semibold text-white mb-4">
+                            <i class="fa-solid fa-lightbulb text-amber-400 mr-2"></i>Öneriler
+                        </h3>
+                        <div id="recommendations-list" class="space-y-3">
+                            <p class="text-slate-500 text-sm text-center py-4">Öneriler yükleniyor...</p>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
         <!-- ===== SOSYAL SECTIONS ===== -->
 
@@ -5005,7 +5037,7 @@
             </script>
         </div>
 
-        <!-- Chat Section (Claude Style) -->
+            <!-- Chat Section (Claude Style) -->
         <div id="section-chat" class="section-content flex flex-col h-full welcome-active w-full overflow-hidden">
 
             <!-- Mobile Chat Header (only on mobile) -->
@@ -5083,117 +5115,117 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Inner Column that holds scrollable content and fixed bottom input -->
-            <div class="flex-1 flex flex-col min-h-0 w-full relative">
-
-                <!-- Middle Area: This grows and contains either the scrollable chat OR the centered welcome -->
-                <div class="flex-1 flex flex-col min-h-0 relative">
-                    <!-- Message Container: scrolls internally -->
-                    <div id="chat-container"
-                        class="max-w-4xl mx-auto w-full h-full flex flex-col space-y-6 px-4 pt-6 overflow-y-auto hidden">
-                        <!-- Messages will be appended here -->
-                    </div>
-
-                    <!-- Welcome Screen: centered in the middle area when idle -->
-                    <div id="welcome-screen" class="flex-1 flex flex-col items-center justify-center">
-                        <div class="welcome-icon-wrapper mb-2 animate-bounce-subtle"
-                            style="width: 64px; height: 64px; border-radius: 20px; background: linear-gradient(135deg, rgba(45, 212, 191, 0.2), rgba(15, 118, 110, 0.1)); border: 1px solid rgba(45, 212, 191, 0.2); display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
-                            <i class="fa-solid fa-leaf text-3xl text-teal-400"></i>
+                
+                <!-- Inner Column that holds scrollable content and fixed bottom input -->
+                <div class="flex-1 flex flex-col min-h-0 w-full relative">
+                    
+                    <!-- Middle Area: This grows and contains either the scrollable chat OR the centered welcome -->
+                    <div class="flex-1 flex flex-col min-h-0 relative">
+                        <!-- Message Container: scrolls internally -->
+                        <div id="chat-container"
+                            class="max-w-4xl mx-auto w-full h-full flex flex-col space-y-6 px-4 pt-6 overflow-y-auto hidden">
+                            <!-- Messages will be appended here -->
                         </div>
 
-                        <div class="space-y-4 px-4 w-full">
-                            <h2 id="dynamic-greeting"
+                        <!-- Welcome Screen: centered in the middle area when idle -->
+                        <div id="welcome-screen" class="flex-1 flex flex-col items-center justify-center">
+                            <div class="welcome-icon-wrapper mb-2 animate-bounce-subtle"
+                                style="width: 64px; height: 64px; border-radius: 20px; background: linear-gradient(135deg, rgba(45, 212, 191, 0.2), rgba(15, 118, 110, 0.1)); border: 1px solid rgba(45, 212, 191, 0.2); display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+                                <i class="fa-solid fa-leaf text-3xl text-teal-400"></i>
+                            </div>
+
+                            <div class="space-y-4 px-4 w-full">
+                                <h2 id="dynamic-greeting"
                                 class="text-4xl md:text-5xl font-bold text-white mb-8 tracking-tight font-display text-center">
                                 İyi akşamlar. Sana bugün nasıl yardımcı olabilirim?</h2>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Input Area: pinned at bottom of flex column, always in its place -->
-                <div id="chat-input-container" class="input-area">
-                    <form id="chat-form" class="input-container-glass">
-                        <!-- File Previews -->
-                        <div id="file-previews" class="file-previews"></div>
+                    <!-- Input Area: pinned at bottom of flex column, always in its place -->
+                    <div id="chat-input-container" class="input-area">
+                        <form id="chat-form" class="input-container-glass">
+                            <!-- File Previews -->
+                            <div id="file-previews" class="file-previews"></div>
 
-                        <!-- Textarea -->
-                        <textarea id="user-input" rows="1" placeholder="Ask LifeCoach AI anything..."
-                            class="chat-textarea custom-scrollbar"
-                            oninput="this.style.height = ''; this.style.height = Math.min(this.scrollHeight, 250) + 'px';"></textarea>
+                            <!-- Textarea -->
+                            <textarea id="user-input" rows="1" placeholder="Ask LifeCoach AI anything..."
+                                class="chat-textarea custom-scrollbar"
+                                oninput="this.style.height = ''; this.style.height = Math.min(this.scrollHeight, 250) + 'px';"></textarea>
 
-                        <input type="file" id="file-upload"
-                            accept="image/*,.pdf,.txt,.md,.doc,.docx,.xls,.xlsx,.ppt,.pptx" class="hidden" multiple
-                            onchange="handleFileSelect(this)">
+                            <input type="file" id="file-upload"
+                                accept="image/*,.pdf,.txt,.md,.doc,.docx,.xls,.xlsx,.ppt,.pptx" class="hidden" multiple
+                                onchange="handleFileSelect(this)">
 
-                        <!-- Actions Bar -->
-                        <div class="input-actions-bar">
-                            <div class="action-group">
+                            <!-- Actions Bar -->
+                            <div class="input-actions-bar">
+                                <div class="action-group">
                                 <button type="button" id="voice-input-btn" onclick="toggleVoiceInput()"
                                     class="input-action-btn" title="Sesli Komut">
-                                    <i class="fa-solid fa-microphone"></i>
-                                </button>
-                                <div id="plus-menu-container-bottom" class="relative">
-                                    <button type="button" onclick="togglePlusMenuBottom()" class="input-action-btn"
-                                        title="Dosya Eylemleri">
-                                        <i class="fa-solid fa-plus"></i>
+                                        <i class="fa-solid fa-microphone"></i>
                                     </button>
-                                    <div id="plus-dropdown-bottom"
-                                        class="absolute bottom-full left-0 mb-3 w-56 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl hidden flex-col overflow-hidden z-[60] animate-fade-up">
-                                        <div
-                                            class="px-4 py-2.5 text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-white/5">
-                                            Hızlı İşlemler</div>
-                                        <button type="button"
-                                            onclick="document.getElementById('file-upload').click(); togglePlusMenuBottom();"
-                                            class="px-4 py-3 hover:bg-teal-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
-                                            <i class="fa-solid fa-upload text-teal-400 w-4"></i> Dosya Yükle
+                                    <div id="plus-menu-container-bottom" class="relative">
+                                        <button type="button" onclick="togglePlusMenuBottom()" class="input-action-btn"
+                                            title="Dosya Eylemleri">
+                                            <i class="fa-solid fa-plus"></i>
                                         </button>
-                                        <div class="h-[1px] bg-white/5"></div>
-                                        <button type="button" onclick="createExcelFile(); togglePlusMenuBottom();"
-                                            class="px-4 py-3 hover:bg-green-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
-                                            <i class="fa-solid fa-file-excel text-green-500 w-4"></i> Excel Dosyası
-                                            Oluştur
-                                        </button>
-                                        <button type="button" onclick="createWordFile(); togglePlusMenuBottom();"
-                                            class="px-4 py-3 hover:bg-blue-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
-                                            <i class="fa-solid fa-file-word text-blue-500 w-4"></i> Word Belgesi
-                                            Oluştur
-                                        </button>
-                                        <button type="button" onclick="createPPTFile(); togglePlusMenuBottom();"
-                                            class="px-4 py-3 hover:bg-orange-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
-                                            <i class="fa-solid fa-file-powerpoint text-orange-500 w-4"></i>
-                                            PowerPoint Oluştur
-                                        </button>
-                                        <div class="h-[1px] bg-white/5"></div>
-                                        <button type="button" onclick="generateAIImage(); togglePlusMenuBottom();"
-                                            class="px-4 py-3 hover:bg-orange-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
-                                            <i class="fa-solid fa-palette text-orange-400 w-4"></i> Görüntü Oluştur
-                                            (Nano Banana)
-                                        </button>
-                                        <div class="h-[1px] bg-white/5"></div>
+                                        <div id="plus-dropdown-bottom"
+                                            class="absolute bottom-full left-0 mb-3 w-56 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl hidden flex-col overflow-hidden z-[60] animate-fade-up">
+                                            <div
+                                                class="px-4 py-2.5 text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-white/5">
+                                                Hızlı İşlemler</div>
+                                            <button type="button"
+                                                onclick="document.getElementById('file-upload').click(); togglePlusMenuBottom();"
+                                                class="px-4 py-3 hover:bg-teal-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
+                                                <i class="fa-solid fa-upload text-teal-400 w-4"></i> Dosya Yükle
+                                            </button>
+                                            <div class="h-[1px] bg-white/5"></div>
+                                            <button type="button" onclick="createExcelFile(); togglePlusMenuBottom();"
+                                                class="px-4 py-3 hover:bg-green-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
+                                                <i class="fa-solid fa-file-excel text-green-500 w-4"></i> Excel Dosyası
+                                                Oluştur
+                                            </button>
+                                            <button type="button" onclick="createWordFile(); togglePlusMenuBottom();"
+                                                class="px-4 py-3 hover:bg-blue-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
+                                                <i class="fa-solid fa-file-word text-blue-500 w-4"></i> Word Belgesi
+                                                Oluştur
+                                            </button>
+                                            <button type="button" onclick="createPPTFile(); togglePlusMenuBottom();"
+                                                class="px-4 py-3 hover:bg-orange-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
+                                                <i class="fa-solid fa-file-powerpoint text-orange-500 w-4"></i>
+                                                PowerPoint Oluştur
+                                            </button>
+                                            <div class="h-[1px] bg-white/5"></div>
+                                            <button type="button" onclick="generateAIImage(); togglePlusMenuBottom();"
+                                                class="px-4 py-3 hover:bg-orange-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
+                                                <i class="fa-solid fa-palette text-orange-400 w-4"></i> Görüntü Oluştur
+                                                (Nano Banana)
+                                            </button>
+                                            <div class="h-[1px] bg-white/5"></div>
                                         <button type="button" onclick="createClassListExcel(); togglePlusMenuBottom();"
-                                            class="px-4 py-3 hover:bg-amber-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
-                                            <i class="fa-solid fa-table-list text-amber-400 w-4"></i> Sınıf Listesi
-                                            (Excel A4)
-                                        </button>
+                                                class="px-4 py-3 hover:bg-amber-500/10 text-left text-xs text-slate-300 flex items-center gap-3 transition-colors">
+                                                <i class="fa-solid fa-table-list text-amber-400 w-4"></i> Sınıf Listesi
+                                                (Excel A4)
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-                                <button type="button" id="deep-search-btn" onclick="toggleDeepSearch()"
-                                    class="input-action-btn" title="Deep Search Mode">
-                                    <i class="fa-solid fa-bolt-lightning"></i>
-                                </button>
-                                <button type="button" id="mic-btn-new" onclick="toggleDictation()"
-                                    class="input-action-btn" title="Voice Mode">
-                                    <i class="fa-solid fa-microphone"></i>
-                                </button>
-                                <div class="h-4 w-px bg-white/10 mx-1"></div>
-                                <button type="button" onclick="startEmergencyMode()"
-                                    class="input-action-btn mode-btn-emergency" title="Acil Durum Modu">
-                                    <i class="fa-solid fa-heart-pulse"></i>
-                                </button>
-                                <button type="button" onclick="startToughLoveMode()"
-                                    class="input-action-btn mode-btn-tough" title="Yüzleşme Modu">
-                                    <i class="fa-solid fa-hand-fist"></i>
-                                </button>
+                                    <button type="button" id="deep-search-btn" onclick="toggleDeepSearch()"
+                                        class="input-action-btn" title="Deep Search Mode">
+                                        <i class="fa-solid fa-bolt-lightning"></i>
+                                    </button>
+                                    <button type="button" id="mic-btn-new" onclick="toggleDictation()"
+                                        class="input-action-btn" title="Voice Mode">
+                                        <i class="fa-solid fa-microphone"></i>
+                                    </button>
+                                    <div class="h-4 w-px bg-white/10 mx-1"></div>
+                                    <button type="button" onclick="startEmergencyMode()"
+                                        class="input-action-btn mode-btn-emergency" title="Acil Durum Modu">
+                                        <i class="fa-solid fa-heart-pulse"></i>
+                                    </button>
+                                    <button type="button" onclick="startToughLoveMode()"
+                                        class="input-action-btn mode-btn-tough" title="Yüzleşme Modu">
+                                        <i class="fa-solid fa-hand-fist"></i>
+                                    </button>
                                 <button type="button" onclick="startFocusSprintMode()"
                                     class="input-action-btn mode-btn-focus" title="Focus Sprint Modu">
                                     <i class="fa-solid fa-bullseye"></i>
@@ -5202,26 +5234,26 @@
                                     class="input-action-btn mode-btn-creative" title="Creative Boost Modu">
                                     <i class="fa-solid fa-wand-magic-sparkles"></i>
                                 </button>
-                            </div>
+                                </div>
 
-                            <div class="action-group">
-                                <div class="text-[10px] text-slate-500 font-medium mr-2 hidden sm:block">Press Shift
-                                    + Enter for
-                                    new line</div>
-                                <button type="submit" class="send-btn-new" id="send-btn" title="Send message">
-                                    <i class="fa-solid fa-arrow-up"></i>
-                                </button>
+                                <div class="action-group">
+                                    <div class="text-[10px] text-slate-500 font-medium mr-2 hidden sm:block">Press Shift
+                                        + Enter for
+                                        new line</div>
+                                    <button type="submit" class="send-btn-new" id="send-btn" title="Send message">
+                                        <i class="fa-solid fa-arrow-up"></i>
+                                    </button>
+                                </div>
                             </div>
+                        </form>
+                        <div class="text-center mt-3">
+                            <p class="text-[11px] text-[#8a8b86]/50 font-medium">LifeCoach AI can make mistakes.
+                                Consider verifying
+                                critical information.</p>
                         </div>
-                    </form>
-                    <div class="text-center mt-3">
-                        <p class="text-[11px] text-[#8a8b86]/50 font-medium">LifeCoach AI can make mistakes.
-                            Consider verifying
-                            critical information.</p>
                     </div>
                 </div>
             </div>
-        </div>
         </div>
     </main>
 
@@ -5346,6 +5378,25 @@
             </div>
             <div class="flex-1 relative bg-black">
                 <iframe id="mario-game-iframe" src="about:blank" class="w-full h-full border-0" allowfullscreen></iframe>
+            </div>
+        </div>
+    </div>
+
+    <!-- Flipper Bird Game Modal -->
+    <div id="flipper-bird-game-modal" class="fixed inset-0 modal-overlay hidden items-center justify-center z-50 p-4">
+        <div class="modal-card w-full max-w-4xl mx-auto p-0 max-h-[90vh] overflow-hidden flex flex-col" style="height: 650px;">
+            <div class="flex justify-between items-center p-4 border-b border-white/10 bg-gradient-to-r from-blue-500/20 to-purple-600/20">
+                <div>
+                    <h3 class="text-lg font-bold text-white font-display">🐦 Flipper Bird</h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Flappy oyun - Pipe'lerden geçerek skor yap!</p>
+                </div>
+                <button onclick="closeFlipperBirdGame()"
+                    class="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-all">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+            <div class="flex-1 relative bg-black">
+                <iframe id="flipper-bird-game-iframe" src="about:blank" class="w-full h-full border-0" allowfullscreen></iframe>
             </div>
         </div>
     </div>
@@ -5522,8 +5573,8 @@
                     <i class="fa-solid fa-info-circle mr-2"></i>
                     <strong>Nasıl Çalışır:</strong> Paylaş butonuna basdığında tüm uygulamalarınız listelenir. Paylaşmak
                     istediğin uygulamayı seç!
-                </p>
-            </div>
+            </p>
+        </div>
 
             <!-- Image Actions -->
             <div class="flex gap-3">
@@ -5537,7 +5588,7 @@
                     <i class="fa-solid fa-copy text-sm"></i>
                     Kopyala
                 </button>
-            </div>
+    </div>
         </div>
     </div>
     <div id="certificate-modal"
@@ -6116,11 +6167,11 @@
 
         function openShareItemModal(title, value, type = 'goal') {
             currentShareData = { title, value, type };
-
+            
             // Popüleri doldur
             document.getElementById('share-display-title').textContent = title;
             document.getElementById('share-display-progress').textContent = type === 'habit' ? `${value} Gün` : `%${value}`;
-
+            
             const tagEl = document.querySelector('.share-tag');
             if (tagEl) {
                 tagEl.textContent = type === 'habit' ? 'LifeCoach AI Streak' : 'LifeCoach AI Progress';
@@ -6271,20 +6322,20 @@
 
         async function platformShare() {
             const { title, value, type } = currentShareData;
-
+            
             console.log('[SHARE] Başlıyor:', { title, value, type });
 
             try {
                 showToast('📤 Paylaşım hazırlanıyor...', 'success');
 
                 // Paylaşım metni oluştur
-                let shareText = '';
+            let shareText = '';
                 let shareTitle = '';
 
-                if (type === 'habit') {
+            if (type === 'habit') {
                     shareText = `🔥 ${value} Gün Kesintisiz!\n\nAlışkanlık: ${title}\n\nLifeCoach AI ile disipline ediyorum! Sen de katıl 💪\n\n#LifeCoachAI #Alışkanlık #Disiplin`;
                     shareTitle = `${title} Alışkanlığı`;
-                } else {
+            } else {
                     shareText = `🎯 ${value}% Tamamladım!\n\nHedef: ${title}\n\nLifeCoach AI ile hedeflerime ulaşıyorum! Sen de potansiyelini keşfet 🚀\n\n#LifeCoachAI #Hedeflerim #PersonalGrowth`;
                     shareTitle = `${title} Hedefim`;
                 }
@@ -6307,7 +6358,7 @@
                 // Share Data oluştur
                 let shareData = {
                     title: shareTitle,
-                    text: shareText,
+                                text: shareText,
                     url: window.location.origin
                 };
 
@@ -6419,11 +6470,11 @@
             const toast = document.createElement('div');
             toast.className = `toast animate-fade-in-up flex items-center gap-3 border-l-4 ${type === 'success' ? 'border-l-emerald-500' :
                 type === 'error' ? 'border-l-red-500' : 'border-l-blue-500'
-                }`;
-
-            const icon = type === 'success' ? 'fa-check-circle text-emerald-400' :
-                type === 'error' ? 'fa-circle-exclamation text-red-400' : 'fa-circle-info text-blue-400';
-
+            }`;
+            
+            const icon = type === 'success' ? 'fa-check-circle text-emerald-400' : 
+                         type === 'error' ? 'fa-circle-exclamation text-red-400' : 'fa-circle-info text-blue-400';
+            
             toast.innerHTML = `
                 <i class="fa-solid ${icon}"></i>
                 <span class="text-sm font-medium text-slate-200">${message}</span>
@@ -6450,7 +6501,7 @@
             document.getElementById('cert-user-name').textContent = user.name || 'Değerli Kullanıcı';
             document.getElementById('cert-goal-title').textContent = goalTitle;
             document.getElementById('cert-date').textContent = new Date().toLocaleDateString('tr-TR');
-
+            
             const modal = document.getElementById('certificate-modal');
             if (modal) {
                 modal.classList.remove('hidden');
@@ -6531,7 +6582,7 @@
             recognition.interimResults = false;
 
             const btn = document.getElementById('voice-input-btn');
-
+            
             recognition.onend = () => {
                 btn.classList.remove('voice-btn-pulse', 'text-teal-400');
             };
@@ -6548,14 +6599,14 @@
                 showToast('Müzik durduruldu.');
                 return;
             }
-
+            
             const sounds = {
-                lofi: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+                lofi: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', 
                 rain: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3'
             };
-
+            
             if (!sounds[type]) return;
-
+            
             focusAudio = new Audio(sounds[type]);
             focusAudio.loop = true;
             focusAudio.play().catch(e => showToast('Müzik oynatılamadı.'));
@@ -6589,7 +6640,7 @@
                     <div class="auth-section">
                         <div class="flex items-center gap-3">
                             <div class="relative cursor-pointer group" onclick="openStatusModal()">
-                                ${avatarHtml}
+                            ${avatarHtml}
                                 <div id="user-current-status-dot" class="status-dot-mini bg-slate-900 shadow-lg">
                                     ${currentStatus.emoji}
                                 </div>
@@ -7145,22 +7196,22 @@
             const chatInputContainer = document.getElementById('chat-input-container');
 
             // Always reset DOM even if hidden - this fixes switching sections to fresh chat
-            if (chatContainer) {
-                chatContainer.innerHTML = '';
-                chatContainer.classList.add('hidden');
-                chatContainer.style.display = 'none';
-            }
-            if (welcomeScreen) {
-                welcomeScreen.classList.remove('hidden');
-                welcomeScreen.style.display = 'flex';
-            }
-            if (sectionChat) {
-                sectionChat.classList.add('welcome-active');
-                sectionChat.style.display = 'flex';
-            }
-            if (chatInputContainer) {
-                chatInputContainer.classList.remove('hidden');
-                chatInputContainer.style.display = 'block';
+                if (chatContainer) {
+                    chatContainer.innerHTML = '';
+                    chatContainer.classList.add('hidden');
+                    chatContainer.style.display = 'none';
+                }
+                if (welcomeScreen) {
+                    welcomeScreen.classList.remove('hidden');
+                    welcomeScreen.style.display = 'flex';
+                }
+                if (sectionChat) {
+                    sectionChat.classList.add('welcome-active');
+                    sectionChat.style.display = 'flex';
+                }
+                if (chatInputContainer) {
+                    chatInputContainer.classList.remove('hidden');
+                    chatInputContainer.style.display = 'block';
             }
 
             // Clear inputs
@@ -7251,9 +7302,9 @@
             try {
                 const response = await fetch('/api/export-plus', {
                     method: 'POST',
-                    headers: {
+                    headers: { 
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
+                        'Authorization': `Bearer ${token}` 
                     },
                     body: JSON.stringify({ type, data, filename })
                 });
@@ -7308,7 +7359,7 @@
                 dataToSend.columns = ["Mesaj İçeriği"];
                 dataToSend.rows = lines.filter(l => l.trim() !== "").map(l => [l]);
             }
-
+            
             exportToOffice('excel', dataToSend, 'LifeCoach_Veri.xlsx');
         }
 
@@ -7512,7 +7563,7 @@
 
             const card = document.createElement('div');
             card.className = 'doc-action-card mt-5 p-5 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between group hover:bg-white/[0.08] transition-all animate-fade-in-up';
-
+            
             const iconMap = {
                 'excel': { icon: 'fa-file-excel', color: 'text-green-500', bg: 'bg-green-500/10' },
                 'word': { icon: 'fa-file-word', color: 'text-blue-500', bg: 'bg-blue-500/10' },
@@ -8146,7 +8197,7 @@
             },
             'nl': {
                 'greeting': 'Hoe kan ik je vandaag helpen?',
-                'input_placeholder': 'Vraag LifeCoach AI alles...',
+                'input_placeholder': 'Vraag LifeCoach AI alles...', 
                 'emergency_btn': 'Noodgeval',
                 'tough_love_btn': 'Tough Love',
                 'new_chat': 'Nieuwe chat starten',
@@ -8171,8 +8222,8 @@
 
         let userLanguage = navigator.language.split('-')[0] || 'en';
         // Özel dil eşleşmeleri
-        if (navigator.language === 'zh-TW') userLanguage = 'zh';
-        if (!TRANSLATIONS[userLanguage]) userLanguage = 'en';
+        if (navigator.language === 'zh-TW') userLanguage = 'zh'; 
+        if (!TRANSLATIONS[userLanguage]) userLanguage = 'en'; 
 
         function applyTranslations() {
             const lang = TRANSLATIONS[userLanguage];
@@ -8359,7 +8410,7 @@
 
             // Initialize Notifications
             initializeNotifications();
-
+            
             applyTranslations(); // Dil ayarlarını uygula
             let isDeepSearch = false;
             let attachedFiles = [];
@@ -8880,11 +8931,11 @@
                     // "Tamamla" butonu aktiflik kontrolü - Kullanıcı isteği: Süre bitene kadar gösterme/aktif etme
                     const targetDate = goal.targetDate ? new Date(goal.targetDate) : null;
                     const isTimeUp = targetDate ? targetDate <= new Date() : false; // Süre yoksa false varsayıyoruz ki sadece süreli hedefler bitsin
-
+                    
                     const canComplete = isTimeUp && goal.status !== 'completed';
-
-                    const completeBtnClass = canComplete
-                        ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
+                    
+                    const completeBtnClass = canComplete 
+                        ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30' 
                         : 'hidden'; // Kullanıcı "süresi bittiği zaman göstersin" dediği için hidden yapıyoruz
                     const completeAction = canComplete ? `onclick="completeGoal('${goal.id}')"` : '';
 
@@ -9067,7 +9118,7 @@
                     loadGoals();
                     closeGoalSuccessModal();
                     showToast('Hedef başarıyla tamamlandı ve notun kaydedildi! ✨');
-
+                    
                     // Open AI Certificate
                     setTimeout(() => openCertificate(title), 800);
                 } catch (err) {
@@ -10259,16 +10310,16 @@
                     selectedCard.querySelector('.persona-check').classList.remove('hidden');
                     selectedCard.querySelector('.persona-check').classList.add('flex');
                     
-                    // Show banner
-                    const banner = document.getElementById('current-persona-banner');
+                // Show banner
+                const banner = document.getElementById('current-persona-banner');
                     if (banner) {
-                        banner.classList.remove('hidden');
-                        banner.style.background = p.color;
-                        banner.style.borderColor = p.border;
-                        document.getElementById('persona-banner-icon').textContent = p.emoji;
-                        document.getElementById('persona-banner-name').textContent = p.name;
-                        document.getElementById('persona-banner-desc').textContent = p.prompt.substring(0, 80) + '...';
-                    }
+                    banner.classList.remove('hidden');
+                    banner.style.background = p.color;
+                    banner.style.borderColor = p.border;
+                    document.getElementById('persona-banner-icon').textContent = p.emoji;
+                    document.getElementById('persona-banner-name').textContent = p.name;
+                    document.getElementById('persona-banner-desc').textContent = p.prompt.substring(0, 80) + '...';
+                }
                 }
                 
                 // Backend Sync
@@ -10526,7 +10577,7 @@
                 if (xpData.history.length > 50) xpData.history = xpData.history.slice(0, 50);
                 localStorage.setItem('lifecoach_xp', JSON.stringify(xpData));
                 checkBadges();
-
+                
                 // Sync with Supabase if user is logged in
                 const token = localStorage.getItem('token');
                 if (token) {
@@ -10538,15 +10589,15 @@
                         },
                         body: JSON.stringify({ xpGained: amount, reason })
                     }).then(response => response.json())
-                        .then(data => {
-                            if (data.success && data.levelUp) {
-                                showToast(`🎉 LEVEL UP! Seviye ${data.updatedStats.level}!`);
-                            }
-                        }).catch(error => {
-                            console.error('Supabase sync error:', error);
-                        });
+                    .then(data => {
+                        if (data.success && data.levelUp) {
+                            showToast(`🎉 LEVEL UP! Seviye ${data.updatedStats.level}!`);
+                        }
+                    }).catch(error => {
+                        console.error('Supabase sync error:', error);
+                    });
                 }
-
+                
                 // Update nav badge
                 const levelInfo = getLevelInfo(xpData.total);
                 const navBadge = document.getElementById('xp-badge-nav');
@@ -10669,12 +10720,12 @@
                     if (!xpData.history.length) { 
                         histEl.innerHTML = '<p class="text-slate-500 text-sm text-center py-4">Henüz XP kazanımı yok</p>'; 
                     } else {
-                        histEl.innerHTML = xpData.history.slice(0, 10).map(h => `
-                            <div class="flex items-center justify-between px-3 py-2 bg-white/5 rounded-xl border border-white/10">
-                                <span class="text-sm text-slate-300">${h.reason}</span>
-                                <span class="text-sm font-bold text-yellow-400">+${h.amount} XP</span>
-                            </div>
-                        `).join('');
+                    histEl.innerHTML = xpData.history.slice(0, 10).map(h => `
+                        <div class="flex items-center justify-between px-3 py-2 bg-white/5 rounded-xl border border-white/10">
+                            <span class="text-sm text-slate-300">${h.reason}</span>
+                            <span class="text-sm font-bold text-yellow-400">+${h.amount} XP</span>
+                        </div>
+                    `).join('');
                     }
                 }
                 checkBadges();
@@ -10887,10 +10938,10 @@
                 statusText.innerText = "Waffle fırında pişiyor...";
                 statusSub.innerText = `${FLAME_COST} alev seviyesi harcandı. Isı ayarlanıyor, malzemeler karıştırılıyor...`;
 
-                try {
-                    const seed = Math.floor(Math.random() * 999999);
-                    const encodedPrompt = encodeURIComponent(prompt + ", visually stunning, 8k resolution, masterpiece, highly detailed, sharp focus");
-                    const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true&enhance=true&seed=${seed}`;
+                    try {
+                        const seed = Math.floor(Math.random() * 999999);
+                        const encodedPrompt = encodeURIComponent(prompt + ", visually stunning, 8k resolution, masterpiece, highly detailed, sharp focus");
+                        const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true&enhance=true&seed=${seed}`;
 
                     // Phase 1: Baking (2 seconds)
                     await new Promise(r => setTimeout(r, 2000));
@@ -10911,17 +10962,17 @@
                     <div class="relative group rounded-3xl overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.5)] border border-orange-500/20 transform transition duration-500 hover:scale-[1.02] animate-fade-in">
                         <div class="absolute inset-0 bg-slate-800 animate-pulse -z-10"></div>
                         <img src="${imageUrl}" class="w-full h-auto min-h-[300px] object-cover" alt="${prompt}" onload="this.classList.add('loaded')">
-                        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-5 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                             <div class="translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-5 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                <div class="translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
                                 <p class="text-white text-[10px] mb-4 line-clamp-2 italic opacity-80">${prompt}</p>
-                                <div class="flex gap-2">
+                                    <div class="flex gap-2">
                                     <a href="${imageUrl}" target="_blank" class="flex-1 text-center py-2 bg-amber-500 text-amber-950 font-bold rounded-xl text-xs hover:bg-amber-400 transition-all flex items-center justify-center gap-2">
-                                        <i class="fa-solid fa-download"></i> İndir
-                                    </a>
+                                            <i class="fa-solid fa-download"></i> İndir
+                                        </a>
+                                    </div>
                                 </div>
-                             </div>
-                        </div>
-                    </div>`;
+                            </div>
+                        </div>`;
 
                     galleryEl.insertAdjacentHTML('afterbegin', imageCard);
 
@@ -10931,13 +10982,13 @@
                     localStorage.setItem('waffle-history', JSON.stringify(history.slice(0, 30)));
 
                     showToast('🧇 Mis gibi Waffle hazır! Afiyet olsun.');
-                    if (typeof addXP !== 'undefined') addXP(15, 'Görsel üretildi');
-                    promptEl.value = '';
+                        if (typeof addXP !== 'undefined') addXP(15, 'Görsel üretildi');
+                        promptEl.value = '';
 
-                } catch (e) {
+                    } catch (e) {
                     loadingEl.classList.add('hidden');
-                    showToast('Waffle fırında yandı! Lütfen tekrar deneyin.', 'error');
-                }
+                        showToast('Waffle fırında yandı! Lütfen tekrar deneyin.', 'error');
+                    }
             }
 
             function loadWaffleHistory() {
@@ -11868,9 +11919,9 @@
                                 key={item.id}
                                 onClick={() => handleClick(item.id)}
                                 className={`flex flex-col items-center justify-center transition-all duration-500 relative ${item.primary
-                                    ? 'w-14 h-14 -mt-10 bg-gradient-to-br from-teal-500 to-emerald-600 rounded-2xl shadow-xl shadow-teal-500/40 text-white ring-4 ring-[#0F172A]/50'
-                                    : 'w-12 h-12'
-                                    } ${active === item.id && !item.primary ? 'text-teal-400' : 'text-slate-400'}`}
+                                        ? 'w-14 h-14 -mt-10 bg-gradient-to-br from-teal-500 to-emerald-600 rounded-2xl shadow-xl shadow-teal-500/40 text-white ring-4 ring-[#0F172A]/50' 
+                                        : 'w-12 h-12'
+                                } ${active === item.id && !item.primary ? 'text-teal-400' : 'text-slate-400'}`}
                             >
                                 <i className={`fa-solid ${item.icon} ${item.primary ? 'text-xl animate-pulse' : 'text-lg'}`}></i>
                                 {!item.primary && <span className="text-[9px] mt-1 font-bold uppercase tracking-tighter opacity-80">{item.label}</span>}
@@ -11888,7 +11939,7 @@
         const DashboardHeader = () => {
             const [xp, setXp] = React.useState(0);
             const [level, setLevel] = React.useState(1);
-
+            
             React.useEffect(() => {
                 const updateXp = () => {
                     // Try global state first (updated by loadDashboard), then localStorage
@@ -11897,9 +11948,9 @@
                         setXp(globalStats.xp || 0);
                         setLevel(globalStats.level || 1);
                     } else {
-                        const badge = JSON.parse(localStorage.getItem('lifecoach-badge-status') || '{}');
-                        setXp(badge.xp || 0);
-                        setLevel(badge.level || 1);
+                    const badge = JSON.parse(localStorage.getItem('lifecoach-badge-status') || '{}');
+                    setXp(badge.xp || 0);
+                    setLevel(badge.level || 1);
                     }
                 };
                 updateXp();
@@ -12025,11 +12076,11 @@
                         <div className="flex items-center gap-4">
                             <div className="w-12 h-12 rounded-xl bg-cyan-500/20 flex items-center justify-center">
                                 <i className="fa-solid fa-microchip text-cyan-400 text-xl animate-spin"></i>
-                            </div>
+                        </div>
                             <div>
                                 <div className="h-4 bg-white/10 rounded w-32 mb-2"></div>
                                 <div className="h-3 bg-white/5 rounded w-48"></div>
-                            </div>
+                    </div>
                         </div>
                     </div>
                 );
@@ -12065,13 +12116,13 @@
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-xl bg-cyan-500/20 flex items-center justify-center border border-cyan-500/30">
                                     <i className={`fa-solid fa-microchip text-cyan-400`}></i>
-                                </div>
-                                <div>
+                            </div>
+                            <div>
                                     <span className="text-[10px] font-black text-cyan-400 uppercase tracking-widest">SYSTEM PRIORITY</span>
                                     <h3 className="text-lg font-bold text-white">{p.title}</h3>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2">
                                 {p.difficulty && (
                                     <span className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase ${p.difficulty === 'easy' ? 'bg-emerald-500/20 text-emerald-400' :
                                         p.difficulty === 'medium' ? 'bg-amber-500/20 text-amber-400' :
@@ -12083,8 +12134,8 @@
                                 <span className="px-2 py-1 rounded-lg bg-cyan-500/20 text-cyan-400 text-[10px] font-bold">
                                     +{p.xpReward || 5} XP
                                 </span>
+                                </div>
                             </div>
-                        </div>
 
                         {/* Description */}
                         <p className="text-slate-300 text-sm mb-4">{p.description}</p>
@@ -12094,7 +12145,7 @@
                             <div className="flex items-start gap-2 mb-4 p-3 bg-white/5 rounded-xl border border-white/10">
                                 <i className="fa-solid fa-lightbulb text-amber-400 text-sm mt-0.5"></i>
                                 <p className="text-xs text-slate-400">{p.reasoning}</p>
-                            </div>
+                        </div>
                         )}
 
                         {/* Meta info */}
@@ -12110,7 +12161,7 @@
                                     <i className="fa-solid fa-fire"></i> +{p.flameReward} Alev
                                 </span>
                             )}
-                        </div>
+                            </div>
 
                         {/* Suggestions */}
                         {priority.suggestions && priority.suggestions.length > 0 && (
@@ -12119,9 +12170,9 @@
                                     <div key={idx} className="flex items-center gap-2 text-xs text-slate-400">
                                         <i className="fa-solid fa-check text-teal-400"></i>
                                         <span>{suggestion}</span>
-                                    </div>
+                        </div>
                                 ))}
-                            </div>
+                    </div>
                         )}
 
                         {/* Action Button */}
@@ -12172,14 +12223,14 @@
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-sm font-semibold text-white">Seviye {stats.level}</span>
                             <span className="text-xs text-slate-400">{xpProgress}/100 XP</span>
-                        </div>
+                                    </div>
                         <div className="w-full bg-white/5 rounded-full h-3 overflow-hidden border border-white/10">
                             <div
                                 className="bg-gradient-to-r from-blue-500 to-cyan-400 h-full transition-all duration-300 rounded-full"
                                 style={{ width: `${xpProgress}%` }}
                             ></div>
-                        </div>
-                    </div>
+                                </div>
+                                </div>
 
                     {/* Stats Grid */}
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-2 animate-fade-in">
@@ -12187,13 +12238,13 @@
                             <div key={idx} className={`bg-gradient-to-br ${item.color} border border-white/10 rounded-2xl p-5 backdrop-blur-md hover:scale-[1.02] transition-all group cursor-default shadow-lg`}>
                                 <div className={`w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center mb-3 ${item.iconColor} group-hover:scale-110 transition-transform shadow-inner`}>
                                     <i className={`fa-solid ${item.icon} text-base`}></i>
-                                </div>
+                            </div>
                                 <div className="text-3xl font-black text-white tracking-tighter mb-1.5">{item.value}</div>
                                 <div className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">{item.label}</div>
-                            </div>
+                                </div>
                         ))}
-                    </div>
-                </div>
+                                    </div>
+                                    </div>
             );
         };
 
@@ -12225,8 +12276,8 @@
                             <div>
                                 <p style="font-size: 0.875rem; font-weight: 900; color: white; text-transform: uppercase; margin: 0;">${entry.username}</p>
                                 <p style="font-size: 0.625rem; color: #9ca3af; font-weight: 900; margin: 0;">Level ${entry.level}</p>
+                                </div>
                             </div>
-                        </div>
                         <div style="text-align: right;">
                             <p style="font-size: 0.875rem; font-weight: 900; color: white; margin: 0;">${entry.total_xp.toLocaleString()} XP</p>
                         </div>
@@ -12238,12 +12289,12 @@
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
                             <div style="width: 40px; height: 40px; border-radius: 0.75rem; background: rgba(59, 130, 246, 0.2); display: flex; align-items: center; justify-content: center; color: #3b82f6; font-size: 1rem;">
                                 <i class="fa-solid ${ch.icon}"></i>
-                            </div>
+                                        </div>
                             <span style="font-size: 0.625rem; font-weight: 900; color: #3b82f6; text-transform: uppercase; letter-spacing: 0.05em; background: rgba(59, 130, 246, 0.1); padding: 0.25rem 0.5rem; border-radius: 0.5rem;">+${ch.xp} XP</span>
-                        </div>
+                                    </div>
                         <span style="font-size: 0.8125rem; font-weight: 900; color: white; text-transform: uppercase; letter-spacing: 0.025em; display: block; margin-bottom: 0.25rem;">${ch.title}</span>
                         <p style="font-size: 0.625rem; color: #9ca3af; font-weight: 500; margin: 0; line-height: 1.5;">${ch.desc}</p>
-                    </div>
+                                </div>
                 `).join('');
 
                 const html = `
@@ -12252,15 +12303,15 @@
                             <div style="display: flex; align-items: center; gap: 1.25rem;">
                                 <div style="width: 64px; height: 64px; border-radius: 1rem; background: linear-gradient(135deg, #ef4444 0%, #ea580c 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 30px rgba(239, 68, 68, 0.3);">
                                     <i class="fa-solid fa-fire-flame-curved" style="font-size: 1.875rem; color: white;"></i>
-                                </div>
+                                                </div>
                                 <div>
                                     <h2 style="font-size: 2.25rem; font-weight: 900; color: white; text-transform: uppercase; letter-spacing: 0.025em; margin: 0 0 0.5rem 0;">AI ARENA</h2>
                                     <div style="display: flex; align-items: center; gap: 0.5rem;">
                                         <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981;"></span>
                                         <p style="font-size: 0.6875rem; font-weight: 900; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; margin: 0;">${leaderboardData.length} Aktif Yarışmacı</p>
-                                    </div>
-                                </div>
-                            </div>
+                                                </div>
+                                            </div>
+                                            </div>
                             <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 1rem; padding: 1.5rem; backdrop-filter: blur(10px);">
                                 <p style="font-size: 0.625rem; font-weight: 900; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 0.5rem 0; opacity: 0.6;">Mevcut Sıralaman</p>
                                 <div style="display: flex; align-items: baseline; gap: 0.5rem;">
@@ -12277,13 +12328,13 @@
                                         <h3 style="font-size: 1.25rem; font-weight: 900; color: white; display: flex; align-items: center; gap: 0.75rem; margin: 0;">
                                             <div style="width: 40px; height: 40px; border-radius: 0.75rem; background: rgba(20, 184, 166, 0.2); display: flex; align-items: center; justify-content: center;">
                                                 <i class="fa-solid fa-ranking-star" style="color: #14b8a6; font-size: 0.875rem;"></i>
-                                            </div>
-                                            Global Liderler
-                                        </h3>
                                     </div>
+                                            Global Liderler
+                                </h3>
+                                                </div>
                                     <div style="display: flex; flex-direction: column; gap: 1rem;">
                                         ${leaderboardHtml}
-                                    </div>
+                                            </div>
                                 </div>
                             </div>
 
@@ -12292,9 +12343,9 @@
                                     <h3 style="font-size: 1.25rem; font-weight: 900; color: white; margin: 0 0 1.5rem 0;">Aktif Görevler</h3>
                                     <div style="display: flex; flex-direction: column; gap: 1rem;">
                                         ${challengeHtml}
-                                    </div>
-                                </div>
-                            </div>
+                        </div>
+                    </div>
+                </div>
                         </div>
                     </div>
                 `;
@@ -12315,27 +12366,27 @@
         // Mount all components
         window.addEventListener('DOMContentLoaded', () => {
             try {
-                const statsRoot = ReactDOM.createRoot(document.getElementById('react-goals-stats-root'));
-                statsRoot.render(<GoalStats />);
+        const statsRoot = ReactDOM.createRoot(document.getElementById('react-goals-stats-root'));
+        statsRoot.render(<GoalStats />);
 
-                const navRoot = ReactDOM.createRoot(document.getElementById('react-mobile-nav-root'));
-                navRoot.render(<BottomNav />);
+        const navRoot = ReactDOM.createRoot(document.getElementById('react-mobile-nav-root'));
+        navRoot.render(<BottomNav />);
 
-                const dashHeaderRoot = ReactDOM.createRoot(document.getElementById('react-dashboard-header-root'));
-                dashHeaderRoot.render(<DashboardHeader />);
+        const dashHeaderRoot = ReactDOM.createRoot(document.getElementById('react-dashboard-header-root'));
+        dashHeaderRoot.render(<DashboardHeader />);
 
                 // Life OS System Priority Widget
                 const systemPriorityRoot = ReactDOM.createRoot(document.getElementById('react-system-priority-root'));
                 systemPriorityRoot.render(<SystemPriorityWidget />);
 
-                const dashStatsRoot = ReactDOM.createRoot(document.getElementById('react-dashboard-stats-root'));
-                dashStatsRoot.render(<DashboardStats />);
+        const dashStatsRoot = ReactDOM.createRoot(document.getElementById('react-dashboard-stats-root'));
+        dashStatsRoot.render(<DashboardStats />);
 
                 const arenaRootEl = document.getElementById('react-arena-root');
                 if (arenaRootEl) {
                     try {
                         const arenaRoot = ReactDOM.createRoot(arenaRootEl);
-                        arenaRoot.render(<AIArena />);
+        arenaRoot.render(<AIArena />);
                         console.log('AI Arena component mounted successfully');
                     } catch (arenaError) {
                         console.error('Error mounting AI Arena:', arenaError);
@@ -12446,6 +12497,99 @@
                     if (bonusXP > 0) {
                         addXP(bonusXP, 'Mario Oyun Bonusu');
                         showToast(`🎮 Oyun sona erdi! Bonus: +${bonusXP} XP`, 'success');
+                    }
+                }
+            } catch (e) {
+                // Silent fail
+            }
+        }
+
+        // ========== FLIPPER BIRD GAME SYSTEM ==========
+        let flipperBirdGameXPInterval = null;
+        let currentFlipperBirdScore = 0;
+
+        // Open Flipper Bird Game Modal
+        function openFlipperBirdGame() {
+            const modal = document.getElementById('flipper-bird-game-modal');
+            const iframe = document.getElementById('flipper-bird-game-iframe');
+            
+            // Reset tracking
+            currentFlipperBirdScore = 0;
+            
+            // Load the game
+            iframe.src = './games/flipper-bird.html';
+            
+            // Show modal
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            // Start XP tracking (check every 3 seconds for score)
+            startFlipperBirdXPTracking();
+            
+            showToast('🐦 Flipper Bird başladı! İyi eğlenceler!', 'success');
+        }
+
+        // Close Flipper Bird Game Modal
+        function closeFlipperBirdGame() {
+            const modal = document.getElementById('flipper-bird-game-modal');
+            const iframe = document.getElementById('flipper-bird-game-iframe');
+            
+            // Stop XP tracking
+            stopFlipperBirdXPTracking();
+            
+            // Calculate final XP
+            calculateFlipperBirdFinalXP();
+            
+            // Hide modal
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            
+            // Clear iframe
+            iframe.src = 'about:blank';
+        }
+
+        // Start Flipper Bird XP tracking
+        function startFlipperBirdXPTracking() {
+            flipperBirdGameXPInterval = setInterval(() => {
+                try {
+                    const iframe = document.getElementById('flipper-bird-game-iframe');
+                    if (iframe && iframe.contentWindow) {
+                        // Access game variables from iframe
+                        const gameScore = iframe.contentWindow.score || 0;
+                        
+                        // Award XP for score (every 10 points = 1 XP)
+                        const scoreDiff = Math.floor(gameScore / 10) - Math.floor(currentFlipperBirdScore / 10);
+                        if (scoreDiff > 0) {
+                            const xpGain = scoreDiff * 1;
+                            addXP(xpGain, 'Flipper Bird Skor');
+                            currentFlipperBirdScore = gameScore;
+                        }
+                    }
+                } catch (e) {
+                    // Cross-origin or other error - silently ignore
+                }
+            }, 3000);
+        }
+
+        // Stop Flipper Bird XP tracking
+        function stopFlipperBirdXPTracking() {
+            if (flipperBirdGameXPInterval) {
+                clearInterval(flipperBirdGameXPInterval);
+                flipperBirdGameXPInterval = null;
+            }
+        }
+
+        // Calculate final XP when game ends
+        function calculateFlipperBirdFinalXP() {
+            try {
+                const iframe = document.getElementById('flipper-bird-game-iframe');
+                if (iframe && iframe.contentWindow) {
+                    const finalScore = iframe.contentWindow.score || 0;
+                    const finalXP = Math.floor(finalScore / 10);
+                    
+                    if (finalXP > 0) {
+                        addXP(finalXP, 'Flipper Bird Oyun Sonu');
+                        showToast(`🐦 Oyun sona erdi! Toplam: +${finalXP} XP`, 'success');
                     }
                 }
             } catch (e) {

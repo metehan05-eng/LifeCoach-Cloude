@@ -79,6 +79,8 @@ app.use(express.json({ limit: '50mb' }));
 
 // --- AYARLAR ve SABİTLER ---
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const GEMINI_API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash-preview-04-17';
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "GOOGLE_CLIENT_ID_BURAYA";
@@ -96,7 +98,11 @@ if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY && !SUPABASE_URL.includes('YOUR_')
 
 let genAI;
 if (GEMINI_API_KEY) {
-    genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+    genAI = new GoogleGenerativeAI(GEMINI_API_KEY, {
+        apiEndpoint: GEMINI_API_ENDPOINT
+    });
+    console.log(`[AI] Gemini endpoint aktif: ${GEMINI_API_ENDPOINT}`);
+    console.log(`[AI] Varsayılan Gemini modeli: ${GEMINI_MODEL}`);
 }
 
 if (!GEMINI_API_KEY) {
@@ -168,7 +174,7 @@ async function generateAIResponse(prompt, history = []) {
         throw new Error('AI not configured - Gemini/DeepSeek API Key eksik');
     }
 
-    const models = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro-latest"];
+    const models = [GEMINI_MODEL];
     let lastError;
 
     for (const modelName of models) {
@@ -907,9 +913,7 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
         let aiResponse;
         let usedModel;
 
-        const mainModel = "gemini-1.5-pro";
-        const fastModel = "gemini-1.5-flash";
-        const experimentalModel = "gemini-2.0-flash-exp";
+        const primaryModel = GEMINI_MODEL;
 
         // 1. Önce DeepSeek'i dene (Sadece metin mesajları için)
         const hasImage = userMessageParts.some(p => p.inlineData);
@@ -952,25 +956,12 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
             }
 
             try {
-                const result = await callWithRetry(experimentalModel, userMessageParts, finalSystemPrompt, chatHistory);
+                const result = await callWithRetry(primaryModel, userMessageParts, finalSystemPrompt, chatHistory);
                 aiResponse = result.text;
                 usedModel = result.model;
-            } catch (err1) {
-                console.warn(`[AI] ${experimentalModel} başarısız:`, err1.message);
-                try {
-                    const result = await callWithRetry(mainModel, userMessageParts, finalSystemPrompt, chatHistory);
-                    aiResponse = result.text;
-                    usedModel = result.model;
-                } catch (err2) {
-                    console.warn(`[AI] ${mainModel} başarısız:`, err2.message);
-                    try {
-                        const result = await callWithRetry(fastModel, userMessageParts, finalSystemPrompt, chatHistory);
-                        aiResponse = result.text;
-                        usedModel = result.model;
-                    } catch (err3) {
-                        throw new Error("Tüm yapay zeka modelleri başarısız oldu.");
-                    }
-                }
+            } catch (err) {
+                console.warn(`[AI] ${primaryModel} başarısız:`, err.message);
+                throw new Error("Gemini 2.5 modeli başarısız oldu.");
             }
         }
 
@@ -3564,7 +3555,7 @@ app.post('/api/generate-audio', authenticateToken, async (req, res) => {
         console.log(`[Audio] Generating audio for text: ${text.substring(0, 50)}...`);
 
         try {
-            const audioModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+            const audioModel = genAI.getGenerativeModel({ model: GEMINI_MODEL });
 
             const result = await audioModel.generateContent({
                 contents: [{
@@ -3585,7 +3576,7 @@ app.post('/api/generate-audio', authenticateToken, async (req, res) => {
                 return res.json({
                     success: true,
                     audioData: `data:${audioPart.inlineData.mimeType};base64,${audioPart.inlineData.data}`,
-                    model: "gemini-1.5-flash",
+                    model: GEMINI_MODEL,
                     text: text
                 });
             } else {
