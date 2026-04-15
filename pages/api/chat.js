@@ -5,11 +5,13 @@ import { createClient } from '@supabase/supabase-js';
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const GEMINI_API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash-preview-04-17';
 
 let genAI;
 if (GEMINI_API_KEY) {
     genAI = new GoogleGenerativeAI(GEMINI_API_KEY, {
-        apiEndpoint: 'https://generativelanguage.googleapis.com/v1beta'
+        apiEndpoint: GEMINI_API_ENDPOINT
     });
 }
 
@@ -91,13 +93,8 @@ async function callGemini(messages, systemPrompt) {
         throw new Error("GEMINI_API_KEY ayarlanmamış");
     }
 
-    // Gemini modelleri - önce gemini-2.5-flash-preview-04-17 dene
-    const models = [
-        "gemini-2.5-flash-preview-04-17",
-        "gemini-2.0-flash",
-        "gemini-1.5-pro",
-        "gemini-1.5-flash"
-    ];
+    // Gemini modeli: sadece Gemini 2.5
+    const models = [GEMINI_MODEL];
 
     // Mesajları Gemini formatına çevir
     const chatHistory = messages
