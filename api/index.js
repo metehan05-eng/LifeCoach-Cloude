@@ -22,7 +22,7 @@ import bcrypt from 'bcryptjs';
 import mammoth from 'mammoth';
 import xlsx from 'xlsx';
 import * as pdf from 'pdf-parse';
-import { GoogleGenerativeAI } from "@google/generative-ai";
+// OpenRouter API kullanılıyor - Gemini kaldırıldı
 import { OAuth2Client } from 'google-auth-library';
 import { spawn } from 'child_process';
 import fs from 'fs';
@@ -78,14 +78,21 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
 // --- AYARLAR ve SABİTLER ---
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta';
-// Gemini Modelleri - Yedek zincir için öncelik sırasına göre
-const GEMINI_MODELS = [
-    process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite-preview',
-    'gemini-3.1-pro-preview'
+// OpenRouter API Ayarları
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const OPENROUTER_API_ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
+// OpenRouter Modelleri - Yedek zincir için öncelik sırasına göre
+const OPENROUTER_MODELS = [
+    process.env.OPENROUTER_MODEL || 'arcee-ai/trinity-large-preview:free',
+    'nvidia/nemotron-nano-12b-v2-vl:free',
+    'nvidia/nemotron-3-nano-30b-a3b:free',
+    'openai/gpt-oss-120b:free',
+    'openai/gpt-oss-120b:free',
+    'google/gemini-2.0-flash-exp:free'
 ];
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
+const TAVILY_API_KEY = process.env.TAVILY_API_KEY; // Tavily AI arama için
+const POLLINATIONS_API_KEY = process.env.POLLINATIONS_API_KEY; // Pollinations.ai görsel üretim için (opsiyonel)
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "GOOGLE_CLIENT_ID_BURAYA";
 const JWT_SECRET = process.env.JWT_SECRET || 'gizli-anahtar-degistir';
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -99,17 +106,201 @@ if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY && !SUPABASE_URL.includes('YOUR_')
     console.log("📁 Supabase yapılandırılmamış - yerel depolama kullanılıyor");
 }
 
-let genAI;
-if (GEMINI_API_KEY) {
-    genAI = new GoogleGenerativeAI(GEMINI_API_KEY, {
-        apiEndpoint: GEMINI_API_ENDPOINT
-    });
-    console.log(`[AI] Gemini endpoint aktif: ${GEMINI_API_ENDPOINT}`);
-    console.log(`[AI] Varsayılan Gemini modelleri: ${GEMINI_MODELS.join(', ')}`);
+// OpenRouter API yapılandırma kontrolü
+if (OPENROUTER_API_KEY) {
+    console.log(`[AI] OpenRouter endpoint aktif: ${OPENROUTER_API_ENDPOINT}`);
+    console.log(`[AI] Varsayılan OpenRouter modelleri: ${OPENROUTER_MODELS.join(', ')}`);
+} else {
+    console.warn("UYARI: OPENROUTER_API_KEY ayarlanmamış. Sohbet çalışmayabilir.");
 }
 
-if (!GEMINI_API_KEY) {
-    console.warn("UYARI: GEMINI_API_KEY ayarlanmamış. Sohbet çalışmayabilir.");
+// OpenRouter API çağrısı için yardımcı fonksiyon
+async function callOpenRouter(messages, model, systemPrompt = null, temperature = 0.7, maxTokens = 4000) {
+    const response = await fetch(OPENROUTER_API_ENDPOINT, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': 'https://han-ai.dev/',
+            'X-Title': 'Life Coach AI'
+        },
+        body: JSON.stringify({
+            model: model,
+            messages: systemPrompt 
+                ? [{ role: 'system', content: systemPrompt }, ...messages]
+                : messages,
+            temperature: temperature,
+            max_tokens: maxTokens
+        })
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`OpenRouter API hatası: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    return {
+        text: data.choices[0]?.message?.content || '',
+        model: model,
+        usage: data.usage
+    };
+}
+
+// ── Tavily AI Search Helper ──────────────────────────────
+async function searchTavily(query, numResults = 5) {
+    if (!TAVILY_API_KEY) {
+        console.warn('[TavilySearch] TAVILY_API_KEY ayarlanmamış');
+        return null;
+    }
+    
+    try {
+        const response = await fetch('https://api.tavily.com/search', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${TAVILY_API_KEY}`
+            },
+            body: JSON.stringify({
+                query: query,
+                search_depth: 'advanced',
+                max_results: numResults,
+                include_answer: true,
+                include_images: false,
+                include_raw_content: false
+            })
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('[TavilySearch] API error:', response.status, errorText);
+            return null;
+        }
+        
+        const data = await response.json();
+        
+        // Tavily sonuçlarını formatla
+        const results = [];
+        
+        // AI generated answer varsa ekle (öne çıkan bilgi gibi)
+        if (data.answer) {
+            results.push({
+                title: 'Özet Cevap',
+                snippet: data.answer,
+                isFeatured: true
+            });
+        }
+        
+        // Arama sonuçlarını ekle
+        if (data.results && data.results.length > 0) {
+            for (const result of data.results.slice(0, numResults)) {
+                results.push({
+                    title: result.title,
+                    link: result.url,
+                    snippet: result.content || result.snippet || ''
+                });
+            }
+        }
+        
+        console.log(`[TavilySearch] "${query}" için ${results.length} sonuç bulundu`);
+        return results;
+        
+    } catch (err) {
+        console.error('[TavilySearch] Arama hatası:', err.message);
+        return null;
+    }
+}
+
+// Arama sonuçlarını AI promptuna formatla
+function formatSearchResultsForAI(results, query) {
+    if (!results || results.length === 0) {
+        return '';
+    }
+    
+    let formatted = `\n\n--- İNTERNET ARAMA SONUÇLARI: "${query}" ---\n\n`;
+    
+    results.forEach((result, index) => {
+        if (result.isFeatured) {
+            formatted += `[ÖNE ÇIKAN BİLGİ]\n${result.snippet}\n\n`;
+        } else {
+            formatted += `[${index + 1}] ${result.title}\n`;
+            formatted += `Kaynak: ${result.displayUrl || result.link}\n`;
+            formatted += `Özet: ${result.snippet}\n\n`;
+        }
+    });
+    
+    formatted += '--- ARAMA SONUÇLARI BİTTİ ---\n';
+    formatted += 'NOT: Yukarıdaki arama sonuçlarını kullanarak en güncel ve doğru bilgiyi ver.\n\n';
+    
+    return formatted;
+}
+
+// ── Pollinations.ai Görsel Üretim Helper ──────────────────────────────
+async function generateImage(prompt, options = {}) {
+    const {
+        width = 1024,
+        height = 1024,
+        model = 'flux-schnell',
+        seed = null,
+        nologo = true
+    } = options;
+    
+    try {
+        // URL'yi oluştur - Pollinations.ai formatı
+        const encodedPrompt = encodeURIComponent(prompt);
+        let url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${width}&height=${height}&model=${model}`;
+        
+        if (seed) url += `&seed=${seed}`;
+        if (nologo) url += `&nologo=true`;
+        if (POLLINATIONS_API_KEY) url += `&key=${POLLINATIONS_API_KEY}`;
+        
+        console.log(`[Pollinations] Görsel üretiliyor: ${model}, ${width}x${height}`);
+        
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Accept': 'image/*, application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Pollinations API hatası: ${response.status} - ${errorText}`);
+        }
+        
+        // Görseli base64 olarak al
+        const imageBuffer = await response.arrayBuffer();
+        const base64Image = Buffer.from(imageBuffer).toString('base64');
+        const contentType = response.headers.get('content-type') || 'image/jpeg';
+        
+        console.log(`[Pollinations] Görsel başarıyla üretildi (${(imageBuffer.byteLength / 1024).toFixed(1)} KB)`);
+        
+        return {
+            success: true,
+            base64: base64Image,
+            contentType: contentType,
+            dataUrl: `data:${contentType};base64,${base64Image}`,
+            prompt: prompt,
+            model: model
+        };
+        
+    } catch (err) {
+        console.error('[Pollinations] Görsel üretim hatası:', err.message);
+        return {
+            success: false,
+            error: err.message
+        };
+    }
+}
+
+// Hedef için görsel promptu oluştur
+function generateGoalImagePrompt(title, description) {
+    const cleanTitle = title.replace(/[^a-zA-Z0-9\s\u00C0-\u017F]/g, '').trim();
+    const cleanDesc = (description || '').replace(/[^a-zA-Z0-9\s\u00C0-\u017F]/g, '').trim();
+    
+    return `A beautiful, inspiring illustration representing: ${cleanTitle}. ${cleanDesc}. 
+    Professional artwork, clean composition, warm colors, motivational theme, 
+    modern digital art style, high quality, no text, no watermarks.`;
 }
 
 // ── YouTube Data API v3 Search Helper ──────────────────────────────
@@ -138,48 +329,39 @@ async function searchYouTubeVideo(query) {
     return null;
 }
 
-// Helper function to generate AI response for goals briefing
+// Helper function to generate AI response for goals briefing - OpenRouter
 async function generateAIResponse(prompt, history = []) {
-    // Gemini modellerini dene (Pro önce, sonra Flash Lite)
-    if (!genAI) {
-        throw new Error('AI not configured - Gemini API Key eksik');
+    // OpenRouter modellerini dene
+    if (!OPENROUTER_API_KEY) {
+        throw new Error('AI not configured - OpenRouter API Key eksik');
     }
 
     let lastError;
     let systemInstruction = "Sen Türkçe içerik üreten uzman bir eğitim koçusun.";
-    const filteredHistory = [];
+    const messages = [];
 
+    // History'yi OpenRouter formatına çevir
     for (const msg of history) {
         if (msg.role === 'system') {
             systemInstruction = msg.content;
         } else {
-            filteredHistory.push({
-                role: msg.role === 'assistant' ? 'model' : 'user',
-                parts: [{ text: msg.content }]
+            messages.push({
+                role: msg.role === 'assistant' ? 'assistant' : 'user',
+                content: msg.content
             });
         }
     }
 
-    for (const modelName of GEMINI_MODELS) {
+    // Son kullanıcı mesajını ekle
+    messages.push({ role: 'user', content: prompt });
+
+    // Modelleri sırayla dene
+    for (const modelName of OPENROUTER_MODELS) {
         try {
-            console.log(`[AI-Status] Gemini deneniyor: ${modelName}`);
-
-            const modelConfig = {
-                model: modelName,
-                generationConfig: { temperature: 0.7, maxOutputTokens: 2000 }
-            };
-            if (systemInstruction) modelConfig.systemInstruction = systemInstruction;
-
-            const model = genAI.getGenerativeModel(modelConfig);
-            const chatHistory = filteredHistory.map(msg => ({
-                role: msg.role,
-                parts: msg.parts
-            }));
-
-            const chat = model.startChat({ history: chatHistory });
-            const result = await chat.sendMessage(prompt);
+            console.log(`[AI-Status] OpenRouter deneniyor: ${modelName}`);
+            const result = await callOpenRouter(messages, modelName, systemInstruction, 0.7, 2000);
             console.log(`[AI-Status] ${modelName} yanıtı başarılı.`);
-            return result.response.text();
+            return result.text;
         } catch (error) {
             console.warn(`[AI-Status] ${modelName} başarısız:`, error.message);
             lastError = error;
@@ -200,40 +382,35 @@ const RATE_LIMIT_CONFIG = {
 // In-memory store for rate limiting
 const messageStore = new Map();
 
-// --- GEMINI HELPER ---
-async function callGeminiWithFallback(prompt, history = [], systemPrompt = "") {
-    if (!genAI) {
-        throw new Error('AI not configured - Gemini API Key eksik');
+// --- OPENROUTER HELPER ---
+async function callOpenRouterWithFallback(prompt, history = [], systemPrompt = "") {
+    if (!OPENROUTER_API_KEY) {
+        throw new Error('AI not configured - OpenRouter API Key eksik');
     }
 
     let lastError;
+    const messages = [];
 
-    for (const modelName of GEMINI_MODELS) {
+    // History'yi OpenRouter formatına çevir
+    for (const msg of history) {
+        if (msg.role !== 'system') {
+            messages.push({
+                role: msg.role === 'assistant' ? 'assistant' : 'user',
+                content: msg.content
+            });
+        }
+    }
+
+    // Prompt'u son mesaj olarak ekle
+    messages.push({ role: 'user', content: prompt });
+
+    // Modelleri sırayla dene
+    for (const modelName of OPENROUTER_MODELS) {
         try {
-            console.log(`[AI-Briefing] Gemini deneniyor: ${modelName}`);
-
-            let systemInstruction = systemPrompt;
-            const filteredGeminiHistory = [];
-            for (const msg of history) {
-                if (msg.role === 'system') systemInstruction = msg.content;
-                else filteredGeminiHistory.push(msg);
-            }
-
-            const modelConfig = {
-                model: modelName,
-                generationConfig: { temperature: 0.7, maxOutputTokens: 2000 }
-            };
-            if (systemInstruction) modelConfig.systemInstruction = systemInstruction;
-
-            const model = genAI.getGenerativeModel(modelConfig);
-            const chatHistory = filteredGeminiHistory.map(msg => ({
-                role: msg.role === 'assistant' ? 'model' : 'user',
-                parts: [{ text: msg.content }]
-            }));
-
-            const chat = model.startChat({ history: chatHistory });
-            const result = await chat.sendMessage(prompt);
-            return result.response.text();
+            console.log(`[AI-Briefing] OpenRouter deneniyor: ${modelName}`);
+            const result = await callOpenRouter(messages, modelName, systemPrompt, 0.7, 2000);
+            console.log(`[AI-Briefing] ${modelName} başarılı.`);
+            return result.text;
         } catch (error) {
             console.warn(`[AI-Briefing] ${modelName} başarısız:`, error.message);
             lastError = error;
@@ -894,28 +1071,53 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
             userMessageParts.unshift({ text: userTextMessage }); // Metni her zaman başa koy
         }
 
-        // --- AI Model Logic (DeepSeek First, Gemini Fallback) ---
+        // --- GOOGLE ARAMA (Bilgi gerektiren sorular için) ---
+        let searchContext = '';
+        const lastMessageText = userMessageParts.map(p => p.text || '').join(' ');
+        
+        // Bilgi gerektiren soru olup olmadığını kontrol et
+        const isInformationalQuery = /^(ne|nedir|nasıl|kim|hangi|neden|niçin|kaç|ne zaman|nerede|nereden|Örnek|Açıkla|Detaylandır|Anlat)/i.test(lastMessageText) ||
+                                     lastMessageText.length > 20;
+        
+        if (isInformationalQuery && TAVILY_API_KEY) {
+            try {
+                // Arama sorgusu oluştur (kullanıcı mesajını temizle)
+                let searchQuery = lastMessageText
+                    .replace(/[?!.].*$/g, '') // Soru işareti ve sonrasını kaldır
+                    .substring(0, 100) // Max 100 karakter
+                    .trim();
+                
+                if (searchQuery.length > 10) {
+                    console.log(`[TavilySearch] Chat için arama yapılıyor: "${searchQuery}"`);
+                    const searchResults = await searchTavily(searchQuery, 5);
+                    
+                    if (searchResults && searchResults.length > 0) {
+                        searchContext = formatSearchResultsForAI(searchResults, searchQuery);
+                        console.log(`[TavilySearch] ${searchResults.length} sonuç bulundu ve prompt'a eklendi`);
+                    }
+                }
+            } catch (searchErr) {
+                console.warn('[TavilySearch] Arama hatası (görmezden geliniyor):', searchErr.message);
+            }
+        }
+
+        // --- AI Model Logic (OpenRouter) ---
         let aiResponse;
         let usedModel;
 
-        // Gemini modellerini dene - Yedek zincir ile
-        async function callWithRetry(modelName, parts, systemPrompt, history, maxRetries = 2) {
+        // OpenRouter modellerini dene - Yedek zincir ile
+        async function callOpenRouterWithRetry(modelName, messages, systemPrompt, maxRetries = 2) {
             let attempt = 0;
             while (attempt <= maxRetries) {
                 try {
-                    console.log(`[AI] Gemini deneniyor: ${modelName} (Deneme ${attempt + 1})`);
-                    const model = genAI.getGenerativeModel({ model: modelName, systemInstruction: systemPrompt });
-                    const chat = model.startChat({
-                        history: history,
-                        generationConfig: { maxOutputTokens: 4000, temperature: 0.7 }
-                    });
-                    const result = await chat.sendMessage(parts);
-                    return { text: result.response.text(), model: modelName };
+                    console.log(`[AI] OpenRouter deneniyor: ${modelName} (Deneme ${attempt + 1})`);
+                    const result = await callOpenRouter(messages, modelName, systemPrompt, 0.7, 4000);
+                    return { text: result.text, model: modelName };
                 } catch (error) {
                     const isRateLimit = error.message?.includes('429') || error.status === 429;
                     if (isRateLimit && attempt < maxRetries) {
                         const waitTime = Math.pow(2, attempt) * 2000;
-                        console.warn(`[AI] Gemini kota doldu, bekleniyor...`);
+                        console.warn(`[AI] OpenRouter rate limit, bekleniyor...`);
                         await new Promise(resolve => setTimeout(resolve, waitTime));
                         attempt++;
                         continue;
@@ -925,19 +1127,39 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
             }
         }
 
+        // Chat history'yi OpenRouter formatına çevir
+        const openRouterMessages = [];
+        for (const msg of chatHistory) {
+            if (msg.role === 'user' || msg.role === 'assistant') {
+                openRouterMessages.push({
+                    role: msg.role === 'assistant' ? 'assistant' : 'user',
+                    content: msg.parts.map(p => p.text || '').join(' ')
+                });
+            }
+        }
+        // Son kullanıcı mesajını ekle (metin içeriği) + arama sonuçları varsa ekle
+        let lastUserContent = userMessageParts.map(p => p.text || '').join(' ');
+        
+        // Eğer Google arama sonuçları varsa, kullanıcı mesajına ekle
+        if (searchContext) {
+            lastUserContent = lastUserContent + searchContext;
+        }
+        
+        openRouterMessages.push({ role: 'user', content: lastUserContent });
+
         // Önce ana modeli dene, başarısız olursa yedek modeli dene
         let triedModels = [];
-        for (const modelName of GEMINI_MODELS) {
+        for (const modelName of OPENROUTER_MODELS) {
             triedModels.push(modelName);
             try {
-                const result = await callWithRetry(modelName, userMessageParts, finalSystemPrompt, chatHistory);
+                const result = await callOpenRouterWithRetry(modelName, openRouterMessages, finalSystemPrompt);
                 aiResponse = result.text;
                 usedModel = result.model;
                 break; // Başarılı, döngüden çık
             } catch (err) {
                 console.warn(`[AI] ${modelName} başarısız:`, err.message);
-                if (triedModels.length === GEMINI_MODELS.length) {
-                    throw new Error("Tüm Gemini modelleri başarısız oldu.");
+                if (triedModels.length === OPENROUTER_MODELS.length) {
+                    throw new Error("Tüm OpenRouter modelleri başarısız oldu.");
                 }
             }
         }
@@ -1865,12 +2087,31 @@ app.post('/api/goals', authenticateToken, async (req, res) => {
             aiDetails = "Analiz şu an yapılamıyor, ancak hedefiniz kaydedildi.";
         }
 
+        // ── Pollinations.ai ile Görsel Üret (Arka planda)
+        let goalImage = null;
+        try {
+            const imagePrompt = generateGoalImagePrompt(title, description);
+            const imageResult = await generateImage(imagePrompt, {
+                width: 1024,
+                height: 1024,
+                model: 'flux-schnell'
+            });
+            
+            if (imageResult.success) {
+                goalImage = imageResult.dataUrl;
+                console.log(`[Pollinations] Hedef görseli oluşturuldu: ${title}`);
+            }
+        } catch (imgErr) {
+            console.warn('[Pollinations] Görsel üretim hatası (devam ediliyor):', imgErr.message);
+        }
+
         const newGoal = {
             id: Date.now().toString(),
             title,
             type,
             description: description || '',
             aiDetails: aiDetails,
+            image: goalImage, // Pollinations.ai görseli
             progress: 0,
             status: 'in-progress',
             targetDate: targetDate || null,
@@ -2078,6 +2319,45 @@ app.delete('/api/goals', authenticateToken, async (req, res) => {
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ error: 'Silme hatası' });
+    }
+});
+
+// --- GOAL IMAGE GENERATION API ---
+app.post('/api/goals/generate-image', authenticateToken, async (req, res) => {
+    try {
+        const { title, description } = req.body;
+        
+        if (!title) {
+            return res.status(400).json({ error: 'Hedef başlığı gereklidir' });
+        }
+        
+        // Görsel promptunu oluştur
+        const imagePrompt = generateGoalImagePrompt(title, description);
+        
+        // Pollinations.ai ile görsel üret
+        const imageResult = await generateImage(imagePrompt, {
+            width: 1024,
+            height: 1024,
+            model: 'flux-schnell'
+        });
+        
+        if (imageResult.success) {
+            res.json({
+                success: true,
+                image: imageResult.dataUrl,
+                prompt: imagePrompt,
+                model: imageResult.model
+            });
+        } else {
+            res.status(500).json({
+                success: false,
+                error: imageResult.error || 'Görsel üretilemedi'
+            });
+        }
+        
+    } catch (error) {
+        console.error('[Pollinations] Endpoint hatası:', error);
+        res.status(500).json({ error: 'Görsel üretim hatası: ' + error.message });
     }
 });
 
@@ -3520,52 +3800,18 @@ app.post('/api/generate-media', authenticateToken, async (req, res) => {
 // AUDIO GENERATION - Gemini 2.5 Flash Native Audio
 app.post('/api/generate-audio', authenticateToken, async (req, res) => {
     try {
-        if (!genAI) {
-            return res.status(500).json({ error: 'AI not configured' });
-        }
-
         const { text, voice = 'default' } = req.body;
         if (!text) {
             return res.status(400).json({ error: 'Metin gerekli' });
         }
 
-        console.log(`[Audio] Generating audio for text: ${text.substring(0, 50)}...`);
+        console.log(`[Audio] Ses oluşturma isteği: ${text.substring(0, 50)}...`);
 
-        try {
-            const audioModel = genAI.getGenerativeModel({ model: GEMINI_MODELS[0] });
-
-            const result = await audioModel.generateContent({
-                contents: [{
-                    role: 'user',
-                    parts: [
-                        { text: `Convert this text to natural speech: ${text}` }
-                    ]
-                }],
-                generationConfig: {
-                    responseModalities: ['AUDIO'],
-                },
-            });
-
-            const response = result.response;
-            const audioPart = response.candidates[0].content.parts.find(part => part.inlineData);
-
-            if (audioPart && audioPart.inlineData) {
-                return res.json({
-                    success: true,
-                    audioData: `data:${audioPart.inlineData.mimeType};base64,${audioPart.inlineData.data}`,
-                    model: GEMINI_MODELS[0],
-                    text: text
-                });
-            } else {
-                throw new Error('No audio data received');
-            }
-        } catch (audioError) {
-            console.error('[Audio] Gemini audio error:', audioError);
-            return res.status(500).json({
-                error: 'Ses oluşturma hatası',
-                details: audioError.message
-            });
-        }
+        // OpenRouter ses desteği şu an için devre dışı - Gemini native audio generation'ı OpenRouter'da mevcut değil
+        return res.status(501).json({
+            error: 'Ses oluşturma şu an desteklenmiyor',
+            details: 'OpenRouter entegrasyonu ile ses oluşturma özelliği geçici olarak devre dışıdır.'
+        });
 
     } catch (error) {
         console.error('[Audio] Generation error:', error);
