@@ -80,8 +80,11 @@ app.use(express.json({ limit: '50mb' }));
 // --- AYARLAR ve SABİTLER ---
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta';
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash-preview-04-17';
-const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
+// Gemini Modelleri - Yedek zincir için öncelik sırasına göre
+const GEMINI_MODELS = [
+    process.env.GEMINI_MODEL || 'gemini-3.1-pro-preview',
+    'gemini-3.1-flash-lite-preview'
+];
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "GOOGLE_CLIENT_ID_BURAYA";
 const JWT_SECRET = process.env.JWT_SECRET || 'gizli-anahtar-degistir';
@@ -137,51 +140,79 @@ async function searchYouTubeVideo(query) {
 
 // Helper function to generate AI response for goals briefing
 async function generateAIResponse(prompt, history = []) {
-    // 1. Önce DeepSeek'i dene (Kullanıcı tercihi)
-    if (DEEPSEEK_API_KEY) {
-        try {
-            console.log(`[AI-Status] DeepSeek API Key algılandı. İstek gönderiliyor...`);
-            let systemMsg = "Sen Türkçe içerik üreten uzman bir eğitim koçusun.";
-            const dsHistory = [];
-
-            for (const msg of history) {
-                if (msg.role === 'system') {
-                    systemMsg = msg.content;
-                } else {
-                    dsHistory.push({
-                        role: msg.role === 'assistant' ? 'model' : 'user',
-                        parts: [{ text: msg.content }]
-                    });
-                }
-            }
-
-            const response = await callDeepSeek(prompt, dsHistory, systemMsg);
-            if (response) {
-                console.log(`[AI-Status] DeepSeek yanıtı başarılı.`);
-                return response;
-            }
-        } catch (error) {
-            console.error(`[AI-Status] DeepSeek hatası:`, error.message);
-            console.log(`[AI-Status] Gemini yedek sistemine geçiliyor...`);
-        }
-    } else {
-        console.warn(`[AI-Status] DEEPSEEK_API_KEY bulunamadı! Lütfen Vercel panelinden ekleyin.`);
-        console.log(`[AI-Status] Varsayılan olarak Gemini kullanılıyor...`);
-    }
-
-    // 2. DeepSeek yoksa veya hata verirse Gemini modellerini dene (Yedek)
+    // Gemini modellerini dene (Pro önce, sonra Flash Lite)
     if (!genAI) {
-        throw new Error('AI not configured - Gemini/DeepSeek API Key eksik');
+        throw new Error('AI not configured - Gemini API Key eksik');
     }
 
-    const models = [GEMINI_MODEL];
+    let lastError;
+    let systemInstruction = "Sen Türkçe içerik üreten uzman bir eğitim koçusun.";
+    const filteredHistory = [];
+
+    for (const msg of history) {
+        if (msg.role === 'system') {
+            systemInstruction = msg.content;
+        } else {
+            filteredHistory.push({
+                role: msg.role === 'assistant' ? 'model' : 'user',
+                parts: [{ text: msg.content }]
+            });
+        }
+    }
+
+    for (const modelName of GEMINI_MODELS) {
+        try {
+            console.log(`[AI-Status] Gemini deneniyor: ${modelName}`);
+
+            const modelConfig = {
+                model: modelName,
+                generationConfig: { temperature: 0.7, maxOutputTokens: 2000 }
+            };
+            if (systemInstruction) modelConfig.systemInstruction = systemInstruction;
+
+            const model = genAI.getGenerativeModel(modelConfig);
+            const chatHistory = filteredHistory.map(msg => ({
+                role: msg.role,
+                parts: msg.parts
+            }));
+
+            const chat = model.startChat({ history: chatHistory });
+            const result = await chat.sendMessage(prompt);
+            console.log(`[AI-Status] ${modelName} yanıtı başarılı.`);
+            return result.response.text();
+        } catch (error) {
+            console.warn(`[AI-Status] ${modelName} başarısız:`, error.message);
+            lastError = error;
+        }
+    }
+
+    throw new Error(`AI üretimi başarısız: ${lastError.message}`);
+}
+
+const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
+
+// Rate Limit Config
+const RATE_LIMIT_CONFIG = {
+    free: { messageLimit: 10, windowMs: 3600000 },
+    premium: { messageLimit: 1000, windowMs: 3600000 }
+};
+
+// In-memory store for rate limiting
+const messageStore = new Map();
+
+// --- GEMINI HELPER ---
+async function callGeminiWithFallback(prompt, history = [], systemPrompt = "") {
+    if (!genAI) {
+        throw new Error('AI not configured - Gemini API Key eksik');
+    }
+
     let lastError;
 
-    for (const modelName of models) {
+    for (const modelName of GEMINI_MODELS) {
         try {
             console.log(`[AI-Briefing] Gemini deneniyor: ${modelName}`);
 
-            let systemInstruction = "";
+            let systemInstruction = systemPrompt;
             const filteredGeminiHistory = [];
             for (const msg of history) {
                 if (msg.role === 'system') systemInstruction = msg.content;
@@ -210,52 +241,6 @@ async function generateAIResponse(prompt, history = []) {
     }
 
     throw new Error(`AI üretimi başarısız: ${lastError.message}`);
-}
-
-const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
-
-// Rate Limit Config
-const RATE_LIMIT_CONFIG = {
-    free: { messageLimit: 10, windowMs: 3600000 },
-    premium: { messageLimit: 1000, windowMs: 3600000 }
-};
-
-// In-memory store for rate limiting
-const messageStore = new Map();
-
-// --- DEEPSEEK HELPER ---
-async function callDeepSeek(prompt, history = [], systemPrompt = "") {
-    if (!DEEPSEEK_API_KEY) throw new Error("DeepSeek API Key ayarlanmamış.");
-
-    const messages = [];
-    if (systemPrompt) messages.push({ role: "system", content: systemPrompt });
-
-    history.forEach(msg => {
-        messages.push({ role: msg.role === "model" ? "assistant" : msg.role, content: msg.parts[0].text });
-    });
-
-    messages.push({ role: "user", content: prompt });
-
-    const response = await fetch("https://api.deepseek.com/chat/completions", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${DEEPSEEK_API_KEY}`,
-        },
-        body: JSON.stringify({
-            "model": "deepseek-chat",
-            "messages": messages,
-            "stream": false
-        })
-    });
-
-    if (!response.ok) {
-        const err = await response.json();
-        throw new Error(`DeepSeek Hatası: ${err.error?.message || response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data.choices[0].message.content;
 }
 
 // --- MIDDLEWARE TANIMLAMALARI ---
@@ -913,55 +898,47 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
         let aiResponse;
         let usedModel;
 
-        const primaryModel = GEMINI_MODEL;
-
-        // 1. Önce DeepSeek'i dene (Sadece metin mesajları için)
-        const hasImage = userMessageParts.some(p => p.inlineData);
-        if (DEEPSEEK_API_KEY && !hasImage) {
-            try {
-                console.log(`[AI] DeepSeek deneniyor (Sohbet)...`);
-                aiResponse = await callDeepSeek(userTextMessage, chatHistory, finalSystemPrompt);
-                usedModel = "deepseek-chat";
-            } catch (dsErr) {
-                console.warn(`[AI] DeepSeek başarısız (Sohbet):`, dsErr.message);
+        // Gemini modellerini dene - Yedek zincir ile
+        async function callWithRetry(modelName, parts, systemPrompt, history, maxRetries = 2) {
+            let attempt = 0;
+            while (attempt <= maxRetries) {
+                try {
+                    console.log(`[AI] Gemini deneniyor: ${modelName} (Deneme ${attempt + 1})`);
+                    const model = genAI.getGenerativeModel({ model: modelName, systemInstruction: systemPrompt });
+                    const chat = model.startChat({
+                        history: history,
+                        generationConfig: { maxOutputTokens: 4000, temperature: 0.7 }
+                    });
+                    const result = await chat.sendMessage(parts);
+                    return { text: result.response.text(), model: modelName };
+                } catch (error) {
+                    const isRateLimit = error.message?.includes('429') || error.status === 429;
+                    if (isRateLimit && attempt < maxRetries) {
+                        const waitTime = Math.pow(2, attempt) * 2000;
+                        console.warn(`[AI] Gemini kota doldu, bekleniyor...`);
+                        await new Promise(resolve => setTimeout(resolve, waitTime));
+                        attempt++;
+                        continue;
+                    }
+                    throw error;
+                }
             }
         }
 
-        // 2. Eğer DeepSeek başarısız olduysa veya resim varsa Gemini Retrial Chain
-        if (!aiResponse) {
-            async function callWithRetry(modelName, parts, systemPrompt, history, maxRetries = 2) {
-                let attempt = 0;
-                while (attempt <= maxRetries) {
-                    try {
-                        console.log(`[AI] Gemini deneniyor: ${modelName} (Deneme ${attempt + 1})`);
-                        const model = genAI.getGenerativeModel({ model: modelName, systemInstruction: systemPrompt });
-                        const chat = model.startChat({
-                            history: history,
-                            generationConfig: { maxOutputTokens: 4000, temperature: 0.7 }
-                        });
-                        const result = await chat.sendMessage(parts);
-                        return { text: result.response.text(), model: modelName };
-                    } catch (error) {
-                        const isRateLimit = error.message?.includes('429') || error.status === 429;
-                        if (isRateLimit && attempt < maxRetries) {
-                            const waitTime = Math.pow(2, attempt) * 2000;
-                            console.warn(`[AI] Gemini kota doldu, bekleniyor...`);
-                            await new Promise(resolve => setTimeout(resolve, waitTime));
-                            attempt++;
-                            continue;
-                        }
-                        throw error;
-                    }
-                }
-            }
-
+        // Önce ana modeli dene, başarısız olursa yedek modeli dene
+        let triedModels = [];
+        for (const modelName of GEMINI_MODELS) {
+            triedModels.push(modelName);
             try {
-                const result = await callWithRetry(primaryModel, userMessageParts, finalSystemPrompt, chatHistory);
+                const result = await callWithRetry(modelName, userMessageParts, finalSystemPrompt, chatHistory);
                 aiResponse = result.text;
                 usedModel = result.model;
+                break; // Başarılı, döngüden çık
             } catch (err) {
-                console.warn(`[AI] ${primaryModel} başarısız:`, err.message);
-                throw new Error("Gemini 2.5 modeli başarısız oldu.");
+                console.warn(`[AI] ${modelName} başarısız:`, err.message);
+                if (triedModels.length === GEMINI_MODELS.length) {
+                    throw new Error("Tüm Gemini modelleri başarısız oldu.");
+                }
             }
         }
 
