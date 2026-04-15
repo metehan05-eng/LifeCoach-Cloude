@@ -105,7 +105,7 @@ if (GEMINI_API_KEY) {
         apiEndpoint: GEMINI_API_ENDPOINT
     });
     console.log(`[AI] Gemini endpoint aktif: ${GEMINI_API_ENDPOINT}`);
-    console.log(`[AI] Varsayılan Gemini modeli: ${GEMINI_MODEL}`);
+    console.log(`[AI] Varsayılan Gemini modelleri: ${GEMINI_MODELS.join(', ')}`);
 }
 
 if (!GEMINI_API_KEY) {
@@ -3532,7 +3532,7 @@ app.post('/api/generate-audio', authenticateToken, async (req, res) => {
         console.log(`[Audio] Generating audio for text: ${text.substring(0, 50)}...`);
 
         try {
-            const audioModel = genAI.getGenerativeModel({ model: GEMINI_MODEL });
+            const audioModel = genAI.getGenerativeModel({ model: GEMINI_MODELS[0] });
 
             const result = await audioModel.generateContent({
                 contents: [{
@@ -3553,7 +3553,7 @@ app.post('/api/generate-audio', authenticateToken, async (req, res) => {
                 return res.json({
                     success: true,
                     audioData: `data:${audioPart.inlineData.mimeType};base64,${audioPart.inlineData.data}`,
-                    model: GEMINI_MODEL,
+                    model: GEMINI_MODELS[0],
                     text: text
                 });
             } else {
