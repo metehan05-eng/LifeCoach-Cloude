@@ -6,9 +6,8 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 let genAI;
 if (GEMINI_API_KEY) {
-    genAI = new GoogleGenerativeAI(GEMINI_API_KEY, {
-        apiEndpoint: 'https://generativelanguage.googleapis.com/v1beta'
-    });
+    genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+    console.log('[Gemini] API initialized');
 }
 
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
@@ -17,23 +16,30 @@ const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 async function callGemini(prompt, systemPrompt = "") {
     if (!genAI) throw new Error('Gemini API key not configured');
 
-    const models = ["gemini-2.5-flash-preview-04-17", "gemini-2.0-flash", "gemini-1.5-flash"];
+    const models = [
+        "gemini-2.0-flash",
+        "gemini-1.5-flash"
+    ];
 
     for (const modelName of models) {
         try {
-            const model = genAI.getGenerativeModel({
+            const modelConfig = {
                 model: modelName,
-                systemInstruction: systemPrompt,
                 generationConfig: {
                     temperature: 0.7,
                     maxOutputTokens: 2000
                 }
-            });
+            };
+            
+            if (systemPrompt) {
+                modelConfig.systemInstruction = systemPrompt;
+            }
 
+            const model = genAI.getGenerativeModel(modelConfig);
             const result = await model.generateContent(prompt);
             return result.response.text();
         } catch (e) {
-            console.warn(`[Gemini] ${modelName} failed, trying next...`);
+            console.warn(`[Gemini] ${modelName} failed:`, e.message);
             continue;
         }
     }
@@ -41,11 +47,11 @@ async function callGemini(prompt, systemPrompt = "") {
     throw new Error('All Gemini models failed');
 }
 
-// AI çağrısı - Gemini öncelikli
+// AI çağrısı - Gemini
 async function generateAIContent(prompt, systemPrompt = "") {
     if (genAI) {
         try {
-            console.log(`[AI-Briefing] Gemini-2.5-flash deneniyor...`);
+            console.log(`[AI-Briefing] Gemini deneniyor...`);
             const response = await callGemini(prompt, systemPrompt);
             console.log(`[AI-Briefing] Gemini başarılı`);
             return response;
@@ -117,7 +123,7 @@ export default async function handler(req, res) {
         const currentProgress = progress || 0;
         
         // If no AI is configured, return fallback advice
-        if (!DEEPSEEK_API_KEY && !genAI) {
+        if (!genAI) {
             const fallbackBriefing = generateFallbackBriefing(title, description);
             return res.status(200).json({ briefing: fallbackBriefing });
         }

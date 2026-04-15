@@ -38,7 +38,7 @@ async function extractMemoryFromConversation(messages) {
 
   try {
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-flash"
+      model: "gemini-2.0-flash"
     });
 
     const extractionPrompt = `Analyze this conversation and extract ONLY valid information. Return ONLY a JSON object, no markdown, no text wrapper.
