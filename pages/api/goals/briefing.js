@@ -1,19 +1,22 @@
 import jwt from 'jsonwebtoken';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'gizli-anahtar-degistir';
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 const TAVILY_API_KEY = process.env.TAVILY_API_KEY; // Tavily AI arama için
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
-const OPENROUTER_API_ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
 
-// OpenRouter modelleri
-const OPENROUTER_MODELS = [
-    process.env.OPENROUTER_MODEL || 'anthropic/claude-3.5-sonnet',
-    'openai/gpt-4o-mini',
-    'anthropic/claude-3-haiku'
-];
+// Gemini API Ayarları (Tek AI - Sadece Gemini)
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash-exp';
 
-console.log('[Briefing] OpenRouter sistemi aktif');
+// Gemini Client (Tek AI)
+let genAI = null;
+if (GEMINI_API_KEY) {
+    genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+    console.log(`[Briefing] Gemini API aktif: ${GEMINI_MODEL}`);
+} else {
+    console.warn('[Briefing] GEMINI_API_KEY ayarlanmamış. AI özellikleri çalışmayabilir.');
+}
 
 // Timeout promise helper
 function withTimeout(promise, ms, label) {
@@ -113,64 +116,53 @@ function formatSearchResults(results, query) {
     return formatted;
 }
 
-// OpenRouter API çağrısı - timeout ile
-async function callOpenRouter(messages, model, systemPrompt = null, temperature = 0.7, maxTokens = 1500) {
-    const response = await withTimeout(
-        fetch(OPENROUTER_API_ENDPOINT, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-                'Content-Type': 'application/json',
-                'HTTP-Referer': 'https://han-ai.dev/',
-                'X-Title': 'Life Coach AI'
-            },
-            body: JSON.stringify({
-                model: model,
-                messages: systemPrompt 
-                    ? [{ role: 'system', content: systemPrompt }, ...messages]
-                    : messages,
-                temperature: temperature,
-                max_tokens: maxTokens
-            })
-        }),
-        8000, // 8 saniye timeout
-        'OpenRouter API'
-    );
-
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`OpenRouter API hatası: ${response.status} - ${errorText}`);
+// Gemini API çağrısı (Ana AI)
+async function callGemini(prompt, systemInstruction = "") {
+    if (!genAI) {
+        throw new Error("Gemini API yapılandırılmamış");
     }
+    
+    const model = genAI.getGenerativeModel({
+        model: GEMINI_MODEL,
+        generationConfig: {
+            maxOutputTokens: 2000,
+            temperature: 0.7,
+        },
+        ...(systemInstruction && {
+            systemInstruction: { parts: [{ text: systemInstruction }] }
+        })
+    });
 
-    const data = await response.json();
+    const result = await model.generateContent({
+        contents: [{
+            role: 'user',
+            parts: [{ text: prompt }]
+        }]
+    });
+    
+    const response = result.response;
     return {
-        text: data.choices[0]?.message?.content || '',
-        model: model
+        text: response.text(),
+        model: GEMINI_MODEL
     };
 }
 
-// AI çağrısı - OpenRouter ile fallback
+// AI çağrısı - Sadece Gemini
 async function generateAIContent(prompt, systemPrompt = "") {
-    if (!OPENROUTER_API_KEY) {
-        console.error('[AI-Briefing] OpenRouter API key eksik');
+    if (!genAI) {
+        console.error('[AI-Briefing] Gemini API yapılandırılmamış');
         return null;
     }
-
-    const messages = [{ role: 'user', content: prompt }];
-
-    for (const modelName of OPENROUTER_MODELS) {
-        try {
-            console.log(`[AI-Briefing] OpenRouter deneniyor: ${modelName}`);
-            const response = await callOpenRouter(messages, modelName, systemPrompt, 0.7, 1200);
-            console.log(`[AI-Briefing] ${modelName} başarılı`);
-            return response.text;
-        } catch (error) {
-            console.warn(`[AI-Briefing] ${modelName} başarısız:`, error.message);
-        }
+    
+    try {
+        console.log(`[AI-Briefing] Gemini çalıştırılıyor: ${GEMINI_MODEL}`);
+        const result = await callGemini(prompt, systemPrompt);
+        console.log('[AI-Briefing] Gemini başarılı');
+        return result.text;
+    } catch (error) {
+        console.error('[AI-Briefing] Gemini hatası:', error.message);
+        return null;
     }
-
-    console.error('[AI-Briefing] Tüm OpenRouter modelleri başarısız oldu');
-    return null;
 }
 
 async function searchYouTubeVideo(query) {

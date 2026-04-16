@@ -22,8 +22,8 @@ import bcrypt from 'bcryptjs';
 import mammoth from 'mammoth';
 import xlsx from 'xlsx';
 import * as pdf from 'pdf-parse';
-// OpenRouter API kullanılıyor - Gemini kaldırıldı
 import { OAuth2Client } from 'google-auth-library';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { spawn } from 'child_process';
 import fs from 'fs';
 
@@ -78,18 +78,11 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
 // --- AYARLAR ve SABİTLER ---
-// OpenRouter API Ayarları
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
-const OPENROUTER_API_ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
-// OpenRouter Modelleri - Yedek zincir için öncelik sırasına göre
-const OPENROUTER_MODELS = [
-    process.env.OPENROUTER_MODEL || 'arcee-ai/trinity-large-preview:free',
-    'nvidia/nemotron-nano-12b-v2-vl:free',
-    'nvidia/nemotron-3-nano-30b-a3b:free',
-    'openai/gpt-oss-120b:free',
-    'openai/gpt-oss-120b:free',
-    'google/gemini-2.0-flash-exp:free'
-];
+// Gemini API Ayarları (Ana AI)
+// Gemini API Ayarları (Tek AI - Sadece Gemini)
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const GEMINI_API_ENDPOINT = process.env.GEMINI_API_ENDPOINT || 'https://generativelanguage.googleapis.com/v1/models';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash-exp';
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 const TAVILY_API_KEY = process.env.TAVILY_API_KEY; // Tavily AI arama için
 const POLLINATIONS_API_KEY = process.env.POLLINATIONS_API_KEY; // Pollinations.ai görsel üretim için (opsiyonel)
@@ -97,6 +90,16 @@ const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "GOOGLE_CLIENT_ID_BURAY
 const JWT_SECRET = process.env.JWT_SECRET || 'gizli-anahtar-degistir';
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+// Gemini Client (Tek AI)
+let genAI = null;
+if (GEMINI_API_KEY) {
+    genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+    console.log(`[AI] Gemini API aktif: ${GEMINI_API_ENDPOINT}`);
+    console.log(`[AI] Varsayılan Gemini modeli: ${GEMINI_MODEL}`);
+} else {
+    console.warn("UYARI: GEMINI_API_KEY ayarlanmamış. AI özellikleri çalışmayabilir.");
+}
 
 // Supabase Client (optional - use local storage if not configured)
 let supabase = null;
@@ -106,44 +109,69 @@ if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY && !SUPABASE_URL.includes('YOUR_')
     console.log("📁 Supabase yapılandırılmamış - yerel depolama kullanılıyor");
 }
 
-// OpenRouter API yapılandırma kontrolü
-if (OPENROUTER_API_KEY) {
-    console.log(`[AI] OpenRouter endpoint aktif: ${OPENROUTER_API_ENDPOINT}`);
-    console.log(`[AI] Varsayılan OpenRouter modelleri: ${OPENROUTER_MODELS.join(', ')}`);
-} else {
-    console.warn("UYARI: OPENROUTER_API_KEY ayarlanmamış. Sohbet çalışmayabilir.");
-}
-
-// OpenRouter API çağrısı için yardımcı fonksiyon
-async function callOpenRouter(messages, model, systemPrompt = null, temperature = 0.7, maxTokens = 4000) {
-    const response = await fetch(OPENROUTER_API_ENDPOINT, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-            'Content-Type': 'application/json',
-            'HTTP-Referer': 'https://han-ai.dev/',
-            'X-Title': 'Life Coach AI'
+// ── Gemini API çağrısı (Tek AI) ──────────────────────────────
+async function callGemini(prompt, history = [], systemInstruction = "") {
+    if (!genAI) {
+        throw new Error("Gemini API yapılandırılmamış");
+    }
+    
+    const model = genAI.getGenerativeModel({
+        model: GEMINI_MODEL,
+        generationConfig: {
+            maxOutputTokens: 4000,
+            temperature: 0.7,
         },
-        body: JSON.stringify({
-            model: model,
-            messages: systemPrompt 
-                ? [{ role: 'system', content: systemPrompt }, ...messages]
-                : messages,
-            temperature: temperature,
-            max_tokens: maxTokens
+        ...(systemInstruction && {
+            systemInstruction: { parts: [{ text: systemInstruction }] }
         })
     });
 
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`OpenRouter API hatası: ${response.status} - ${errorText}`);
+    // Gemini formatına çevir
+    const contents = [];
+    
+    // History ekle
+    for (const msg of history) {
+        if (msg.role === 'user') {
+            contents.push({
+                role: 'user',
+                parts: [{ text: msg.content || msg.parts?.map(p => p.text).join(' ') || '' }]
+            });
+        } else if (msg.role === 'assistant' || msg.role === 'model') {
+            contents.push({
+                role: 'model',
+                parts: [{ text: msg.content || msg.parts?.map(p => p.text).join(' ') || '' }]
+            });
+        }
     }
+    
+    // Son kullanıcı mesajını ekle
+    contents.push({
+        role: 'user',
+        parts: [{ text: prompt }]
+    });
 
-    const data = await response.json();
+    const result = await model.generateContent({ contents });
+    const response = result.response;
+    
     return {
-        text: data.choices[0]?.message?.content || '',
-        model: model,
-        usage: data.usage
+        text: response.text(),
+        model: GEMINI_MODEL
+    };
+}
+
+// ── AI Yanıt Fonksiyonu (Sadece Gemini) ──────────────────────────────
+async function generateAIResponse(prompt, history = [], systemInstruction = "") {
+    if (!genAI) {
+        throw new Error("Gemini API yapılandırılmamış");
+    }
+    
+    console.log(`[AI] Gemini çalıştırılıyor: ${GEMINI_MODEL}`);
+    const result = await callGemini(prompt, history, systemInstruction);
+    console.log('[AI] Gemini yanıtı başarılı');
+    return {
+        text: result.text,
+        model: GEMINI_MODEL,
+        provider: 'gemini'
     };
 }
 
