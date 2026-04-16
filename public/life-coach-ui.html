@@ -3323,15 +3323,16 @@
                         </button>
                     </div>
                 </div>
+            </div>
 
-                <!-- AI Arena Section -->
-                <div id="section-arena" class="section-content hidden flex-col">
-                    <div id="react-arena-root" style="width: 100%;"></div>
-                </div>
+            <!-- AI Arena Section -->
+            <div id="section-arena" class="section-content hidden flex-col">
+                <div id="react-arena-root" style="width: 100%;"></div>
+            </div>
 
-                <!-- Goals Section -->
-                <div id="section-goals" class="section-content hidden flex-col">
-                    <div class="max-w-5xl mx-auto w-full">
+            <!-- Goals Section -->
+            <div id="section-goals" class="section-content hidden flex-col">
+                <div class="max-w-5xl mx-auto w-full">
                         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                             <div>
                                 <h2 class="text-3xl font-bold text-white font-display mb-2">Hedeflerim 🎯</h2>
@@ -3373,13 +3374,13 @@
                                 <p class="text-sm mt-1">Yeni bir hedef oluşturarak başla!</p>
                             </div>
                         </div>
-                    </div>
-                </div>
+            </div>
+            </div>
 
-                <!-- Habits Section -->
-                <div id="section-habits" class="section-content hidden flex-col">
-                    <div class="max-w-5xl mx-auto w-full">
-                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+            <!-- Habits Section -->
+            <div id="section-habits" class="section-content hidden flex-col">
+                <div class="max-w-5xl mx-auto w-full">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                             <div>
                                 <h2 class="text-3xl font-bold text-white font-display mb-2">Alışkanlıklar ❤️</h2>
                                 <p class="text-slate-400 text-sm">Günlük alışkanlıklarını takip et</p>
@@ -3397,268 +3398,285 @@
                                 <div class="text-xs text-slate-500 mt-1">Bugün Tamamlandı</div>
                             </div>
                             <div class="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
-                                <div class="text-xl font-bold text-amber-400" id="habits-best-streak">0</div>
-                                <div class="text-xs text-slate-500 mt-1">En İyi Seri</div>
-                            </div>
-                            <div class="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
-                                <div class="text-xl font-bold text-purple-400" id="habits-completion-rate">0%</div>
-                                <div class="text-xs text-slate-500 mt-1">Başarı Oranı</div>
-                            </div>
+                        <div>
+                            <h2 class="text-3xl font-bold text-white font-display mb-2">Alışkanlıklar ❤️</h2>
+                            <p class="text-slate-400 text-sm">Günlük alışkanlıklarını takip et</p>
                         </div>
+                        <button onclick="openHabitModal()" class="btn-primary flex items-center gap-2">
+                            <i class="fa-solid fa-plus text-sm"></i>
+                            <span>Yeni Alışkanlık</span>
+                        </button>
+                    </div>
 
-                        <!-- Habits List -->
-                        <div id="habits-list" class="grid md:grid-cols-2 gap-4">
-                            <div class="md:col-span-2 text-center py-12 text-slate-500">
-                                <i class="fa-solid fa-heart-pulse text-4xl mb-3 opacity-30"></i>
-                                <p>Henüz alışkanlığın yok</p>
-                                <p class="text-sm mt-1">Günlük rutinini oluşturmaya başla!</p>
-                            </div>
+                    <!-- Habits Stats -->
+                    <div class="grid grid-cols-3 gap-4 mb-6">
+                        <div class="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
+                            <div class="text-xl font-bold text-emerald-400" id="habits-completed-today">0</div>
+                            <div class="text-xs text-slate-500 mt-1">Bugün Tamamlandı</div>
+                        </div>
+                        <div class="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
+                            <div class="text-xl font-bold text-amber-400" id="habits-best-streak">0</div>
+                            <div class="text-xs text-slate-500 mt-1">En İyi Seri</div>
+                        </div>
+                        <div class="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
+                            <div class="text-xl font-bold text-purple-400" id="habits-completion-rate">0%</div>
+                            <div class="text-xs text-slate-500 mt-1">Başarı Oranı</div>
+                        </div>
+                    </div>
+
+                    <!-- Habits List -->
+                    <div id="habits-list" class="grid md:grid-cols-2 gap-4">
+                        <div class="md:col-span-2 text-center py-12 text-slate-500">
+                            <i class="fa-solid fa-heart-pulse text-4xl mb-3 opacity-30"></i>
+                            <p>Henüz alışkanlığın yok</p>
+                            <p class="text-sm mt-1">Günlük rutinini oluşturmaya başla!</p>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Plans Section -->
-                <div id="section-plans" class="section-content hidden flex-col">
-                    <div class="max-w-5xl mx-auto w-full">
-                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+            <!-- Plans Section -->
+            <div id="section-plans" class="section-content hidden flex-col">
+                <div class="max-w-5xl mx-auto w-full">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                        <div>
+                            <h2 class="text-3xl font-bold text-white font-display mb-2">Planlar 📅</h2>
+                            <p class="text-slate-400 text-sm">AI tarafından oluşturulan planlarını görüntüle</p>
+                        </div>
+                        <button onclick="openPlanModal()" class="btn-primary flex items-center gap-2">
+                            <i class="fa-solid fa-plus text-sm"></i>
+                            <span>Yeni Plan</span>
+                        </button>
+                    </div>
+
+                    <!-- Plans Tabs -->
+                    <div class="flex gap-2 mb-6 overflow-x-auto pb-2">
+                        <button onclick="filterPlans('all')"
+                            class="plan-filter-btn px-4 py-2 rounded-xl text-sm font-medium bg-teal-500/20 text-teal-400 border border-teal-500/30"
+                            data-filter="all">Tümü</button>
+                        <button onclick="filterPlans('daily')"
+                            class="plan-filter-btn px-4 py-2 rounded-xl text-sm font-medium bg-white/5 text-slate-400 border border-white/10"
+                            data-filter="daily">Günlük</button>
+                        <button onclick="filterPlans('weekly')"
+                            class="plan-filter-btn px-4 py-2 rounded-xl text-sm font-medium bg-white/5 text-slate-400 border border-white/10"
+                            data-filter="weekly">Haftalık</button>
+                        <button onclick="filterPlans('monthly')"
+                            class="plan-filter-btn px-4 py-2 rounded-xl text-sm font-medium bg-white/5 text-slate-400 border border-white/10"
+                            data-filter="monthly">Aylık</button>
+                    </div>
+
+                    <!-- Plans List -->
+                    <div id="plans-list" class="space-y-4">
+                        <div class="text-center py-12 text-slate-500">
+                            <i class="fa-solid fa-calendar-days text-4xl mb-3 opacity-30"></i>
+                            <p>Henüz planın yok</p>
+                            <p class="text-sm mt-1">AI'dan bir plan oluşturmasını iste!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Section -->
+            <div id="section-progress" class="section-content hidden flex-col">
+                <div class="max-w-5xl mx-auto w-full">
+                    <div class="mb-8">
+                        <h2 class="text-3xl font-bold text-white font-display mb-2">İlerleme 📊</h2>
+                        <p class="text-slate-400 text-sm">İstatistiklerini ve grafiklerini görüntüle</p>
+                    </div>
+
+                    <!-- Productivity Score -->
+                    <div
+                        class="bg-gradient-to-br from-teal-500/10 to-emerald-500/10 border border-teal-500/20 rounded-2xl p-6 mb-6">
+                        <div class="flex items-center justify-between">
                             <div>
-                                <h2 class="text-3xl font-bold text-white font-display mb-2">Planlar 📅</h2>
-                                <p class="text-slate-400 text-sm">AI tarafından oluşturulan planlarını görüntüle</p>
+                                <h3 class="text-lg font-semibold text-white mb-1">Genel Verimlilik</h3>
+                                <p class="text-sm text-slate-400">Hedefler, alışkanlıklar ve planlar</p>
                             </div>
-                            <button onclick="openPlanModal()" class="btn-primary flex items-center gap-2">
-                                <i class="fa-solid fa-plus text-sm"></i>
-                                <span>Yeni Plan</span>
-                            </button>
-                        </div>
-
-                        <!-- Plans Tabs -->
-                        <div class="flex gap-2 mb-6 overflow-x-auto pb-2">
-                            <button onclick="filterPlans('all')"
-                                class="plan-filter-btn px-4 py-2 rounded-xl text-sm font-medium bg-teal-500/20 text-teal-400 border border-teal-500/30"
-                                data-filter="all">Tümü</button>
-                            <button onclick="filterPlans('daily')"
-                                class="plan-filter-btn px-4 py-2 rounded-xl text-sm font-medium bg-white/5 text-slate-400 border border-white/10"
-                                data-filter="daily">Günlük</button>
-                            <button onclick="filterPlans('weekly')"
-                                class="plan-filter-btn px-4 py-2 rounded-xl text-sm font-medium bg-white/5 text-slate-400 border border-white/10"
-                                data-filter="weekly">Haftalık</button>
-                            <button onclick="filterPlans('monthly')"
-                                class="plan-filter-btn px-4 py-2 rounded-xl text-sm font-medium bg-white/5 text-slate-400 border border-white/10"
-                                data-filter="monthly">Aylık</button>
-                        </div>
-
-                        <!-- Plans List -->
-                        <div id="plans-list" class="space-y-4">
-                            <div class="text-center py-12 text-slate-500">
-                                <i class="fa-solid fa-calendar-days text-4xl mb-3 opacity-30"></i>
-                                <p>Henüz planın yok</p>
-                                <p class="text-sm mt-1">AI'dan bir plan oluşturmasını iste!</p>
+                            <div class="text-right">
+                                <div class="text-4xl font-bold text-teal-400" id="prod-score">0</div>
+                                <div class="text-xs text-slate-500">/ 100</div>
                             </div>
+                        </div>
+                        <div class="mt-4 h-2 bg-white/10 rounded-full overflow-hidden">
+                            <div id="prod-bar"
+                                class="h-full bg-gradient-to-r from-teal-500 to-emerald-500 rounded-full transition-all duration-1000"
+                                style="width: 0%"></div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Progress Section -->
-                <div id="section-progress" class="section-content hidden flex-col">
-                    <div class="max-w-5xl mx-auto w-full">
-                        <div class="mb-8">
-                            <h2 class="text-3xl font-bold text-white font-display mb-2">İlerleme 📊</h2>
-                            <p class="text-slate-400 text-sm">İstatistiklerini ve grafiklerini görüntüle</p>
-                        </div>
-
-                        <!-- Productivity Score -->
-                        <div
-                            class="bg-gradient-to-br from-teal-500/10 to-emerald-500/10 border border-teal-500/20 rounded-2xl p-6 mb-6">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <h3 class="text-lg font-semibold text-white mb-1">Genel Verimlilik</h3>
-                                    <p class="text-sm text-slate-400">Hedefler, alışkanlıklar ve planlar</p>
-                                </div>
-                                <div class="text-right">
-                                    <div class="text-4xl font-bold text-teal-400" id="prod-score">0</div>
-                                    <div class="text-xs text-slate-500">/ 100</div>
-                                </div>
-                            </div>
-                            <div class="mt-4 h-2 bg-white/10 rounded-full overflow-hidden">
-                                <div id="prod-bar"
-                                    class="h-full bg-gradient-to-r from-teal-500 to-emerald-500 rounded-full transition-all duration-1000"
-                                    style="width: 0%"></div>
-                            </div>
-                        </div>
-
-                        <!-- Weekly Chart -->
-                        <div class="bg-white/5 border border-white/10 rounded-2xl p-6 mb-6">
-                            <h3 class="text-lg font-semibold text-white mb-4">Haftalık İlerleme</h3>
-                            <div class="h-48 flex items-end justify-between gap-2" id="weekly-chart">
-                                <!-- Chart bars will be inserted by JS -->
-                            </div>
-                        </div>
-
-                        <!-- Stats Grid -->
-                        <div class="grid md:grid-cols-3 gap-4 mb-6">
-                            <div class="bg-white/5 border border-white/10 rounded-xl p-4">
-                                <h4 class="text-sm font-medium text-slate-400 mb-3">Hedefler</h4>
-                                <div class="flex justify-between items-center mb-2">
-                                    <span class="text-xs text-slate-500">Tamamlandı</span>
-                                    <span class="text-sm font-bold text-teal-400" id="goal-completed">0/0</span>
-                                </div>
-                                <div class="h-1.5 bg-white/10 rounded-full overflow-hidden">
-                                    <div id="goal-bar" class="h-full bg-teal-500 rounded-full" style="width: 0%"></div>
-                                </div>
-                            </div>
-                            <div class="bg-white/5 border border-white/10 rounded-xl p-4">
-                                <h4 class="text-sm font-medium text-slate-400 mb-3">Alışkanlıklar</h4>
-                                <div class="flex justify-between items-center mb-2">
-                                    <span class="text-xs text-slate-500">Bugün</span>
-                                    <span class="text-sm font-bold text-emerald-400" id="habit-today">0/0</span>
-                                </div>
-                                <div class="h-1.5 bg-white/10 rounded-full overflow-hidden">
-                                    <div id="habit-bar" class="h-full bg-emerald-500 rounded-full" style="width: 0%">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="bg-white/5 border border-white/10 rounded-xl p-4">
-                                <h4 class="text-sm font-medium text-slate-400 mb-3">Planlar</h4>
-                                <div class="flex justify-between items-center mb-2">
-                                    <span class="text-xs text-slate-500">Görevler</span>
-                                    <span class="text-sm font-bold text-amber-400" id="plan-tasks">0/0</span>
-                                </div>
-                                <div class="h-1.5 bg-white/10 rounded-full overflow-hidden">
-                                    <div id="plan-bar" class="h-full bg-amber-500 rounded-full" style="width: 0%"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Today's Summary -->
-                        <div class="grid md:grid-cols-2 gap-4">
-                            <div
-                                class="bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 rounded-2xl p-6">
-                                <h3 class="text-lg font-semibold text-emerald-400 mb-4 flex items-center gap-2">
-                                    <i class="fa-solid fa-check-circle"></i> Tamamlananlar
-                                </h3>
-                                <ul id="progress-completed-list" class="space-y-3 text-sm text-slate-300">
-                                    <li class="text-slate-500 italic">Yükleniyor...</li>
-                                </ul>
-                            </div>
-                            <div
-                                class="bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-2xl p-6">
-                                <h3 class="text-lg font-semibold text-amber-400 mb-4 flex items-center gap-2">
-                                    <i class="fa-solid fa-clock"></i> Eksikler (Bugün Odaklan)
-                                </h3>
-                                <ul id="progress-missing-list" class="space-y-3 text-sm text-slate-300">
-                                    <li class="text-slate-500 italic">Yükleniyor...</li>
-                                </ul>
-                            </div>
+                    <!-- Weekly Chart -->
+                    <div class="bg-white/5 border border-white/10 rounded-2xl p-6 mb-6">
+                        <h3 class="text-lg font-semibold text-white mb-4">Haftalık İlerleme</h3>
+                        <div class="h-48 flex items-end justify-between gap-2" id="weekly-chart">
+                            <!-- Chart bars will be inserted by JS -->
                         </div>
                     </div>
-                </div>
 
-                <!-- Focus Mode Section -->
-                <div id="section-focus" class="section-content hidden flex-col">
-                    <div class="max-w-4xl mx-auto w-full">
-                        <div class="mb-8">
-                            <h2 class="text-3xl font-bold text-white font-display mb-2">Odak Modu 🎯</h2>
-                            <p class="text-slate-400 text-sm">Derin çalışma seansları ile verimliliğini artır</p>
-                        </div>
-
-                        <!-- Timer Display -->
-                        <div
-                            class="bg-gradient-to-br from-teal-500/10 to-cyan-500/10 border border-teal-500/20 rounded-2xl p-8 mb-6 text-center">
-                            <div id="focus-timer" class="text-7xl font-bold text-white font-display mb-4">25:00</div>
-                            <div id="focus-status" class="text-slate-400 text-sm mb-6">Hazır</div>
-                            <div class="flex justify-center gap-4">
-                                <button id="focus-start-btn" onclick="startFocusSession()"
-                                    class="btn-primary px-8 py-3 text-lg">
-                                    <i class="fa-solid fa-play mr-2"></i>Başla
-                                </button>
-                                <button id="focus-pause-btn" onclick="pauseFocusSession()"
-                                    class="btn-secondary px-8 py-3 text-lg hidden">
-                                    <i class="fa-solid fa-pause mr-2"></i>Duraklat
-                                </button>
-                                <button id="focus-resume-btn" onclick="resumeFocusSession()"
-                                    class="btn-primary px-8 py-3 text-lg hidden">
-                                    <i class="fa-solid fa-play mr-2"></i>Devam Et
-                                </button>
-                                <button id="focus-stop-btn" onclick="stopFocusSession()"
-                                    class="btn-secondary px-8 py-3 text-lg hidden">
-                                    <i class="fa-solid fa-stop mr-2"></i>Durdur
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- AI Focus Radio -->
-                        <div
-                            class="bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 rounded-2xl p-6 mb-8 text-center">
-                            <h3 class="text-lg font-bold text-white mb-4 flex items-center justify-center gap-2">
-                                <i class="fa-solid fa-radio text-indigo-400"></i> AI Focus Radio
-                            </h3>
-                            <div class="flex justify-center gap-4">
-                                <button onclick="playFocusBeats('lofi')"
-                                    class="btn-secondary flex-1 py-3 flex flex-col items-center gap-2 bg-indigo-500/5 hover:bg-indigo-500/20">
-                                    <i class="fa-solid fa-headphones text-xl"></i> <span>LoFi Beats</span>
-                                </button>
-                                <button onclick="playFocusBeats('rain')"
-                                    class="btn-secondary flex-1 py-3 flex flex-col items-center gap-2 bg-indigo-500/5 hover:bg-indigo-500/20">
-                                    <i class="fa-solid fa-cloud-rain text-xl"></i> <span>Deep Rain</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Timer Options -->
-                        <div class="grid grid-cols-3 gap-4 mb-6">
-                            <button onclick="setFocusDuration(25)"
-                                class="focus-duration-btn bg-white/5 border border-white/10 rounded-xl p-4 text-center hover:border-teal-500/50 transition-all"
-                                data-duration="25">
-                                <div class="text-2xl font-bold text-white">25</div>
-                                <div class="text-xs text-slate-500">Dakika</div>
-                            </button>
-                            <button onclick="setFocusDuration(50)"
-                                class="focus-duration-btn bg-white/5 border border-white/10 rounded-xl p-4 text-center hover:border-teal-500/50 transition-all"
-                                data-duration="50">
-                                <div class="text-2xl font-bold text-white">50</div>
-                                <div class="text-xs text-slate-500">Dakika</div>
-                            </button>
-                            <button onclick="setFocusDuration(90)"
-                                class="focus-duration-btn bg-white/5 border border-white/10 rounded-xl p-4 text-center hover:border-teal-500/50 transition-all"
-                                data-duration="90">
-                                <div class="text-2xl font-bold text-white">90</div>
-                                <div class="text-xs text-slate-500">Dakika</div>
-                            </button>
-                        </div>
-
-                        <!-- Focus Stats -->
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                            <div class="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
-                                <div class="text-2xl font-bold text-teal-400" id="focus-today-sessions">0</div>
-                                <div class="text-xs text-slate-500 mt-1">Bugünkü Seans</div>
-                            </div>
-                            <div class="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
-                                <div class="text-2xl font-bold text-cyan-400" id="focus-today-minutes">0</div>
-                                <div class="text-xs text-slate-500 mt-1">Dakika</div>
-                            </div>
-                            <div class="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
-                                <div class="text-2xl font-bold text-emerald-400" id="focus-weekly-minutes">0</div>
-                                <div class="text-xs text-slate-500 mt-1">Haftalık</div>
-                            </div>
-                            <div class="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
-                                <div class="text-2xl font-bold text-amber-400" id="focus-streak">0</div>
-                                <div class="text-xs text-slate-500 mt-1">Seri</div>
-                            </div>
-                        </div>
-
-                        <!-- Recent Sessions -->
+                    <!-- Stats Grid -->
+                    <div class="grid md:grid-cols-3 gap-4 mb-6">
                         <div class="bg-white/5 border border-white/10 rounded-xl p-4">
-                            <h3 class="text-lg font-semibold text-white mb-4">Son Seanslar</h3>
-                            <div id="focus-sessions-list" class="space-y-2">
-                                <p class="text-slate-500 text-sm text-center py-4">Henüz seans yok</p>
+                            <h4 class="text-sm font-medium text-slate-400 mb-3">Hedefler</h4>
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs text-slate-500">Tamamlandı</span>
+                                <span class="text-sm font-bold text-teal-400" id="goal-completed">0/0</span>
+                            </div>
+                            <div class="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                                <div id="goal-bar" class="h-full bg-teal-500 rounded-full" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="bg-white/5 border border-white/10 rounded-xl p-4">
+                            <h4 class="text-sm font-medium text-slate-400 mb-3">Alışkanlıklar</h4>
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs text-slate-500">Bugün</span>
+                                <span class="text-sm font-bold text-emerald-400" id="habit-today">0/0</span>
+                            </div>
+                            <div class="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                                <div id="habit-bar" class="h-full bg-emerald-500 rounded-full" style="width: 0%">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white/5 border border-white/10 rounded-xl p-4">
+                            <h4 class="text-sm font-medium text-slate-400 mb-3">Planlar</h4>
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs text-slate-500">Görevler</span>
+                                <span class="text-sm font-bold text-amber-400" id="plan-tasks">0/0</span>
+                            </div>
+                            <div class="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                                <div id="plan-bar" class="h-full bg-amber-500 rounded-full" style="width: 0%"></div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Reflection Section -->
-                <div id="section-reflection" class="section-content hidden flex-col">
-                    <div class="max-w-4xl mx-auto w-full">
+                    <!-- Today's Summary -->
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div
+                            class="bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 rounded-2xl p-6">
+                            <h3 class="text-lg font-semibold text-emerald-400 mb-4 flex items-center gap-2">
+                                <i class="fa-solid fa-check-circle"></i> Tamamlananlar
+                            </h3>
+                            <ul id="progress-completed-list" class="space-y-3 text-sm text-slate-300">
+                                <li class="text-slate-500 italic">Yükleniyor...</li>
+                            </ul>
+                        </div>
+                        <div
+                            class="bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-2xl p-6">
+                            <h3 class="text-lg font-semibold text-amber-400 mb-4 flex items-center gap-2">
+                                <i class="fa-solid fa-clock"></i> Eksikler (Bugün Odaklan)
+                            </h3>
+                            <ul id="progress-missing-list" class="space-y-3 text-sm text-slate-300">
+                                <li class="text-slate-500 italic">Yükleniyor...</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Focus Section -->
+            <div id="section-focus" class="section-content hidden flex-col">
+                <div class="max-w-4xl mx-auto w-full">
+                    <div class="mb-8">
+                        <h2 class="text-3xl font-bold text-white font-display mb-2">Odak Modu 🎯</h2>
+                        <p class="text-slate-400 text-sm">Derin çalışma seansları ile verimliliğini artır</p>
+                    </div>
+
+                    <!-- Timer Display -->
+                    <div
+                        class="bg-gradient-to-br from-teal-500/10 to-cyan-500/10 border border-teal-500/20 rounded-2xl p-8 mb-6 text-center">
+                        <div id="focus-timer" class="text-7xl font-bold text-white font-display mb-4">25:00</div>
+                        <div id="focus-status" class="text-slate-400 text-sm mb-6">Hazır</div>
+                        <div class="flex justify-center gap-4">
+                            <button id="focus-start-btn" onclick="startFocusSession()"
+                                class="btn-primary px-8 py-3 text-lg">
+                                <i class="fa-solid fa-play mr-2"></i>Başla
+                            </button>
+                            <button id="focus-pause-btn" onclick="pauseFocusSession()"
+                                class="btn-secondary px-8 py-3 text-lg hidden">
+                                <i class="fa-solid fa-pause mr-2"></i>Duraklat
+                            </button>
+                            <button id="focus-resume-btn" onclick="resumeFocusSession()"
+                                class="btn-primary px-8 py-3 text-lg hidden">
+                                <i class="fa-solid fa-play mr-2"></i>Devam Et
+                            </button>
+                            <button id="focus-stop-btn" onclick="stopFocusSession()"
+                                class="btn-secondary px-8 py-3 text-lg hidden">
+                                <i class="fa-solid fa-stop mr-2"></i>Durdur
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- AI Focus Radio -->
+                    <div
+                        class="bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 rounded-2xl p-6 mb-8 text-center">
+                        <h3 class="text-lg font-bold text-white mb-4 flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-radio text-indigo-400"></i> AI Focus Radio
+                        </h3>
+                        <div class="flex justify-center gap-4">
+                            <button onclick="playFocusBeats('lofi')"
+                                class="btn-secondary flex-1 py-3 flex flex-col items-center gap-2 bg-indigo-500/5 hover:bg-indigo-500/20">
+                                <i class="fa-solid fa-headphones text-xl"></i> <span>LoFi Beats</span>
+                            </button>
+                            <button onclick="playFocusBeats('rain')"
+                                class="btn-secondary flex-1 py-3 flex flex-col items-center gap-2 bg-indigo-500/5 hover:bg-indigo-500/20">
+                                <i class="fa-solid fa-cloud-rain text-xl"></i> <span>Deep Rain</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Timer Options -->
+                    <div class="grid grid-cols-3 gap-4 mb-6">
+                        <button onclick="setFocusDuration(25)"
+                            class="focus-duration-btn bg-white/5 border border-white/10 rounded-xl p-4 text-center hover:border-teal-500/50 transition-all"
+                            data-duration="25">
+                            <div class="text-2xl font-bold text-white">25</div>
+                            <div class="text-xs text-slate-500">Dakika</div>
+                        </button>
+                        <button onclick="setFocusDuration(50)"
+                            class="focus-duration-btn bg-white/5 border border-white/10 rounded-xl p-4 text-center hover:border-teal-500/50 transition-all"
+                            data-duration="50">
+                            <div class="text-2xl font-bold text-white">50</div>
+                            <div class="text-xs text-slate-500">Dakika</div>
+                        </button>
+                        <button onclick="setFocusDuration(90)"
+                            class="focus-duration-btn bg-white/5 border border-white/10 rounded-xl p-4 text-center hover:border-teal-500/50 transition-all"
+                            data-duration="90">
+                            <div class="text-2xl font-bold text-white">90</div>
+                            <div class="text-xs text-slate-500">Dakika</div>
+                        </button>
+                    </div>
+
+                    <!-- Focus Stats -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
+                            <div class="text-2xl font-bold text-teal-400" id="focus-today-sessions">0</div>
+                            <div class="text-xs text-slate-500 mt-1">Bugünkü Seans</div>
+                        </div>
+                        <div class="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
+                            <div class="text-2xl font-bold text-cyan-400" id="focus-today-minutes">0</div>
+                            <div class="text-xs text-slate-500 mt-1">Dakika</div>
+                        </div>
+                        <div class="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
+                            <div class="text-2xl font-bold text-emerald-400" id="focus-weekly-minutes">0</div>
+                            <div class="text-xs text-slate-500 mt-1">Haftalık</div>
+                        </div>
+                        <div class="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
+                            <div class="text-2xl font-bold text-amber-400" id="focus-streak">0</div>
+                            <div class="text-xs text-slate-500 mt-1">Seri</div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Sessions -->
+                    <div class="bg-white/5 border border-white/10 rounded-xl p-4">
+                        <h3 class="text-lg font-semibold text-white mb-4">Son Seanslar</h3>
+                        <div id="focus-sessions-list" class="space-y-2">
+                            <p class="text-slate-500 text-sm text-center py-4">Henüz seans yok</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reflection Section -->
+            <div id="section-reflection" class="section-content hidden flex-col">
+                <div class="max-w-4xl mx-auto w-full">
                         <div class="mb-8">
                             <h2 class="text-3xl font-bold text-white font-display mb-2">Yansıma 📝</h2>
                             <p class="text-slate-400 text-sm">Kendini düşün, büyü</p>
@@ -3742,13 +3760,13 @@
                                 <p class="text-slate-500 text-sm text-center py-4">Henüz yansıma yok</p>
                             </div>
                         </div>
-                    </div>
-                </div>
+            </div>
+            </div>
 
-                <!-- ===== YENİ SECTION 1: PERSONA (KOÇ KARAKTERİ) ===== -->
-                <div id="section-persona" class="section-content hidden flex-col">
-                    <div class="max-w-3xl mx-auto w-full">
-                        <div class="mb-8">
+            <!-- ===== YENİ SECTION 1: PERSONA (KOÇ KARAKTERİ) ===== -->
+            <div id="section-persona" class="section-content hidden flex-col">
+                <div class="max-w-3xl mx-auto w-full">
+                    <div class="mb-8">
                             <h2 class="text-3xl font-bold text-white font-display mb-2">Koç Karakteri 🎭</h2>
                             <p class="text-slate-400 text-sm">AI koçunun kişiliğini seçin. Seçtiğiniz karakter tüm
                                 sohbetlere yansıyacak.</p>
@@ -3866,13 +3884,13 @@
                             <button onclick="saveMemory()" class="btn-primary mt-4 flex items-center gap-2"><i
                                     class="fa-solid fa-floppy-disk"></i> Belleği Kaydet</button>
                         </div>
-                    </div>
                 </div>
+            </div>
 
-                <!-- ===== YENİ SECTION 2: MOOD TRACKING (DUYGU DURUMU) ===== -->
-                <div id="section-mood" class="section-content hidden flex-col">
-                    <div class="max-w-4xl mx-auto w-full">
-                        <div class="mb-8">
+            <!-- ===== YENİ SECTION 2: MOOD TRACKING (DUYGU DURUMU) ===== -->
+            <div id="section-mood" class="section-content hidden flex-col">
+                <div class="max-w-4xl mx-auto w-full">
+                    <div class="mb-8">
                             <h2 class="text-3xl font-bold text-white font-display mb-2">Duygu Durumu 😊</h2>
                             <p class="text-slate-400 text-sm">Günlük ruh halinizi kaydedin, AI içgörüler üretsin</p>
                         </div>
@@ -3934,13 +3952,13 @@
                                 <p class="text-slate-500 text-sm text-center py-4">Henüz kayıt yok</p>
                             </div>
                         </div>
-                    </div>
                 </div>
+            </div>
 
-                <!-- ===== YENİ SECTION 3: TASK BREAKDOWN (GÖREV PARÇALA) ===== -->
-                <div id="section-taskbreak" class="section-content hidden flex-col">
-                    <div class="max-w-4xl mx-auto w-full">
-                        <div class="mb-8">
+            <!-- ===== YENİ SECTION 3: TASK BREAKDOWN (GÖREV PARÇALA) ===== -->
+            <div id="section-taskbreak" class="section-content hidden flex-col">
+                <div class="max-w-4xl mx-auto w-full">
+                    <div class="mb-8">
                             <h2 class="text-3xl font-bold text-white font-display mb-2">Görev Parçala ✂️</h2>
                             <p class="text-slate-400 text-sm">Büyük hayallerini küçük, başarılabilir adımlara böl</p>
                         </div>
@@ -3979,13 +3997,13 @@
                                 girerek
                                 başlayın!</p>
                         </div>
-                    </div>
                 </div>
+            </div>
 
-                <!-- ===== YENİ SECTION 4: ACHIEVEMENTS (BAŞARILAR / GAMİFİCATİON) ===== -->
-                <div id="section-achievements" class="section-content hidden flex-col">
-                    <div class="max-w-4xl mx-auto w-full">
-                        <div class="mb-8">
+            <!-- ===== YENİ SECTION 4: ACHIEVEMENTS (BAŞARILAR / GAMİFİCATİON) ===== -->
+            <div id="section-achievements" class="section-content hidden flex-col">
+                <div class="max-w-4xl mx-auto w-full">
+                    <div class="mb-8">
                             <h2 class="text-3xl font-bold text-white font-display mb-2">Başarılar 🏆</h2>
                             <p class="text-slate-400 text-sm">Puanlarını biriktir, seviyeleri atla, rozetler kazan</p>
                         </div>
@@ -4051,14 +4069,14 @@
                                 <p class="text-slate-500 text-sm text-center py-4">Henüz XP kazanımı yok</p>
                             </div>
                         </div>
-                    </div>
                 </div>
+            </div>
 
-                <!-- WAFFLE MODU (Görsel Üretme) Section -->
-                <div id="section-waffle" class="section-content hidden flex-col">
-                    <div class="max-w-4xl mx-auto w-full">
-                        <!-- Başlık Bölümü -->
-                        <div class="mb-8 flex items-center justify-between">
+            <!-- WAFFLE MODU (Görsel Üretme) Section -->
+            <div id="section-waffle" class="section-content hidden flex-col">
+                <div class="max-w-4xl mx-auto w-full">
+                    <!-- Başlık Bölümü -->
+                    <div class="mb-8 flex items-center justify-between">
                             <div class="flex items-center gap-5">
                                 <div
                                     class="w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-600/30 to-orange-800/30 border-2 border-amber-500/40 flex items-center justify-center text-5xl shadow-[0_0_20px_rgba(245,158,11,0.3)] relative overflow-hidden group">
@@ -4198,7 +4216,6 @@
                         </div>
                     </div>
                 </div>
-            </div>
 
             <!-- Smart Coach Section -->
             <div id="section-coach" class="section-content hidden flex-col">
