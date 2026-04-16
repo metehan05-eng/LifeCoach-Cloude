@@ -114,7 +114,7 @@ async function callGemini(prompt, history = [], systemInstruction = "") {
     if (!genAI) {
         throw new Error("Gemini API yapılandırılmamış");
     }
-    
+
     const model = genAI.getGenerativeModel({
         model: GEMINI_MODEL,
         generationConfig: {
@@ -128,7 +128,7 @@ async function callGemini(prompt, history = [], systemInstruction = "") {
 
     // Gemini formatına çevir
     const contents = [];
-    
+
     // History ekle
     for (const msg of history) {
         if (msg.role === 'user') {
@@ -143,7 +143,7 @@ async function callGemini(prompt, history = [], systemInstruction = "") {
             });
         }
     }
-    
+
     // Son kullanıcı mesajını ekle
     contents.push({
         role: 'user',
@@ -152,7 +152,7 @@ async function callGemini(prompt, history = [], systemInstruction = "") {
 
     const result = await model.generateContent({ contents });
     const response = result.response;
-    
+
     return {
         text: response.text(),
         model: GEMINI_MODEL
@@ -164,7 +164,7 @@ async function generateAIResponse(prompt, history = [], systemInstruction = "") 
     if (!genAI) {
         throw new Error("Gemini API yapılandırılmamış");
     }
-    
+
     console.log(`[AI] Gemini çalıştırılıyor: ${GEMINI_MODEL}`);
     const result = await callGemini(prompt, history, systemInstruction);
     console.log('[AI] Gemini yanıtı başarılı');
@@ -181,7 +181,7 @@ async function searchTavily(query, numResults = 5) {
         console.warn('[TavilySearch] TAVILY_API_KEY ayarlanmamış');
         return null;
     }
-    
+
     try {
         const response = await fetch('https://api.tavily.com/search', {
             method: 'POST',
@@ -198,18 +198,18 @@ async function searchTavily(query, numResults = 5) {
                 include_raw_content: false
             })
         });
-        
+
         if (!response.ok) {
             const errorText = await response.text();
             console.error('[TavilySearch] API error:', response.status, errorText);
             return null;
         }
-        
+
         const data = await response.json();
-        
+
         // Tavily sonuçlarını formatla
         const results = [];
-        
+
         // AI generated answer varsa ekle (öne çıkan bilgi gibi)
         if (data.answer) {
             results.push({
@@ -218,7 +218,7 @@ async function searchTavily(query, numResults = 5) {
                 isFeatured: true
             });
         }
-        
+
         // Arama sonuçlarını ekle
         if (data.results && data.results.length > 0) {
             for (const result of data.results.slice(0, numResults)) {
@@ -229,10 +229,10 @@ async function searchTavily(query, numResults = 5) {
                 });
             }
         }
-        
+
         console.log(`[TavilySearch] "${query}" için ${results.length} sonuç bulundu`);
         return results;
-        
+
     } catch (err) {
         console.error('[TavilySearch] Arama hatası:', err.message);
         return null;
@@ -244,9 +244,9 @@ function formatSearchResultsForAI(results, query) {
     if (!results || results.length === 0) {
         return '';
     }
-    
+
     let formatted = `\n\n--- İNTERNET ARAMA SONUÇLARI: "${query}" ---\n\n`;
-    
+
     results.forEach((result, index) => {
         if (result.isFeatured) {
             formatted += `[ÖNE ÇIKAN BİLGİ]\n${result.snippet}\n\n`;
@@ -256,10 +256,10 @@ function formatSearchResultsForAI(results, query) {
             formatted += `Özet: ${result.snippet}\n\n`;
         }
     });
-    
+
     formatted += '--- ARAMA SONUÇLARI BİTTİ ---\n';
     formatted += 'NOT: Yukarıdaki arama sonuçlarını kullanarak en güncel ve doğru bilgiyi ver.\n\n';
-    
+
     return formatted;
 }
 
@@ -272,37 +272,37 @@ async function generateImage(prompt, options = {}) {
         seed = null,
         nologo = true
     } = options;
-    
+
     try {
         // URL'yi oluştur - Pollinations.ai formatı
         const encodedPrompt = encodeURIComponent(prompt);
         let url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${width}&height=${height}&model=${model}`;
-        
+
         if (seed) url += `&seed=${seed}`;
         if (nologo) url += `&nologo=true`;
         if (POLLINATIONS_API_KEY) url += `&key=${POLLINATIONS_API_KEY}`;
-        
+
         console.log(`[Pollinations] Görsel üretiliyor: ${model}, ${width}x${height}`);
-        
+
         const response = await fetch(url, {
             method: 'GET',
             headers: {
                 'Accept': 'image/*, application/json'
             }
         });
-        
+
         if (!response.ok) {
             const errorText = await response.text();
             throw new Error(`Pollinations API hatası: ${response.status} - ${errorText}`);
         }
-        
+
         // Görseli base64 olarak al
         const imageBuffer = await response.arrayBuffer();
         const base64Image = Buffer.from(imageBuffer).toString('base64');
         const contentType = response.headers.get('content-type') || 'image/jpeg';
-        
+
         console.log(`[Pollinations] Görsel başarıyla üretildi (${(imageBuffer.byteLength / 1024).toFixed(1)} KB)`);
-        
+
         return {
             success: true,
             base64: base64Image,
@@ -311,7 +311,7 @@ async function generateImage(prompt, options = {}) {
             prompt: prompt,
             model: model
         };
-        
+
     } catch (err) {
         console.error('[Pollinations] Görsel üretim hatası:', err.message);
         return {
@@ -325,7 +325,7 @@ async function generateImage(prompt, options = {}) {
 function generateGoalImagePrompt(title, description) {
     const cleanTitle = title.replace(/[^a-zA-Z0-9\s\u00C0-\u017F]/g, '').trim();
     const cleanDesc = (description || '').replace(/[^a-zA-Z0-9\s\u00C0-\u017F]/g, '').trim();
-    
+
     return `A beautiful, inspiring illustration representing: ${cleanTitle}. ${cleanDesc}. 
     Professional artwork, clean composition, warm colors, motivational theme, 
     modern digital art style, high quality, no text, no watermarks.`;
@@ -358,7 +358,7 @@ async function searchYouTubeVideo(query) {
 }
 
 // Helper function to generate AI response for goals briefing - OpenRouter
-async function generateAIResponse(prompt, history = []) {
+async function generateAIResponseOpenRouter(prompt, history = []) {
     // OpenRouter modellerini dene
     if (!OPENROUTER_API_KEY) {
         throw new Error('AI not configured - OpenRouter API Key eksik');
@@ -1102,11 +1102,11 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
         // --- GOOGLE ARAMA (Bilgi gerektiren sorular için) ---
         let searchContext = '';
         const lastMessageText = userMessageParts.map(p => p.text || '').join(' ');
-        
+
         // Bilgi gerektiren soru olup olmadığını kontrol et
         const isInformationalQuery = /^(ne|nedir|nasıl|kim|hangi|neden|niçin|kaç|ne zaman|nerede|nereden|Örnek|Açıkla|Detaylandır|Anlat)/i.test(lastMessageText) ||
-                                     lastMessageText.length > 20;
-        
+            lastMessageText.length > 20;
+
         if (isInformationalQuery && TAVILY_API_KEY) {
             try {
                 // Arama sorgusu oluştur (kullanıcı mesajını temizle)
@@ -1114,11 +1114,11 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
                     .replace(/[?!.].*$/g, '') // Soru işareti ve sonrasını kaldır
                     .substring(0, 100) // Max 100 karakter
                     .trim();
-                
+
                 if (searchQuery.length > 10) {
                     console.log(`[TavilySearch] Chat için arama yapılıyor: "${searchQuery}"`);
                     const searchResults = await searchTavily(searchQuery, 5);
-                    
+
                     if (searchResults && searchResults.length > 0) {
                         searchContext = formatSearchResultsForAI(searchResults, searchQuery);
                         console.log(`[TavilySearch] ${searchResults.length} sonuç bulundu ve prompt'a eklendi`);
@@ -1167,12 +1167,12 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
         }
         // Son kullanıcı mesajını ekle (metin içeriği) + arama sonuçları varsa ekle
         let lastUserContent = userMessageParts.map(p => p.text || '').join(' ');
-        
+
         // Eğer Google arama sonuçları varsa, kullanıcı mesajına ekle
         if (searchContext) {
             lastUserContent = lastUserContent + searchContext;
         }
-        
+
         openRouterMessages.push({ role: 'user', content: lastUserContent });
 
         // Önce ana modeli dene, başarısız olursa yedek modeli dene
@@ -2124,7 +2124,7 @@ app.post('/api/goals', authenticateToken, async (req, res) => {
                 height: 1024,
                 model: 'flux-schnell'
             });
-            
+
             if (imageResult.success) {
                 goalImage = imageResult.dataUrl;
                 console.log(`[Pollinations] Hedef görseli oluşturuldu: ${title}`);
@@ -2354,21 +2354,21 @@ app.delete('/api/goals', authenticateToken, async (req, res) => {
 app.post('/api/goals/generate-image', authenticateToken, async (req, res) => {
     try {
         const { title, description } = req.body;
-        
+
         if (!title) {
             return res.status(400).json({ error: 'Hedef başlığı gereklidir' });
         }
-        
+
         // Görsel promptunu oluştur
         const imagePrompt = generateGoalImagePrompt(title, description);
-        
+
         // Pollinations.ai ile görsel üret
         const imageResult = await generateImage(imagePrompt, {
             width: 1024,
             height: 1024,
             model: 'flux-schnell'
         });
-        
+
         if (imageResult.success) {
             res.json({
                 success: true,
@@ -2382,7 +2382,7 @@ app.post('/api/goals/generate-image', authenticateToken, async (req, res) => {
                 error: imageResult.error || 'Görsel üretilemedi'
             });
         }
-        
+
     } catch (error) {
         console.error('[Pollinations] Endpoint hatası:', error);
         res.status(500).json({ error: 'Görsel üretim hatası: ' + error.message });
@@ -2613,6 +2613,39 @@ app.all('/api/social', authenticateToken, async (req, res) => {
     try {
         const userId = String(req.user.id); // Ensure string for consistency
         const { type, action, id } = req.query;
+
+        if (type === 'partners') {
+            const partnersKV = await getKVData('accountability_partners') || {};
+            const userPartners = partnersKV[userId] || [];
+
+            if (req.method === 'GET') {
+                if (action === 'checkins') {
+                    const allCheckIns = await getKVData('social_checkins') || {};
+                    const userCheckIns = allCheckIns[userId] || [];
+                    return res.json(userCheckIns);
+                }
+                return res.json(userPartners);
+            }
+
+            if (req.method === 'POST') {
+                if (action === 'checkin') {
+                    const { partnerId, message } = req.body;
+                    const allCheckIns = await getKVData('social_checkins') || {};
+                    if (!allCheckIns[partnerId]) allCheckIns[partnerId] = [];
+                    
+                    const checkIn = {
+                        senderId: userId,
+                        partnerName: req.user.name || 'Partner',
+                        message,
+                        date: new Date().toISOString()
+                    };
+                    
+                    allCheckIns[partnerId].push(checkIn);
+                    await setKVData('social_checkins', allCheckIns);
+                    return res.json({ success: true });
+                }
+            }
+        }
 
         if (type === 'groups') {
             const groupsKV = await getKVData('study_groups') || {};
@@ -3689,7 +3722,124 @@ app.post('/api/py_generator', optionalAuth, async (req, res) => {
     }
 });
 
-// Dosya indirme
+// === NOTIFICATIONS API ===
+app.get('/api/notifications', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const allHabits = await getKVData('habits') || {};
+        const userHabits = allHabits[userId] || [];
+        
+        const pendingNotifications = [];
+        const now = new Date();
+        const todayStr = now.toISOString().split('T')[0];
+        
+        for (const habit of userHabits) {
+            if (!habit.reminder || !habit.reminder.enabled) continue;
+            
+            const [hours, minutes] = habit.reminder.time.split(':').map(Number);
+            const reminderTime = new Date(now);
+            reminderTime.setHours(hours, minutes, 0, 0);
+            
+            // Should send today? (Simplified)
+            let shouldSend = true;
+            if (habit.lastNotificationAt) {
+                const lastDate = new Date(habit.lastNotificationAt).toISOString().split('T')[0];
+                if (lastDate === todayStr) shouldSend = false;
+            }
+            
+            if (shouldSend && now >= reminderTime) {
+                pendingNotifications.push({
+                    habitId: habit.id,
+                    habitName: habit.name,
+                    title: `⏰ ${habit.name}`,
+                    message: `Alışkanlığını tamamlama vakti! 🚀`
+                });
+                habit.lastNotificationAt = now.toISOString();
+            }
+        }
+        
+        if (pendingNotifications.length > 0) {
+            allHabits[userId] = userHabits;
+            await setKVData('habits', allHabits);
+        }
+        
+        res.json({ notifications: pendingNotifications });
+    } catch (error) {
+        console.error('Notifications error:', error);
+        res.status(500).json({ error: 'Bildirimler alınamadı' });
+    }
+});
+
+app.post('/api/notifications', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { subscription } = req.body;
+        
+        if (subscription) {
+            const allSubs = await getKVData('push_subscriptions') || {};
+            allSubs[userId] = subscription;
+            await setKVData('push_subscriptions', allSubs);
+            return res.json({ success: true });
+        }
+        
+        res.status(400).json({ error: 'Subscription gerekli' });
+    } catch (error) {
+        res.status(500).json({ error: 'İşlem başarısız' });
+    }
+});
+
+// === CHALLENGES API ===
+app.get('/api/challenges', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { type } = req.query;
+        
+        if (type === 'analytics') {
+            const allAnalytics = await getKVData('user_analytics') || {};
+            const userAnalytics = allAnalytics[userId] || { totalEvents: 0, events: [] };
+            return res.json(userAnalytics);
+        }
+        
+        const allChallenges = await getKVData('challenges') || {};
+        const userChallenges = allChallenges[userId] || [];
+        res.json({ challenges: userChallenges });
+    } catch (error) {
+        res.status(500).json({ error: 'Challengelar alınamadı' });
+    }
+});
+
+// === ADVANCED API (Leaderboard etc) ===
+app.get('/api/advanced', authenticateToken, async (req, res) => {
+    try {
+        const { type } = req.query;
+        
+        if (type === 'leaderboard') {
+            const allStats = await getKVData('user-stats') || {};
+            const leaderboard = Object.entries(allStats)
+                .map(([userId, stats]) => ({
+                    userId,
+                    name: stats.name || 'Gizli Kullanıcı',
+                    xp: stats.xp || 0,
+                    streak: stats.flameLevel || 0
+                }))
+                .sort((a, b) => b.xp - a.xp)
+                .slice(0, 10);
+                
+            return res.json(leaderboard);
+        }
+        
+        res.status(400).json({ error: 'Geçersiz tip' });
+    } catch (error) {
+        res.status(500).json({ error: 'Veri alınamadı' });
+    }
+});
+
+// === SOSYAL API UPDATE (PARTNERS) ===
+// Note: Inserting this into the app.all('/api/social') logic would be better but let's add a separate handler for simplicity if it falls through, 
+// or I should actually update the existing social handler.
+// I'll update the existing social handler instead.
+
+// === DOSYA İNDİRME ===
 app.get('/api/download', optionalAuth, async (req, res) => {
     try {
         const filePath = req.query.path;
