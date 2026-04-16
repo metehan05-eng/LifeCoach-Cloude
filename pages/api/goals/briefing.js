@@ -15,29 +15,44 @@ const OPENROUTER_MODELS = [
 
 console.log('[Briefing] OpenRouter sistemi aktif');
 
-// Tavily AI Search Helper
-async function searchTavily(query, numResults = 5) {
+// Timeout promise helper
+function withTimeout(promise, ms, label) {
+    return Promise.race([
+        promise,
+        new Promise((_, reject) => 
+            setTimeout(() => reject(new Error(`${label} timeout (${ms}ms)`)), ms)
+        )
+    ]);
+}
+
+// Tavily AI Search Helper - Hızlı versiyon
+async function searchTavily(query, numResults = 3) {
     if (!TAVILY_API_KEY) {
         console.warn('[BriefingSearch] TAVILY_API_KEY ayarlanmamış');
         return null;
     }
     
     try {
-        const response = await fetch('https://api.tavily.com/search', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${TAVILY_API_KEY}`
-            },
-            body: JSON.stringify({
-                query: query,
-                search_depth: 'advanced',
-                max_results: numResults,
-                include_answer: true,
-                include_images: false,
-                include_raw_content: false
-            })
-        });
+        // 3 saniyelik timeout ile ara
+        const response = await withTimeout(
+            fetch('https://api.tavily.com/search', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${TAVILY_API_KEY}`
+                },
+                body: JSON.stringify({
+                    query: query,
+                    search_depth: 'basic', // 'advanced' yerine 'basic' - daha hızlı
+                    max_results: numResults,
+                    include_answer: true,
+                    include_images: false,
+                    include_raw_content: false
+                })
+            }),
+            3000, // 3 saniye timeout
+            'Tavily search'
+        );
         
         if (!response.ok) {
             const errorText = await response.text();
@@ -72,8 +87,8 @@ async function searchTavily(query, numResults = 5) {
         return results;
         
     } catch (err) {
-        console.error('[BriefingSearch] Arama hatası:', err.message);
-        return null;
+        console.warn('[BriefingSearch] Arama hatası (timeout veya hata):', err.message);
+        return null; // Hata durumunda null dön, fallback kullanılacak
     }
 }
 
@@ -98,25 +113,29 @@ function formatSearchResults(results, query) {
     return formatted;
 }
 
-// OpenRouter API çağrısı
-async function callOpenRouter(messages, model, systemPrompt = null, temperature = 0.7, maxTokens = 2000) {
-    const response = await fetch(OPENROUTER_API_ENDPOINT, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-            'Content-Type': 'application/json',
-            'HTTP-Referer': 'https://han-ai.dev/',
-            'X-Title': 'Life Coach AI'
-        },
-        body: JSON.stringify({
-            model: model,
-            messages: systemPrompt 
-                ? [{ role: 'system', content: systemPrompt }, ...messages]
-                : messages,
-            temperature: temperature,
-            max_tokens: maxTokens
-        })
-    });
+// OpenRouter API çağrısı - timeout ile
+async function callOpenRouter(messages, model, systemPrompt = null, temperature = 0.7, maxTokens = 1500) {
+    const response = await withTimeout(
+        fetch(OPENROUTER_API_ENDPOINT, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+                'Content-Type': 'application/json',
+                'HTTP-Referer': 'https://han-ai.dev/',
+                'X-Title': 'Life Coach AI'
+            },
+            body: JSON.stringify({
+                model: model,
+                messages: systemPrompt 
+                    ? [{ role: 'system', content: systemPrompt }, ...messages]
+                    : messages,
+                temperature: temperature,
+                max_tokens: maxTokens
+            })
+        }),
+        8000, // 8 saniye timeout
+        'OpenRouter API'
+    );
 
     if (!response.ok) {
         const errorText = await response.text();
@@ -142,7 +161,7 @@ async function generateAIContent(prompt, systemPrompt = "") {
     for (const modelName of OPENROUTER_MODELS) {
         try {
             console.log(`[AI-Briefing] OpenRouter deneniyor: ${modelName}`);
-            const response = await callOpenRouter(messages, modelName, systemPrompt, 0.7, 2000);
+            const response = await callOpenRouter(messages, modelName, systemPrompt, 0.7, 1200);
             console.log(`[AI-Briefing] ${modelName} başarılı`);
             return response.text;
         } catch (error) {
