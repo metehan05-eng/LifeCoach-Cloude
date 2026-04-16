@@ -464,7 +464,19 @@
                 })
             });
 
+            // Debug: Log response status and content type
+            console.log('[Briefing] Response status:', res.status, 'Content-Type:', res.headers.get('content-type'));
+
+            // Check if response is JSON before parsing
+            const contentType = res.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await res.text();
+                console.error('[Briefing] Non-JSON response:', text.substring(0, 500));
+                throw new Error(`Sunucu JSON yerine ${contentType || 'bilinmeyen'} döndürdü. Status: ${res.status}`);
+            }
+
             const data = await res.json();
+            console.log('[Briefing] Parsed data:', data);
 
             if (!res.ok || data.error) {
                 throw new Error(data.error || `Sunucu hatası: ${res.status}`);
@@ -474,9 +486,9 @@
             renderBriefing(data.briefing, date, data.video || null);
 
         } catch (err) {
-            console.error(err);
+            console.error('[Briefing] Error:', err);
             document.getElementById('briefingContent').innerHTML =
-                `<p class="text-red-400 p-4 border border-red-500/20 rounded-xl text-sm">${err.message}</p>`;
+                `<p class="text-red-400 p-4 border border-red-500/20 rounded-xl text-sm"><strong>Hata:</strong> ${err.message}</p>`;
         } finally {
             document.getElementById('loadingState').classList.add('hidden');
             document.getElementById('briefingCard').classList.remove('hidden');
