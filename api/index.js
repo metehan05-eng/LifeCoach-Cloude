@@ -199,7 +199,41 @@ async function callGemini(prompt, history = [], systemInstruction = "") {
             }
         }
     }
-    throw new Error(`Tüm AI modelleri denendi ancak başarılı olunamadı. Son hata: ${lastError?.message}`);
+
+    // ── ULTIMATE FALLBACK: Direct Fetch (SDK'yı es geçerek ham HTTP isteği atar) ──
+    console.log("[AI] SDK başarısız, ham HTTP (fetch) denemesi başlatılıyor...");
+    for (const modelName of modelsToTry) {
+        for (const apiVer of apiVersions) {
+            try {
+                const apiKey = GEMINI_API_KEY.trim();
+                const url = `https://generativelanguage.googleapis.com/${apiVer}/models/${modelName}:generateContent?key=${apiKey}`;
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: (systemInstruction ? systemInstruction + "\n\n" : "") + prompt }] }],
+                        generationConfig: { maxOutputTokens: 4000, temperature: 0.7 }
+                    })
+                });
+
+                const data = await response.json();
+                if (response.ok && data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
+                    console.log(`[AI] Ham HTTP ile BAŞARILI: ${modelName} (${apiVer})`);
+                    return {
+                        text: data.candidates[0].content.parts[0].text,
+                        model: modelName
+                    };
+                } else if (data.error) {
+                    console.warn(`[AI] Ham HTTP hatası (${modelName} - ${apiVer}): ${data.error.message}`);
+                }
+            } catch (fetchErr) {
+                console.error(`[AI] Ham HTTP kritik hata: ${fetchErr.message}`);
+            }
+        }
+    }
+
+    throw new Error(`Tüm AI modelleri ve bağlantı yöntemleri denendi ancak başarılı olunamadı. Lütfen API anahtarınızın "Generative Language API" yetkisi olduğundan emin olun. Son hata: ${lastError?.message}`);
 }
 
 // ── AI Yanıt Fonksiyonu (Sadece Gemini) ──────────────────────────────
