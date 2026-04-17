@@ -91,6 +91,20 @@ const JWT_SECRET = process.env.JWT_SECRET || 'gizli-anahtar-degistir';
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+// --- YARDIMCI FONKSİYONLAR ---
+/**
+ * Türkiye (UTC+3) saatine göre bugünün tarihini YYYY-MM-DD formatında döner.
+ */
+function getTodayDate() {
+    return new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Istanbul' });
+}
+
+function getYesterdayDate() {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return d.toLocaleDateString('sv-SE', { timeZone: 'Europe/Istanbul' });
+}
+
 // Gemini Client (Tek AI)
 let genAI = null;
 if (GEMINI_API_KEY) {
@@ -1634,24 +1648,23 @@ app.get('/forgot-password', (req, res) => {
 
 function calculateStreak(completions) {
     if (!completions || completions.length === 0) return 0;
-    const sortedDates = [...completions].sort((a, b) => new Date(b) - new Date(a));
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const lastCompletion = new Date(sortedDates[0]);
-    lastCompletion.setHours(0, 0, 0, 0);
-    if (lastCompletion < yesterday) return 0;
+    const sortedDates = [...new Set(completions)].sort().reverse();
+    const today = getTodayDate();
+    const yesterday = getYesterdayDate();
+    
+    if (sortedDates[0] !== today && sortedDates[0] !== yesterday) return 0;
+    
     let streak = 0;
-    let currentDate = lastCompletion.getTime() === today.getTime() ? today : yesterday;
-    for (let i = 0; i < sortedDates.length; i++) {
-        const completionDate = new Date(sortedDates[i]);
-        completionDate.setHours(0, 0, 0, 0);
-        if (completionDate.getTime() === currentDate.getTime()) {
+    let checkDateStr = sortedDates[0];
+    
+    for (const date of sortedDates) {
+        if (date === checkDateStr) {
             streak++;
-            currentDate = new Date(currentDate);
-            currentDate.setDate(currentDate.getDate() - 1);
-        } else if (completionDate.getTime() < currentDate.getTime()) {
+            const d = new Date(checkDateStr);
+            d.setHours(d.getHours() + 12); // Buffer to stay on the same logical day regardless of DST
+            d.setDate(d.getDate() - 1);
+            checkDateStr = d.toLocaleDateString('sv-SE', { timeZone: 'Europe/Istanbul' });
+        } else {
             break;
         }
     }
@@ -1661,10 +1674,8 @@ function calculateStreak(completions) {
 function calculateReflectionStreak(reflections) {
     if (!reflections || reflections.length === 0) return 0;
     const dates = [...new Set(reflections.map(r => r.date))].sort().reverse();
-    const today = new Date().toISOString().split('T')[0];
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    const today = getTodayDate();
+    const yesterdayStr = getYesterdayDate();
     if (dates[0] !== today && dates[0] !== yesterdayStr) return 0;
     let streak = 1;
     for (let i = 1; i < dates.length; i++) {
@@ -1682,10 +1693,8 @@ function calculateFocusStreak(sessions) {
     const completedSessions = sessions.filter(s => s.status === 'completed');
     if (completedSessions.length === 0) return 0;
     const dates = [...new Set(completedSessions.map(s => s.date))].sort().reverse();
-    const today = new Date().toISOString().split('T')[0];
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    const today = getTodayDate();
+    const yesterdayStr = getYesterdayDate();
     if (dates[0] !== today && dates[0] !== yesterdayStr) return 0;
     let streak = 1;
     for (let i = 1; i < dates.length; i++) {
@@ -1705,7 +1714,7 @@ app.get('/api/habits', authenticateToken, async (req, res) => {
         const userId = req.user.id;
         const allHabits = await getKVData('habits');
         const userHabits = allHabits[userId] || [];
-        const today = new Date().toISOString().split('T')[0];
+        const today = getTodayDate();
         const habitsWithStats = userHabits.map(habit => {
             const completions = habit.completions || [];
             return {
@@ -1731,7 +1740,7 @@ app.post('/api/habits', authenticateToken, async (req, res) => {
         if (action === 'toggle') {
             const habitIndex = userHabits.findIndex(h => h.id === id);
             if (habitIndex === -1) return res.status(404).json({ error: 'Alışkanlık bulunamadı' });
-            const today = new Date().toISOString().split('T')[0];
+            const today = getTodayDate();
             const completions = userHabits[habitIndex].completions || [];
             let updatedCompletions = completions.includes(today) ? completions.filter(d => d !== today) : [...completions, today];
             userHabits[habitIndex] = { ...userHabits[habitIndex], completions: updatedCompletions, streak: calculateStreak(updatedCompletions), updatedAt: new Date().toISOString() };
@@ -1873,7 +1882,7 @@ app.get('/api/reflections', authenticateToken, async (req, res) => {
         const allReflections = await getKVData('reflections');
         const userReflections = allReflections[userId] || [];
         userReflections.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        const today = new Date().toISOString().split('T')[0];
+        const today = getTodayDate();
         res.json({
             reflections: userReflections,
             todayReflection: userReflections.find(r => r.date === today),
@@ -1891,7 +1900,7 @@ app.post('/api/reflections', authenticateToken, async (req, res) => {
         const { content, type, mood, achievements, improvements, tomorrowGoals } = req.body;
         const allReflections = await getKVData('reflections');
         const userReflections = allReflections[userId] || [];
-        const today = new Date().toISOString().split('T')[0];
+        const today = getTodayDate();
         const existingToday = userReflections.find(r => r.date === today && r.type === (type || 'daily'));
         const newReflection = {
             id: Date.now().toString(), content, type: type || 'daily', mood: mood || 'neutral',
@@ -1949,7 +1958,7 @@ app.get('/api/focus', authenticateToken, async (req, res) => {
         const userId = req.user.id;
         const allFocus = await getKVData('focus');
         const userFocus = allFocus[userId] || [];
-        const today = new Date().toISOString().split('T')[0];
+        const today = getTodayDate();
         const todaySessions = userFocus.filter(s => s.date === today);
         const totalMinutes = userFocus.reduce((sum, s) => sum + (s.duration || 0), 0);
         res.json({
@@ -1972,7 +1981,7 @@ app.post('/api/focus', authenticateToken, async (req, res) => {
         const allFocus = await getKVData('focus');
         const userFocus = allFocus[userId] || [];
         if (action === 'start') {
-            const newSession = { id: Date.now().toString(), startTime: startTime || new Date().toISOString(), endTime: null, duration: 0, date: new Date().toISOString().split('T')[0], status: 'active' };
+            const newSession = { id: Date.now().toString(), startTime: startTime || new Date().toISOString(), endTime: null, duration: 0, date: getTodayDate(), status: 'active' };
             userFocus.push(newSession);
             allFocus[userId] = userFocus;
             await setKVData('focus', allFocus);
@@ -2076,7 +2085,7 @@ app.get('/api/goals', authenticateToken, async (req, res) => {
         const userId = req.user.id;
         const allGoals = await getKVData('goals');
         const userGoals = allGoals[userId] || [];
-        const today = new Date().toISOString().split('T')[0];
+        const today = getTodayDate();
 
         const goalsWithStats = userGoals.map(goal => {
             const completions = goal.completions || [];
@@ -2194,8 +2203,8 @@ app.post('/api/goals/briefing', authenticateToken, async (req, res) => {
         if (!title || !description) return res.status(400).json({ error: 'Title and description required' });
 
         // ── Date handling (no timezone shift)
-        const targetDate = date || new Date().toISOString().split('T')[0];
-        const todayDate = new Date().toISOString().split('T')[0];
+        const targetDate = date || getTodayDate();
+        const todayDate = getTodayDate();
         const [y, m, d2] = targetDate.split('-').map(Number);
         const dayLabel = new Date(y, m - 1, d2).toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' });
 
@@ -2318,7 +2327,7 @@ app.post('/api/goals/toggle', authenticateToken, async (req, res) => {
 
         if (idx === -1) return res.status(404).json({ error: 'Hedef bulunamadı' });
 
-        const today = new Date().toISOString().split('T')[0];
+        const today = getTodayDate();
         const completions = userGoals[idx].completions || [];
 
         let updatedCompletions;
@@ -3607,7 +3616,7 @@ app.post('/api/eq-dashboard/export', authenticateToken, async (req, res) => {
         pythonProcess.stdin.write(JSON.stringify({
             mode: 'export',
             type: 'word',
-            filename: `EQ_Rapor_${new Date().toISOString().split('T')[0]}.docx`,
+            filename: `EQ_Rapor_${getTodayDate()}.docx`,
             content: reportContent,
             eq_data: moodHistory.slice(-14) // Last 14 days for chart
         }));
@@ -3634,7 +3643,7 @@ app.post('/api/eq-dashboard/export', authenticateToken, async (req, res) => {
                     return res.status(404).json({ error: 'Generated file not found' });
                 }
 
-                res.download(filePath, `EQ_Rapor_${new Date().toISOString().split('T')[0]}.docx`, (err) => {
+                res.download(filePath, `EQ_Rapor_${getTodayDate()}.docx`, (err) => {
                     if (err) console.error("Download error:", err);
                     try { if (fs.existsSync(filePath)) fs.unlinkSync(filePath); } catch (e) { }
                 });
