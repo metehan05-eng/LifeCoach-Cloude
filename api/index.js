@@ -82,7 +82,8 @@ app.use(express.json({ limit: '50mb' }));
 // Gemini API Ayarları (Tek AI - Sadece Gemini)
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_API_ENDPOINT = process.env.GEMINI_API_ENDPOINT || 'https://generativelanguage.googleapis.com/v1/models';
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash-exp';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
+const GEMINI_FALLBACK_MODELS = ['gemini-1.5-flash', 'gemini-pro'];
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 const TAVILY_API_KEY = process.env.TAVILY_API_KEY; // Tavily AI arama için
 const POLLINATIONS_API_KEY = process.env.POLLINATIONS_API_KEY; // Pollinations.ai görsel üretim için (opsiyonel)
@@ -107,10 +108,27 @@ function getYesterdayDate() {
 
 // Gemini Client (Tek AI)
 let genAI = null;
+let ACTUAL_GEMINI_MODEL = GEMINI_MODEL;
+
+// --- DİNAMİK MODEL YAPILANDIRMASI ---
+// Monitor scripti tarafından oluşturulan config.json dosyasını kontrol et
+try {
+    const configPath = path.join(__dirname, 'data/ai_config.json');
+    if (fs.existsSync(configPath)) {
+        const dynamicConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+        if (dynamicConfig.active_model) {
+            ACTUAL_GEMINI_MODEL = dynamicConfig.active_model;
+            console.log(`[AI] Dinamik model yüklendi: ${ACTUAL_GEMINI_MODEL} (Kaynak: ai_monitor.py)`);
+        }
+    }
+} catch (err) {
+    console.warn("[AI] Dinamik yapılandırma okunamadı, varsayılan kullanılacak.");
+}
+
 if (GEMINI_API_KEY) {
     genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
     console.log(`[AI] Gemini API aktif: ${GEMINI_API_ENDPOINT}`);
-    console.log(`[AI] Varsayılan Gemini modeli: ${GEMINI_MODEL}`);
+    console.log(`[AI] Aktif Gemini modeli: ${ACTUAL_GEMINI_MODEL}`);
 } else {
     console.warn("UYARI: GEMINI_API_KEY ayarlanmamış. AI özellikleri çalışmayabilir.");
 }
@@ -129,48 +147,50 @@ async function callGemini(prompt, history = [], systemInstruction = "") {
         throw new Error("Gemini API yapılandırılmamış");
     }
 
-    const model = genAI.getGenerativeModel({
-        model: GEMINI_MODEL,
-        generationConfig: {
-            maxOutputTokens: 4000,
-            temperature: 0.7,
-        },
-        ...(systemInstruction && {
-            systemInstruction: { parts: [{ text: systemInstruction }] }
-        })
-    });
+    const modelsToTry = [ACTUAL_GEMINI_MODEL, GEMINI_MODEL, ...GEMINI_FALLBACK_MODELS];
+    let lastError = null;
 
-    // Gemini formatına çevir
-    const contents = [];
+    for (const modelName of modelsToTry) {
+        try {
+            console.log(`[AI] Gemini denemesi: ${modelName}`);
+            const model = genAI.getGenerativeModel({
+                model: modelName,
+                generationConfig: {
+                    maxOutputTokens: 4000,
+                    temperature: 0.7,
+                },
+                ...(systemInstruction && {
+                    systemInstruction: { parts: [{ text: systemInstruction }] }
+                })
+            });
 
-    // History ekle
-    for (const msg of history) {
-        if (msg.role === 'user') {
-            contents.push({
-                role: 'user',
-                parts: [{ text: msg.content || msg.parts?.map(p => p.text).join(' ') || '' }]
-            });
-        } else if (msg.role === 'assistant' || msg.role === 'model') {
-            contents.push({
-                role: 'model',
-                parts: [{ text: msg.content || msg.parts?.map(p => p.text).join(' ') || '' }]
-            });
+            // Gemini formatına çevir
+            const contents = [];
+            for (const msg of history) {
+                if (msg.role === 'user') {
+                    contents.push({ role: 'user', parts: [{ text: msg.content || msg.parts?.map(p => p.text).join(' ') || '' }] });
+                } else if (msg.role === 'assistant' || msg.role === 'model') {
+                    contents.push({ role: 'model', parts: [{ text: msg.content || msg.parts?.map(p => p.text).join(' ') || '' }] });
+                }
+            }
+            contents.push({ role: 'user', parts: [{ text: prompt }] });
+
+            const result = await model.generateContent({ contents });
+            const response = result.response;
+            
+            console.log(`[AI] ${modelName} yanıtı başarılı`);
+            return {
+                text: response.text(),
+                model: modelName
+            };
+        } catch (err) {
+            console.error(`[AI] ${modelName} hatası:`, err.message);
+            lastError = err;
+            // Eğer model bulunamadıysa (404) veya bakiye bittiyse (429/403) bir sonrakini dene
+            if (modelName === modelsToTry[modelsToTry.length - 1]) throw lastError;
         }
     }
-
-    // Son kullanıcı mesajını ekle
-    contents.push({
-        role: 'user',
-        parts: [{ text: prompt }]
-    });
-
-    const result = await model.generateContent({ contents });
-    const response = result.response;
-
-    return {
-        text: response.text(),
-        model: GEMINI_MODEL
-    };
+    throw lastError;
 }
 
 // ── AI Yanıt Fonksiyonu (Sadece Gemini) ──────────────────────────────
