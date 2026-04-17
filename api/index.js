@@ -126,7 +126,9 @@ try {
 }
 
 if (GEMINI_API_KEY) {
-    genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+    // API Key'in başında/sonunda boşluk varsa temizle (Vercel'de bazen yaşanabiliyor)
+    const cleanApiKey = GEMINI_API_KEY.trim();
+    genAI = new GoogleGenerativeAI(cleanApiKey);
     console.log(`[AI] Gemini API aktif: ${GEMINI_API_ENDPOINT}`);
     console.log(`[AI] Aktif Gemini modeli: ${ACTUAL_GEMINI_MODEL}`);
 } else {
@@ -148,49 +150,56 @@ async function callGemini(prompt, history = [], systemInstruction = "") {
     }
 
     const modelsToTry = [ACTUAL_GEMINI_MODEL, GEMINI_MODEL, ...GEMINI_FALLBACK_MODELS];
+    const apiVersions = ['v1', 'v1beta'];
     let lastError = null;
 
     for (const modelName of modelsToTry) {
-        try {
-            console.log(`[AI] Gemini denemesi: ${modelName} (Versiyon denemesi: v1)`);
-            const model = genAI.getGenerativeModel({
-                model: modelName,
-                generationConfig: {
-                    maxOutputTokens: 4000,
-                    temperature: 0.7,
-                },
-                ...(systemInstruction && {
-                    systemInstruction: { parts: [{ text: systemInstruction }] }
-                })
-            }, { apiVersion: 'v1' });
+        for (const apiVer of apiVersions) {
+            try {
+                console.log(`[AI] denemesi: ${modelName} | API: ${apiVer}`);
+                const model = genAI.getGenerativeModel({
+                    model: modelName,
+                    generationConfig: {
+                        maxOutputTokens: 4000,
+                        temperature: 0.7,
+                    },
+                    ...(systemInstruction && {
+                        systemInstruction: { parts: [{ text: systemInstruction }] }
+                    })
+                }, { apiVersion: apiVer });
 
-            // Gemini formatına çevir
-            const contents = [];
-            for (const msg of history) {
-                if (msg.role === 'user') {
-                    contents.push({ role: 'user', parts: [{ text: msg.content || msg.parts?.map(p => p.text).join(' ') || '' }] });
-                } else if (msg.role === 'assistant' || msg.role === 'model') {
-                    contents.push({ role: 'model', parts: [{ text: msg.content || msg.parts?.map(p => p.text).join(' ') || '' }] });
+                const contents = [];
+                for (const msg of history) {
+                    if (msg.role === 'user') {
+                        contents.push({ role: 'user', parts: [{ text: msg.content || msg.parts?.map(p => p.text).join(' ') || '' }] });
+                    } else if (msg.role === 'assistant' || msg.role === 'model') {
+                        contents.push({ role: 'model', parts: [{ text: msg.content || msg.parts?.map(p => p.text).join(' ') || '' }] });
+                    }
                 }
-            }
-            contents.push({ role: 'user', parts: [{ text: prompt }] });
+                contents.push({ role: 'user', parts: [{ text: prompt }] });
 
-            const result = await model.generateContent({ contents });
-            const response = result.response;
-            
-            console.log(`[AI] ${modelName} yanıtı başarılı`);
-            return {
-                text: response.text(),
-                model: modelName
-            };
-        } catch (err) {
-            console.error(`[AI] ${modelName} hatası:`, err.message);
-            lastError = err;
-            // Eğer model bulunamadıysa (404) veya bakiye bittiyse (429/403) bir sonrakini dene
-            if (modelName === modelsToTry[modelsToTry.length - 1]) throw lastError;
+                const result = await model.generateContent({ contents });
+                const response = result.response;
+                
+                console.log(`[AI] BAŞARILI: ${modelName} (${apiVer})`);
+                return {
+                    text: response.text(),
+                    model: modelName
+                };
+            } catch (err) {
+                console.warn(`[AI] BAŞARISIZ: ${modelName} (${apiVer}) -> ${err.message}`);
+                lastError = err;
+                
+                // Eğer hata API Key kaynaklıysa (401/403) diğerlerini deneme, direkt hata dön
+                if (err.message.includes('401') || err.message.includes('403') || err.message.includes('API key')) {
+                    throw new Error("API Anahtarı geçersiz veya yetkisiz: " + err.message);
+                }
+                
+                // Aksi halde döngü devam eder ve bir sonraki versiyonu/modeli dener
+            }
         }
     }
-    throw lastError;
+    throw new Error(`Tüm AI modelleri denendi ancak başarılı olunamadı. Son hata: ${lastError?.message}`);
 }
 
 // ── AI Yanıt Fonksiyonu (Sadece Gemini) ──────────────────────────────
