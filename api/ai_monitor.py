@@ -12,51 +12,67 @@ def log_status(message):
     print(f"[{timestamp}] {message}")
 
 def check_gemini_models():
-    # .env dosyasından okuma simülasyonu (Vercel ortamında ortam değişkenleri mevcuttur)
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         log_status("HATA: GEMINI_API_KEY bulunamadı.")
         return []
 
-    log_status("Gemini modelleri listeleniyor...")
-    # v1beta üzerinden modelleri listele
-    url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
+    log_status("Gemini modelleri listeleniyor (v1 ve v1beta denemesi)...")
     
-    try:
-        response = requests.get(url)
-        if response.status_code != 200:
-            log_status(f"HATA: Modeller listelenemedi ({response.status_code})")
-            return []
+    # Her iki versiyonu da dene
+    versions = ["v1", "v1beta"]
+    all_found_models = []
+    
+    for ver in versions:
+        url = f"https://generativelanguage.googleapis.com/{ver}/models?key={api_key}"
+        try:
+            response = requests.get(url)
+            if response.status_code == 200:
+                models = response.json().get("models", [])
+                for m in models:
+                    m["api_version"] = ver # Versiyon bilgisini sakla
+                    all_found_models.append(m)
+            else:
+                log_status(f"Bilgi: {ver} üzerinden liste alınamadı ({response.status_code})")
+        except Exception as e:
+            log_status(f"Hata ({ver} listeleme): {str(e)}")
 
-        models = response.json().get("models", [])
-        log_status(f"Sistemde {len(models)} model tanımlı.")
-        
-        results = []
-        for model in models:
-            name = model.get("name", "")
-            display_name = model.get("displayName", "")
-            methods = model.get("supportedGenerationMethods", [])
-            
-            # Sadece içerik üretebilen metin modellerini test et
-            if "generateContent" in methods:
-                log_status(f"Test ediliyor: {display_name} ({name})")
-                status = probe_model(name, api_key)
-                results.append({
-                    "model_id": name,
-                    "name": display_name,
-                    "status": status,
-                    "last_check": datetime.now().isoformat()
-                })
-        
-        return results
-
-    except Exception as e:
-        log_status(f"BEKLENMEDİK HATA: {str(e)}")
+    if not all_found_models:
+        log_status("HATA: Hiçbir model bulunamadı.")
         return []
 
-def probe_model(model_name, api_key):
+    log_status(f"Sistemde toplam {len(all_found_models)} model tanımı bulundu.")
+    # Tekrarları temizle (model ID'sine göre)
+    seen = set()
+    unique_models = []
+    for m in all_found_models:
+        if m["name"] not in seen:
+            unique_models.append(m)
+            seen.add(m["name"])
+    
+    results = []
+    for model in unique_models:
+        name = model.get("name", "")
+        display_name = model.get("displayName", "")
+        methods = model.get("supportedGenerationMethods", [])
+        version = model.get("api_version", "v1")
+        
+        if "generateContent" in methods:
+            log_status(f"Test ediliyor: {display_name} ({name}) - API: {version}")
+            status = probe_model(name, api_key, version)
+            results.append({
+                "model_id": name,
+                "name": display_name,
+                "status": status,
+                "api_version": version,
+                "last_check": datetime.now().isoformat()
+            })
+    
+    return results
+
+def probe_model(model_name, api_key, version="v1"):
     """Modele çok kısa bir istek göndererek aktifliğini test eder."""
-    url = f"https://generativelanguage.googleapis.com/v1beta/{model_name}:generateContent?key={api_key}"
+    url = f"https://generativelanguage.googleapis.com/{version}/{model_name}:generateContent?key={api_key}"
     payload = {
         "contents": [{"parts": [{"text": "P"}]}],
         "generationConfig": {"maxOutputTokens": 1}
