@@ -273,20 +273,26 @@
                 max-width: 100% !important;
                 padding: 0 !important;
                 margin: 0 !important;
-                display: none;
+                display: none !important;
                 flex-direction: column !important;
                 transform: none !important;
                 left: 0 !important;
                 min-width: 0 !important;
-                min-height: 0 !important;
-                height: 100% !important;
                 overflow-x: hidden !important;
-                overflow-y: auto !important;
             }
 
             .section-content:not(.hidden) {
                 display: flex !important;
                 flex-direction: column !important;
+            }
+
+            /* Chat uses flex column with full height */
+            #section-chat:not(.hidden) {
+                display: flex !important;
+                flex-direction: column !important;
+                height: 100% !important;
+                overflow: hidden !important;
+                padding: 0 !important;
             }
 
             /* AI Arena specific styling */
@@ -2231,22 +2237,33 @@
             animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
             width: 100%;
             max-width: 100%;
-            padding: 2rem;
-            margin: 0;
             display: none;
             flex-direction: column;
-            height: 100%;
-            /* KEY FIX: sections must fill parent height */
-            overflow-y: auto;
-            overflow-x: hidden;
         }
 
         .section-content:not(.hidden) {
             display: flex;
+            flex-direction: column;
         }
 
         .section-content.hidden {
             display: none !important;
+        }
+
+        /* Chat needs special flex layout, no padding */
+        #section-chat {
+            padding: 0 !important;
+        }
+        #section-chat:not(.hidden) {
+            display: flex !important;
+            flex-direction: column !important;
+            height: 100% !important;
+            overflow: hidden !important;
+        }
+
+        /* Avatar section no padding (handles its own) */
+        #section-avatar {
+            padding: 0 !important;
         }
 
         /* Override for chat section - needs row layout on desktop */
@@ -3203,8 +3220,9 @@
                     <span
                         class="ml-auto text-[9px] px-2 py-1 rounded-md bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black shadow-[0_2px_8px_rgba(245,158,11,0.4)] relative z-10 uppercase tracking-wider group-hover:shadow-[0_4px_12px_rgba(245,158,11,0.6)] transition-all">Üret</span>
                 </button>
-                </nav>
             </div>
+        </div>
+
 
             <!-- Glow Divider -->
             <div class="px-4 pb-2">
@@ -3255,7 +3273,7 @@
         <div id="react-mobile-nav-root" class="md:hidden"></div>
 
         <!-- Content Wrapper -->
-        <div id="sections-wrapper" class="flex-1 overflow-y-auto p-4 md:p-8 space-y-5 w-full max-w-full">
+        <div id="sections-wrapper" class="flex-1 overflow-y-auto p-4 md:p-8 w-full max-w-full">
 
             <!-- Dashboard Section -->
             <div id="section-dashboard" class="section-content hidden">
@@ -3402,31 +3420,15 @@
                                 <div class="text-xs text-slate-500 mt-1">Bugün Tamamlandı</div>
                             </div>
                             <div class="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
-                        <div>
-                            <h2 class="text-3xl font-bold text-white font-display mb-2">Alışkanlıklar ❤️</h2>
-                            <p class="text-slate-400 text-sm">Günlük alışkanlıklarını takip et</p>
+                                <div class="text-xl font-bold text-amber-400" id="habits-best-streak">0</div>
+                                <div class="text-xs text-slate-500 mt-1">En İyi Seri</div>
+                            </div>
+                            <div class="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
+                                <div class="text-xl font-bold text-purple-400" id="habits-completion-rate">0%</div>
+                                <div class="text-xs text-slate-500 mt-1">Başarı Oranı</div>
+                            </div>
                         </div>
-                        <button onclick="openHabitModal()" class="btn-primary flex items-center gap-2">
-                            <i class="fa-solid fa-plus text-sm"></i>
-                            <span>Yeni Alışkanlık</span>
-                        </button>
-                    </div>
 
-                    <!-- Habits Stats -->
-                    <div class="grid grid-cols-3 gap-4 mb-6">
-                        <div class="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
-                            <div class="text-xl font-bold text-emerald-400" id="habits-completed-today">0</div>
-                            <div class="text-xs text-slate-500 mt-1">Bugün Tamamlandı</div>
-                        </div>
-                        <div class="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
-                            <div class="text-xl font-bold text-amber-400" id="habits-best-streak">0</div>
-                            <div class="text-xs text-slate-500 mt-1">En İyi Seri</div>
-                        </div>
-                        <div class="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
-                            <div class="text-xl font-bold text-purple-400" id="habits-completion-rate">0%</div>
-                            <div class="text-xs text-slate-500 mt-1">Başarı Oranı</div>
-                        </div>
-                    </div>
 
                     <!-- Habits List -->
                     <div id="habits-list" class="grid md:grid-cols-2 gap-4">
@@ -8747,24 +8749,34 @@
                 const section = document.getElementById('section-' + sectionName);
                 if (section) {
                     section.classList.remove('hidden');
-                    // Scroll to top of content
-                    const mainContent = document.getElementById('main-content');
-                    if (mainContent) {
-                        mainContent.scrollTop = 0;
+                    // Force display — overrides any residual Tailwind hidden
+                    if (sectionName === 'chat') {
+                        section.style.display = 'flex';
+                        section.style.flexDirection = 'column';
+                    } else {
+                        section.style.display = 'flex';
+                        section.style.flexDirection = 'column';
                     }
-                    // Also scroll window on mobile
+                    // Scroll to top
+                    const sectionsWrapper = document.getElementById('sections-wrapper');
+                    if (sectionsWrapper) sectionsWrapper.scrollTop = 0;
+                    const mainContent = document.getElementById('main-content');
+                    if (mainContent) mainContent.scrollTop = 0;
                     window.scrollTo(0, 0);
                 }
 
-                // Update nav item active state
+                // Update nav item active state — Aurora Dark violet palette
                 document.querySelectorAll('.nav-item').forEach(el => {
-                    el.classList.remove('bg-teal-500/20', 'text-teal-400', 'border-teal-500/30');
+                    el.classList.remove(
+                        'bg-teal-500/20', 'text-teal-400', 'border-teal-500/30',
+                        'bg-violet-500/20', 'text-violet-300', 'border-violet-500/30'
+                    );
                     el.classList.add('text-slate-400');
                 });
 
                 const activeNav = document.querySelector(`.nav-item[data-section="${sectionName}"]`);
                 if (activeNav) {
-                    activeNav.classList.add('bg-teal-500/20', 'text-teal-400', 'border-teal-500/30');
+                    activeNav.classList.add('bg-violet-500/20', 'text-violet-300', 'border-violet-500/30');
                     activeNav.classList.remove('text-slate-400');
                 }
 
