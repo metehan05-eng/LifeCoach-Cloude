@@ -82,8 +82,8 @@ app.use(express.json({ limit: '50mb' }));
 // Gemini API Ayarları (Tek AI - Sadece Gemini)
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_API_ENDPOINT = process.env.GEMINI_API_ENDPOINT || 'https://generativelanguage.googleapis.com/v1/models';
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
-const GEMINI_FALLBACK_MODELS = ['gemini-2.0-pro', 'gemini-3.0-flash', 'gemini-3.1-flash', 'gemini-1.5-flash'];
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+const GEMINI_FALLBACK_MODELS = ['gemini-2.5-pro', 'gemma-3-27b', 'gemini-2.0-flash'];
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 const TAVILY_API_KEY = process.env.TAVILY_API_KEY; // Tavily AI arama için
 const POLLINATIONS_API_KEY = process.env.POLLINATIONS_API_KEY; // Pollinations.ai görsel üretim için (opsiyonel)
