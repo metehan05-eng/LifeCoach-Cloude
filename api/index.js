@@ -244,14 +244,10 @@ async function generateAIResponse(prompt, history = [], systemInstruction = "") 
         throw new Error("Gemini API yapılandırılmamış");
     }
 
-    console.log(`[AI] Gemini çalıştırılıyor: ${GEMINI_MODEL}`);
+    console.log(`[AI] Gemini çalıştırılıyor: ${ACTUAL_GEMINI_MODEL}`);
     const result = await callGemini(prompt, history, systemInstruction);
     console.log('[AI] Gemini yanıtı başarılı');
-    return {
-        text: result.text,
-        model: GEMINI_MODEL,
-        provider: 'gemini'
-    };
+    return result.text; // Sadece metni döndür (uyumluluk için)
 }
 
 // ── Tavily AI Search Helper ──────────────────────────────
