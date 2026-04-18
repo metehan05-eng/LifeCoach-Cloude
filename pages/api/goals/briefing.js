@@ -239,9 +239,29 @@ export default async function handler(req, res) {
             console.warn('[BriefingSearch] Arama hatası (görmezden geliniyor):', searchErr.message);
         }
 
-        const systemPrompt = `Sen profesyonel ve teknik bir yaşam koçusun. Kullanıcının hedefi doğrultusunda teknik detaylar, yol haritası ve kod örnekleri içeren günlük rehberlik sağlarsın.
+        const titleLower = title.toLowerCase();
+        const descLower = (description || '').toLowerCase();
+        const fullSubject = `${titleLower} ${descLower}`;
+        
+        const isProgramming = /yazılım|programlama|kodlama|python|java|javascript|php|html|css|sql|developer|mühendislik|backend|frontend|fullstack|api|veritabanı|c\+\+|swift|kotlin|rust|go|dart/i.test(fullSubject);
+        const isMathScience = /matematik|geometri|fizik|kimya|biyoloji|hesaplama|formul|formül|denklem|integral|türev|problem çözümü|dönüşüm|birim|ölçü/i.test(fullSubject);
 
-ÖNEMLİ: Aşağıdaki İNTERNET ARAMA SONUÇLARI bölümündeki güncel ve doğrulanmış bilgileri kullanarak yanıt ver. Eğer arama sonuçları varsa, bunları temel al; yoksa genel bilgilerini kullan.`;
+        const systemPrompt = `Sen profesyonel ve teknik bir yaşam koçusun. Kullanıcının hedefi doğrultusunda teknik detaylar ve yol haritası içeren günlük rehberlik sağlarsın.
+        
+ÖNEMLİ KURALLAR:
+1. Eğer hedef YAZILIM/PROGRAMLAMA ile ilgiliyse, mutlaka 'Kod Örneği' ve açıklamasını ekle.
+2. Eğer hedef MATEMATİK/FEN BİLİMLERİ ile ilgiliyse, kod yazma! Bunun yerine 'Bilimsel Formül ve Çözüm' bölümü ekle ve her şeyi formüllerle anlat.
+3. Diğer genel hedefler için kod veya formül yerine 'Stratejik İpucu' ekle.
+4. Aşağıdaki İNTERNET ARAMA SONUÇLARI bölümündeki güncel ve doğrulanmış bilgileri kullanarak yanıt ver.`;
+
+        let dynamicSection = "";
+        if (isProgramming) {
+            dynamicSection = `3. **Kod Örneği** (Markdown formatında, dile uygun).\n4. **Kod Örneğinin Açıklaması**.`;
+        } else if (isMathScience) {
+            dynamicSection = `3. **Bilimsel Formül ve Çözüm Adımları** (Matematiksel notation kullanarak).\n4. **Çözümün Mantığı ve Açıklaması**.`;
+        } else {
+            dynamicSection = `3. **Uzman Tavsiyesi ve Stratejik İpucu**.\n4. **Uygulama Önerisi**.`;
+        }
 
         const userPrompt = `Hedef: ${title}
 Açıklama: ${description || ''}
@@ -252,16 +272,12 @@ ${searchContext}
 
 Görev: Bu hedefe ulaşmak için bugün neler yapılabileceğini detaylandırın.
 Kullanıcının mevcut ilerlemesini (%${currentProgress}) ve daha önce ${completionCount} gün çalıştığını göz önünde bulundurarak, "Yol Haritası"nın bir sonraki mantıklı adımını önerin.
-Eğer birkaç gün geçmişse, konuları derinleştirin.
-
-Yukarıdaki İNTERNET ARAMA SONUÇLARI varsa, bu güncel bilgileri kullanarak en doğru ve detaylı yol haritasını oluştur.
 
 Yanıt formatı (Markdown kullan):
-1. **Bugün çalışılması gereken ana konu** (Örn: PHP Temelleri - Koşullu İfadeler).
-2. **Konunun açıklaması** (Arama sonuçlarından güncel bilgilerle zenginleştirilmiş).
-3. **Kod Örneği** (Markdown formatında, hedefe uygunsa).
-4. **Kod Örneğinin Açıklaması**.
-7. **Günlük Motivasyon ve Görev** (Motive edici bir kapanış).
+1. **Bugün çalışılması gereken ana konu**.
+2. **Konunun açıklaması**.
+${dynamicSection}
+5. **Günlük Motivasyon ve Görev**.
 
 ---
 SEARCH_QUERY: [Bu konuyu öğrenmek için YouTube'da aranacak Türkçe arama terimi]
