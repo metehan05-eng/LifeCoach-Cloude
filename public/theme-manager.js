@@ -3,6 +3,28 @@
 const ThemeManager = {
     // Pre-defined Themes
     presets: {
+        aurora: {
+            name: 'Aurora Dark',
+            icon: '🌌',
+            colors: {
+                primary: '#4F46E5',
+                'primary-light': '#818CF8',
+                'primary-dark': '#3730A3',
+                secondary: '#A855F7',
+                accent: '#EC4899',
+                'neon-teal': '#A855F7',
+                'neon-cyan': '#C084FC',
+                'surface-dark': '#160F2E',
+                'card-dark': '#0D0B1A',
+                'deep-dark': '#050008',
+                'bg-body': '#050008',
+                'orb1-color': '#4F46E5',
+                'orb2-color': '#EC4899',
+                'orb3-color': '#A855F7',
+                text: '#E2E0F0'
+            },
+            bodyBg: '#050008'
+        },
         default: {
             name: 'Default Teal',
             icon: '🔷',
@@ -198,14 +220,14 @@ const ThemeManager = {
         if (saved) {
             try {
                 const theme = JSON.parse(saved);
-                this.currentTheme = theme.name || 'default';
+                this.currentTheme = theme.name || 'aurora';
                 this.customTheme = theme.custom || {};
                 return;
             } catch (e) {
                 console.error('Failed to load theme:', e);
             }
         }
-        this.currentTheme = 'default';
+        this.currentTheme = 'aurora';
     },
 
     // Save theme to localStorage
