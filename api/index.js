@@ -253,16 +253,44 @@ async function callGemini(prompt, history = [], systemInstruction = "") {
     throw new Error(`Tüm AI modelleri denendi ancak başarılı olunamadı. Son hata: ${lastError?.message}`);
 }
 
-// ── AI Yanıt Fonksiyonu (Sadece Gemini) ──────────────────────────────
+// ── AI Yanıt Fonksiyonu (Gemini & OpenRouter Fallback) ──────────────────────────────
 async function generateAIResponse(prompt, history = [], systemInstruction = "") {
-    if (!genAI) {
-        throw new Error("Gemini API yapılandırılmamış");
-    }
+    try {
+        // 1. Önce Gemini'yi dene
+        const result = await callGemini(prompt, history, systemInstruction);
+        return result.text;
+    } catch (err) {
+        console.warn(`[AI] Gemini başarısız oldu, OpenRouter yedeklemesi başlatılıyor... Hata: ${err.message}`);
+        
+        // 2. OpenRouter mevcut ise dene
+        if (OPENROUTER_API_KEY && OPENROUTER_MODELS.length > 0) {
+            try {
+                // Geçmişi OpenRouter formatına dönüştür
+                const messages = (history || []).map(h => ({
+                    role: h.role === 'model' || h.role === 'assistant' ? 'assistant' : 'user',
+                    content: h.parts ? h.parts.map(p => p.text).join(' ') : (h.content || '')
+                }));
+                messages.push({ role: 'user', content: prompt });
 
-    console.log(`[AI] Gemini çalıştırılıyor: ${ACTUAL_GEMINI_MODEL}`);
-    const result = await callGemini(prompt, history, systemInstruction);
-    console.log('[AI] Gemini yanıtı başarılı');
-    return result.text; // Sadece metni döndür (uyumluluk için)
+                // OpenRouter modellerini sırayla dene
+                for (const model of OPENROUTER_MODELS) {
+                    try {
+                        console.log(`[AI] OpenRouter Fallback deneniyor: ${model}`);
+                        const orResult = await callOpenRouter(messages, model, systemInstruction);
+                        console.log(`[AI] OpenRouter Fallback BAŞARILI: ${model}`);
+                        return orResult.text;
+                    } catch (orErr) {
+                        console.warn(`[AI] OpenRouter ${model} başarısız: ${orErr.message}`);
+                    }
+                }
+            } catch (fallbackErr) {
+                console.error("[AI] Tüm yedekleme mekanizmaları başarısız oldu:", fallbackErr.message);
+            }
+        }
+        
+        // Hiçbiri çalışmazsa orijinal hatayı fırlat
+        throw new Error(`Tüm AI servisleri (Gemini & OpenRouter) başarısız oldu. Son hata: ${err.message}`);
+    }
 }
 
 // ── Tavily AI Search Helper ──────────────────────────────
