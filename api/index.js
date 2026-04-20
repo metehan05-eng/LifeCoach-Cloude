@@ -156,31 +156,39 @@ if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY && !SUPABASE_URL.includes('YOUR_')
 async function callGemini(prompt, history = [], systemInstruction = "") {
     if (!genAI) throw new Error("Gemini API yapılandırılmamış");
 
-    // Hız için en hızlı modelleri seç
     const modelsToTry = [ACTUAL_GEMINI_MODEL, 'gemini-1.5-flash'];
     let lastError = null;
 
+    // Eğer history içinde 'system' rolü varsa onu ayıkla
+    let finalSystemInstruction = systemInstruction;
+    const finalHistory = [];
+    
+    for (const msg of (history || [])) {
+        if (msg.role === 'system') {
+            finalSystemInstruction = msg.content || msg.parts?.[0]?.text || finalSystemInstruction;
+        } else {
+            finalHistory.push(msg);
+        }
+    }
+
     for (const modelName of modelsToTry) {
         try {
-            console.log(`[AI] Hızlı deneme: ${modelName}`);
+            console.log(`[AI] Deneniyor: ${modelName}`);
             
-            // Zaman aşımı kontrolü (Hız için 4 saniye!)
+            // Zaman aşımı 8 saniye - Vercel limitine yakın ama daha güvenilir
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 4000);
+            const timeoutId = setTimeout(() => controller.abort(), 8500);
 
             const model = genAI.getGenerativeModel({
                 model: modelName,
-                generationConfig: { maxOutputTokens: 2048, temperature: 0.7 }
+                generationConfig: { maxOutputTokens: 2048, temperature: 0.7 },
+                ...(finalSystemInstruction && { systemInstruction: { parts: [{ text: finalSystemInstruction }] } })
             }, { apiVersion: 'v1' });
 
-            const contents = [];
-            for (const msg of history) {
-                const role = msg.role === 'user' ? 'user' : 'model';
-                contents.push({
-                    role: role,
-                    parts: [{ text: msg.content || msg.parts?.map(p => p.text).join(' ') || '' }]
-                });
-            }
+            const contents = finalHistory.map(msg => ({
+                role: msg.role === 'user' ? 'user' : 'model',
+                parts: [{ text: msg.content || msg.parts?.map(p => p.text).join(' ') || '' }]
+            }));
             contents.push({ role: 'user', parts: [{ text: prompt }] });
 
             const result = await model.generateContent({ contents }, { signal: controller.signal });
@@ -191,13 +199,13 @@ async function callGemini(prompt, history = [], systemInstruction = "") {
                 model: modelName
             };
         } catch (err) {
-            console.warn(`[AI] Deneme başarısız (${modelName}): ${err.message}`);
+            console.warn(`[AI] ${modelName} başarısız: ${err.message}`);
             lastError = err;
             if (err.message.includes('401') || err.message.includes('403')) break;
         }
     }
 
-    throw lastError || new Error("Gemini denemesi başarısız oldu.");
+    throw lastError || new Error("Gemini yanıt veremedi.");
 }
 
 // ── AI Yanıt Fonksiyonu (Gemini & OpenRouter Fallback) ──────────────────────────────
@@ -1146,7 +1154,11 @@ Currently working on other AI products as well.
 
 ---
 
-You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
+You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.
+${memoryInjection}
+${personaInjection}
+${modeInjection}
+${localizationInjection}`;
 
         // Use provided systemPrompt or fallback to default
         const finalSystemPrompt = systemPrompt || defaultSystemPrompt;
