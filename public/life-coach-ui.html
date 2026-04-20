@@ -8973,14 +8973,12 @@
 
 
 
-                    // Hedef görseli (Pollinations.ai ile üretilmiş)
-                    const goalImageHtml = goal.image
-                        ? `<div class="mb-4 rounded-xl overflow-hidden border border-white/10"><img src="${escapeHTML(goal.image)}" alt="${escapeHTML(goal.title)}" class="w-full h-48 object-cover" loading="lazy"/></div>`
-                        : '';
+                    // Hedef görseli özelliği kapatıldı
+                    const goalImageHtml = '';
 
                     return `
                         <div class="bg-[#0F172A]/80 border border-white/10 rounded-2xl p-6 hover:border-teal-500/30 transition-all group animate-fade-in-up backdrop-blur-md">
-                            ${goalImageHtml}
+
                             <div class="flex items-start justify-between mb-4">
                                 <div class="flex-1">
                                     <div class="flex items-center gap-3 mb-2">

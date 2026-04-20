@@ -92,6 +92,15 @@ const JWT_SECRET = process.env.JWT_SECRET || 'gizli-anahtar-degistir';
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+// OpenRouter API Ayarları
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const OPENROUTER_MODELS = [
+    "google/gemini-2.0-flash-exp:free",      // Hızlı ve ücretsiz
+    "mistralai/mistral-small-3.1-24b-instruct:free", // Kaliteli
+    "google/gemma-3-27b-it:free",            // Alternatif
+    "openrouter/free"                        // Yedek
+];
+
 // --- YARDIMCI FONKSİYONLAR ---
 /**
  * Türkiye (UTC+3) saatine göre bugünün tarihini YYYY-MM-DD formatında döner.
@@ -336,6 +345,51 @@ function formatSearchResultsForAI(results, query) {
     formatted += 'NOT: Yukarıdaki arama sonuçlarını kullanarak en güncel ve doğru bilgiyi ver.\n\n';
 
     return formatted;
+}
+
+// ── OpenRouter API Çağrısı (Helper) ──────────────────────────────
+async function callOpenRouter(messages, model, systemPrompt = null, temperature = 0.7, maxTokens = 2000) {
+    if (!OPENROUTER_API_KEY) {
+        throw new Error('OpenRouter API Key eksik. Lütfen .env dosyasında OPENROUTER_API_KEY değişkenini ayarlayın.');
+    }
+
+    try {
+        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+                'Content-Type': 'application/json',
+                'HTTP-Referer': 'https://han-ai.dev/',
+                'X-Title': 'Life Coach AI'
+            },
+            body: JSON.stringify({
+                model: model,
+                messages: systemPrompt 
+                    ? [{ role: 'system', content: systemPrompt }, ...messages]
+                    : messages,
+                temperature: temperature,
+                max_tokens: maxTokens
+            })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`OpenRouter API hatası: ${response.status} - ${errorText}`);
+        }
+
+        const data = await response.json();
+        if (!data.choices || data.choices.length === 0) {
+            throw new Error("OpenRouter seçim yapamadı (boş yanıt).");
+        }
+
+        return {
+            text: data.choices[0]?.message?.content || '',
+            model: model
+        };
+    } catch (err) {
+        console.error(`[OpenRouter] ${model} isteği başarısız:`, err.message);
+        throw err;
+    }
 }
 
 // ── Pollinations.ai Görsel Üretim Helper ──────────────────────────────
@@ -1210,23 +1264,21 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
             }
         }
 
-        // --- AI Model Logic (OpenRouter) ---
+        // --- AI Model Logic (OpenRouter & Gemini Fallback) ---
         let aiResponse;
         let usedModel;
 
-        // OpenRouter modellerini dene - Yedek zincir ile
-        async function callOpenRouterWithRetry(modelName, messages, systemPrompt, maxRetries = 2) {
+        async function callOpenRouterWithRetry(modelName, messages, systemPrompt, maxRetries = 1) {
             let attempt = 0;
             while (attempt <= maxRetries) {
                 try {
                     console.log(`[AI] OpenRouter deneniyor: ${modelName} (Deneme ${attempt + 1})`);
                     const result = await callOpenRouter(messages, modelName, systemPrompt, 0.7, 4000);
-                    return { text: result.text, model: modelName };
+                    return { text: result.text, model: result.model };
                 } catch (error) {
                     const isRateLimit = error.message?.includes('429') || error.status === 429;
                     if (isRateLimit && attempt < maxRetries) {
-                        const waitTime = Math.pow(2, attempt) * 2000;
-                        console.warn(`[AI] OpenRouter rate limit, bekleniyor...`);
+                        const waitTime = 1000;
                         await new Promise(resolve => setTimeout(resolve, waitTime));
                         attempt++;
                         continue;
@@ -1236,40 +1288,42 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
             }
         }
 
-        // Chat history'yi OpenRouter formatına çevir
         const openRouterMessages = [];
         for (const msg of chatHistory) {
-            if (msg.role === 'user' || msg.role === 'assistant') {
-                openRouterMessages.push({
-                    role: msg.role === 'assistant' ? 'assistant' : 'user',
-                    content: msg.parts.map(p => p.text || '').join(' ')
-                });
-            }
+            openRouterMessages.push({
+                role: msg.role === 'model' || msg.role === 'assistant' ? 'assistant' : 'user',
+                content: msg.parts.map(p => p.text || '').join(' ')
+            });
         }
-        // Son kullanıcı mesajını ekle (metin içeriği) + arama sonuçları varsa ekle
+        
         let lastUserContent = userMessageParts.map(p => p.text || '').join(' ');
-
-        // Eğer Google arama sonuçları varsa, kullanıcı mesajına ekle
-        if (searchContext) {
-            lastUserContent = lastUserContent + searchContext;
-        }
-
+        if (searchContext) lastUserContent += searchContext;
         openRouterMessages.push({ role: 'user', content: lastUserContent });
 
-        // Önce ana modeli dene, başarısız olursa yedek modeli dene
-        let triedModels = [];
-        for (const modelName of OPENROUTER_MODELS) {
-            triedModels.push(modelName);
+        // 1. Önce OpenRouter modellerini dene
+        if (OPENROUTER_API_KEY) {
+            for (const modelName of OPENROUTER_MODELS) {
+                try {
+                    const result = await callOpenRouterWithRetry(modelName, openRouterMessages, finalSystemPrompt);
+                    aiResponse = result.text;
+                    usedModel = result.model;
+                    break; 
+                } catch (err) {
+                    console.warn(`[AI] OpenRouter ${modelName} başarısız:`, err.message);
+                }
+            }
+        }
+
+        // 2. OpenRouter başarısızsa veya API KEY yoksa Gemini (CallGemini) ile devam et
+        if (!aiResponse) {
             try {
-                const result = await callOpenRouterWithRetry(modelName, openRouterMessages, finalSystemPrompt);
+                console.log("[AI] Sistemi Gemini modeline yönlendiriliyor...");
+                const result = await callGemini(lastUserContent, chatHistory, finalSystemPrompt);
                 aiResponse = result.text;
                 usedModel = result.model;
-                break; // Başarılı, döngüden çık
             } catch (err) {
-                console.warn(`[AI] ${modelName} başarısız:`, err.message);
-                if (triedModels.length === OPENROUTER_MODELS.length) {
-                    throw new Error("Tüm OpenRouter modelleri başarısız oldu.");
-                }
+                console.error("[AI] Gemini de başarısız oldu:", err.message);
+                throw new Error(`Yapay zeka modellerine erişilemiyor: ${err.message}`);
             }
         }
 
@@ -2191,23 +2245,8 @@ app.post('/api/goals', authenticateToken, async (req, res) => {
             aiDetails = "Analiz şu an yapılamıyor, ancak hedefiniz kaydedildi.";
         }
 
-        // ── Pollinations.ai ile Görsel Üret (Arka planda)
+        // ── Görsel özelliği devre dışı bırakıldı ──
         let goalImage = null;
-        try {
-            const imagePrompt = generateGoalImagePrompt(title, description);
-            const imageResult = await generateImage(imagePrompt, {
-                width: 1024,
-                height: 1024,
-                model: 'flux-schnell'
-            });
-
-            if (imageResult.success) {
-                goalImage = imageResult.dataUrl;
-                console.log(`[Pollinations] Hedef görseli oluşturuldu: ${title}`);
-            }
-        } catch (imgErr) {
-            console.warn('[Pollinations] Görsel üretim hatası (devam ediliyor):', imgErr.message);
-        }
 
         const newGoal = {
             id: Date.now().toString(),
