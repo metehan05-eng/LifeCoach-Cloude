@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LifeCoach Discord | Social Chat</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="/socket.io/socket.io.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Ginto-Normal:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --discord-dark: #313338;
+            --discord-sidebar: #2b2d31;
+            --discord-servers: #1e1f22;
+            --discord-accent: #5865f2;
+            --discord-text: #dbdee1;
+            --discord-muted: #949ba4;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--discord-dark);
+            color: var(--discord-text);
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .glass {
+            background: rgba(49, 51, 56, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #1a1b1e;
+            border-radius: 10px;
+        }
+
+        .server-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .server-icon:hover {
+            border-radius: 30%;
+            background-color: var(--discord-accent);
+            color: white;
+        }
+
+        .server-icon.active {
+            border-radius: 30%;
+            background-color: var(--discord-accent);
+            color: white;
+        }
+
+        .server-icon.active::before {
+            content: '';
+            position: absolute;
+            left: -12px;
+            top: 25%;
+            height: 50%;
+            width: 4px;
+            background: white;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .channel-item {
+            transition: all 0.15s;
+        }
+
+        .channel-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #f2f3f5;
+        }
+
+        .channel-item.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message-anim {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+
+    <!-- 1. SERVERS SIDEBAR -->
+    <aside class="w-[72px] bg-[var(--discord-servers)] flex flex-col items-center py-3 space-y-2 overflow-y-auto no-scrollbar hidden md:flex">
+        <!-- Home / Dashboard -->
+        <div onclick="location.href='/life-coach-ui.html'" class="server-icon flex items-center justify-center bg-[#313338] text-emerald-500 mb-2 hover:bg-emerald-500 hover:text-white group">
+            <i class="fa-solid fa-house text-xl"></i>
+            <span class="absolute left-16 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">Dashboard</span>
+        </div>
+        
+        <div class="w-8 h-[2px] bg-[#35363c] rounded-full mx-auto my-2"></div>
+
+        <!-- Groups loaded via JS -->
+        <div id="discord-servers-list" class="flex flex-col items-center space-y-2 w-full">
+            <!-- Icons here -->
+        </div>
+
+        <div onclick="location.href='/life-coach-ui.html#section-study-groups'" class="server-icon flex items-center justify-center bg-[#313338] text-emerald-500 hover:bg-emerald-500 hover:text-white group">
+            <i class="fa-solid fa-plus text-xl"></i>
+            <span class="absolute left-16 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">Grup Bul</span>
+        </div>
+    </aside>
+
+    <!-- 2. CHANNELS SIDEBAR -->
+    <aside class="w-64 bg-[var(--discord-sidebar)] flex flex-col h-full border-r border-[#1e1f22]">
+        <!-- Server Header -->
+        <div class="h-12 px-4 flex items-center justify-between border-b border-[#1e1f22] shadow-sm cursor-pointer hover:bg-white/5 transition-colors">
+            <h1 id="server-name" class="font-bold text-sm truncate">Gruba Katılın</h1>
+            <i class="fa-solid fa-chevron-down text-xs text-slate-400"></i>
+        </div>
+
+        <!-- Channels List -->
+        <div class="flex-1 overflow-y-auto px-2 py-3 space-y-6 custom-scrollbar">
+            <!-- Text Channels -->
+            <div>
+                <div class="flex items-center justify-between px-2 mb-1 group cursor-pointer">
+                    <div class="flex items-center text-[var(--discord-muted)] group-hover:text-white transition-colors">
+                        <i class="fa-solid fa-chevron-down text-[10px] mr-1"></i>
+                        <span class="text-[11px] font-bold uppercase tracking-wider">Metin Kanalları</span>
+                    </div>
+                    <i class="fa-solid fa-plus text-xs text-slate-400 hover:text-white"></i>
+                </div>
+                <nav id="text-channels-list" class="space-y-0.5">
+                    <!-- Channels added by JS -->
+                </nav>
+            </div>
+
+            <!-- Voice Channels -->
+            <div>
+                <div class="flex items-center justify-between px-2 mb-1 group cursor-pointer">
+                    <div class="flex items-center text-[var(--discord-muted)] group-hover:text-white transition-colors">
+                        <i class="fa-solid fa-chevron-down text-[10px] mr-1"></i>
+                        <span class="text-[11px] font-bold uppercase tracking-wider">Ses Kanalları</span>
+                    </div>
+                    <i class="fa-solid fa-plus text-xs text-slate-400 hover:text-white"></i>
+                </div>
+                <nav id="voice-channels-list" class="space-y-0.5">
+                    <!-- Voice channels here -->
+                </nav>
+            </div>
+        </div>
+
+        <!-- User Info Footer -->
+        <div class="h-14 bg-[#232428] px-2 flex items-center gap-2">
+            <div class="relative group cursor-pointer">
+                <img id="user-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=User" class="w-8 h-8 rounded-full bg-slate-700">
+                <div class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border-2 border-[#232428]"></div>
+            </div>
+            <div class="flex-1 min-w-0">
+                <p id="user-name" class="text-xs font-bold text-white truncate">Yükleniyor...</p>
+                <p class="text-[10px] text-slate-400">#Çevrimiçi</p>
+            </div>
+            <div class="flex items-center gap-1">
+                <button class="w-8 h-8 flex items-center justify-center rounded hover:bg-white/10 text-slate-400 hover:text-white"><i class="fa-solid fa-microphone"></i></button>
+                <button class="w-8 h-8 flex items-center justify-center rounded hover:bg-white/10 text-slate-400 hover:text-white"><i class="fa-solid fa-headphones"></i></button>
+                <button class="w-8 h-8 flex items-center justify-center rounded hover:bg-white/10 text-slate-400 hover:text-white"><i class="fa-solid fa-gear"></i></button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- 3. MAIN CHAT AREA -->
+    <main class="flex-1 flex flex-col h-full bg-[var(--discord-dark)]">
+        <!-- Chat Header -->
+        <header class="h-12 px-4 flex items-center justify-between border-b border-[#1e1f22] shadow-sm">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-hashtag text-[var(--discord-muted)] text-xl"></i>
+                <h2 id="current-channel-display" class="font-bold text-sm">genel</h2>
+                <div class="h-6 w-[1px] bg-white/10 mx-2"></div>
+                <p id="channel-topic" class="text-xs text-slate-400 truncate max-w-[300px]">Bu kanalın başlangıcı...</p>
+            </div>
+            <div class="flex items-center gap-4 text-slate-400">
+                <i class="fa-solid fa-bell-slash hover:text-white cursor-pointer"></i>
+                <i class="fa-solid fa-thumbtack hover:text-white cursor-pointer -rotate-45"></i>
+                <i class="fa-solid fa-users hover:text-white cursor-pointer" onclick="toggleMembersList()"></i>
+                <div class="relative flex items-center bg-black/20 rounded px-2 py-0.5 border border-white/5">
+                    <input type="text" placeholder="Ara" class="bg-transparent text-xs outline-none w-24 focus:w-40 transition-all">
+                    <i class="fa-solid fa-magnifying-glass text-[10px]"></i>
+                </div>
+                <i class="fa-solid fa-inbox hover:text-white cursor-pointer"></i>
+                <i class="fa-solid fa-circle-question hover:text-white cursor-pointer"></i>
+            </div>
+        </header>
+
+        <!-- Messages Container -->
+        <div id="messages-container" class="flex-1 overflow-y-auto px-4 py-4 space-y-4 custom-scrollbar">
+            <!-- Channel Start Hero -->
+            <div class="mb-10 animate-fade-in">
+                <div class="w-16 h-16 bg-[#41434a] rounded-full flex items-center justify-center mb-4">
+                    <i class="fa-solid fa-hashtag text-white text-4xl"></i>
+                </div>
+                <h1 id="hero-channel-name" class="text-3xl font-bold text-white mb-1">#genel kanalına hoş geldin!</h1>
+                <p class="text-slate-400 text-sm">Bu, #genel kanalının başlangıcıdır.</p>
+                <div class="h-[1px] bg-white/5 w-full my-6"></div>
+            </div>
+
+            <!-- Messages injected here -->
+            <div id="discord-messages" class="space-y-4"></div>
+        </div>
+
+        <!-- Message Input -->
+        <div class="px-4 pb-6 mt-2">
+            <div class="bg-[#383a40] rounded-lg p-3 flex items-start gap-4">
+                <button class="mt-0.5 text-slate-400 hover:text-white transition-colors">
+                    <i class="fa-solid fa-circle-plus text-xl"></i>
+                </button>
+                <div class="flex-1 relative">
+                    <textarea id="message-textarea" 
+                        rows="1" 
+                        placeholder="#genel kanalına mesaj gönder" 
+                        class="w-full bg-transparent text-sm text-slate-200 outline-none resize-none placeholder-slate-500 h-6 leading-6"></textarea>
+                </div>
+                <div class="flex items-center gap-3 text-slate-400">
+                    <i class="fa-solid fa-gift hover:text-white cursor-pointer"></i>
+                    <i class="fa-solid fa-file-image hover:text-white cursor-pointer"></i>
+                    <i class="fa-solid fa-face-smile hover:text-white cursor-pointer"></i>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 4. MEMBERS LIST SIDEBAR -->
+    <aside id="members-sidebar" class="w-60 bg-[var(--discord-sidebar)] flex flex-col h-full hidden lg:flex border-l border-white/5 animate-fade-in-right">
+        <div class="flex-1 overflow-y-auto px-4 py-6 custom-scrollbar space-y-6">
+            <div>
+                <p class="text-[11px] font-bold text-slate-400 uppercase mb-2">Çevrimiçi — <span id="member-online-count">0</span></p>
+                <div id="members-online" class="space-y-1">
+                    <!-- Members injected via JS -->
+                </div>
+            </div>
+            <div>
+                <p class="text-[11px] font-bold text-slate-400 uppercase mb-2">Çevrimdışı — <span id="member-offline-count">0</span></p>
+                <div id="members-offline" class="space-y-1">
+                    <!-- Offline members here -->
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- JS Logic -->
+    <script>
+        let socket;
+        let currentGroupId = null;
+        let currentChannelId = 'genel';
+        let user = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            currentGroupId = urlParams.get('groupId');
+            
+            checkAuth();
+            if (currentGroupId) {
+                loadGroupData();
+                loadGroupsList(); // For the icons on the left
+                initSocket();
+            } else {
+                window.location.href = '/life-coach-ui.html';
+            }
+
+            // Input behavior
+            const textarea = document.getElementById('message-textarea');
+            textarea.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+            });
+
+            textarea.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+        });
+
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            const userStr = localStorage.getItem('user');
+            if (!token || !userStr) {
+                window.location.href = '/login.html';
+                return;
+            }
+            user = JSON.parse(userStr);
+            document.getElementById('user-name').textContent = user.name;
+            document.getElementById('user-avatar').src = user.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`;
+        }
+
+        async function loadGroupsList() {
+            const token = localStorage.getItem('token');
+            try {
+                const res = await fetch('/api/social?type=groups', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                const container = document.getElementById('discord-servers-list');
+                
+                if (data.groups) {
+                    container.innerHTML = data.groups.map(g => `
+                        <div onclick="switchGroup('${g.id}')" 
+                             class="server-icon flex items-center justify-center bg-[#313338] text-slate-300 group ${g.id === currentGroupId ? 'active' : ''}"
+                             title="${g.name}">
+                            ${g.avatarUrl ? `<img src="${g.avatarUrl}" class="w-full h-full rounded-[inherit] object-cover">` : `<span class="text-xs font-bold">${g.name.substring(0,2).toUpperCase()}</span>`}
+                            <span class="absolute left-16 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">${g.name}</span>
+                        </div>
+                    `).join('');
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function loadGroupData() {
+            const token = localStorage.getItem('token');
+            try {
+                const res = await fetch(`/api/social?type=groups&id=${currentGroupId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                const group = data.group;
+
+                document.getElementById('server-name').textContent = group.name;
+                document.getElementById('hero-channel-name').textContent = `#${currentChannelId} kanalına hoş geldin!`;
+                
+                renderChannels(group.channels || [
+                    { id: 'genel', name: 'genel', type: 'text' },
+                    { id: 'yardim', name: 'yardımlaşma', type: 'text' },
+                    { id: 'sesli', name: 'Sesli Çalışma', type: 'voice' }
+                ]);
+                
+                renderMembers(group.memberDetails || []);
+                loadMessages();
+            } catch (e) {
+                console.error(e);
+                alert("Grup yüklenemedi!");
+                window.location.href = '/life-coach-ui.html';
+            }
+        }
+
+        function renderChannels(channels) {
+            const textList = document.getElementById('text-channels-list');
+            const voiceList = document.getElementById('voice-channels-list');
+            
+            textList.innerHTML = '';
+            voiceList.innerHTML = '';
+
+            channels.forEach(ch => {
+                const isActive = ch.id === currentChannelId;
+                const html = `
+                    <div onclick="switchChannel('${ch.id}', '${ch.type}', '${ch.name}')" 
+                        class="channel-item flex items-center gap-1.5 px-2 py-1 rounded cursor-pointer ${isActive ? 'active' : 'text-slate-400'} group">
+                        <i class="fa-solid ${ch.type === 'text' ? 'fa-hashtag' : 'fa-volume-high'} text-lg opacity-40"></i>
+                        <span class="text-[13px] font-medium truncate">${ch.name}</span>
+                    </div>
+                `;
+                if(ch.type === 'text') textList.insertAdjacentHTML('beforeend', html);
+                else voiceList.insertAdjacentHTML('beforeend', html);
+            });
+        }
+
+        function renderMembers(members) {
+            const onlineList = document.getElementById('members-online');
+            const count = document.getElementById('member-online-count');
+            
+            count.textContent = members.length;
+            onlineList.innerHTML = members.map(m => `
+                <div class="flex items-center gap-2 p-1 rounded hover:bg-white/5 cursor-pointer group">
+                    <div class="relative">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${m.id}" class="w-8 h-8 rounded-full bg-slate-700">
+                        <div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-[var(--discord-sidebar)]"></div>
+                    </div>
+                    <span class="text-sm font-medium text-slate-400 group-hover:text-white transition-colors truncate">${m.name || m.id.substring(0,8)}</span>
+                </div>
+            `).join('');
+        }
+
+        function initSocket() {
+            socket = io();
+            socket.on('connect', () => {
+                socket.emit('join_room', currentGroupId);
+            });
+
+            socket.on('new_message', (msg) => {
+                if (msg.channelId === currentChannelId) {
+                    appendMessage(msg);
+                }
+            });
+        }
+
+        async function loadMessages() {
+            const token = localStorage.getItem('token');
+            const container = document.getElementById('discord-messages');
+            container.innerHTML = '<div class="flex justify-center py-10"><i class="fa-solid fa-circle-notch fa-spin text-slate-500 text-2xl"></i></div>';
+            
+            try {
+                const res = await fetch(`/api/social?type=groups&id=${currentGroupId}&action=messages&channelId=${currentChannelId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                
+                container.innerHTML = '';
+                if (data.messages && data.messages.length > 0) {
+                    data.messages.forEach(msg => appendMessage(msg));
+                } else {
+                    container.innerHTML = '<p class="text-center text-slate-500 py-10 text-xs">Henüz mesaj yok.</p>';
+                }
+                
+                const scrollContainer = document.getElementById('messages-container');
+                scrollContainer.scrollTop = scrollContainer.scrollHeight;
+            } catch (e) { console.error(e); }
+        }
+
+        function appendMessage(msg) {
+            const container = document.getElementById('discord-messages');
+            if (container.querySelector('.text-center')) container.innerHTML = '';
+
+            const time = new Date(msg.timestamp).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+            const isMe = msg.senderId === user.name || msg.senderId === user.id;
+            
+            const html = `
+                <div class="flex items-start gap-4 hover:bg-black/10 -mx-4 px-4 py-1.5 transition-colors group message-anim">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${msg.senderId}" class="w-10 h-10 rounded-full bg-slate-700 mt-0.5">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-sm text-white hover:underline cursor-pointer">${msg.senderName || msg.senderId}</span>
+                            <span class="text-[10px] text-slate-500 font-medium">${time}</span>
+                        </div>
+                        <p class="text-sm text-slate-200 leading-relaxed break-words">${msg.content}</p>
+                    </div>
+                </div>
+            `;
+            
+            container.insertAdjacentHTML('beforeend', html);
+            const scrollContainer = document.getElementById('messages-container');
+            scrollContainer.scrollTop = scrollContainer.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const token = localStorage.getItem('token');
+            const input = document.getElementById('message-textarea');
+            const content = input.value.trim();
+            if (!content) return;
+
+            input.value = '';
+            input.style.height = '24px';
+
+            try {
+                await fetch(`/api/social?type=groups&id=${currentGroupId}&action=message`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ content, channelId: currentChannelId })
+                });
+            } catch (e) {
+                alert("Mesaj gönderilemedi!");
+            }
+        }
+
+        function switchChannel(id, type, name) {
+            if (type === 'voice') {
+                alert("Sesli kanal özelliği yakında!");
+                return;
+            }
+            currentChannelId = id;
+            document.getElementById('current-channel-display').textContent = name;
+            document.getElementById('message-textarea').placeholder = `#${name} kanalına mesaj gönder`;
+            document.getElementById('hero-channel-name').textContent = `#${name} kanalına hoş geldin!`;
+            
+            loadMessages();
+            loadGroupData(); // To update active channel in sidebar
+        }
+
+        function switchGroup(id) {
+            window.location.href = `discord.html?groupId=${id}`;
+        }
+
+        function toggleMembersList() {
+            document.getElementById('members-sidebar').classList.toggle('hidden');
+        }
+    </script>
+</body>
+</html>
