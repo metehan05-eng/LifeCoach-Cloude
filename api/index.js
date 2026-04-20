@@ -167,7 +167,7 @@ async function callGemini(prompt, history = [], systemInstruction = "") {
         for (const apiVer of apiVersions) {
             try {
                 console.log(`[AI] denemesi: ${modelName} | API: ${apiVer}`);
-                
+
                 // Zaman aşımı kontrolü (12 saniye)
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 12000);
@@ -195,9 +195,9 @@ async function callGemini(prompt, history = [], systemInstruction = "") {
 
                 const result = await model.generateContent({ contents }, { signal: controller.signal });
                 const response = result.response;
-                
+
                 clearTimeout(timeoutId);
-                
+
                 console.log(`[AI] BAŞARILI: ${modelName} (${apiVer})`);
                 return {
                     text: response.text(),
@@ -206,7 +206,7 @@ async function callGemini(prompt, history = [], systemInstruction = "") {
             } catch (err) {
                 console.warn(`[AI] BAŞARISIZ: ${modelName} (${apiVer}) -> ${err.message}`);
                 lastError = err;
-                
+
                 if (err.message.includes('401') || err.message.includes('403') || err.message.includes('API key')) {
                     throw new Error("API Anahtarı geçersiz veya yetkisiz: " + err.message);
                 }
@@ -222,7 +222,7 @@ async function callGemini(prompt, history = [], systemInstruction = "") {
         try {
             const apiKey = GEMINI_API_KEY.trim();
             const url = `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${apiKey}`;
-            
+
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 10000);
 
@@ -370,7 +370,7 @@ async function callOpenRouter(messages, model, systemPrompt = null, temperature 
             },
             body: JSON.stringify({
                 model: model,
-                messages: systemPrompt 
+                messages: systemPrompt
                     ? [{ role: 'system', content: systemPrompt }, ...messages]
                     : messages,
                 temperature: temperature,
@@ -1015,7 +1015,12 @@ Kullanıcı bu soruya cevap verdiğinde, seçimine göre SADECE şu oyunları ö
 - Eğer "Rahatlamak" istiyorsa: MineCraft
 - Eğer "Hikaye" seviyorsa: Elden Ring
 - Eğer "Aksiyon" seviyorsa: Call Of Duty
-- Eğer "Yarış" oyunu seviyorsa: Need for speed ve Cars 2 The Video Game
+- Eğer "Yarış" oyunu seviyorsa: Need for speed Carbon ve Cars 2 The Video Game
+
+SUPERHERO INTERACTION RULES (SÜPER KAHRAMAN KURALLARI):
+Eğer kullanıcı "en sevdiğin süper kahraman kim" veya benzeri bir soru sorarsa, KESİNLİKLE tek bir isim vererek konuyu kapatma. 
+Bunun yerine şu kahramanları seçenek olarak sun ve kullanıcının fikrini sor: Homelander, Iron Man, Spider-Man, Dr. Doom, Batman, Magneto.
+Kullanıcıya "Senin favorin hangisi?" veya "Sence hangisi daha karizmatik / güçlü?" gibi sorular sorarak onu sohbetin içine çek.
 
 MISSION
 
@@ -1247,7 +1252,7 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
         // Bilgi gerektiren soru olup olmadığını kontrol et (Aramayı hızlandırmak için sadece gerekli durumlarda yap)
         const isGreeting = /^(merhaba|selam|hi|hello|hey|günaydın|tünaydın|iyi akşamlar|iyi geceler)/i.test(lastMessageText);
         const isShortQuery = lastMessageText.trim().split(/\s+/).length < 4; // 4 kelimeden az ise kısa sorgu say
-        
+
         const isInformationalQuery = !isGreeting && !isShortQuery && (
             /^(ne|nedir|nasıl|kim|hangi|neden|niçin|kaç|ne zaman|nerede|nereden|Örnek|Açıkla|Detaylandır|Anlat)/i.test(lastMessageText) ||
             lastMessageText.length > 50
@@ -1283,7 +1288,7 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
             role: msg.role === 'model' || msg.role === 'assistant' ? 'assistant' : 'user',
             content: msg.parts.map(p => p.text || '').join(' ')
         }));
-        
+
         let lastUserContent = userMessageParts.map(p => p.text || '').join(' ');
         if (searchContext) lastUserContent += searchContext;
         openRouterMessages.push({ role: 'user', content: lastUserContent });
@@ -1314,7 +1319,7 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
             usedModel = result.model;
         } catch (err) {
             console.warn("[AI] Gemini başarısız oldu, OpenRouter yedeklerine geçiliyor:", err.message);
-            
+
             // 2. Gemini başarısızsa OpenRouter modellerini dene
             if (OPENROUTER_API_KEY) {
                 for (const modelName of OPENROUTER_MODELS) {
@@ -1322,7 +1327,7 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
                         const result = await callOpenRouterWithRetry(modelName, openRouterMessages, finalSystemPrompt);
                         aiResponse = result.text;
                         usedModel = result.model;
-                        break; 
+                        break;
                     } catch (orErr) {
                         console.warn(`[AI] OpenRouter ${modelName} başarısız:`, orErr.message);
                     }
@@ -1779,12 +1784,12 @@ function calculateStreak(completions) {
     const sortedDates = [...new Set(completions)].sort().reverse();
     const today = getTodayDate();
     const yesterday = getYesterdayDate();
-    
+
     if (sortedDates[0] !== today && sortedDates[0] !== yesterday) return 0;
-    
+
     let streak = 0;
     let checkDateStr = sortedDates[0];
-    
+
     for (const date of sortedDates) {
         if (date === checkDateStr) {
             streak++;
@@ -2754,14 +2759,14 @@ app.all('/api/social', authenticateToken, async (req, res) => {
                     const { partnerId, message } = req.body;
                     const allCheckIns = await getKVData('social_checkins') || {};
                     if (!allCheckIns[partnerId]) allCheckIns[partnerId] = [];
-                    
+
                     const checkIn = {
                         senderId: userId,
                         partnerName: req.user.name || 'Partner',
                         message,
                         date: new Date().toISOString()
                     };
-                    
+
                     allCheckIns[partnerId].push(checkIn);
                     await setKVData('social_checkins', allCheckIns);
                     return res.json({ success: true });
@@ -3850,25 +3855,25 @@ app.get('/api/notifications', authenticateToken, async (req, res) => {
         const userId = req.user.id;
         const allHabits = await getKVData('habits') || {};
         const userHabits = allHabits[userId] || [];
-        
+
         const pendingNotifications = [];
         const now = new Date();
         const todayStr = now.toISOString().split('T')[0];
-        
+
         for (const habit of userHabits) {
             if (!habit.reminder || !habit.reminder.enabled) continue;
-            
+
             const [hours, minutes] = habit.reminder.time.split(':').map(Number);
             const reminderTime = new Date(now);
             reminderTime.setHours(hours, minutes, 0, 0);
-            
+
             // Should send today? (Simplified)
             let shouldSend = true;
             if (habit.lastNotificationAt) {
                 const lastDate = new Date(habit.lastNotificationAt).toISOString().split('T')[0];
                 if (lastDate === todayStr) shouldSend = false;
             }
-            
+
             if (shouldSend && now >= reminderTime) {
                 pendingNotifications.push({
                     habitId: habit.id,
@@ -3879,12 +3884,12 @@ app.get('/api/notifications', authenticateToken, async (req, res) => {
                 habit.lastNotificationAt = now.toISOString();
             }
         }
-        
+
         if (pendingNotifications.length > 0) {
             allHabits[userId] = userHabits;
             await setKVData('habits', allHabits);
         }
-        
+
         res.json({ notifications: pendingNotifications });
     } catch (error) {
         console.error('Notifications error:', error);
@@ -3896,14 +3901,14 @@ app.post('/api/notifications', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.id;
         const { subscription } = req.body;
-        
+
         if (subscription) {
             const allSubs = await getKVData('push_subscriptions') || {};
             allSubs[userId] = subscription;
             await setKVData('push_subscriptions', allSubs);
             return res.json({ success: true });
         }
-        
+
         res.status(400).json({ error: 'Subscription gerekli' });
     } catch (error) {
         res.status(500).json({ error: 'İşlem başarısız' });
@@ -3915,13 +3920,13 @@ app.get('/api/challenges', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.id;
         const { type } = req.query;
-        
+
         if (type === 'analytics') {
             const allAnalytics = await getKVData('user_analytics') || {};
             const userAnalytics = allAnalytics[userId] || { totalEvents: 0, events: [] };
             return res.json(userAnalytics);
         }
-        
+
         const allChallenges = await getKVData('challenges') || {};
         const userChallenges = allChallenges[userId] || [];
         res.json({ challenges: userChallenges });
@@ -3934,7 +3939,7 @@ app.get('/api/challenges', authenticateToken, async (req, res) => {
 app.get('/api/advanced', authenticateToken, async (req, res) => {
     try {
         const { type } = req.query;
-        
+
         if (type === 'leaderboard') {
             const allStats = await getKVData('user-stats') || {};
             const leaderboard = Object.entries(allStats)
@@ -3946,10 +3951,10 @@ app.get('/api/advanced', authenticateToken, async (req, res) => {
                 }))
                 .sort((a, b) => b.xp - a.xp)
                 .slice(0, 10);
-                
+
             return res.json(leaderboard);
         }
-        
+
         res.status(400).json({ error: 'Geçersiz tip' });
     } catch (error) {
         res.status(500).json({ error: 'Veri alınamadı' });
