@@ -154,142 +154,78 @@ if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY && !SUPABASE_URL.includes('YOUR_')
 
 // ── Gemini API çağrısı (Tek AI) ──────────────────────────────
 async function callGemini(prompt, history = [], systemInstruction = "") {
-    if (!genAI) {
-        throw new Error("Gemini API yapılandırılmamış");
-    }
+    if (!genAI) throw new Error("Gemini API yapılandırılmamış");
 
-    // Modelleri benzersiz yap ve sırayı koru
-    const modelsToTry = [...new Set([ACTUAL_GEMINI_MODEL, GEMINI_MODEL, ...GEMINI_FALLBACK_MODELS])];
-    const apiVersions = ['v1', 'v1beta'];
+    // Hız için en hızlı modelleri seç
+    const modelsToTry = [ACTUAL_GEMINI_MODEL, 'gemini-1.5-flash'];
     let lastError = null;
 
     for (const modelName of modelsToTry) {
-        for (const apiVer of apiVersions) {
-            try {
-                console.log(`[AI] denemesi: ${modelName} | API: ${apiVer}`);
-
-                // Zaman aşımı kontrolü (12 saniye)
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 12000);
-
-                const model = genAI.getGenerativeModel({
-                    model: modelName,
-                    generationConfig: {
-                        maxOutputTokens: 4000,
-                        temperature: 0.7,
-                    },
-                    ...(systemInstruction && {
-                        systemInstruction: { parts: [{ text: systemInstruction }] }
-                    })
-                }, { apiVersion: apiVer });
-
-                const contents = [];
-                for (const msg of history) {
-                    if (msg.role === 'user') {
-                        contents.push({ role: 'user', parts: [{ text: msg.content || msg.parts?.map(p => p.text).join(' ') || '' }] });
-                    } else if (msg.role === 'assistant' || msg.role === 'model') {
-                        contents.push({ role: 'model', parts: [{ text: msg.content || msg.parts?.map(p => p.text).join(' ') || '' }] });
-                    }
-                }
-                contents.push({ role: 'user', parts: [{ text: prompt }] });
-
-                const result = await model.generateContent({ contents }, { signal: controller.signal });
-                const response = result.response;
-
-                clearTimeout(timeoutId);
-
-                console.log(`[AI] BAŞARILI: ${modelName} (${apiVer})`);
-                return {
-                    text: response.text(),
-                    model: modelName
-                };
-            } catch (err) {
-                console.warn(`[AI] BAŞARISIZ: ${modelName} (${apiVer}) -> ${err.message}`);
-                lastError = err;
-
-                if (err.message.includes('401') || err.message.includes('403') || err.message.includes('API key')) {
-                    throw new Error("API Anahtarı geçersiz veya yetkisiz: " + err.message);
-                }
-
-                // Hız için: Eğer model bulunamadıysa (404) apiVersion değiştirmeden bir sonraki modele geç
-                if (err.message.includes('404')) break;
-            }
-        }
-    }
-
-    // ── ULTIMATE FALLBACK: Direct Fetch ──
-    for (const modelName of modelsToTry) {
         try {
-            const apiKey = GEMINI_API_KEY.trim();
-            const url = `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${apiKey}`;
-
+            console.log(`[AI] Hızlı deneme: ${modelName}`);
+            
+            // Zaman aşımı kontrolü (Hız için 4 saniye!)
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000);
+            const timeoutId = setTimeout(() => controller.abort(), 4000);
 
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                signal: controller.signal,
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: (systemInstruction ? systemInstruction + "\n\n" : "") + prompt }] }],
-                    generationConfig: { maxOutputTokens: 4000, temperature: 0.7 }
-                })
-            });
+            const model = genAI.getGenerativeModel({
+                model: modelName,
+                generationConfig: { maxOutputTokens: 2048, temperature: 0.7 }
+            }, { apiVersion: 'v1' });
 
-            const data = await response.json();
-            clearTimeout(timeoutId);
-
-            if (response.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
-                return {
-                    text: data.candidates[0].content.parts[0].text,
-                    model: modelName
-                };
+            const contents = [];
+            for (const msg of history) {
+                const role = msg.role === 'user' ? 'user' : 'model';
+                contents.push({
+                    role: role,
+                    parts: [{ text: msg.content || msg.parts?.map(p => p.text).join(' ') || '' }]
+                });
             }
-        } catch (fetchErr) {
-            console.error(`[AI] Ham HTTP hatası: ${fetchErr.message}`);
+            contents.push({ role: 'user', parts: [{ text: prompt }] });
+
+            const result = await model.generateContent({ contents }, { signal: controller.signal });
+            clearTimeout(timeoutId);
+            
+            return {
+                text: result.response.text(),
+                model: modelName
+            };
+        } catch (err) {
+            console.warn(`[AI] Deneme başarısız (${modelName}): ${err.message}`);
+            lastError = err;
+            if (err.message.includes('401') || err.message.includes('403')) break;
         }
     }
 
-    throw new Error(`Tüm AI modelleri denendi ancak başarılı olunamadı. Son hata: ${lastError?.message}`);
+    throw lastError || new Error("Gemini denemesi başarısız oldu.");
 }
 
 // ── AI Yanıt Fonksiyonu (Gemini & OpenRouter Fallback) ──────────────────────────────
+// ── AI Yanıt Fonksiyonu (Gemini & OpenRouter Fallback) ──────────────────────────────
 async function generateAIResponse(prompt, history = [], systemInstruction = "") {
     try {
-        // 1. Önce Gemini'yi dene
+        // 1. Önce Gemini'yi dene (Max 6 saniye)
         const result = await callGemini(prompt, history, systemInstruction);
         return result.text;
     } catch (err) {
-        console.warn(`[AI] Gemini başarısız oldu, OpenRouter yedeklemesi başlatılıyor... Hata: ${err.message}`);
+        console.warn(`[AI] Gemini başarısız oldu, OpenRouter yedeklemesi başlatılıyor...`);
         
-        // 2. OpenRouter mevcut ise dene
         if (OPENROUTER_API_KEY && OPENROUTER_MODELS.length > 0) {
-            try {
-                // Geçmişi OpenRouter formatına dönüştür
-                const messages = (history || []).map(h => ({
-                    role: h.role === 'model' || h.role === 'assistant' ? 'assistant' : 'user',
-                    content: h.parts ? h.parts.map(p => p.text).join(' ') : (h.content || '')
-                }));
-                messages.push({ role: 'user', content: prompt });
+            const messages = (history || []).map(h => ({
+                role: h.role === 'model' || h.role === 'assistant' ? 'assistant' : 'user',
+                content: h.parts ? h.parts.map(p => p.text).join(' ') : (h.content || '')
+            }));
+            messages.push({ role: 'user', content: prompt });
 
-                // OpenRouter modellerini sırayla dene
-                for (const model of OPENROUTER_MODELS) {
-                    try {
-                        console.log(`[AI] OpenRouter Fallback deneniyor: ${model}`);
-                        const orResult = await callOpenRouter(messages, model, systemInstruction);
-                        console.log(`[AI] OpenRouter Fallback BAŞARILI: ${model}`);
-                        return orResult.text;
-                    } catch (orErr) {
-                        console.warn(`[AI] OpenRouter ${model} başarısız: ${orErr.message}`);
-                    }
-                }
-            } catch (fallbackErr) {
-                console.error("[AI] Tüm yedekleme mekanizmaları başarısız oldu:", fallbackErr.message);
+            // Sadece ilk OpenRouter modelini dene (Zaman kısıtlı!)
+            try {
+                const orResult = await callOpenRouter(messages, OPENROUTER_MODELS[0], systemInstruction);
+                return orResult.text;
+            } catch (orErr) {
+                console.error("[AI] Tüm modeller zaman aşımına uğruyor.");
             }
         }
-        
-        // Hiçbiri çalışmazsa orijinal hatayı fırlat
-        throw new Error(`Tüm AI servisleri (Gemini & OpenRouter) başarısız oldu. Son hata: ${err.message}`);
+        throw new Error("Yapay zeka yanıt veremedi, lütfen tekrar deneyin.");
     }
 }
 
