@@ -313,75 +313,16 @@ async function joinGroupByCode() {
 // View Group Details
 async function viewGroupDetail(groupId) {
     const token = localStorage.getItem('token');
-    if (!token) return;
-
-    try {
-        const res = await fetch(`/api/social?type=groups&id=${groupId}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        if (!res.ok) throw new Error('Grup bulunamadı');
-
-        const data = await res.json();
-        const group = data.group;
-        const isOwner = data.isOwner;
-
-        window.currentGroupId = groupId;
-        window.currentGroupIsOwner = isOwner;
-        window.currentChannelId = 'genel'; // default channel
-
-        // Update UI
-        document.getElementById('groups-list').classList.add('hidden');
-        document.getElementById('group-detail-container').classList.remove('hidden');
-        document.getElementById('group-detail-container').classList.add('flex');
-
-        document.getElementById('group-detail-name').textContent = group.name;
-        document.getElementById('group-join-id-copy').textContent = `ID: #${group.joinCode || '0000'}`;
-        document.getElementById('group-member-count').textContent = group.members.length;
-        
-        // Show/hide gear icon
-        const gear = document.getElementById('btn-settings-tab-icon');
-        if (isOwner) gear.classList.remove('hidden');
-        else gear.classList.add('hidden');
-
-        // Load Members
-        loadGroupMembers(groupId, data.group.memberDetails || group.members);
-
-        // Sidebar User Info
-        const uStr = localStorage.getItem('user');
-        if (uStr) {
-            const u = JSON.parse(uStr);
-            document.getElementById('social-mini-avatar').src = u.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.name}`;
-            document.getElementById('social-mini-name').textContent = u.name;
-        }
-
-        // Render Channels
-        renderChannels(group.channels || []);
-
-        // Initialize Socket
-        initGroupSocket();
-        socket.emit('join_room', groupId);
-
-        // Load messages for default channel
-        loadGroupMessages(groupId, 'genel');
-
-        // Setup settings form
-        if (isOwner) {
-            document.getElementById('group-edit-name').value = group.name;
-            document.getElementById('group-edit-desc').value = group.description;
-            document.getElementById('group-edit-public').checked = group.isPublic;
-            
-            if (group.rules) {
-                document.getElementById('group-edit-no-links').checked = group.rules.noLinks;
-                document.getElementById('group-edit-no-ads').checked = group.rules.noAds;
-            }
-        }
-
-    } catch (err) {
-        console.error('View group error:', err);
-        showToast(err.message, 'error');
+    if (!token) {
+        showToast('Lütfen giriş yapın', 'error');
+        return;
     }
+
+    // Modern Discord tarzı chat sayfasına yönlendir
+    window.location.href = `discord.html?groupId=${groupId}`;
 }
+
+
 
 function renderChannels(channels) {
     const textContainer = document.getElementById('group-text-channels');
