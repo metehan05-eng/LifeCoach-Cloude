@@ -158,7 +158,8 @@ async function callGemini(prompt, history = [], systemInstruction = "") {
         throw new Error("Gemini API yapılandırılmamış");
     }
 
-    const modelsToTry = [ACTUAL_GEMINI_MODEL, GEMINI_MODEL, ...GEMINI_FALLBACK_MODELS];
+    // Modelleri benzersiz yap ve sırayı koru
+    const modelsToTry = [...new Set([ACTUAL_GEMINI_MODEL, GEMINI_MODEL, ...GEMINI_FALLBACK_MODELS])];
     const apiVersions = ['v1', 'v1beta'];
     let lastError = null;
 
@@ -166,6 +167,11 @@ async function callGemini(prompt, history = [], systemInstruction = "") {
         for (const apiVer of apiVersions) {
             try {
                 console.log(`[AI] denemesi: ${modelName} | API: ${apiVer}`);
+                
+                // Zaman aşımı kontrolü (12 saniye)
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 12000);
+
                 const model = genAI.getGenerativeModel({
                     model: modelName,
                     generationConfig: {
@@ -187,8 +193,10 @@ async function callGemini(prompt, history = [], systemInstruction = "") {
                 }
                 contents.push({ role: 'user', parts: [{ text: prompt }] });
 
-                const result = await model.generateContent({ contents });
+                const result = await model.generateContent({ contents }, { signal: controller.signal });
                 const response = result.response;
+                
+                clearTimeout(timeoutId);
                 
                 console.log(`[AI] BAŞARILI: ${modelName} (${apiVer})`);
                 return {
@@ -199,52 +207,50 @@ async function callGemini(prompt, history = [], systemInstruction = "") {
                 console.warn(`[AI] BAŞARISIZ: ${modelName} (${apiVer}) -> ${err.message}`);
                 lastError = err;
                 
-                // Eğer hata API Key kaynaklıysa (401/403) diğerlerini deneme, direkt hata dön
                 if (err.message.includes('401') || err.message.includes('403') || err.message.includes('API key')) {
                     throw new Error("API Anahtarı geçersiz veya yetkisiz: " + err.message);
                 }
-                
-                // 429 (Quota) hatası alırsak da diğer modelleri denemeye devam et
-                console.warn(`[AI] ${modelName} kotası dolmuş olabilir, sıradakine geçiliyor...`);
-                lastError = err;
+
+                // Hız için: Eğer model bulunamadıysa (404) apiVersion değiştirmeden bir sonraki modele geç
+                if (err.message.includes('404')) break;
             }
         }
     }
 
-    // ── ULTIMATE FALLBACK: Direct Fetch (SDK'yı es geçerek ham HTTP isteği atar) ──
-    console.log("[AI] SDK başarısız, ham HTTP (fetch) denemesi başlatılıyor...");
+    // ── ULTIMATE FALLBACK: Direct Fetch ──
     for (const modelName of modelsToTry) {
-        for (const apiVer of apiVersions) {
-            try {
-                const apiKey = GEMINI_API_KEY.trim();
-                const url = `https://generativelanguage.googleapis.com/${apiVer}/models/${modelName}:generateContent?key=${apiKey}`;
-                
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: (systemInstruction ? systemInstruction + "\n\n" : "") + prompt }] }],
-                        generationConfig: { maxOutputTokens: 4000, temperature: 0.7 }
-                    })
-                });
+        try {
+            const apiKey = GEMINI_API_KEY.trim();
+            const url = `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${apiKey}`;
+            
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-                const data = await response.json();
-                if (response.ok && data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
-                    console.log(`[AI] Ham HTTP ile BAŞARILI: ${modelName} (${apiVer})`);
-                    return {
-                        text: data.candidates[0].content.parts[0].text,
-                        model: modelName
-                    };
-                } else if (data.error) {
-                    console.warn(`[AI] Ham HTTP hatası (${modelName} - ${apiVer}): ${data.error.message}`);
-                }
-            } catch (fetchErr) {
-                console.error(`[AI] Ham HTTP kritik hata: ${fetchErr.message}`);
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                signal: controller.signal,
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: (systemInstruction ? systemInstruction + "\n\n" : "") + prompt }] }],
+                    generationConfig: { maxOutputTokens: 4000, temperature: 0.7 }
+                })
+            });
+
+            const data = await response.json();
+            clearTimeout(timeoutId);
+
+            if (response.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
+                return {
+                    text: data.candidates[0].content.parts[0].text,
+                    model: modelName
+                };
             }
+        } catch (fetchErr) {
+            console.error(`[AI] Ham HTTP hatası: ${fetchErr.message}`);
         }
     }
 
-    throw new Error(`Tüm AI modelleri ve bağlantı yöntemleri denendi ancak başarılı olunamadı. Lütfen API anahtarınızın "Generative Language API" yetkisi olduğundan emin olun. Son hata: ${lastError?.message}`);
+    throw new Error(`Tüm AI modelleri denendi ancak başarılı olunamadı. Son hata: ${lastError?.message}`);
 }
 
 // ── AI Yanıt Fonksiyonu (Sadece Gemini) ──────────────────────────────
@@ -1238,19 +1244,24 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
         let searchContext = '';
         const lastMessageText = userMessageParts.map(p => p.text || '').join(' ');
 
-        // Bilgi gerektiren soru olup olmadığını kontrol et
-        const isInformationalQuery = /^(ne|nedir|nasıl|kim|hangi|neden|niçin|kaç|ne zaman|nerede|nereden|Örnek|Açıkla|Detaylandır|Anlat)/i.test(lastMessageText) ||
-            lastMessageText.length > 20;
+        // Bilgi gerektiren soru olup olmadığını kontrol et (Aramayı hızlandırmak için sadece gerekli durumlarda yap)
+        const isGreeting = /^(merhaba|selam|hi|hello|hey|günaydın|tünaydın|iyi akşamlar|iyi geceler)/i.test(lastMessageText);
+        const isShortQuery = lastMessageText.trim().split(/\s+/).length < 4; // 4 kelimeden az ise kısa sorgu say
+        
+        const isInformationalQuery = !isGreeting && !isShortQuery && (
+            /^(ne|nedir|nasıl|kim|hangi|neden|niçin|kaç|ne zaman|nerede|nereden|Örnek|Açıkla|Detaylandır|Anlat)/i.test(lastMessageText) ||
+            lastMessageText.length > 50
+        );
 
         if (isInformationalQuery && TAVILY_API_KEY) {
             try {
                 // Arama sorgusu oluştur (kullanıcı mesajını temizle)
                 let searchQuery = lastMessageText
                     .replace(/[?!.].*$/g, '') // Soru işareti ve sonrasını kaldır
-                    .substring(0, 100) // Max 100 karakter
+                    .substring(0, 80) // Max 80 karakter
                     .trim();
 
-                if (searchQuery.length > 10) {
+                if (searchQuery.length > 5) {
                     console.log(`[TavilySearch] Chat için arama yapılıyor: "${searchQuery}"`);
                     const searchResults = await searchTavily(searchQuery, 5);
 
@@ -1264,22 +1275,29 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
             }
         }
 
-        // --- AI Model Logic (OpenRouter & Gemini Fallback) ---
+        // --- AI Model Logic (Gemini with OpenRouter Fallback) ---
         let aiResponse;
         let usedModel;
+
+        const openRouterMessages = chatHistory.map(msg => ({
+            role: msg.role === 'model' || msg.role === 'assistant' ? 'assistant' : 'user',
+            content: msg.parts.map(p => p.text || '').join(' ')
+        }));
+        
+        let lastUserContent = userMessageParts.map(p => p.text || '').join(' ');
+        if (searchContext) lastUserContent += searchContext;
+        openRouterMessages.push({ role: 'user', content: lastUserContent });
 
         async function callOpenRouterWithRetry(modelName, messages, systemPrompt, maxRetries = 1) {
             let attempt = 0;
             while (attempt <= maxRetries) {
                 try {
-                    console.log(`[AI] OpenRouter deneniyor: ${modelName} (Deneme ${attempt + 1})`);
                     const result = await callOpenRouter(messages, modelName, systemPrompt, 0.7, 4000);
                     return { text: result.text, model: result.model };
                 } catch (error) {
-                    const isRateLimit = error.message?.includes('429') || error.status === 429;
+                    const isRateLimit = error.message?.includes('429');
                     if (isRateLimit && attempt < maxRetries) {
-                        const waitTime = 1000;
-                        await new Promise(resolve => setTimeout(resolve, waitTime));
+                        await new Promise(resolve => setTimeout(resolve, 1000));
                         attempt++;
                         continue;
                     }
@@ -1288,43 +1306,32 @@ You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.`;
             }
         }
 
-        const openRouterMessages = [];
-        for (const msg of chatHistory) {
-            openRouterMessages.push({
-                role: msg.role === 'model' || msg.role === 'assistant' ? 'assistant' : 'user',
-                content: msg.parts.map(p => p.text || '').join(' ')
-            });
-        }
-        
-        let lastUserContent = userMessageParts.map(p => p.text || '').join(' ');
-        if (searchContext) lastUserContent += searchContext;
-        openRouterMessages.push({ role: 'user', content: lastUserContent });
-
-        // 1. Önce OpenRouter modellerini dene
-        if (OPENROUTER_API_KEY) {
-            for (const modelName of OPENROUTER_MODELS) {
-                try {
-                    const result = await callOpenRouterWithRetry(modelName, openRouterMessages, finalSystemPrompt);
-                    aiResponse = result.text;
-                    usedModel = result.model;
-                    break; 
-                } catch (err) {
-                    console.warn(`[AI] OpenRouter ${modelName} başarısız:`, err.message);
+        // 1. Önce Gemini'yi dene (Hızlı olduğu için)
+        try {
+            console.log("[AI] Birincil model olarak Gemini deneniyor...");
+            const result = await callGemini(lastUserContent, chatHistory, finalSystemPrompt);
+            aiResponse = result.text;
+            usedModel = result.model;
+        } catch (err) {
+            console.warn("[AI] Gemini başarısız oldu, OpenRouter yedeklerine geçiliyor:", err.message);
+            
+            // 2. Gemini başarısızsa OpenRouter modellerini dene
+            if (OPENROUTER_API_KEY) {
+                for (const modelName of OPENROUTER_MODELS) {
+                    try {
+                        const result = await callOpenRouterWithRetry(modelName, openRouterMessages, finalSystemPrompt);
+                        aiResponse = result.text;
+                        usedModel = result.model;
+                        break; 
+                    } catch (orErr) {
+                        console.warn(`[AI] OpenRouter ${modelName} başarısız:`, orErr.message);
+                    }
                 }
             }
         }
 
-        // 2. OpenRouter başarısızsa veya API KEY yoksa Gemini (CallGemini) ile devam et
         if (!aiResponse) {
-            try {
-                console.log("[AI] Sistemi Gemini modeline yönlendiriliyor...");
-                const result = await callGemini(lastUserContent, chatHistory, finalSystemPrompt);
-                aiResponse = result.text;
-                usedModel = result.model;
-            } catch (err) {
-                console.error("[AI] Gemini de başarısız oldu:", err.message);
-                throw new Error(`Yapay zeka modellerine erişilemiyor: ${err.message}`);
-            }
+            throw new Error("Tüm yapay zeka modellerine erişim başarısız oldu. Lütfen internet bağlantınızı kontrol edin.");
         }
 
         let newSessionId = sessionId;
