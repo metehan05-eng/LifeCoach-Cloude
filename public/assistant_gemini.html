@@ -1411,13 +1411,20 @@ Features: Formulas, Charts, Pivot Tables</div></div>
                 body: JSON.stringify(payload)
             });
 
-            const data = await response.json();
+            let data;
+            const contentType = response.headers.get("content-type");
+            if (contentType && contentType.indexOf("application/json") !== -1) {
+                data = await response.json();
+            } else {
+                const textError = await response.text();
+                throw new Error("Sunucudan beklenen yanıt alınamadı (JSON değil). Durum: " + response.status + "\nYanıt: " + textError.substring(0, 100));
+            }
             
             typingWrap.classList.remove('active');
             isTyping = false;
 
             if (data.error) {
-                renderMsg('assistant', 'Üzgünüm, bir hata oluştu: ' + data.error);
+                renderMsg('assistant', 'Üzgünüm, bir hata oluştu: ' + (data.details || data.error));
             } else {
                 const reply = data.response || 'Üzgünüm, yanıt alınamadı.';
                 messages.push({ role: 'assistant', content: reply });
@@ -1446,8 +1453,16 @@ Features: Formulas, Charts, Pivot Tables</div></div>
         } catch (err) {
             typingWrap.classList.remove('active');
             isTyping = false;
-            renderMsg('assistant', 'Bağlantı hatası oluştu. Lütfen tekrar deneyin.');
-            console.error(err);
+            
+            let errMsg = 'Bağlantı hatası oluştu. Lütfen tekrar deneyin.';
+            if (err.message.includes('JSON')) {
+                errMsg = 'Sunucu hatası: Beklenmeyen bir yanıt alındı. Lütfen daha kısa bir soru sormayı deneyin.';
+            } else if (err.message.includes('500')) {
+                 errMsg = 'Sunucu (500) hatası oluştu. Yapay zeka şu an meşgul olabilir.';
+            }
+            
+            renderMsg('assistant', errMsg);
+            console.error('Chat Error Details:', err);
         }
         
         // Dosya eklentilerini temizle

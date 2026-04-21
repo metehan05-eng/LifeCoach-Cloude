@@ -90,8 +90,8 @@ app.use(express.json({ limit: '50mb' }));
 // Gemini API Ayarları (Tek AI - Sadece Gemini)
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_API_ENDPOINT = process.env.GEMINI_API_ENDPOINT || 'https://generativelanguage.googleapis.com/v1/models';
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
-const GEMINI_FALLBACK_MODELS = ['gemini-2.5-pro', 'gemma-3-27b', 'gemini-2.0-flash'];
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+const GEMINI_FALLBACK_MODELS = ['gemini-1.5-pro', 'gemini-2.0-flash-exp', 'gemini-1.5-flash'];
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 const TAVILY_API_KEY = process.env.TAVILY_API_KEY; // Tavily AI arama için
 const POLLINATIONS_API_KEY = process.env.POLLINATIONS_API_KEY; // Pollinations.ai görsel üretim için (opsiyonel)
@@ -103,9 +103,9 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 // OpenRouter API Ayarları
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const OPENROUTER_MODELS = [
-    "google/gemini-2.0-flash-exp:free",      // Hızlı ve ücretsiz
-    "mistralai/mistral-small-3.1-24b-instruct:free", // Kaliteli
-    "google/gemma-3-27b-it:free",            // Alternatif
+    "google/gemini-2.0-flash-exp:free",
+    "google/gemini-flash-1.5-exp:free",
+    "google/gemma-2-9b-it:free",
     "openrouter/free"                        // Yedek
 ];
 
@@ -170,7 +170,7 @@ async function callGemini(prompt, history = [], systemInstruction = "") {
     // Eğer history içinde 'system' rolü varsa onu ayıkla
     let finalSystemInstruction = systemInstruction;
     const finalHistory = [];
-    
+
     for (const msg of (history || [])) {
         if (msg.role === 'system') {
             finalSystemInstruction = msg.content || msg.parts?.[0]?.text || finalSystemInstruction;
@@ -182,7 +182,7 @@ async function callGemini(prompt, history = [], systemInstruction = "") {
     for (const modelName of modelsToTry) {
         try {
             console.log(`[AI] Deneniyor: ${modelName}`);
-            
+
             // Zaman aşımı 8 saniye - Vercel limitine yakın ama daha güvenilir
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 8500);
@@ -201,9 +201,18 @@ async function callGemini(prompt, history = [], systemInstruction = "") {
 
             const result = await model.generateContent({ contents }, { signal: controller.signal });
             clearTimeout(timeoutId);
-            
+
+            if (!result.response || !result.response.candidates || result.response.candidates.length === 0) {
+                throw new Error("AI yanıt kutusunda aday bulunamadı (Filtrelenmiş olabilir).");
+            }
+
+            const responseText = result.response.text();
+            if (!responseText) {
+                throw new Error("AI boş bir yanıt döndürdü.");
+            }
+
             return {
-                text: result.response.text(),
+                text: responseText,
                 model: modelName
             };
         } catch (err) {
@@ -225,7 +234,7 @@ async function generateAIResponse(prompt, history = [], systemInstruction = "") 
         return result.text;
     } catch (err) {
         console.warn(`[AI] Gemini başarısız oldu, OpenRouter yedeklemesi başlatılıyor...`);
-        
+
         if (OPENROUTER_API_KEY && OPENROUTER_MODELS.length > 0) {
             const messages = (history || []).map(h => ({
                 role: h.role === 'model' || h.role === 'assistant' ? 'assistant' : 'user',
@@ -3140,12 +3149,12 @@ app.all('/api/social', authenticateToken, async (req, res) => {
             if (req.method === 'GET' && action === 'profile') {
                 const query = req.query.uniqueId || req.query.query;
                 if (!query) return res.status(400).json({ error: 'Arama terimi gerekli' });
-                
+
                 const users = await getKVData('all_users_index') || [];
                 const foundUser = users.find(u => u.uniqueId === query || u.name.toLowerCase().includes(query.toLowerCase()));
-                
+
                 if (!foundUser) return res.status(404).json({ error: 'Kullanıcı bulunamadı' });
-                
+
                 return res.json({
                     success: true,
                     profile: { id: foundUser.id, uniqueId: foundUser.uniqueId, name: foundUser.name }
@@ -3573,9 +3582,9 @@ app.post('/api/user-stats', authenticateToken, async (req, res) => {
         } else if (rewardType) {
             const xpGained = rewardType === 'daily_login' ? 10 :
                 rewardType === 'goal_complete' ? 50 :
-                rewardType === 'habit_streak' ? 30 :
-                rewardType === 'social_share' ? 100 :
-                rewardType === 'assistant_message' ? 10 : 10;
+                    rewardType === 'habit_streak' ? 30 :
+                        rewardType === 'social_share' ? 100 :
+                            rewardType === 'assistant_message' ? 10 : 10;
 
             const stats = await awardXP(userId, xpGained, rewardType);
             return res.json(stats);
