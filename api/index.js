@@ -62,6 +62,14 @@ io.on('connection', (socket) => {
     socket.on('leave_voice', ({ groupId, userId }) => {
         socket.broadcast.emit('user_left_voice', userId);
     });
+
+    socket.on('typing', ({ room, user }) => {
+        socket.to(room).emit('user_typing', { user, room });
+    });
+
+    socket.on('stop_typing', ({ room, user }) => {
+        socket.to(room).emit('user_stop_typing', { user, room });
+    });
 });
 
 // Middleware
@@ -2983,6 +2991,7 @@ app.all('/api/social', authenticateToken, async (req, res) => {
                         senderName: req.user.name || userId,
                         content: filteredContent,
                         channelId: channelId || 'genel',
+                        attachment: req.body.attachment || null,
                         timestamp: Date.now()
                     };
 
