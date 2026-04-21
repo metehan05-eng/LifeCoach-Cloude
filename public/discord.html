@@ -383,15 +383,17 @@
             const count = document.getElementById('member-online-count');
             
             count.textContent = members.length;
-            onlineList.innerHTML = members.map(m => `
+            onlineList.innerHTML = members.map(m => {
+                const name = m.id === 'undefined' ? 'Misafir' : (m.name || m.id || 'Bilinmeyen');
+                return `
                 <div class="flex items-center gap-2 p-1 rounded hover:bg-white/5 cursor-pointer group">
                     <div class="relative">
                         <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${m.id}" class="w-8 h-8 rounded-full bg-slate-700">
                         <div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-[var(--discord-sidebar)]"></div>
                     </div>
-                    <span class="text-sm font-medium text-slate-400 group-hover:text-white transition-colors truncate">${m.name || m.id.substring(0,8)}</span>
+                    <span class="text-sm font-medium text-slate-400 group-hover:text-white transition-colors truncate">${name}</span>
                 </div>
-            `).join('');
+            `;}).join('');
         }
 
         function initSocket() {
@@ -406,7 +408,13 @@
 
             socket.on('new_message', (msg) => {
                 if (msg.channelId === currentChannelId) {
-                    appendMessage(msg);
+                    // Kendi attığımız mesaj ise (Optimistic UI zaten ekledi), socketten geleni es geç
+                    const isDuplicate = Array.from(document.querySelectorAll('.message-content'))
+                        .some(p => p.textContent === msg.content && p.parentElement.querySelector('.message-time').textContent === new Date(msg.timestamp).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }));
+                    
+                    if (!isDuplicate) {
+                        appendMessage(msg);
+                    }
                 }
             });
         }
@@ -446,10 +454,10 @@
                     <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${msg.senderId}" class="w-10 h-10 rounded-full bg-slate-700 mt-0.5">
                     <div class="flex-1 min-w-0">
                         <div class="flex items-center gap-2">
-                            <span class="font-bold text-sm text-white hover:underline cursor-pointer">${msg.senderName || msg.senderId}</span>
-                            <span class="text-[10px] text-slate-500 font-medium">${time}</span>
+                            <span class="font-bold text-sm text-white hover:underline cursor-pointer">${msg.senderName || msg.senderId || 'Anonim'}</span>
+                            <span class="text-[10px] text-slate-500 font-medium message-time">${time}</span>
                         </div>
-                        <p class="text-sm text-slate-200 leading-relaxed break-words">${msg.content}</p>
+                        <p class="text-sm text-slate-200 leading-relaxed break-words message-content">${msg.content}</p>
                     </div>
                 </div>
             `;
@@ -467,6 +475,16 @@
 
             input.value = '';
             input.style.height = '24px';
+
+            // OPTIMISTIC UI: Mesajı anında ekrana bas
+            const tempMsg = {
+                senderId: user.id,
+                senderName: user.name,
+                content: content,
+                timestamp: Date.now(),
+                channelId: currentChannelId
+            };
+            appendMessage(tempMsg);
 
             try {
                 const res = await fetch(`/api/social?type=groups&id=${currentGroupId}&action=message`, {
