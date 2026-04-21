@@ -3561,10 +3561,14 @@ app.post('/api/user-stats', authenticateToken, async (req, res) => {
 
         if (action === 'consume' && consumeType) {
             const existingStats = await getKVData(`user_stats:${userId}`);
-            if (existingStats && existingStats.flameLevel > 0) {
-                existingStats.flameLevel--;
+            const cost = consumeType === 'music_generation' ? 200 : 1;
+
+            if (existingStats && existingStats.flameLevel >= cost) {
+                existingStats.flameLevel -= cost;
                 await setKVData(`user_stats:${userId}`, existingStats);
-                return res.json(existingStats);
+                return res.json({ ...existingStats, consumed: cost });
+            } else {
+                return res.status(400).json({ error: 'Yetersiz Alev Seviyesi', required: cost });
             }
         } else if (rewardType) {
             const xpGained = rewardType === 'daily_login' ? 10 :
