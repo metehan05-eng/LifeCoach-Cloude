@@ -71,14 +71,15 @@ async function searchFriendProfile() {
     errorEl.classList.add('hidden');
     resultEl.classList.add('hidden');
     
-    if (!code || code.length !== 4) {
-        errorEl.textContent = 'Lütfen geçerli 4 haneli ID girin.';
+    if (!code) {
+        errorEl.textContent = 'Lütfen bir isim veya 4 haneli ID girin.';
         errorEl.classList.remove('hidden');
         return;
     }
 
     try {
-        const res = await fetch(`/api/social?type=friends&action=profile&uniqueId=${code}`, {
+        const queryParam = code.length === 4 && !isNaN(code) ? `uniqueId=${code}` : `query=${encodeURIComponent(code)}`;
+        const res = await fetch(`/api/social?type=friends&action=profile&${queryParam}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         
@@ -102,7 +103,8 @@ async function searchFriendProfile() {
             document.getElementById('friend-result-avatar').classList.add('hidden');
         }
         
-        window.currentDMTargetId = data.profile.uniqueId;
+        window.currentDMTargetId = data.profile.id; // Gerçek ID'yi sakla
+        window.currentDMUniqueId = data.profile.uniqueId; // 4 haneli kodu da sakla
         resultEl.classList.remove('hidden');
         
     } catch (err) {
@@ -114,12 +116,22 @@ async function searchFriendProfile() {
 function startDMChat() {
     document.getElementById('friend-search-result').classList.add('hidden');
     document.getElementById('friend-search-id').parentElement.classList.add('hidden');
-    document.getElementById('dm-target-name').textContent = `Mesaj: #${window.currentDMTargetId}`;
+    document.getElementById('dm-target-name').textContent = `Mesaj: @${document.getElementById('friend-result-name').textContent}`;
     
     const dmSection = document.getElementById('friend-dm-section');
     dmSection.classList.remove('hidden');
     dmSection.classList.add('flex');
     
+    // Socket odasına katıl
+    if (socket) {
+        const uStr = localStorage.getItem('user');
+        if (uStr) {
+            const myId = JSON.parse(uStr).id;
+            const conversationId = [myId, window.currentDMTargetId].sort().join('_');
+            socket.emit('join_room', `dm_${conversationId}`);
+        }
+    }
+
     loadFriendDMs();
 }
 
@@ -189,8 +201,14 @@ async function sendFriendDM() {
         });
         
         if (res.ok) {
+            const data = await res.json();
             input.value = '';
             loadFriendDMs();
+            if (data.xpGained && typeof window.showXP === 'function') {
+                window.showXP(data.xpGained);
+            } else if (data.xpGained) {
+                showToast(`+${data.xpGained} XP Kazandın!`, 'success');
+            }
         }
     } catch (err) {
         console.error('Send DM error:', err);
@@ -510,18 +528,29 @@ async function sendGroupMessage() {
 // Socket dinleyicisini güncelle
 function updateSocketListener() {
     if (!socket) return;
-    socket.off('new_message'); // Eski dinleyiciyi temizle
+    socket.off('new_message'); 
+    socket.off('new_dm');
+
     socket.on('new_message', (msg) => {
-        // Eğer bu mesajı biz az önce gönderdiysek (Optimistic UI bastıysa), socketten geleni es geç
-        const msgId = msg.content + msg.timestamp;
-        
-        // Not: Burada timestamp sunucu tarafından değişebilir, o yüzden içerik ve senderId kontrolü daha güvenli olabilir.
-        // Şimdilik basitçe içerik kontrolü yapıyoruz.
-        if (msg.senderId === (localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).name : null) && lastSentMsgId === msg.content + msg.timestamp) {
-            return; 
-        }
+        const uStr = localStorage.getItem('user');
+        const myName = uStr ? JSON.parse(uStr).name : null;
+        if (msg.senderName === myName) return; 
         
         appendMessageToUI(msg, true);
+    });
+
+    socket.on('new_dm', (msg) => {
+        // Eğer şu an bu kişiyle mesajlaşıyorsak mesajı ekrana bas
+        const uStr = localStorage.getItem('user');
+        if (!uStr) return;
+        const myId = JSON.parse(uStr).id;
+        const conversationId = [myId, window.currentDMTargetId].sort().join('_');
+
+        if (msg.conversationId === conversationId) {
+            loadFriendDMs(); // Basitçe listeyi yenile veya append et
+        } else {
+            showToast(`📩 Yeni mesaj: ${msg.senderName}`, 'info');
+        }
     });
 }
 
@@ -704,4 +733,23 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.key === 'Enter') joinGroupByCode();
         });
     }
+
+    // Friend search input enter support
+    const friendInput = document.getElementById('friend-search-id');
+    if (friendInput) {
+        friendInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') searchFriendProfile();
+        });
+    }
+
+    // DM input enter support
+    const dmInput = document.getElementById('friend-dm-input');
+    if (dmInput) {
+        dmInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendFriendDM();
+        });
+    }
+
+    // Initialize Socket
+    initGroupSocket();
 });

@@ -6,8 +6,8 @@
     <title>LifeCoach Discord | Social Chat</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="/socket.io/socket.io.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Ginto-Normal:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
         :root {
@@ -336,6 +336,7 @@
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const data = await res.json();
+                if (data.xpGained) showXP(data.xpGained);
                 const group = data.group;
 
                 document.getElementById('server-name').textContent = group.name;
@@ -394,9 +395,13 @@
         }
 
         function initSocket() {
-            socket = io();
+            const token = localStorage.getItem('token');
+            socket = io({
+                auth: { token }
+            });
             socket.on('connect', () => {
-                socket.emit('join_room', currentGroupId);
+                const room = currentChannelId ? `${currentGroupId}_${currentChannelId}` : currentGroupId;
+                socket.emit('join_room', room);
             });
 
             socket.on('new_message', (msg) => {
@@ -464,7 +469,7 @@
             input.style.height = '24px';
 
             try {
-                await fetch(`/api/social?type=groups&id=${currentGroupId}&action=message`, {
+                const res = await fetch(`/api/social?type=groups&id=${currentGroupId}&action=message`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -472,6 +477,8 @@
                     },
                     body: JSON.stringify({ content, channelId: currentChannelId })
                 });
+                const data = await res.json();
+                if (data.xpGained) showXP(data.xpGained);
             } catch (e) {
                 alert("Mesaj gönderilemedi!");
             }
@@ -487,6 +494,11 @@
             document.getElementById('message-textarea').placeholder = `#${name} kanalına mesaj gönder`;
             document.getElementById('hero-channel-name').textContent = `#${name} kanalına hoş geldin!`;
             
+            if (socket) {
+                // Leave old room, join new room
+                socket.emit('join_room', `${currentGroupId}_${currentChannelId}`);
+            }
+            
             loadMessages();
             loadGroupData(); // To update active channel in sidebar
         }
@@ -497,6 +509,19 @@
 
         function toggleMembersList() {
             document.getElementById('members-sidebar').classList.toggle('hidden');
+        }
+
+        function showXP(amount) {
+            if (!amount || amount <= 0) return;
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-24 left-1/2 -translate-x-1/2 bg-emerald-500 text-white px-4 py-2 rounded-full font-bold shadow-lg z-[100] animate-bounce flex items-center gap-2';
+            toast.innerHTML = `<i class="fa-solid fa-star"></i> +${amount} XP Kazandın!`;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.5s ease';
+                setTimeout(() => toast.remove(), 500);
+            }, 2500);
         }
     </script>
 </body>

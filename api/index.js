@@ -301,6 +301,74 @@ async function searchTavily(query, numResults = 5) {
     }
 }
 
+// --- XP YARDIMCI FONKSİYONU ---
+async function awardXP(userId, amount, reason) {
+    try {
+        // 1. Yerel Depolama (KV) Güncelleme
+        const defaultStats = {
+            user_id: userId,
+            total_xp: 0,
+            level: 1,
+            flameLevel: 0,
+            history: []
+        };
+        const existingStats = await getKVData(`user_stats:${userId}`);
+        let stats = { ...defaultStats, ...(existingStats || {}) };
+
+        stats.total_xp += amount;
+        stats.level = Math.floor(stats.total_xp / 100) + 1;
+        stats.flameLevel += 1;
+        stats.history.push({
+            type: reason,
+            xp: amount,
+            flame: 1,
+            date: new Date().toISOString()
+        });
+        stats.last_activity = new Date().toISOString();
+        await setKVData(`user_stats:${userId}`, stats);
+
+        // 2. Supabase Güncelleme (Eğer aktifse)
+        if (supabase) {
+            try {
+                const { data: currentStats } = await supabase
+                    .from('user_stats')
+                    .select('*')
+                    .eq('user_id', userId)
+                    .single();
+
+                if (currentStats) {
+                    const newTotalXp = currentStats.total_xp + amount;
+                    const newLevel = Math.floor(newTotalXp / 100) + 1;
+
+                    await supabase
+                        .from('user_stats')
+                        .update({
+                            total_xp: newTotalXp,
+                            level: newLevel,
+                            last_activity: new Date().toISOString()
+                        })
+                        .eq('user_id', userId);
+
+                    await supabase
+                        .from('xp_history')
+                        .insert({
+                            user_id: userId,
+                            xp_amount: amount,
+                            reason: reason,
+                            created_at: new Date().toISOString()
+                        });
+                }
+            } catch (sErr) {
+                console.warn('[XP] Supabase update failed:', sErr.message);
+            }
+        }
+        return stats;
+    } catch (err) {
+        console.error('[XP] awardXP error:', err);
+        return null;
+    }
+}
+
 // Arama sonuçlarını AI promptuna formatla
 function formatSearchResultsForAI(results, query) {
     if (!results || results.length === 0) {
@@ -1515,6 +1583,11 @@ app.post('/api/register', async (req, res) => {
 
         await setKVData(`user:${email}`, user);
         await setKVData(`user:id:${userId}`, { email });
+
+        // Arama için kullanıcı dizinine ekle
+        const usersIndex = await getKVData('all_users_index') || [];
+        usersIndex.push({ id: userId, uniqueId, name: user.name, email });
+        await setKVData('all_users_index', usersIndex);
 
         const token = jwt.sign(
             { id: userId, email, type: user.type },
@@ -2779,9 +2852,21 @@ app.all('/api/social', authenticateToken, async (req, res) => {
                             return { id: mId, status };
                         }));
 
+                        // --- XP ÖDÜLÜ: Günlük Grup Girişi ---
+                        const today = getTodayDate();
+                        const lastEntryKey = `last_group_entry:${userId}`;
+                        const lastEntryDate = await getKVData(lastEntryKey);
+                        let xpGained = 0;
+                        if (lastEntryDate !== today) {
+                            await awardXP(userId, 30, 'group_daily_entry');
+                            await setKVData(lastEntryKey, today);
+                            xpGained = 30;
+                        }
+
                         return res.json({
                             group: { ...group, memberDetails },
-                            isOwner: group.ownerId === userId
+                            isOwner: group.ownerId === userId,
+                            xpGained
                         });
                     }
                 } else {
@@ -2825,6 +2910,7 @@ app.all('/api/social', authenticateToken, async (req, res) => {
                     return res.json({ success: true });
                 } else if (action === 'message') {
                     const groupId = id;
+                    const { content, channelId } = req.body;
                     const group = groupsKV[groupId];
                     if (!group) return res.status(404).json({ error: 'Grup bulunamadı' });
 
@@ -2893,8 +2979,10 @@ app.all('/api/social', authenticateToken, async (req, res) => {
                     }
 
                     const msg = {
-                        senderId: req.user.email?.split('@')[0] || userId.substring(0, 5),
+                        senderId: userId,
+                        senderName: req.user.name || userId,
                         content: filteredContent,
+                        channelId: channelId || 'genel',
                         timestamp: Date.now()
                     };
 
@@ -2916,8 +3004,9 @@ app.all('/api/social', authenticateToken, async (req, res) => {
                     if (req.app.get('io')) {
                         req.app.get('io').to(targetRoom).emit('new_message', msg);
                     }
+                    await awardXP(userId, 20, 'group_message');
                     await setKVData('study_groups', groupsKV);
-                    return res.json({ success: true });
+                    return res.json({ success: true, xpGained: 20 });
                 } else if (action === 'kick') {
                     const { groupId, targetUserId } = req.body;
                     const group = groupsKV[groupId];
@@ -3040,17 +3129,17 @@ app.all('/api/social', authenticateToken, async (req, res) => {
             }
         } else if (type === 'friends') {
             if (req.method === 'GET' && action === 'profile') {
-                const searchId = req.query.uniqueId;
-                if (!searchId) return res.status(400).json({ error: 'Arama ID gerekli' });
-
-                // Note: Linear search in KV is slow for production, but works for mock DB
-                // Usually we'd maintain an index `user:uniqueId:${id}`
+                const query = req.query.uniqueId || req.query.query;
+                if (!query) return res.status(400).json({ error: 'Arama terimi gerekli' });
+                
                 const users = await getKVData('all_users_index') || [];
-                // Since this is mock DB without index, let's create a proxy search or assume we saved it.
-                // In a real database we'd do a select by uniqueId. We'll simulate finding it:
+                const foundUser = users.find(u => u.uniqueId === query || u.name.toLowerCase().includes(query.toLowerCase()));
+                
+                if (!foundUser) return res.status(404).json({ error: 'Kullanıcı bulunamadı' });
+                
                 return res.json({
                     success: true,
-                    profile: { uniqueId: searchId, name: 'Bilinmeyen Kullanıcı (Kayıtlı değil)', type: 'free' }
+                    profile: { id: foundUser.id, uniqueId: foundUser.uniqueId, name: foundUser.name }
                 });
             }
 
@@ -3074,20 +3163,29 @@ app.all('/api/social', authenticateToken, async (req, res) => {
                 const conversationId = [userId, targetId].sort().join('_');
                 if (!dmsKV[conversationId]) dmsKV[conversationId] = [];
 
-                dmsKV[conversationId].push({
+                const msg = {
                     senderId: userId,
-                    senderName: req.user.email?.split('@')[0],
+                    senderName: req.user.name || userId,
                     content,
                     timestamp: Date.now()
-                });
+                };
 
-                // Güvenlik sınırlandırması: Maksimum 200 mesaj tutulur
+                dmsKV[conversationId].push(msg);
+
                 if (dmsKV[conversationId].length > 200) {
                     dmsKV[conversationId] = dmsKV[conversationId].slice(-200);
                 }
 
+                if (req.app.get('io')) {
+                    req.app.get('io').to(`dm_${conversationId}`).emit('new_dm', {
+                        ...msg,
+                        conversationId
+                    });
+                }
+
+                await awardXP(userId, 10, 'direct_message');
                 await setKVData('direct_messages', dmsKV);
-                return res.json({ success: true });
+                return res.json({ success: true, xpGained: 10 });
             }
         }
 
@@ -3452,46 +3550,25 @@ app.post('/api/user-stats', authenticateToken, async (req, res) => {
         const userId = req.user.id;
         const { rewardType, action, consumeType } = req.body;
 
-        // Get current stats
-        const defaultStats = {
-            user_id: userId,
-            total_xp: 0,
-            level: 1,
-            flameLevel: 0,
-            history: []
-        };
-        const existingStats = await getKVData(`user_stats:${userId}`);
-        let stats = { ...defaultStats, ...(existingStats || {}) };
-
         if (action === 'consume' && consumeType) {
-            // Handle flame consumption
-            if (stats.flameLevel > 0) {
-                stats.flameLevel--;
+            const existingStats = await getKVData(`user_stats:${userId}`);
+            if (existingStats && existingStats.flameLevel > 0) {
+                existingStats.flameLevel--;
+                await setKVData(`user_stats:${userId}`, existingStats);
+                return res.json(existingStats);
             }
         } else if (rewardType) {
-            // Handle reward
             const xpGained = rewardType === 'daily_login' ? 10 :
                 rewardType === 'goal_complete' ? 50 :
-                    rewardType === 'habit_streak' ? 30 :
-                        rewardType === 'social_share' ? 100 :
-                            rewardType === 'assistant_message' ? 10 : 10;
+                rewardType === 'habit_streak' ? 30 :
+                rewardType === 'social_share' ? 100 :
+                rewardType === 'assistant_message' ? 10 : 10;
 
-            const flameGained = rewardType === 'social_share' ? 100 : 1;
-
-            stats.total_xp += xpGained;
-            stats.level = Math.floor(stats.total_xp / 100) + 1;
-            stats.flameLevel += flameGained;
-            stats.history.push({
-                type: rewardType,
-                xp: xpGained,
-                flame: flameGained,
-                date: new Date().toISOString()
-            });
+            const stats = await awardXP(userId, xpGained, rewardType);
+            return res.json(stats);
         }
 
-        stats.last_activity = new Date().toISOString();
-        await setKVData(`user_stats:${userId}`, stats);
-
+        const stats = await getKVData(`user_stats:${userId}`);
         res.json(stats);
     } catch (error) {
         console.error('User stats update error:', error);
