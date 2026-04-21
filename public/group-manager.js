@@ -455,18 +455,50 @@ function appendMessageToUI(msg, scroll = true) {
     const time = new Date(msg.timestamp).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
     const avatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${msg.senderId}`;
     
-    const html = `
-        <div class="flex items-start gap-4 group hover:bg-white/3 p-1 rounded-lg transition-all animate-fade-in">
-            <img src="${avatar}" class="w-10 h-10 rounded-xl bg-slate-700 p-0.5 mt-0.5">
-            <div class="flex-1 overflow-hidden">
-                <div class="flex items-center gap-2">
-                    <span class="text-teal-400 font-bold text-sm">${msg.senderId}</span>
-                    <span class="text-[10px] text-slate-500">${time}</span>
-                </div>
+    // Sıralı mesaj kontrolü (WhatsApp tarzı)
+    const lastMsg = messagesDiv.lastElementChild;
+    let isSequential = false;
+    if (lastMsg) {
+        const prevSender = lastMsg.getAttribute('data-sender');
+        const prevTime = parseInt(lastMsg.getAttribute('data-time'));
+        if (prevSender === msg.senderId && (msg.timestamp - prevTime) < (5 * 60 * 1000)) {
+            isSequential = true;
+        }
+    }
+
+    let attachmentHtml = '';
+    if (msg.attachment) {
+        if (msg.attachment.type.startsWith('image/')) {
+            attachmentHtml = `<div class="mt-1 max-w-[200px] rounded overflow-hidden border border-white/10"><img src="${msg.attachment.data}" class="w-full"></div>`;
+        } else {
+            attachmentHtml = `<div class="mt-1 p-2 bg-white/5 rounded text-[10px] flex items-center gap-1"><i class="fa-solid fa-file opacity-50"></i> <span class="truncate">${msg.attachment.name}</span></div>`;
+        }
+    }
+    
+    let html = '';
+    if (isSequential) {
+        html = `
+            <div class="group relative py-0.5 animate-fade-in pl-14" data-sender="${msg.senderId}" data-time="${msg.timestamp}">
+                <span class="absolute left-0 text-[9px] text-slate-500 opacity-0 group-hover:opacity-100 top-1 w-12 text-right">${time}</span>
                 <p class="text-slate-300 text-sm break-words">${msg.content}</p>
+                ${attachmentHtml}
             </div>
-        </div>
-    `;
+        `;
+    } else {
+        html = `
+            <div class="flex items-start gap-4 group hover:bg-white/3 p-1 rounded-lg transition-all animate-fade-in" data-sender="${msg.senderId}" data-time="${msg.timestamp}">
+                <img src="${avatar}" class="w-10 h-10 rounded-xl bg-slate-700 p-0.5 mt-0.5">
+                <div class="flex-1 overflow-hidden">
+                    <div class="flex items-center gap-2">
+                        <span class="text-teal-400 font-bold text-sm">${msg.senderName || msg.senderId}</span>
+                        <span class="text-[10px] text-slate-500">${time}</span>
+                    </div>
+                    <p class="text-slate-300 text-sm break-words">${msg.content}</p>
+                    ${attachmentHtml}
+                </div>
+            </div>
+        `;
+    }
     
     // Remove "no messages" placeholder if exists
     if (messagesDiv.querySelector('.text-slate-500')) {

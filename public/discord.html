@@ -221,10 +221,32 @@
             <div id="discord-messages" class="space-y-4"></div>
         </div>
 
+        <!-- Typing Indicator -->
+        <div id="typing-indicator" class="px-4 text-[11px] text-slate-400 italic h-4 min-h-[16px] mb-1"></div>
+
         <!-- Message Input -->
-        <div class="px-4 pb-6 mt-2">
+        <div class="px-4 pb-6 mt-2 relative">
+            <!-- File Preview Container -->
+            <div id="file-preview-container" class="hidden absolute bottom-full mb-2 bg-[#383a40] border border-white/10 rounded-lg p-2 flex items-center gap-2 max-w-[300px]">
+                <div class="relative">
+                    <div id="file-preview-content" class="w-12 h-12 bg-black/20 rounded flex items-center justify-center overflow-hidden text-xs text-slate-400">
+                        <!-- Preview injected here -->
+                    </div>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p id="file-preview-name" class="text-[10px] text-white truncate font-medium">dosya.png</p>
+                    <p id="file-preview-size" class="text-[9px] text-slate-500">1.2 MB</p>
+                </div>
+                <button onclick="removeFileFromMsg()" class="text-slate-400 hover:text-red-400 p-1">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
             <div class="bg-[#383a40] rounded-lg p-3 flex items-start gap-4">
-                <button class="mt-0.5 text-slate-400 hover:text-white transition-colors">
+                <!-- Hidden File Input -->
+                <input type="file" id="group-file-input" class="hidden" onchange="handleFileSelect(event)">
+                
+                <button onclick="document.getElementById('group-file-input').click()" class="mt-0.5 text-slate-400 hover:text-white transition-colors">
                     <i class="fa-solid fa-circle-plus text-xl"></i>
                 </button>
                 <div class="flex-1 relative">
@@ -235,7 +257,7 @@
                 </div>
                 <div class="flex items-center gap-3 text-slate-400">
                     <i class="fa-solid fa-gift hover:text-white cursor-pointer"></i>
-                    <i class="fa-solid fa-file-image hover:text-white cursor-pointer"></i>
+                    <i onclick="document.getElementById('group-file-input').click()" class="fa-solid fa-file-image hover:text-white cursor-pointer"></i>
                     <i class="fa-solid fa-face-smile hover:text-white cursor-pointer"></i>
                 </div>
             </div>
@@ -266,6 +288,7 @@
         let currentGroupId = null;
         let currentChannelId = 'genel';
         let user = null;
+        let currentFile = null;
 
         document.addEventListener('DOMContentLoaded', async () => {
             const urlParams = new URLSearchParams(window.location.search);
@@ -282,9 +305,22 @@
 
             // Input behavior
             const textarea = document.getElementById('message-textarea');
+            let typingTimeout;
+
             textarea.addEventListener('input', function() {
                 this.style.height = 'auto';
                 this.style.height = (this.scrollHeight) + 'px';
+
+                // Typing event
+                if (socket) {
+                    const room = currentChannelId ? `${currentGroupId}_${currentChannelId}` : currentGroupId;
+                    socket.emit('typing', { room, user: user.name });
+                    
+                    clearTimeout(typingTimeout);
+                    typingTimeout = setTimeout(() => {
+                        socket.emit('stop_typing', { room, user: user.name });
+                    }, 3000);
+                }
             });
 
             textarea.addEventListener('keypress', (e) => {
@@ -417,6 +453,34 @@
                     }
                 }
             });
+
+            socket.on('user_typing', ({ user, room }) => {
+                const typingEl = document.getElementById('typing-indicator');
+                if (!window.typingUsers) window.typingUsers = new Set();
+                window.typingUsers.add(user);
+                updateTypingDisplay();
+            });
+
+            socket.on('user_stop_typing', ({ user, room }) => {
+                if (window.typingUsers) {
+                    window.typingUsers.delete(user);
+                    updateTypingDisplay();
+                }
+            });
+        }
+
+        function updateTypingDisplay() {
+            const typingEl = document.getElementById('typing-indicator');
+            const users = Array.from(window.typingUsers || []);
+            if (users.length === 0) {
+                typingEl.textContent = '';
+            } else if (users.length === 1) {
+                typingEl.textContent = `${users[0]} yazıyor...`;
+            } else if (users.length === 2) {
+                typingEl.textContent = `${users[0]} ve ${users[1]} yazıyor...`;
+            } else {
+                typingEl.textContent = 'Birkaç kişi yazıyor...';
+            }
         }
 
         async function loadMessages() {
@@ -447,34 +511,156 @@
             if (container.querySelector('.text-center')) container.innerHTML = '';
 
             const time = new Date(msg.timestamp).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
-            const isMe = msg.senderId === user.name || msg.senderId === user.id;
             
-            const html = `
-                <div class="flex items-start gap-4 hover:bg-black/10 -mx-4 px-4 py-1.5 transition-colors group message-anim">
-                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${msg.senderId}" class="w-10 h-10 rounded-full bg-slate-700 mt-0.5">
-                    <div class="flex-1 min-w-0">
-                        <div class="flex items-center gap-2">
-                            <span class="font-bold text-sm text-white hover:underline cursor-pointer">${msg.senderName || msg.senderId || 'Anonim'}</span>
-                            <span class="text-[10px] text-slate-500 font-medium message-time">${time}</span>
+            // Sıralı mesaj kontrolü (Discord/WhatsApp tarzı gruplandırma)
+            const lastMsg = container.lastElementChild;
+            let isSequential = false;
+            if (lastMsg) {
+                const prevSender = lastMsg.getAttribute('data-sender');
+                const prevTime = parseInt(lastMsg.getAttribute('data-time'));
+                // Aynı kişi ve 5 dakika içinde ise peş peşe yazıyor demektir
+                if (prevSender === msg.senderId && (msg.timestamp - prevTime) < (5 * 60 * 1000)) {
+                    isSequential = true;
+                }
+            }
+
+            let attachmentHtml = '';
+            if (msg.attachment) {
+                if (msg.attachment.type.startsWith('image/')) {
+                    attachmentHtml = `
+                        <div class="mt-2 rounded-lg overflow-hidden border border-white/5 max-w-[400px]">
+                            <img src="${msg.attachment.data}" class="w-full h-auto cursor-pointer hover:opacity-90 transition-opacity" onclick="window.open(this.src)">
                         </div>
-                        <p class="text-sm text-slate-200 leading-relaxed break-words message-content">${msg.content}</p>
+                    `;
+                } else {
+                    attachmentHtml = `
+                        <div class="mt-2 flex items-center gap-3 p-3 rounded-lg bg-[#2b2d31] border border-white/5 max-w-[400px]">
+                            <div class="w-10 h-10 bg-black/20 rounded flex items-center justify-center text-xl text-slate-400">
+                                <i class="fa-solid fa-file"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-blue-400 truncate">${msg.attachment.name}</p>
+                                <p class="text-[10px] text-slate-500">${msg.attachment.size}</p>
+                            </div>
+                            <a href="${msg.attachment.data}" download="${msg.attachment.name}" class="text-slate-400 hover:text-white">
+                                <i class="fa-solid fa-download"></i>
+                            </a>
+                        </div>
+                    `;
+                }
+            }
+            
+            let html = '';
+            if (isSequential) {
+                // Gruplanmış mesaj (Avatar ve isim yok)
+                html = `
+                    <div class="group -mx-4 px-4 py-0.5 hover:bg-black/10 transition-colors flex items-start gap-4 message-anim compact-msg" 
+                         data-sender="${msg.senderId}" data-time="${msg.timestamp}">
+                        <div class="w-10 text-[10px] text-slate-500 opacity-0 group-hover:opacity-100 mt-1 text-right select-none pr-1">
+                            ${time}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm text-slate-200 leading-relaxed break-words message-content">${msg.content}</p>
+                            ${attachmentHtml}
+                        </div>
                     </div>
-                </div>
-            `;
+                `;
+            } else {
+                // Yeni mesaj bloğu
+                html = `
+                    <div class="flex items-start gap-4 hover:bg-black/10 -mx-4 px-4 py-1.5 transition-colors group message-anim" 
+                         data-sender="${msg.senderId}" data-time="${msg.timestamp}">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${msg.senderId}" class="w-10 h-10 rounded-full bg-slate-700 mt-0.5">
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-sm text-white hover:underline cursor-pointer">${msg.senderName || msg.senderId || 'Anonim'}</span>
+                                <span class="text-[10px] text-slate-500 font-medium message-time">${time}</span>
+                            </div>
+                            <p class="text-sm text-slate-200 leading-relaxed break-words message-content">${msg.content}</p>
+                            ${attachmentHtml}
+                        </div>
+                    </div>
+                `;
+            }
             
             container.insertAdjacentHTML('beforeend', html);
             const scrollContainer = document.getElementById('messages-container');
             scrollContainer.scrollTop = scrollContainer.scrollHeight;
         }
 
+        async function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // 5MB limit
+            if (file.size > 5 * 1024 * 1024) {
+                alert("Dosya boyutu 5MB'dan küçük olmalı!");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                currentFile = {
+                    name: file.name,
+                    type: file.type,
+                    size: formatBytes(file.size),
+                    data: event.target.result
+                };
+
+                const preview = document.getElementById('file-preview-container');
+                const content = document.getElementById('file-preview-content');
+                const nameLabel = document.getElementById('file-preview-name');
+                const sizeLabel = document.getElementById('file-preview-size');
+
+                nameLabel.textContent = file.name;
+                sizeLabel.textContent = formatBytes(file.size);
+
+                if (file.type.startsWith('image/')) {
+                    content.innerHTML = `<img src="${event.target.result}" class="w-full h-full object-cover">`;
+                } else {
+                    content.innerHTML = `<i class="fa-solid fa-file text-2xl"></i>`;
+                }
+
+                preview.classList.remove('hidden');
+                preview.classList.add('flex');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeFileFromMsg() {
+            currentFile = null;
+            document.getElementById('file-preview-container').classList.add('hidden');
+            document.getElementById('file-preview-container').classList.remove('flex');
+            document.getElementById('group-file-input').value = '';
+        }
+
+        function formatBytes(bytes, decimals = 2) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+
         async function sendMessage() {
             const token = localStorage.getItem('token');
             const input = document.getElementById('message-textarea');
             const content = input.value.trim();
-            if (!content) return;
+            
+            if (!content && !currentFile) return;
 
+            const attachment = currentFile;
+            
             input.value = '';
             input.style.height = '24px';
+            removeFileFromMsg();
+
+            // Typing durdur
+            if (socket) {
+                const room = currentChannelId ? `${currentGroupId}_${currentChannelId}` : currentGroupId;
+                socket.emit('stop_typing', { room, user: user.name });
+            }
 
             // OPTIMISTIC UI: Mesajı anında ekrana bas
             const tempMsg = {
@@ -482,7 +668,8 @@
                 senderName: user.name,
                 content: content,
                 timestamp: Date.now(),
-                channelId: currentChannelId
+                channelId: currentChannelId,
+                attachment: attachment
             };
             appendMessage(tempMsg);
 
@@ -493,7 +680,7 @@
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify({ content, channelId: currentChannelId })
+                    body: JSON.stringify({ content, channelId: currentChannelId, attachment })
                 });
                 const data = await res.json();
                 if (data.xpGained) showXP(data.xpGained);
