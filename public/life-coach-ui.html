@@ -1319,6 +1319,18 @@
             box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.1);
         }
 
+        .category-btn.active,
+        .category-btn[data-category].bg-teal-500\/20 {
+            background: rgba(45, 212, 191, 0.2);
+            border-color: rgba(45, 212, 191, 0.4);
+            color: #2dd4bf;
+        }
+
+        .preset-goal-item:hover {
+            border-color: rgba(45, 212, 191, 0.3);
+            background: rgba(45, 212, 191, 0.1);
+        }
+
         .toast {
             background: rgba(15, 23, 42, 0.95);
             border: 1px solid rgba(45, 212, 191, 0.2);
@@ -5402,11 +5414,56 @@
             </div>
 
             <form id="goal-form" class="space-y-4">
+                <!-- Preset Goals Section -->
+                <div id="preset-goals-section">
+                    <label class="block text-xs font-semibold text-teal-400 uppercase tracking-wider mb-2">
+                        <i class="fa-solid fa-sparkles mr-1"></i>Hızlı Başla (Önerilen)
+                    </label>
+                    <div id="preset-categories" class="flex flex-wrap gap-2 mb-3">
+                        <!-- Categories will be loaded here -->
+                    </div>
+                    <div id="preset-goals-list" class="space-y-2 max-h-40 overflow-y-auto hidden">
+                        <!-- Preset goals will be shown here -->
+                    </div>
+                    <div id="preset-loading" class="hidden text-center py-2 text-xs text-slate-500">
+                        <i class="fa-solid fa-circle-notch fa-spin mr-1"></i> Yükleniyor...
+                    </div>
+                </div>
+
+                <!-- Divider -->
+                <div class="flex items-center gap-3">
+                    <div class="flex-1 h-px bg-white/10"></div>
+                    <span class="text-xs text-slate-500">veya</span>
+                    <div class="flex-1 h-px bg-white/10"></div>
+                </div>
+
+                <!-- Custom Goal -->
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Hedef
                         Başlığı</label>
-                    <input type="text" id="goal-title" class="modal-input" placeholder="Örn: Fizik çalışmak" required>
+                    <input type="text" id="goal-title" class="modal-input" placeholder="Örn: C++ öğrenmek istiyorum" required>
                 </div>
+
+                <!-- Category Selection (auto-detected or manual) -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Kategori</label>
+                    <select id="goal-category" class="modal-input">
+                        <option value="">Otomatik tespit</option>
+                        <option value="programming">💻 Programlama</option>
+                        <option value="mathematics">📐 Matematik</option>
+                        <option value="physics">⚡ Fizik</option>
+                        <option value="science">🔬 Fen Bilimleri</option>
+                        <option value="languages">🌍 Dil Öğrenimi</option>
+                        <option value="sports">🏋️ Spor & Fitness</option>
+                        <option value="music">🎵 Müzik</option>
+                        <option value="art">🎨 Sanat & Tasarım</option>
+                        <option value="business">💼 İş & Girişimcilik</option>
+                        <option value="test_prep">📚 Sınav Hazırlığı</option>
+                        <option value="health">🧘 Sağlık & Wellness</option>
+                        <option value="other">📌 Diğer</option>
+                    </select>
+                </div>
+
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Hedef
                         Türü</label>
@@ -5421,12 +5478,15 @@
                     <label
                         class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Açıklama</label>
                     <textarea id="goal-description" class="modal-input" rows="2"
-                        placeholder="Hedefini detaylı açıkla..." required></textarea>
+                        placeholder="Hedefini detaylı açıkla..."></textarea>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Hedef Tarihi
                         (İsteğe Bağlı)</label>
                     <input type="date" id="goal-date" class="modal-input">
+                    <div id="timeline-suggestion" class="hidden mt-2 text-xs text-teal-400 bg-teal-500/10 border border-teal-500/20 rounded-lg p-2">
+                        <i class="fa-solid fa-clock mr-1"></i> <span id="timeline-suggestion-text"></span>
+                    </div>
                 </div>
                 <div id="goal-error"
                     class="text-red-400 text-sm hidden bg-red-500/10 border border-red-500/20 rounded-xl p-3"></div>
@@ -9061,6 +9121,177 @@
                 document.getElementById('goal-error').classList.add('hidden');
                 document.getElementById('goal-modal').classList.remove('hidden');
                 document.getElementById('goal-modal').classList.add('flex');
+                loadPresetCategories();
+            }
+
+            // ==================== PRESET GOALS ====================
+            let presetCategories = [];
+            let presetGoalsData = [];
+
+            async function loadPresetCategories() {
+                try {
+                    const data = await PresetGoalsService.getCategories();
+                    if (data.success && data.categories) {
+                        presetCategories = data.categories;
+                        renderPresetCategories();
+                    }
+                } catch (err) {
+                    console.error('Failed to load preset categories:', err);
+                }
+            }
+
+            function renderPresetCategories() {
+                const container = document.getElementById('preset-categories');
+                container.innerHTML = presetCategories.slice(0, 6).map(cat => `
+                    <button type="button" onclick="selectPresetCategory('${cat.id}')"
+                        class="category-btn px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-xs text-slate-300 hover:bg-teal-500/20 hover:border-teal-500/30 hover:text-teal-400 transition-all"
+                        data-category="${cat.id}">
+                        ${cat.icon} ${cat.name}
+                    </button>
+                `).join('');
+            }
+
+            async function selectPresetCategory(categoryId) {
+                const container = document.getElementById('preset-goals-list');
+                const loading = document.getElementById('preset-loading');
+                
+                // Update active state
+                document.querySelectorAll('.category-btn').forEach(btn => {
+                    btn.classList.remove('bg-teal-500/20', 'border-teal-500/30', 'text-teal-400');
+                    btn.classList.add('bg-white/5', 'border-white/10', 'text-slate-300');
+                });
+                document.querySelector(`[data-category="${categoryId}"]`).classList.add('bg-teal-500/20', 'border-teal-500/30', 'text-teal-400');
+                document.querySelector(`[data-category="${categoryId}"]`).classList.remove('bg-white/5', 'border-white/10', 'text-slate-300');
+
+                container.classList.add('hidden');
+                loading.classList.remove('hidden');
+
+                try {
+                    const data = await PresetGoalsService.getByCategory(categoryId);
+                    if (data.success && data.goals) {
+                        presetGoalsData = data.goals;
+                        renderPresetGoals(data.goals);
+                    }
+                } catch (err) {
+                    console.error('Failed to load preset goals:', err);
+                } finally {
+                    loading.classList.add('hidden');
+                }
+            }
+
+            function renderPresetGoals(goals) {
+                const container = document.getElementById('preset-goals-list');
+                container.classList.remove('hidden');
+                container.innerHTML = goals.map(goal => `
+                    <div onclick="selectPresetGoal('${goal.title.replace(/'/g, "\\'")}', '${goal.category}', '${goal.suggestedTimeline || ''}')"
+                        class="preset-goal-item p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-teal-500/10 hover:border-teal-500/30 cursor-pointer transition-all">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <h4 class="text-sm font-semibold text-white">${goal.title}</h4>
+                                <p class="text-xs text-slate-400 mt-1">${goal.description}</p>
+                                <div class="flex items-center gap-2 mt-2">
+                                    <span class="text-xs px-2 py-0.5 rounded bg-teal-500/20 text-teal-400">${goal.suggestedTimeline || '4 hafta'}</span>
+                                    <span class="text-xs px-2 py-0.5 rounded bg-white/5 text-slate-400">${goal.level}</span>
+                                </div>
+                            </div>
+                            <i class="fa-solid fa-plus-circle text-teal-400"></i>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            function selectPresetGoal(title, category, timeline) {
+                document.getElementById('goal-title').value = title;
+                document.getElementById('goal-category').value = category;
+                document.getElementById('preset-goals-list').classList.add('hidden');
+                
+                // Show timeline suggestion
+                if (timeline) {
+                    showTimelineSuggestion(timeline);
+                }
+            }
+
+            async function showTimelineSuggestion(timeline) {
+                const suggestionEl = document.getElementById('timeline-suggestion');
+                const suggestionText = document.getElementById('timeline-suggestion-text');
+                
+                suggestionText.textContent = `Önerilen süre: ${timeline}`;
+                suggestionEl.classList.remove('hidden');
+            }
+
+            // Auto-detect category and suggest timeline when typing
+            document.getElementById('goal-title')?.addEventListener('input', async (e) => {
+                const title = e.target.value;
+                const categorySelect = document.getElementById('goal-category');
+                
+                if (title.length > 3) {
+                    // Auto-detect category from title
+                    const detectedCategory = detectCategory(title);
+                    if (detectedCategory && categorySelect.value === '') {
+                        categorySelect.value = detectedCategory;
+                    }
+                }
+            });
+
+            document.getElementById('goal-date')?.addEventListener('change', async (e) => {
+                const targetDate = e.target.value;
+                const title = document.getElementById('goal-title').value;
+                const category = document.getElementById('goal-category').value;
+                
+                if (targetDate) {
+                    try {
+                        const data = await PresetGoalsService.suggestTimeline(title, targetDate, category || null);
+                        if (data.success && data.timeline) {
+                            showTimelineSuggestion(data.timeline);
+                        }
+                    } catch (err) {
+                        console.error('Timeline suggestion error:', err);
+                    }
+                }
+            });
+
+            function detectCategory(title) {
+                const titleLower = title.toLowerCase();
+                
+                if (titleLower.includes('c++') || titleLower.includes('python') || titleLower.includes('java') || 
+                    titleLower.includes('javascript') || titleLower.includes('program') || titleLower.includes('kod') ||
+                    titleLower.includes('yazılım') || titleLower.includes('web') || titleLower.includes('react')) {
+                    return 'programming';
+                }
+                if (titleLower.includes('matematik') || titleLower.includes('kalkülüs') || titleLower.includes('cebir') ||
+                    titleLower.includes('geometri') || titleLower.includes('istatistik')) {
+                    return 'mathematics';
+                }
+                if (titleLower.includes('fizik') || titleLower.includes('mekanik') || titleLower.includes('termo')) {
+                    return 'physics';
+                }
+                if (titleLower.includes('ingilizce') || titleLower.includes('almanca') || titleLower.includes('fransızca') ||
+                    titleLower.includes('japonca') || titleLower.includes('dil')) {
+                    return 'languages';
+                }
+                if (titleLower.includes('koş') || titleLower.includes('spor') || titleLower.includes('fitness') || 
+                    titleLower.includes('yoga') || titleLower.includes('gym')) {
+                    return 'sports';
+                }
+                if (titleLower.includes('yks') || titleLower.includes('ales') || titleLower.includes('sınav') || titleLower.includes('sınava')) {
+                    return 'test_prep';
+                }
+                if (titleLower.includes('gitar') || titleLower.includes('piyano') || titleLower.includes('müzik')) {
+                    return 'music';
+                }
+                if (titleLower.includes('çizim') || titleLower.includes('sanat') || titleLower.includes('tasarım')) {
+                    return 'art';
+                }
+                if (titleLower.includes('kimya') || titleLower.includes('biyoloji') || titleLower.includes('fen')) {
+                    return 'science';
+                }
+                if (titleLower.includes('pazarlama') || titleLower.includes('iş') || titleLower.includes('girişim') || titleLower.includes('startup')) {
+                    return 'business';
+                }
+                if (titleLower.includes('meditasyon') || titleLower.includes('uyku') || titleLower.includes('beslenme') || titleLower.includes('sağlık')) {
+                    return 'health';
+                }
+                return 'other';
             }
 
             function closeGoalModal() {

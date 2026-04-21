@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import { prismaClient } from '@/lib/prisma';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'gizli-anahtar-degistir';
 
@@ -21,6 +22,9 @@ const studyGroups = {};
 const accountabilityPartnerships = {};
 const groupMessages = {};
 const groupMembers = {};
+const directMessages = {};
+const sentFiles = {};
+const receivedFiles = {};
 
 export default async function handler(req, res) {
   const user = authenticateToken(req);
@@ -443,6 +447,400 @@ export default async function handler(req, res) {
     } catch (err) {
       console.error('Leave group error:', err);
       return res.status(500).json({ error: 'Gruppadan ayrılamadı' });
+    }
+  }
+
+  // === DIRECT MESSAGES (1-on-1 Chat) API ===
+
+  // GET /api/social?type=messages&partnerId=xxx - Get direct messages with a partner
+  if (req.method === 'GET' && req.query.type === 'messages' && req.query.partnerId) {
+    try {
+      const partnerId = req.query.partnerId;
+      const conversationKey = [userId, partnerId].sort().join('_');
+      const messages = directMessages[conversationKey] || [];
+      const limit = req.query.limit ? parseInt(req.query.limit) : 50;
+
+      return res.status(200).json({
+        success: true,
+        messages: messages.slice(-limit),
+        count: messages.length,
+        conversationKey
+      });
+    } catch (err) {
+      console.error('Direct messages GET error:', err);
+      return res.status(500).json({ error: 'Mesajlar alınamadı' });
+    }
+  }
+
+  // GET /api/social?type=conversations - Get all conversations
+  if (req.method === 'GET' && req.query.type === 'conversations') {
+    try {
+      const conversationsMap = new Map();
+
+      // Get conversations from directMessages (in-memory)
+      Object.keys(directMessages).forEach(key => {
+        const [id1, id2] = key.split('_');
+        const partnerId = id1 === userId ? id2 : id1;
+        
+        if (!conversationsMap.has(partnerId)) {
+          const messages = directMessages[key] || [];
+          const lastMessage = messages[messages.length - 1];
+          const unreadCount = messages.filter(m => 
+            m.senderId === partnerId && !m.readAt
+          ).length;
+
+          conversationsMap.set(partnerId, {
+            partnerId,
+            partnerName: null,
+            lastMessage: lastMessage ? {
+              content: lastMessage.content,
+              type: lastMessage.type,
+              timestamp: lastMessage.timestamp,
+              isMine: lastMessage.senderId === userId
+            } : null,
+            unreadCount,
+            updatedAt: lastMessage ? lastMessage.timestamp : null
+          });
+        }
+      });
+
+      // Get partners from Prisma database
+      const dbPartners = await prismaClient.accountabilityPartner.findMany({
+        where: { userId: userId },
+        include: {
+          partner: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              image: true
+            }
+          }
+        }
+      });
+
+      dbPartners.forEach(p => {
+        if (!conversationsMap.has(p.partnerId)) {
+          conversationsMap.set(p.partnerId, {
+            partnerId: p.partner.id,
+            partnerName: p.partner.name || p.partner.email?.split('@')[0] || 'Kullanıcı',
+            partnerEmail: p.partner.email,
+            partnerImage: p.partner.image,
+            lastMessage: null,
+            unreadCount: 0,
+            updatedAt: null
+          });
+        } else {
+          // Update partner name if we have it from database
+          const conv = conversationsMap.get(p.partnerId);
+          conv.partnerName = p.partner.name || p.partner.email?.split('@')[0] || 'Kullanıcı';
+          conv.partnerEmail = p.partner.email;
+          conv.partnerImage = p.partner.image;
+        }
+      });
+
+      // Convert to array and sort
+      let conversations = Array.from(conversationsMap.values());
+      conversations.sort((a, b) => {
+        if (!a.updatedAt) return 1;
+        if (!b.updatedAt) return -1;
+        return new Date(b.updatedAt) - new Date(a.updatedAt);
+      });
+
+      return res.status(200).json({
+        success: true,
+        conversations,
+        count: conversations.length
+      });
+    } catch (err) {
+      console.error('Conversations GET error:', err);
+      return res.status(500).json({ error: 'Konuşmalar alınamadı' });
+    }
+  }
+
+  // POST /api/social?type=partners - Add/create accountability partner
+  if (req.method === 'POST' && req.query.type === 'partners') {
+    try {
+      const { partnerId } = req.body;
+      
+      if (!partnerId) {
+        return res.status(400).json({ error: 'Partner ID gerekli' });
+      }
+
+      if (partnerId === userId) {
+        return res.status(400).json({ error: 'Kendini partner olarak ekleyemezsin' });
+      }
+
+      // Check if partnership already exists
+      const existingPartner = await prismaClient.accountabilityPartner.findFirst({
+        where: {
+          userId: userId,
+          partnerId: partnerId
+        }
+      });
+
+      if (existingPartner) {
+        return res.status(400).json({ error: 'Bu kullanıcı zaten partneriniz' });
+      }
+
+      // Get partner info from database
+      const partnerUser = await prismaClient.user.findUnique({
+        where: { id: partnerId },
+        select: { id: true, name: true, email: true, image: true }
+      });
+
+      if (!partnerUser) {
+        return res.status(404).json({ error: 'Kullanıcı bulunamadı' });
+      }
+
+      // Create partnership in both directions
+      const partnership = await prismaClient.accountabilityPartner.create({
+        data: {
+          userId: userId,
+          partnerId: partnerId,
+          status: 'active'
+        }
+      });
+
+      // Also create reverse partnership
+      await prismaClient.accountabilityPartner.create({
+        data: {
+          userId: partnerId,
+          partnerId: userId,
+          status: 'active'
+        }
+      });
+
+      return res.status(201).json({
+        success: true,
+        message: 'Partner eklendi',
+        partnership: {
+          id: partnership.id,
+          partnerId: partnerUser.id,
+          partnerName: partnerUser.name || partnerUser.email?.split('@')[0] || 'Kullanıcı',
+          partnerEmail: partnerUser.email,
+          partnerImage: partnerUser.image,
+          startedAt: partnership.startedAt,
+          status: 'active'
+        }
+      });
+    } catch (err) {
+      console.error('Add partner error:', err);
+      return res.status(500).json({ error: 'Partner eklenemedi' });
+    }
+  }
+
+  // GET /api/social?type=partners - Get accountability partners
+  if (req.method === 'GET' && req.query.type === 'partners') {
+    try {
+      const dbPartners = await prismaClient.accountabilityPartner.findMany({
+        where: { userId: userId },
+        include: {
+          partner: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              image: true
+            }
+          }
+        },
+        orderBy: { startedAt: 'desc' }
+      });
+
+      const partners = dbPartners.map(p => ({
+        id: p.id,
+        partnerId: p.partner.id,
+        partnerName: p.partner.name || p.partner.email?.split('@')[0] || 'Kullanıcı',
+        partnerEmail: p.partner.email,
+        partnerImage: p.partner.image,
+        startedAt: p.startedAt,
+        status: p.status
+      }));
+
+      return res.status(200).json({
+        success: true,
+        partners,
+        count: partners.length
+      });
+    } catch (err) {
+      console.error('Get partners error:', err);
+      return res.status(500).json({ error: 'Partnerlar alınamadı' });
+    }
+  }
+
+  // POST /api/social?type=messages - Send direct message
+  if (req.method === 'POST' && req.query.type === 'messages') {
+    try {
+      const { partnerId, content, messageType = 'text', fileData, fileName, fileType } = req.body;
+
+      if (!partnerId || !content) {
+        return res.status(400).json({ error: 'Partner ID ve içerik gerekli' });
+      }
+
+      const conversationKey = [userId, partnerId].sort().join('_');
+      
+      if (!directMessages[conversationKey]) {
+        directMessages[conversationKey] = [];
+      }
+
+      const message = {
+        id: Math.random().toString(36).substr(2, 9),
+        senderId: userId,
+        recipientId: partnerId,
+        content,
+        type: messageType,
+        timestamp: new Date().toISOString(),
+        readAt: null,
+        fileData: fileData || null,
+        fileName: fileName || null,
+        fileType: fileType || null
+      };
+
+      directMessages[conversationKey].push(message);
+
+      // If there's a file, save to sent files
+      if (fileData && fileName) {
+        if (!sentFiles[userId]) sentFiles[userId] = [];
+        sentFiles[userId].push({
+          id: message.id,
+          fileName,
+          fileType,
+          fileData,
+          sentTo: partnerId,
+          timestamp: message.timestamp
+        });
+      }
+
+      return res.status(201).json({
+        success: true,
+        message: 'Mesaj gönderildi',
+        data: message
+      });
+    } catch (err) {
+      console.error('Direct message POST error:', err);
+      return res.status(500).json({ error: 'Mesaj gönderilemedi' });
+    }
+  }
+
+  // POST /api/social?type=messages&action=markRead - Mark messages as read
+  if (req.method === 'POST' && req.query.type === 'messages' && req.query.action === 'markRead') {
+    try {
+      const { partnerId } = req.body;
+      const conversationKey = [userId, partnerId].sort().join('_');
+      const messages = directMessages[conversationKey] || [];
+
+      messages.forEach(m => {
+        if (m.senderId === partnerId && !m.readAt) {
+          m.readAt = new Date().toISOString();
+        }
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: 'Okundu işaretlendi'
+      });
+    } catch (err) {
+      console.error('Mark read error:', err);
+      return res.status(500).json({ error: 'Hata oluştu' });
+    }
+  }
+
+  // GET /api/social?type=files - Get sent and received files
+  if (req.method === 'GET' && req.query.type === 'files') {
+    try {
+      const sent = sentFiles[userId] || [];
+      const received = receivedFiles[userId] || [];
+
+      return res.status(200).json({
+        success: true,
+        sent,
+        received,
+        totalSent: sent.length,
+        totalReceived: received.length
+      });
+    } catch (err) {
+      console.error('Files GET error:', err);
+      return res.status(500).json({ error: 'Dosyalar alınamadı' });
+    }
+  }
+
+  // DELETE /api/social?type=files - Delete a file
+  if (req.method === 'DELETE' && req.query.type === 'files') {
+    try {
+      const { fileId } = req.body;
+      
+      // Remove from sent
+      if (sentFiles[userId]) {
+        sentFiles[userId] = sentFiles[userId].filter(f => f.id !== fileId);
+      }
+      
+      // Remove from received
+      if (receivedFiles[userId]) {
+        receivedFiles[userId] = receivedFiles[userId].filter(f => f.id !== fileId);
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: 'Dosya silindi'
+      });
+    } catch (err) {
+      console.error('File delete error:', err);
+      return res.status(500).json({ error: 'Dosya silinemedi' });
+    }
+  }
+
+  // POST /api/social?type=ai-suggestion - Get AI message suggestion
+  if (req.method === 'POST' && req.query.type === 'ai-suggestion') {
+    // Fast fallback suggestions (no AI delay)
+    const fastSuggestions = [
+      { text: "Teşekkürler, sen nasılsın?", mood: "friendly" },
+      { text: "Harika! Birlikte çalışmaya devam edelim!", mood: "supportive" },
+      { text: "Motivasyonuna bayıldım, hadi hedeflerimize ulaşalım! 💪", mood: "motivated" }
+    ];
+
+    try {
+      const { partnerName, context, lastMessage } = req.body;
+      
+      // Try dynamic import
+      let callGemini;
+      try {
+        const module = await import('@/lib/gemini-multi-api');
+        callGemini = module.callGeminiWithFallback;
+      } catch (e) {
+        console.log('Using fast fallback for AI suggestion');
+      }
+
+      if (callGemini) {
+        const prompt = `Kullanıcı "${lastMessage || 'Selam!'}" mesajına 3 farklı kısa cevap öner. Maks 1 cümle. JSON: {"suggestions":[{"text":"ö1","mood":"friendly"},{"text":"ö2","mood":"supportive"},{"text":"ö3","mood":"motivated"}]}`;
+
+        const response = await callGemini(prompt, "", {
+          model: "gemini-2.0-flash",
+          maxOutputTokens: 300
+        });
+
+        if (response) {
+          const jsonText = response.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+          const parsed = JSON.parse(jsonText);
+          
+          return res.status(200).json({
+            success: true,
+            suggestions: parsed.suggestions || fastSuggestions
+          });
+        }
+      }
+
+      // Return fast suggestions if AI fails
+      return res.status(200).json({
+        success: true,
+        suggestions: fastSuggestions
+      });
+    } catch (err) {
+      console.error('AI suggestion error:', err);
+      return res.status(200).json({
+        success: true,
+        suggestions: fastSuggestions
+      });
     }
   }
   

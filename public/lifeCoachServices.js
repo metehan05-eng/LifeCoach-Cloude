@@ -813,6 +813,191 @@ const WaffleService = {
     }
 };
 
+// ==================== PRESET GOALS API ====================
+
+const PresetGoalsService = {
+    async getCategories() {
+        try {
+            const res = await fetch('/api/preset-goals?action=categories');
+            if (!res.ok) throw new Error('Failed to fetch categories');
+            return await res.json();
+        } catch (error) {
+            console.error('PresetGoalsService.getCategories error:', error);
+            return { success: false, categories: [] };
+        }
+    },
+
+    async getByCategory(category) {
+        try {
+            const res = await fetch(`/api/preset-goals?action=byCategory&category=${encodeURIComponent(category)}`);
+            if (!res.ok) throw new Error('Failed to fetch preset goals');
+            return await res.json();
+        } catch (error) {
+            console.error('PresetGoalsService.getByCategory error:', error);
+            return { success: false, goals: [] };
+        }
+    },
+
+    async getAll() {
+        try {
+            const res = await fetch('/api/preset-goals?action=all');
+            if (!res.ok) throw new Error('Failed to fetch preset goals');
+            return await res.json();
+        } catch (error) {
+            console.error('PresetGoalsService.getAll error:', error);
+            return { success: false, goals: [] };
+        }
+    },
+
+    async search(query) {
+        try {
+            const res = await fetch(`/api/preset-goals?action=search&search=${encodeURIComponent(query)}`);
+            if (!res.ok) throw new Error('Failed to search preset goals');
+            return await res.json();
+        } catch (error) {
+            console.error('PresetGoalsService.search error:', error);
+            return { success: false, goals: [] };
+        }
+    },
+
+    async suggestTimeline(subject, targetDate, category, level) {
+        try {
+            const params = new URLSearchParams({
+                action: 'suggestTimeline',
+                subject: subject || '',
+                targetDate: targetDate || '',
+                category: category || '',
+                level: level || 'intermediate'
+            });
+            const res = await fetch(`/api/preset-goals?${params}`);
+            if (!res.ok) throw new Error('Failed to suggest timeline');
+            return await res.json();
+        } catch (error) {
+            console.error('PresetGoalsService.suggestTimeline error:', error);
+            return { success: false, timeline: '4 hafta' };
+        }
+    },
+
+    async generateBreakdown(goalTitle, targetDate) {
+        try {
+            const res = await fetch('/api/preset-goals?action=generateFromGoal', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ goalTitle, targetDate })
+            });
+            if (!res.ok) throw new Error('Failed to generate breakdown');
+            return await res.json();
+        } catch (error) {
+            console.error('PresetGoalsService.generateBreakdown error:', error);
+            return { success: false };
+        }
+    }
+};
+
+// ==================== MESSAGING API ====================
+
+const MessagingService = {
+    async getConversations() {
+        try {
+            const res = await fetch('/api/social?type=conversations', {
+                method: 'GET',
+                headers: getAuthHeaders()
+            });
+            if (!res.ok) throw new Error('Failed to fetch conversations');
+            return await res.json();
+        } catch (error) {
+            console.error('MessagingService.getConversations error:', error);
+            return { success: false, conversations: [] };
+        }
+    },
+
+    async getMessages(partnerId) {
+        try {
+            const res = await fetch(`/api/social?type=messages&partnerId=${partnerId}`, {
+                method: 'GET',
+                headers: getAuthHeaders()
+            });
+            if (!res.ok) throw new Error('Failed to fetch messages');
+            return await res.json();
+        } catch (error) {
+            console.error('MessagingService.getMessages error:', error);
+            return { success: false, messages: [] };
+        }
+    },
+
+    async sendMessage(partnerId, content, messageType = 'text', fileData = null, fileName = null, fileType = null) {
+        try {
+            const res = await fetch('/api/social?type=messages', {
+                method: 'POST',
+                headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+                body: JSON.stringify({ partnerId, content, messageType, fileData, fileName, fileType })
+            });
+            if (!res.ok) throw new Error('Failed to send message');
+            return await res.json();
+        } catch (error) {
+            console.error('MessagingService.sendMessage error:', error);
+            return { success: false };
+        }
+    },
+
+    async markAsRead(partnerId) {
+        try {
+            const res = await fetch('/api/social?type=messages&action=markRead', {
+                method: 'POST',
+                headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+                body: JSON.stringify({ partnerId })
+            });
+            return await res.json();
+        } catch (error) {
+            console.error('MessagingService.markAsRead error:', error);
+            return { success: false };
+        }
+    },
+
+    async getFiles() {
+        try {
+            const res = await fetch('/api/social?type=files', {
+                method: 'GET',
+                headers: getAuthHeaders()
+            });
+            if (!res.ok) throw new Error('Failed to fetch files');
+            return await res.json();
+        } catch (error) {
+            console.error('MessagingService.getFiles error:', error);
+            return { success: false, sent: [], received: [] };
+        }
+    },
+
+    async deleteFile(fileId) {
+        try {
+            const res = await fetch('/api/social?type=files', {
+                method: 'DELETE',
+                headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fileId })
+            });
+            return await res.json();
+        } catch (error) {
+            console.error('MessagingService.deleteFile error:', error);
+            return { success: false };
+        }
+    },
+
+    async getAiSuggestion(partnerName, lastMessage, context) {
+        try {
+            const res = await fetch('/api/social?type=ai-suggestion', {
+                method: 'POST',
+                headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+                body: JSON.stringify({ partnerName, lastMessage, context })
+            });
+            if (!res.ok) throw new Error('Failed to get AI suggestion');
+            return await res.json();
+        } catch (error) {
+            console.error('MessagingService.getAiSuggestion error:', error);
+            return { success: false, suggestions: [] };
+        }
+    }
+};
+
 // Export for global use
 window.GoalsService = GoalsService;
 window.HabitsService = HabitsService;
@@ -826,3 +1011,5 @@ window.RecommendationsService = RecommendationsService;
 window.SmartCoachService = SmartCoachService;
 window.NotificationsService = NotificationsService;
 window.WaffleService = WaffleService;
+window.PresetGoalsService = PresetGoalsService;
+window.MessagingService = MessagingService;
