@@ -54,6 +54,7 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <script src="./lifeCoachServices.js"></script>
     <script src="./group-manager.js"></script>
     <script src="./theme-manager.js"></script>
@@ -3196,6 +3197,23 @@
                         class="ml-auto text-[9px] px-1.5 py-0.5 rounded-md bg-violet-500/20 text-violet-400 font-bold border border-violet-500/30 shadow-[0_0_8px_rgba(139,92,246,0.2)]">YENİ</span>
                 </button>
 
+                <!-- 🎵 AI Orkestra -->
+                <button onclick="showSection('music'); closeSidebarMobile();"
+                    class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all group"
+                    data-section="music">
+                    <div
+                        class="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500/10 to-cyan-400/5 border border-blue-500/20 group-hover:from-blue-500/20 group-hover:to-cyan-400/10 group-hover:border-blue-500/30 transition-all shadow-md shadow-blue-500/10 group-hover:shadow-lg group-hover:shadow-blue-500/20 relative">
+                        <i
+                            class="fa-solid fa-music text-blue-400 text-[13px] group-hover:scale-110 transition-transform duration-300"></i>
+                        <div
+                            class="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full animate-pulse shadow-[0_0_5px_rgba(59,130,246,0.8)]">
+                        </div>
+                    </div>
+                    <span class="text-sm font-medium group-hover:font-semibold transition-colors">AI Orkestra</span>
+                    <span
+                        class="ml-auto text-[9px] px-1.5 py-0.5 rounded-md bg-blue-500/20 text-blue-400 font-bold border border-blue-500/30">MÜZİK</span>
+                </button>
+
                 <div class="px-3 pt-2 pb-1 mt-2 mb-1 border-t border-slate-700/50"></div>
 
                 <!-- Waffle Modu -->
@@ -4087,6 +4105,95 @@
                                 <p class="text-slate-500 text-sm text-center py-4">Henüz XP kazanımı yok</p>
                             </div>
                         </div>
+                </div>
+            </div>
+
+            <!-- AI ORKESTRA (Müzik Üretme) Section -->
+            <div id="section-music" class="section-content hidden flex-col w-full h-full p-4 md:p-8 overflow-y-auto">
+                <div class="max-w-4xl mx-auto w-full">
+                    <!-- Başlık Bölümü -->
+                    <div class="mb-8 flex items-center justify-between">
+                        <div class="flex items-center gap-5">
+                            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600/30 to-cyan-800/30 border-2 border-blue-500/40 flex items-center justify-center text-3xl shadow-[0_0_20px_rgba(59,130,246,0.3)]">
+                                🎵
+                            </div>
+                            <div>
+                                <h1 class="text-3xl font-black text-white tracking-tight">AI <span class="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">Orkestra</span></h1>
+                                <p class="text-slate-400 text-sm font-medium">Yapay zeka ile kendi melodilerini bestele</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Müzik Tasarım Kartı -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Kontrol Paneli -->
+                        <div class="lg:col-span-1 space-y-6">
+                            <div class="bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-xl">
+                                <h3 class="text-sm font-bold text-slate-300 uppercase tracking-widest mb-4">Tür Seçimi</h3>
+                                <div class="grid grid-cols-2 gap-3" id="music-genre-select">
+                                    <button onclick="setMusicGenre('piano')" class="genre-btn group p-3 rounded-2xl bg-white/5 border border-white/10 hover:border-blue-500/50 transition-all flex flex-col items-center gap-2 active">
+                                        <span class="text-xl">🎹</span>
+                                        <span class="text-[10px] font-bold text-slate-400 group-hover:text-white uppercase">Piano</span>
+                                    </button>
+                                    <button onclick="setMusicGenre('disco')" class="genre-btn group p-3 rounded-2xl bg-white/5 border border-white/10 hover:border-purple-500/50 transition-all flex flex-col items-center gap-2">
+                                        <span class="text-xl">🕺</span>
+                                        <span class="text-[10px] font-bold text-slate-400 group-hover:text-white uppercase">Disco</span>
+                                    </button>
+                                    <button onclick="setMusicGenre('rap')" class="genre-btn group p-3 rounded-2xl bg-white/5 border border-white/10 hover:border-red-500/50 transition-all flex flex-col items-center gap-2">
+                                        <span class="text-xl">🎤</span>
+                                        <span class="text-[10px] font-bold text-slate-400 group-hover:text-white uppercase">Rap Beat</span>
+                                    </button>
+                                    <button onclick="setMusicGenre('ambient')" class="genre-btn group p-3 rounded-2xl bg-white/5 border border-white/10 hover:border-emerald-500/50 transition-all flex flex-col items-center gap-2">
+                                        <span class="text-xl">🌿</span>
+                                        <span class="text-[10px] font-bold text-slate-400 group-hover:text-white uppercase">Ambient</span>
+                                    </button>
+                                </div>
+
+                                <div class="mt-6 pt-6 border-t border-white/5">
+                                    <h3 class="text-sm font-bold text-slate-300 uppercase tracking-widest mb-4">Ayarlar</h3>
+                                    <div class="space-y-4">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-xs text-slate-400">Notaları Göster</span>
+                                            <input type="checkbox" id="show-music-notes" checked class="w-4 h-4 rounded bg-slate-800">
+                                        </div>
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-xs text-slate-400">Tempo</span>
+                                            <input type="range" id="music-tempo" min="60" max="180" value="120" class="w-24">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button onclick="generateAIMusic()" id="generate-music-btn" class="w-full py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-black uppercase tracking-widest shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 hover:-translate-y-1 transition-all flex items-center justify-center gap-3">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                BESTELE
+                            </button>
+                        </div>
+
+                        <!-- Stüdyo / Visualizer -->
+                        <div class="lg:col-span-2 space-y-6">
+                            <div class="bg-black/40 backdrop-blur-3xl border border-white/10 rounded-3xl overflow-hidden shadow-2xl relative min-h-[300px]">
+                                <!-- Canvas Visualizer -->
+                                <canvas id="music-visualizer" class="w-full h-[300px]"></canvas>
+                                
+                                <!-- Status Overlay -->
+                                <div id="music-status" class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                    <div class="text-center">
+                                        <p class="text-blue-400 font-bold tracking-widest animate-pulse opacity-50">STÜDYO HAZIR</p>
+                                    </div>
+                                </div>
+
+                                <!-- Real-time Notes Display -->
+                                <div id="music-notes-display" class="absolute bottom-4 left-4 right-4 h-12 flex items-center gap-2 overflow-x-hidden">
+                                    <!-- Notes flow here -->
+                                </div>
+                            </div>
+
+                            <div class="bg-slate-900/60 p-4 rounded-2xl border border-white/5">
+                                <textarea id="music-prompt" placeholder="Ne tür bir melodi istersin? (örn: hüzünlü piyano, 80ler synthwave...)" class="w-full bg-transparent border-none outline-none text-sm text-slate-200 resize-none h-12"></textarea>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -12865,6 +12972,190 @@
         // Make functions globally available
         window.openSMCGame = () => showToast('Yeni oyunlar yakında eklenecek!', 'info');
         window.closeSMCGame = () => { };
+        // ========== AI MUSIC STUDIO (AI ORKESTRA) ==========
+        let musicSynth = null;
+        let currentMusicGenre = 'piano';
+        let isMusicPlaying = false;
+        let musicCanvas, musicCtx;
+        let musicAnimationId;
+        let analyzer;
+        
+        function initMusicStudio() {
+            if (musicSynth) return;
+            
+            try {
+                // Tone.js Synth
+                musicSynth = new Tone.PolySynth(Tone.Synth).toDestination();
+                
+                // Visualizer Setup
+                musicCanvas = document.getElementById('music-visualizer');
+                if (!musicCanvas) return;
+                
+                musicCtx = musicCanvas.getContext('2d');
+                
+                analyzer = new Tone.Analyser("waveform", 256);
+                musicSynth.connect(analyzer);
+                
+                resizeMusicCanvas();
+                window.addEventListener('resize', resizeMusicCanvas);
+                console.log("✅ Music Studio Initialized");
+            } catch (err) {
+                console.error("❌ Music Studio Init Error:", err);
+            }
+        }
+
+        function resizeMusicCanvas() {
+            if (!musicCanvas) return;
+            musicCanvas.width = musicCanvas.offsetWidth * window.devicePixelRatio;
+            musicCanvas.height = musicCanvas.offsetHeight * window.devicePixelRatio;
+        }
+
+        function setMusicGenre(genre) {
+            currentMusicGenre = genre;
+            // UI Update
+            document.querySelectorAll('#music-genre-select .genre-btn').forEach(btn => {
+                btn.classList.remove('active', 'border-blue-500/50', 'border-purple-500/50', 'border-red-500/50', 'border-emerald-500/50', 'bg-blue-500/10');
+                if (btn.onclick.toString().includes(genre)) {
+                    btn.classList.add('active', 'bg-blue-500/10');
+                    const color = genre === 'piano' ? 'blue' : genre === 'disco' ? 'purple' : genre === 'rap' ? 'red' : 'emerald';
+                    btn.classList.add(`border-${color}-500/50`);
+                }
+            });
+            
+            showToast(`${genre.toUpperCase()} modu aktif!`, 'success');
+        }
+
+        async function generateAIMusic() {
+            try {
+                await Tone.start();
+                initMusicStudio();
+                
+                const btn = document.getElementById('generate-music-btn');
+                const prompt = document.getElementById('music-prompt').value;
+                const status = document.getElementById('music-status');
+                
+                btn.disabled = true;
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> BESTELENİYOR...';
+                status.innerHTML = '<div class="text-center"><p class="text-cyan-400 font-bold animate-pulse tracking-[0.2em]">YAPAY ZEKA BESTELİYOR...</p></div>';
+
+                // AI'dan nota dizesi iste
+                const notes = await getAINotesFromAI(currentMusicGenre, prompt);
+                
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+                
+                playMelody(notes);
+            } catch (err) {
+                console.error(err);
+                showToast("Müzik sistemi başlatılamadı. Lütfen sayfaya tıkla ve tekrar dene.", "error");
+            }
+        }
+
+        async function getAINotesFromAI(genre, prompt) {
+            // Gerçek API çağrısı simülasyonu
+            // Not: İleride bunu Gemini'ye bağlayabiliriz
+            const presets = {
+                piano: ["C4", "E4", "G4", "C5", "A4", "F4", "D4", "C4"],
+                disco: ["E3", "G3", "B3", "D4", "B3", "G3", "E3", "B3"],
+                rap: ["G2", "G2", "C3", "G2", "A#2", "G2", "D3", "G2"],
+                ambient: ["F4", "A4", "C5", "E5", "D5", "B4", "G4", "F4"]
+            };
+            
+            await new Promise(r => setTimeout(r, 1500));
+            return presets[genre] || presets.piano;
+        }
+
+        function playMelody(notes) {
+            const now = Tone.now();
+            const display = document.getElementById('music-notes-display');
+            const showNotes = document.getElementById('show-music-notes').checked;
+            display.innerHTML = '';
+            
+            const noteInterval = 0.5; // sn
+            
+            notes.forEach((note, i) => {
+                musicSynth.triggerAttackRelease(note, "8n", now + i * noteInterval);
+                
+                // UI Visualizer Support
+                setTimeout(() => {
+                    if (showNotes) {
+                        const noteEl = document.createElement('div');
+                        noteEl.className = 'px-4 py-2 bg-blue-500/20 border border-blue-500/40 rounded-xl text-blue-400 text-[12px] font-black animate-bounce-subtle shadow-[0_0_15px_rgba(59,130,246,0.2)]';
+                        noteEl.textContent = note;
+                        display.appendChild(noteEl);
+                        if (display.children.length > 6) display.removeChild(display.firstChild);
+                    }
+                }, i * noteInterval * 1000);
+            });
+
+            if (!isMusicPlaying) {
+                isMusicPlaying = true;
+                drawVisualizer();
+            }
+            
+            document.getElementById('music-status').innerHTML = '<p class="text-blue-400 font-bold tracking-[0.3em] animate-pulse">CANLI ÇALINIYOR</p>';
+            
+            setTimeout(() => {
+                document.getElementById('music-status').innerHTML = '<p class="text-slate-500 font-bold tracking-widest opacity-30 uppercase text-xs">Stüdyo Hazır</p>';
+                isMusicPlaying = false;
+            }, notes.length * noteInterval * 1000 + 500);
+        }
+
+        function drawVisualizer() {
+            if (!isMusicPlaying || !musicCtx) {
+                cancelAnimationFrame(musicAnimationId);
+                return;
+            }
+            musicAnimationId = requestAnimationFrame(drawVisualizer);
+            
+            const values = analyzer.getValue();
+            musicCtx.clearRect(0, 0, musicCanvas.width, musicCanvas.height);
+            
+            // Draw stylized waves
+            musicCtx.beginPath();
+            musicCtx.lineWidth = 3;
+            
+            // Neon Blue Gradient
+            const gradient = musicCtx.createLinearGradient(0, 0, musicCanvas.width, 0);
+            gradient.addColorStop(0, '#3b82f6');
+            gradient.addColorStop(0.5, '#22d3ee');
+            gradient.addColorStop(1, '#3b82f6');
+            
+            musicCtx.strokeStyle = gradient;
+            musicCtx.shadowBlur = 15;
+            musicCtx.shadowColor = 'rgba(59, 130, 246, 0.5)';
+            
+            const sliceWidth = musicCanvas.width / values.length;
+            let x = 0;
+            
+            for (let i = 0; i < values.length; i++) {
+                const v = values[i] * 120;
+                const y = musicCanvas.height / 2 + v;
+                
+                if (i === 0) musicCtx.moveTo(x, y);
+                else musicCtx.lineTo(x, y);
+                
+                x += sliceWidth;
+            }
+            
+            musicCtx.stroke();
+            
+            // Draw secondary bars (reflection)
+            musicCtx.beginPath();
+            musicCtx.lineWidth = 1;
+            musicCtx.strokeStyle = 'rgba(34, 211, 238, 0.2)';
+            x = 0;
+            for (let i = 0; i < values.length; i++) {
+                const v = values[i] * 60;
+                const y = musicCanvas.height / 2 - v;
+                if (i === 0) musicCtx.moveTo(x, y);
+                else musicCtx.lineTo(x, y);
+                x += sliceWidth;
+            }
+            musicCtx.stroke();
+        }
+
     </script>
 </body>
 
