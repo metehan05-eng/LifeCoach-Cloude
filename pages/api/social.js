@@ -40,15 +40,25 @@ export default async function handler(req, res) {
   // GET /api/social?type=groups - Get user's study groups
   if (req.method === 'GET' && req.query.type === 'groups') {
     try {
-      const userGroups = Object.values(studyGroups).filter(g => 
-        g.ownerId === userId || g.members.includes(userId)
-      );
+      const userGroups = Object.values(studyGroups).map(g => {
+        const isOwner = g.ownerId === userId;
+        const isMember = g.members.includes(userId);
+        
+        // Hide password for private groups unless the requester is a member or owner
+        const visiblePassword = (g.isPublic || isOwner || isMember) ? g.password : '****';
+        
+        return {
+          ...g,
+          password: visiblePassword,
+          joinCode: visiblePassword // Keep UI fields consistent
+        };
+      });
       
       return res.status(200).json({
         success: true,
         groups: userGroups,
         count: userGroups.length,
-        message: 'Çalışma grupları alındı'
+        message: 'Gruplar alındı'
       });
     } catch (err) {
       console.error('Groups GET error:', err);
@@ -59,11 +69,14 @@ export default async function handler(req, res) {
   // POST /api/social?type=groups - Create study group
   if (req.method === 'POST' && req.query.type === 'groups') {
     try {
-      const { name, description, subject, isPublic = true } = req.body;
+      const { name, description, subject, isPublic = true, password } = req.body;
       
       if (!name || !description) {
         return res.status(400).json({ error: 'Adı ve açıklaması gerekli' });
       }
+      
+      // Auto-generate a 4-digit join code/password if not provided
+      const joinCode = password || Math.floor(1000 + Math.random() * 9000).toString();
       
       const groupId = Math.random().toString(36).substr(2, 9);
       const newGroup = {
@@ -75,7 +88,14 @@ export default async function handler(req, res) {
         members: [userId],
         createdAt: new Date().toISOString(),
         isPublic,
-        totalMembers: 1
+        password: joinCode, // 4-digit password
+        joinCode: joinCode, // UI shows this as join code
+        totalMembers: 1,
+        channels: [
+          { id: 'genel', name: 'genel', type: 'text' },
+          { id: 'yardim', name: 'yardımlaşma', type: 'text' },
+          { id: 'sesli', name: 'Sesli Çalışma', type: 'voice' }
+        ]
       };
       
       studyGroups[groupId] = newGroup;
@@ -83,7 +103,7 @@ export default async function handler(req, res) {
       return res.status(201).json({
         success: true,
         message: 'Çalışma grubu oluşturuldu',
-        group: newGroup
+        group: { ...newGroup, password: joinCode } // Show password on creation
       });
     } catch (err) {
       console.error('Groups POST error:', err);
@@ -94,13 +114,19 @@ export default async function handler(req, res) {
   // POST /api/social?type=groups&action=join - Join group
   if (req.method === 'POST' && req.query.type === 'groups' && req.query.action === 'join') {
     try {
-      const { groupId } = req.body;
+      const { groupId, password } = req.body;
       
       if (!studyGroups[groupId]) {
         return res.status(404).json({ error: 'Grup bulunamadı' });
       }
       
       const group = studyGroups[groupId];
+      
+      // Password check for private groups
+      if (!group.isPublic && group.password !== password) {
+        return res.status(403).json({ error: 'Özel grup için geçerli bir şifre (4 hane) gerekli' });
+      }
+
       if (group.members.includes(userId)) {
         return res.status(400).json({ error: 'Zaten bu grubun üyesisin' });
       }
@@ -111,11 +137,39 @@ export default async function handler(req, res) {
       return res.status(200).json({
         success: true,
         message: 'Gruba katıldın',
-        group: group
+        group: { ...group, password: group.isPublic ? group.password : '****' }
       });
     } catch (err) {
       console.error('Group join error:', err);
       return res.status(500).json({ error: 'Gruba katılamadı' });
+    }
+  }
+  
+  // POST /api/social?type=groups&action=joinByCode - Join group by 4-digit code
+  if (req.method === 'POST' && req.query.type === 'groups' && req.query.action === 'joinByCode') {
+    try {
+      const { joinCode } = req.body;
+      const group = Object.values(studyGroups).find(g => g.joinCode === joinCode);
+      
+      if (!group) {
+        return res.status(404).json({ error: 'Grup bulunamadı' });
+      }
+      
+      if (group.members.includes(userId)) {
+        return res.status(200).json({ success: true, message: 'Zaten üyesiniz', groupId: group.id });
+      }
+      
+      group.members.push(userId);
+      group.totalMembers = group.members.length;
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Kod doğrulandı ve gruba katıldınız',
+        groupId: group.id
+      });
+    } catch (err) {
+      console.error('JoinByCode error:', err);
+      return res.status(500).json({ error: 'İşlem başarısız' });
     }
   }
   
@@ -235,7 +289,18 @@ export default async function handler(req, res) {
         return res.status(404).json({ error: 'Grup bulunamadı' });
       }
       
-      if (!group.members.includes(userId) && group.ownerId !== userId) {
+      const isOwner = group.ownerId === userId;
+      const isMember = group.members.includes(userId);
+
+      // Require password for private groups even for members (per user request)
+      if (!group.isPublic && !isOwner) {
+        const providedPassword = req.headers['x-group-password'] || req.query.password;
+        if (providedPassword !== group.password) {
+          return res.status(403).json({ error: 'Özel grup şifresi gerekli', passwordRequired: true });
+        }
+      }
+      
+      if (!isMember && !isOwner) {
         return res.status(403).json({ error: 'Bu gruba erişim izni yok' });
       }
       
@@ -360,10 +425,10 @@ export default async function handler(req, res) {
         return res.status(403).json({ error: 'Sadece grup üyeleri mesaj gönderebilir' });
       }
       
-      const { content, messageType = 'text' } = req.body;
+      const { content, messageType = 'text', attachment = null } = req.body;
       
-      if (!content) {
-        return res.status(400).json({ error: 'Mesaj içeriği gerekli' });
+      if (!content && !attachment) {
+        return res.status(400).json({ error: 'Mesaj içeriği veya dosya gerekli' });
       }
       
       if (!groupMessages[groupId]) {
@@ -374,8 +439,9 @@ export default async function handler(req, res) {
         id: Math.random().toString(36).substr(2, 9),
         senderId: userId,
         content,
-        messageType, // 'text', 'image', 'document'
+        messageType: attachment ? (attachment.type?.startsWith('image/') ? 'image' : 'document') : messageType,
         timestamp: new Date().toISOString(),
+        attachment, // Store attachment data
         reactions: {}
       };
       

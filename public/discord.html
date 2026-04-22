@@ -128,9 +128,27 @@
     <!-- 2. CHANNELS SIDEBAR -->
     <aside class="w-64 bg-[var(--discord-sidebar)] flex flex-col h-full border-r border-[#1e1f22]">
         <!-- Server Header -->
-        <div class="h-12 px-4 flex items-center justify-between border-b border-[#1e1f22] shadow-sm cursor-pointer hover:bg-white/5 transition-colors">
-            <h1 id="server-name" class="font-bold text-sm truncate">Gruba Katılın</h1>
-            <i class="fa-solid fa-chevron-down text-xs text-slate-400"></i>
+        <div class="relative group">
+            <div onclick="toggleServerMenu()" class="h-12 px-4 flex items-center justify-between border-b border-[#1e1f22] shadow-sm cursor-pointer hover:bg-white/5 transition-colors">
+                <h1 id="server-name" class="font-bold text-sm truncate">Gruba Katılın</h1>
+                <i class="fa-solid fa-chevron-down text-xs text-slate-400"></i>
+            </div>
+            
+            <!-- Server Menu Dropdown -->
+            <div id="server-menu" class="hidden absolute top-12 left-2 right-2 bg-[#111214] rounded-lg shadow-2xl border border-white/5 p-2 z-[60] space-y-1">
+                <button onclick="location.href='/life-coach-ui.html#section-study-groups'" class="w-full text-left px-3 py-2 rounded text-xs text-slate-300 hover:bg-[#5865f2] hover:text-white transition-colors flex items-center justify-between">
+                    Grup Listesi <i class="fa-solid fa-list-ul"></i>
+                </button>
+                <div class="h-[1px] bg-white/5 my-1"></div>
+                <button onclick="leaveCurrentGroup()" class="w-full text-left px-3 py-2 rounded text-xs text-red-400 hover:bg-red-500 hover:text-white transition-colors flex items-center justify-between">
+                    Gruptan Ayrıl <i class="fa-solid fa-right-from-bracket"></i>
+                </button>
+                <div id="admin-only-actions" class="hidden">
+                    <button id="delete-group-btn" onclick="deleteCurrentGroup()" class="w-full text-left px-3 py-2 rounded text-xs text-red-500 hover:bg-red-600 hover:text-white transition-colors flex items-center justify-between">
+                        Grubu Sil <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                </div>
+            </div>
         </div>
 
         <!-- Channels List -->
@@ -367,11 +385,30 @@
 
         async function loadGroupData() {
             const token = localStorage.getItem('token');
+            const savedPassword = sessionStorage.getItem(`group_pass_${currentGroupId}`);
+            
             try {
-                const res = await fetch(`/api/social?type=groups&id=${currentGroupId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
+                const res = await fetch(`/api/social?type=groups&id=${currentGroupId}${savedPassword ? `&password=${savedPassword}` : ''}`, {
+                    headers: { 
+                        'Authorization': `Bearer ${token}`
+                    }
                 });
+                
                 const data = await res.json();
+                
+                if (res.status === 403 && data.passwordRequired) {
+                    const pass = prompt("Bu grup özeldir. Lütfen 4 haneli şifreyi girin:");
+                    if (pass) {
+                        sessionStorage.setItem(`group_pass_${currentGroupId}`, pass);
+                        return loadGroupData();
+                    } else {
+                        window.location.href = '/life-coach-ui.html';
+                        return;
+                    }
+                }
+
+                if (!res.ok) throw new Error(data.error);
+
                 if (data.xpGained) showXP(data.xpGained);
                 const group = data.group;
 
@@ -385,6 +422,7 @@
                 ]);
                 
                 renderMembers(group.memberDetails || []);
+                checkAdminStatus(group);
                 loadMessages();
             } catch (e) {
                 console.error(e);
@@ -716,6 +754,39 @@
             document.getElementById('members-sidebar').classList.toggle('hidden');
         }
 
+        function toggleServerMenu() {
+            document.getElementById('server-menu').classList.toggle('hidden');
+        }
+
+        async function leaveCurrentGroup() {
+            if (!confirm('Gruptan ayrılmak istediğinize emin misiniz?')) return;
+            const token = localStorage.getItem('token');
+            try {
+                const res = await fetch(`/api/social?type=groups&id=${currentGroupId}&action=leave`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                window.location.href = '/life-coach-ui.html#section-study-groups';
+            } catch (e) { alert("Ayrılma işlemi başarısız."); }
+        }
+
+        async function deleteCurrentGroup() {
+            if (!confirm('!!! DİKKAT !!!\nBu grubu tamamen silmek istediğinize emin misiniz? Bu işlem geri alınamaz!')) return;
+            const token = localStorage.getItem('token');
+            try {
+                const res = await fetch(`/api/social?type=groups&id=${currentGroupId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    alert("Grup başarıyla silindi.");
+                    window.location.href = '/life-coach-ui.html#section-study-groups';
+                } else {
+                    alert("Silme işlemi başarısız. Sadece adminler silebilir.");
+                }
+            } catch (e) { alert("Hata oluştu."); }
+        }
+
         function showXP(amount) {
             if (!amount || amount <= 0) return;
             const toast = document.createElement('div');
@@ -728,6 +799,20 @@
                 setTimeout(() => toast.remove(), 500);
             }, 2500);
         }
+
+        // Admin actions visibility
+        async function checkAdminStatus(group) {
+            if (group.ownerId === user.id) {
+                document.getElementById('admin-only-actions').classList.remove('hidden');
+            }
+        }
+
+        // Close menu on click outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.group')) {
+                document.getElementById('server-menu').classList.add('hidden');
+            }
+        });
     </script>
 </body>
 </html>

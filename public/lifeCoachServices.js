@@ -680,12 +680,12 @@ const StatsService = {
         }
     },
 
-    async addReward(rewardType) {
+    async addReward(rewardType, amount) {
         try {
             const res = await fetch('/api/user-stats', {
                 method: 'POST',
                 headers: getAuthHeaders(),
-                body: JSON.stringify({ rewardType })
+                body: JSON.stringify({ rewardType, amount })
             });
             if (!res.ok) throw new Error('Failed to add reward');
             return await res.json();

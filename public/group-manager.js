@@ -231,6 +231,7 @@ async function createStudyGroup(event) {
         subject: document.getElementById('group-subject').value,
         isPublic: document.getElementById('group-is-public').checked,
         avatarUrl: document.getElementById('group-avatar-preview').src,
+        password: document.getElementById('group-password').value,
         noLinks: document.getElementById('group-no-links').checked,
         noAds: document.getElementById('group-no-ads').checked
     };
@@ -266,7 +267,7 @@ async function createStudyGroup(event) {
 }
 
 // Join Study Group
-async function joinStudyGroup(groupId) {
+async function joinStudyGroup(groupId, password = null) {
     const token = localStorage.getItem('token');
     if (!token) {
         showToast('Lütfen giriş yapın', 'error');
@@ -280,15 +281,24 @@ async function joinStudyGroup(groupId) {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ groupId })
+            body: JSON.stringify({ groupId, password })
         });
 
         const data = await res.json();
+        
+        if (res.status === 403 && !password) {
+            // Private group, prompt for password
+            const userPass = prompt("Bu grup özeldir. Lütfen 4 haneli giriş şifresini girin:");
+            if (userPass) {
+                return joinStudyGroup(groupId, userPass);
+            }
+            return;
+        }
+
         if (!res.ok) throw new Error(data.error || 'Gruba katılamadı');
 
         showToast('✅ Gruba başarıyla katıldınız!', 'success');
         loadStudyGroups();
-        // Hemen odaya gir (SPA içi)
         viewGroupDetail(groupId);
     } catch (err) {
         console.error('Join group error:', err);
@@ -544,8 +554,9 @@ async function sendGroupMessage() {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ content, channelId })
+            body: JSON.stringify({ content, channelId, attachment: window.currentMsgAttachment || null })
         });
+        window.currentMsgAttachment = null; // Reset after send
 
         if (!res.ok) throw new Error('Mesaj gönderilemedi');
         
@@ -622,15 +633,15 @@ async function updateGroupSettings() {
 }
 
 // Delete Group
-async function deleteGroup() {
+async function deleteStudyGroup(groupId) {
     const token = localStorage.getItem('token');
-    const groupId = window.currentGroupId;
-    if (!token || !groupId || !window.currentGroupIsOwner) return;
+    const targetGroupId = groupId || window.currentGroupId;
+    if (!token || !targetGroupId) return;
 
     if (!confirm('Grubu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')) return;
 
     try {
-        const res = await fetch(`/api/social?type=groups&id=${groupId}`, {
+        const res = await fetch(`/api/social?type=groups&id=${targetGroupId}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${token}` }
         });
