@@ -8,17 +8,25 @@ function getUserId(req) {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
     
-    if (token) {
+    // Skip if token is the string "null" or "undefined" (common JS artifacts)
+    if (token && token !== 'null' && token !== 'undefined') {
         try {
             const decoded = jwt.verify(token, JWT_SECRET);
-            return decoded.id;
+            if (decoded && decoded.id) {
+                return decoded.id;
+            }
         } catch (err) {
-            return null;
+            console.warn('Token verification failed, falling back to session ID');
         }
     }
     
-    // For free users, use session ID
-    return req.headers['x-session-id'] || 'free-user';
+    // For free users, use session ID or fallback to 'free-user'
+    const sessionId = req.headers['x-session-id'];
+    if (sessionId && sessionId !== 'null' && sessionId !== 'undefined') {
+        return sessionId;
+    }
+    
+    return 'free-user';
 }
 
 // XP ve Alev Seviyesi Kazanç Tablosu
@@ -63,9 +71,7 @@ const CONSUMPTION = {
 // GET - Get user stats (XP, Flame Level)
 async function getStats(req, res) {
     const userId = getUserId(req);
-    if (!userId) {
-        return res.status(400).json({ error: 'Kullanıcı ID belirlenemedi' });
-    }
+    // userId is always defined now because of fallback to 'free-user'
 
     try {
         const allStats = await getKVData('user-stats') || {};
@@ -77,6 +83,9 @@ async function getStats(req, res) {
             history: []
         };
 
+        // Add total_xp for dashboard compatibility
+        userStats.total_xp = userStats.xp;
+
         return res.status(200).json(userStats);
     } catch (error) {
         console.error('Get stats error:', error);
@@ -87,18 +96,15 @@ async function getStats(req, res) {
 // POST - Add XP and Flame Level
 async function addReward(req, res) {
     const userId = getUserId(req);
-    if (!userId) {
-        return res.status(400).json({ error: 'Kullanıcı ID belirlenemedi' });
-    }
 
     try {
         const { rewardType, amount } = req.body;
 
-        if (!rewardType) {
-            return res.status(400).json({ error: 'Ödül türü gereklidir' });
+        if (!rewardType && !amount) {
+            return res.status(400).json({ error: 'Ödül türü veya miktarı gereklidir' });
         }
 
-        const reward = REWARDS[rewardType] || { xp: amount || 0, flame: 0 };
+        const reward = REWARDS[rewardType] || { xp: parseInt(amount) || 0, flame: 0 };
         
         const allStats = await getKVData('user-stats') || {};
         const userStats = allStats[userId] || {
@@ -118,7 +124,7 @@ async function addReward(req, res) {
 
         // Add to history
         userStats.history.push({
-            type: rewardType,
+            type: rewardType || 'custom',
             xp: reward.xp,
             flame: reward.flame,
             timestamp: new Date().toISOString()
@@ -128,6 +134,9 @@ async function addReward(req, res) {
         if (userStats.history.length > 100) {
             userStats.history = userStats.history.slice(-100);
         }
+
+        // Add total_xp for dashboard compatibility
+        userStats.total_xp = userStats.xp;
 
         allStats[userId] = userStats;
         await setKVData('user-stats', allStats);
