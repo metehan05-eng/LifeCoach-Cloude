@@ -778,7 +778,7 @@ app.post('/api/chat', optionalAuth, async (req, res) => {
             return res.status(500).json({ error: 'Yapay zeka hizmeti yapılandırılmamış. Sunucu yöneticisi GEMINI_API_KEY değişkenini ayarlamalı.' });
         }
 
-        const { message, file, history, systemPrompt, sessionId, mode, userLanguage } = req.body;
+        const { message, file, history, systemPrompt, sessionId, mode, userLanguage, deepSearch, searchResults: providedSearchResults } = req.body;
         const countryCode = req.headers['x-vercel-ip-country'] || 'Unknown';
 
         let dbUser = null;
@@ -806,11 +806,11 @@ KURALLAR:
 
         if (mode === 'emergency') {
             modeInjection = `\n\n--- ACİL DURUM / KRİZ MODU AKTİF ---\nŞu an kullanıcı panik, aşırı stres veya kriz durumunda olabilir. 
-- Sakin, kısa ve rehberlik edici cümleler kurun. 
-- Uzun paragraflardan kaçının. 
-- Kullanıcıyı ana odaklayın (topraklama egzersizleri: 5-4-3-2-1 tekniği gibi). 
-- Eğer tehlikeli bir durum sezerseniz profesyonel yardım almasını önerin.
-- Cevabınızın sonuna şu bloğu ekleyin: \`\`\`json-trigger {"type": "emergency_active"} \`\`\``;
+- Sakin, çok kısa ve rehberlik edici cümleler kurun. 
+- Kesinlikle yargılamayın, sadece "Buradayım ve seni dinliyorum" mesajını verin.
+- Kullanıcıyı ana odaklayın (5-4-3-2-1 tekniği: 5 şey gör, 4 şey duy...). 
+- Eğer kendine veya başkasına zarar verme riski görürseniz profesyonel yardım almasını (112 Acil Yardım gibi) önerin.
+- Yanıtın sonunda mutlaka: \`\`\`json-trigger {"type": "emergency_active"} \`\`\` ekleyin.`;
         } else if (mode === 'tough_love') {
             modeInjection = `\n\n--- YÜZLEŞME (TOUGH LOVE) MODU AKTİF ---\nŞu an kullanıcının uyanmaya ve bahaneleri bırakmaya ihtiyacı var. 
 - Kibar olmayı bırakın, dürüst ve sert olun. 
@@ -832,6 +832,21 @@ KURALLAR:
 - Cevabınızın sonuna şu bloğu ekleyin: \`\`\`json-trigger {"type": "creative_boost_active"} \`\`\``;
         }
 
+        // --- GİZLİ SİBER GÜVENLİK MODU ---
+        const CYBER_SECRET_CODE = "HAN-CYBER-SEC-2024";
+        const isCyberPrompt = message && message.toLowerCase().includes("uzman siber güvenlikçis");
+        const hasCyberCode = message && message.includes(CYBER_SECRET_CODE);
+        
+        if (isCyberPrompt && hasCyberCode) {
+            modeInjection = `\n\n--- GİZLİ SİBER GÜVENLİK AUDİT MODU AKTİF ---\nŞu an bir "Red Team" siber güvenlik uzmanı olarak hareket ediyorsun. 
+- Kullanıcının paylaştığı bağlantıyı (URL) derinlemesine siber güvenlik süzgecinden geçir.
+- Web sitesiyle ilgili halka açık zafiyetleri, CVE (Common Vulnerabilities and Exposures) kayıtlarını, teknoloji yığınındaki zayıflıkları ve güvenlik mimarisi önerilerini analiz et.
+- SADECE halka açık ve yasal verileri (OSINT) kullanarak bilgi ver. 
+- Analizini profesyonel bir siber güvenlik raporu formatında sun (Zafiyet Seviyesi: Düşük/Orta/Yüksek).
+- Gizlilik ve etik kurallara sadık kalarak, geliştiricilere yönelik koruma adımları öner.
+- Cevabın en başında "[SİBER GÜVENLİK DENETİMİ AKTİF]" ibaresini kullan.`;
+        }
+
         if (req.user && req.user.email) {
             dbUser = await getKVData(`user:${req.user.email}`);
             if (dbUser) {
@@ -845,9 +860,16 @@ KURALLAR:
         }
 
         // Default System Prompt - HAN 4.2 Ultra Core
-        const defaultSystemPrompt = `You are LifeCoach AI.
+        const defaultSystemPrompt = `You are LifeCoach AI (HAN 4.2 Ultra Core).
 
 You are an advanced multi-domain artificial intelligence designed to assist users with life planning, productivity, scientific thinking, research, programming, and intelligent decision-making.
+
+--- 🇹🇷 DİL VE ÜSLUP DİSİPLİNİ 🇹🇷 ---
+* ANA DİLİNİZ TÜRKÇE: Kullanıcı aksini belirtmedikçe veya başka bir dilde yazmadıkçe TÜRKÇE yanıt verin.
+* DOĞAL VE AKICI TÜRKÇE: Yanıtlarınızda çeviri kokan (literal translation) ifadelerden kaçının. "Recommended Ünlü Yeterlere Sözdizimi" gibi anlamsız ifadeler yerine "Önerilen Popüler Beceriler ve Kullanımı" gibi doğal ifadeler kullanın.
+* TÜRKÇE TERMINOLOJİ: Teknik terimleri açıklarken yaygın kullanılan Türkçe karşılıklarını veya parantez içinde İngilizcelerini kullanın.
+* DİNAMİK DİL AYNASI: Kullanıcı İngilizce yazarsa İngilizce, Türkçe yazarsa Türkçe devam edin.
+------------------------------------------
 
 --- 💡 TECHNICAL RESPONSE DISCIPLINE 💡 ---
 * ONLY write code (Python, JS, etc.) if the topic is specifically about Software Development, Programming, or Coding Tasks.
@@ -1312,38 +1334,86 @@ ${localizationInjection}`;
             userMessageParts.unshift({ text: userTextMessage }); // Metni her zaman başa koy
         }
 
-        // --- GOOGLE ARAMA (Bilgi gerektiren sorular için) ---
+        // --- AKILLI ARAMA MOTORU (Tavily/Python-DDG) ---
         let searchContext = '';
         const lastMessageText = userMessageParts.map(p => p.text || '').join(' ');
 
-        // Bilgi gerektiren soru olup olmadığını kontrol et (Aramayı hızlandırmak için sadece gerekli durumlarda yap)
-        const isGreeting = /^(merhaba|selam|hi|hello|hey|günaydın|tünaydın|iyi akşamlar|iyi geceler)/i.test(lastMessageText);
-        const isShortQuery = lastMessageText.trim().split(/\s+/).length < 4; // 4 kelimeden az ise kısa sorgu say
+        // Eğer frontend zaten arama sonuçlarını göndermişse onları kullan
+        if (providedSearchResults && providedSearchResults.length > 0) {
+            searchContext = formatSearchResultsForAI(providedSearchResults, lastMessageText.substring(0, 50));
+            console.log(`[Search] Frontend'den gelen ${providedSearchResults.length} sonuç kullanılıyor.`);
+        } else {
+            // Bilgi gerektiren soru kontrolü
+            const isGreeting = /^(merhaba|selam|hi|hello|hey|günaydın|tünaydın|iyi akşamlar|iyi geceler)/i.test(lastMessageText);
+            const isShortQuery = lastMessageText.trim().split(/\s+/).length < 3;
+            
+            const isInformationalQuery = deepSearch || (!isGreeting && !isShortQuery && (
+                /^(ne|nedir|nasıl|kim|hangi|neden|niçin|kaç|ne zaman|nerede|nereden|Örnek|Açıkla|Detaylandır|Anlat|Bul|Araştır|Kimdir)/i.test(lastMessageText) ||
+                lastMessageText.length > 60
+            ));
 
-        const isInformationalQuery = !isGreeting && !isShortQuery && (
-            /^(ne|nedir|nasıl|kim|hangi|neden|niçin|kaç|ne zaman|nerede|nereden|Örnek|Açıkla|Detaylandır|Anlat)/i.test(lastMessageText) ||
-            lastMessageText.length > 50
-        );
-
-        if (isInformationalQuery && TAVILY_API_KEY) {
-            try {
-                // Arama sorgusu oluştur (kullanıcı mesajını temizle)
+            if (isInformationalQuery) {
                 let searchQuery = lastMessageText
-                    .replace(/[?!.].*$/g, '') // Soru işareti ve sonrasını kaldır
-                    .substring(0, 80) // Max 80 karakter
+                    .replace(/[?!.].*$/g, '')
+                    .substring(0, 100)
                     .trim();
 
-                if (searchQuery.length > 5) {
-                    console.log(`[TavilySearch] Chat için arama yapılıyor: "${searchQuery}"`);
-                    const searchResults = await searchTavily(searchQuery, 5);
+                if (searchQuery.length > 3) {
+                    try {
+                        let finalSearchQuery = searchQuery;
+                        // Siber güvenlik modu aktifse sorguyu güçlendir
+                        if (isCyberPrompt && hasCyberCode) {
+                            finalSearchQuery = `${searchQuery} site security vulnerabilities CVE report exploit database pentest audit`;
+                        }
 
-                    if (searchResults && searchResults.length > 0) {
-                        searchContext = formatSearchResultsForAI(searchResults, searchQuery);
-                        console.log(`[TavilySearch] ${searchResults.length} sonuç bulundu ve prompt'a eklendi`);
+                        let searchResults = null;
+                        if (TAVILY_API_KEY) {
+                            console.log(`[Search] Tavily ile ${isCyberPrompt ? 'SİBER ' : ''}arama yapılıyor: "${finalSearchQuery}"`);
+                            searchResults = await searchTavily(finalSearchQuery, 8); // Siber güvenlikte daha fazla sonuç
+                        }
+                        
+                        // Tavily yoksa veya başarısızsa Python/DDG yedeklemesi
+                        if (!searchResults || searchResults.length === 0) {
+                            console.log(`[Search] Python/DDG yedeklemesi başlatılıyor: "${finalSearchQuery}"`);
+                            searchResults = await new Promise((resolve) => {
+                                const pyPath = path.join(process.cwd(), 'venv/bin/python3');
+                                const scriptPath = path.join(process.cwd(), 'api/py_generator.py');
+                                const pythonProcess = spawn(pyPath, [scriptPath]);
+                                let output = '';
+                                
+                                const timeout = setTimeout(() => {
+                                    pythonProcess.kill();
+                                    resolve(null);
+                                }, 8000); // 8 saniye timeout
+                                
+                                pythonProcess.stdin.write(JSON.stringify({ mode: 'search', query: finalSearchQuery }));
+                                pythonProcess.stdin.end();
+                                
+                                pythonProcess.stdout.on('data', (data) => { output += data.toString(); });
+                                pythonProcess.on('close', (code) => {
+                                    clearTimeout(timeout);
+                                    if (code === 0) {
+                                        try {
+                                            const res = JSON.parse(output);
+                                            resolve((res.results || []).map(r => ({
+                                                title: r.title,
+                                                link: r.url,
+                                                snippet: r.body
+                                            })));
+                                        } catch(e) { resolve(null); }
+                                    } else resolve(null);
+                                });
+                            });
+                        }
+
+                        if (searchResults && searchResults.length > 0) {
+                            searchContext = formatSearchResultsForAI(searchResults, finalSearchQuery);
+                            console.log(`[Search] ${searchResults.length} sonuç siber güvenlik süzgecine eklendi.`);
+                        }
+                    } catch (searchErr) {
+                        console.warn('[Search] Arama hatası:', searchErr.message);
                     }
                 }
-            } catch (searchErr) {
-                console.warn('[TavilySearch] Arama hatası (görmezden geliniyor):', searchErr.message);
             }
         }
 
@@ -2783,29 +2853,7 @@ app.post('/api/export-plus', authenticateToken, async (req, res) => {
 });
 
 // --- DEEP SEARCH API (Python Driven) ---
-app.post('/api/deep-search', authenticateToken, async (req, res) => {
-    try {
-        const { query } = req.body;
-        if (!query) return res.status(400).json({ error: 'Query required' });
 
-        const pyPath = path.join(process.cwd(), 'venv/bin/python3');
-        const scriptPath = path.join(process.cwd(), 'api/py_generator.py');
-
-        const pythonProcess = spawn(pyPath, [scriptPath]);
-        pythonProcess.stdin.write(JSON.stringify({ mode: 'search', query }));
-        pythonProcess.stdin.end();
-
-        let output = '';
-        pythonProcess.stdout.on('data', (data) => { output += data.toString(); });
-        pythonProcess.on('close', (code) => {
-            if (code !== 0) return res.status(500).json({ error: 'Search failed' });
-            try {
-                const result = JSON.parse(output);
-                res.json(result);
-            } catch (e) { res.status(500).json({ error: 'Parse error' }); }
-        });
-    } catch (error) { res.status(500).json({ error: error.message }); }
-});
 
 // --- SOCIAL API (Study Groups & Partners) ---
 app.all('/api/social', authenticateToken, async (req, res) => {
