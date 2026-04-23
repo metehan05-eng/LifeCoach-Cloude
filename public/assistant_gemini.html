@@ -9,6 +9,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
+    <!-- Highlight.js for beautiful code -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/tokyo-night-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <style>
         *, *::before, *::after {
             margin: 0; padding: 0;
@@ -137,6 +140,14 @@
                 radial-gradient(ellipse 60% 50% at 85% 70%, rgba(168, 85, 247, 0.13) 0%, transparent 55%),
                 radial-gradient(ellipse 50% 45% at 50% 98%, rgba(236, 72, 153, 0.09) 0%, transparent 50%),
                 #050008;
+        }
+        .bg-canvas::after {
+            content: '';
+            position: fixed; inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            opacity: 0.035;
+            mix-blend-mode: overlay;
+            pointer-events: none;
         }
 
         .orb {
@@ -493,12 +504,18 @@
             box-shadow: 0 0 12px rgba(168, 85, 247, 0.4);
         }
         .typing-dots {
-            display: flex; gap: 5px; align-items: center;
-            padding: 10px 14px;
-            background: rgba(13, 11, 26, 0.75);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            backdrop-filter: blur(10px);
+            display: flex; gap: 8px; align-items: center;
+            padding: 10px 16px;
+            background: rgba(13, 11, 26, 0.85);
+            border: 1px solid rgba(168, 85, 247, 0.25);
+            border-radius: 18px;
+            backdrop-filter: blur(14px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        .typing-text {
+            display: none; /* Initially hidden */
+            font-size: 12px; color: var(--ink-mid);
+            margin-left: 8px; font-weight: 500;
         }
         .typing-dots span {
             width: 6px; height: 6px;
@@ -955,6 +972,7 @@
             <div class="typing-avatar">🌌</div>
             <div class="typing-dots">
                 <span></span><span></span><span></span>
+                <span class="typing-text" id="typingText" style="display:inline-block;">Düşünüyor...</span>
             </div>
         </div>
     </main>
@@ -1099,8 +1117,13 @@
 
     function cleanText(text) {
         if (!text) return '';
-        // JSON-action bloklarını temizle (Kullanıcı bunları görmesin)
-        return text.replace(/```json-action\n?[\s\S]*?\n?```/g, '').trim();
+        // Tüm JSON bloklarını temizle (Action, Memory, Trigger)
+        return text
+            .replace(/```json-action\n?[\s\S]*?\n?```/g, '')
+            .replace(/```json-memory\n?[\s\S]*?\n?```/g, '')
+            .replace(/```json-trigger\n?[\s\S]*?\n?```/g, '')
+            .replace(/```json-info\n?[\s\S]*?\n?```/g, '')
+            .trim();
     }
 
     function scrollBottom() {
@@ -1360,25 +1383,14 @@ Features: Formulas, Charts, Pivot Tables</div></div>
         // typing
         isTyping = true;
         typingWrap.classList.add('active');
+        const typingLabel = document.getElementById('typingText');
+        if (typingLabel) {
+            typingLabel.textContent = deepSearch ? 'İnternette aranıyor...' : 'Analiz ediliyor...';
+        }
         scrollBottom();
 
-        // Deep Search aktifse önce arama yap
+        // Arama işlemi artık backend'e bırakıldı (Hız ve verimlilik için)
         let searchResults = null;
-        if (deepSearch) {
-            try {
-                const searchRes = await fetch('/api/deep-search', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ query: text, max_results: 5 })
-                });
-                if (searchRes.ok) {
-                    const data = await searchRes.json();
-                    searchResults = data.results || [];
-                }
-            } catch (e) {
-                console.error('Deep search error:', e);
-            }
-        }
 
         // Backend API çağrısı
         try {
@@ -1429,6 +1441,13 @@ Features: Formulas, Charts, Pivot Tables</div></div>
                 const reply = data.response || 'Üzgünüm, yanıt alınamadı.';
                 messages.push({ role: 'assistant', content: reply });
                 const currentMsgEl = renderMsg('assistant', reply);
+                
+                // Highlight code blocks if any
+                setTimeout(() => {
+                    currentMsgEl.querySelectorAll('pre code').forEach((el) => {
+                        hljs.highlightElement(el);
+                    });
+                }, 50);
                 
                 // Session ID'yi güncelle
                 if (data.sessionId) {
@@ -2226,15 +2245,22 @@ Features: Formulas, Charts, Pivot Tables</div></div>
             .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
             .replace(/\*(.*?)\*/g,'<em>$1</em>')
             .replace(/`([^`]+)`/g,'<code>$1</code>')
-            .replace(/```([\s\S]*?)```/g, (match, code) => `<pre><code>${escapeHtml(code)}</code></pre>`)
-            .replace(/^### (.+)$/gm,'<h4 style="color:var(--aqua);font-size:14px;margin:14px 0 6px;font-weight:600;">$1</h4>')
-            .replace(/^## (.+)$/gm,'<h3 style="color:var(--teal);font-size:15px;margin:16px 0 8px;font-weight:600;">$1</h3>')
-            .replace(/^# (.+)$/gm,'<h2 style="color:var(--teal);font-size:17px;margin:18px 0 10px;font-weight:600;">$1</h2>')
-            .replace(/^- (.+)$/gm,'<li>$1</li>')
-            .replace(/(<li>.*<\/li>\n?)+/g, m => `<ul style="margin:10px 0;padding-left:20px;">${m}</ul>`)
+            .replace(/```([\s\S]*?)```/g, (match, code) => `<pre style="position:relative;"><code class="hljs">${escapeHtml(code)}</code><button onclick="copyMsg(this, \`${escapeHtml(code)}\`)" style="position:absolute;top:5px;right:5px;background:rgba(255,255,255,0.1);border:none;border-radius:4px;color:white;padding:2px 5px;cursor:pointer;font-size:10px;">Copy</button></pre>`)
+            .replace(/^### (.+)$/gm,'<h4 style="color:var(--accent-bright);font-size:1.1em;margin:1.2em 0 0.5em;font-weight:700;">$1</h4>')
+            .replace(/^## (.+)$/gm,'<h3 style="color:var(--accent-bright);font-size:1.25em;margin:1.4em 0 0.6em;font-weight:700;border-bottom:1px solid var(--border);">$1</h3>')
+            .replace(/^# (.+)$/gm,'<h2 style="color:var(--accent-bright);font-size:1.5em;margin:1.6em 0 0.8em;font-weight:800;">$1</h2>')
+            .replace(/^- (.+)$/gm,'<li style="margin-bottom:6px;">$1</li>')
+            .replace(/(<li>.*<\/li>\n?)+/g, m => `<ul style="margin:12px 0;padding-left:22px;list-style-type:circle;">${m}</ul>`)
+            .replace(/\|(.+)\|/g, (match) => {
+                // Basit tablo desteği
+                const cells = match.split('|').filter(c => c.trim() !== '');
+                if (cells.length === 0) return match;
+                return `<tr style="border-bottom:1px solid var(--border);">${cells.map(c => `<td style="padding:8px;border:1px solid var(--border);">${c.trim()}</td>`).join('')}</tr>`;
+            })
+            .replace(/(<tr.*<\/tr>\n?)+/g, m => `<table style="width:100%;border-collapse:collapse;margin:15px 0;background:rgba(255,255,255,0.02);border-radius:8px;overflow:hidden;font-size:14px;">${m}</table>`)
             .replace(/\n\n/g,'</p><p>')
             .replace(/\n/g,'<br>')
-            .replace(/^(?!<)(.+)$/gm, m => `<p style="margin-bottom:10px;">${m}</p>`)
+            .replace(/^(?!<)(.+)$/gm, m => `<p style="margin-bottom:12px;">${m}</p>`)
             .replace(/<p><\/p>/g,'')
             .replace(/<p>/, '')
             .replace(/<\/p>$/, '');
