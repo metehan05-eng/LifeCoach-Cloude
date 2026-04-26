@@ -11,9 +11,11 @@
             box-sizing: border-box;
         }
 
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%);
+            font-family: 'Nunito', sans-serif;
+            background: #131f24;
             color: #fff;
             min-height: 100vh;
             display: flex;
@@ -24,11 +26,13 @@
         }
 
         body.match-won {
-            background: linear-gradient(135deg, #4ece47 0%, #2d7a1a 100%);
+            background: #131f24;
+            box-shadow: inset 0 0 100px rgba(88, 204, 2, 0.2);
         }
 
         body.match-lost {
-            background: linear-gradient(135deg, #ff6b6b 0%, #8b0000 100%);
+            background: #131f24;
+            box-shadow: inset 0 0 100px rgba(234, 43, 43, 0.2);
         }
 
         .container {
@@ -290,34 +294,41 @@
         button {
             padding: 15px 30px;
             border: none;
-            border-radius: 8px;
+            border-radius: 16px;
             font-size: 1rem;
-            font-weight: 700;
+            font-weight: 800;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.15s ease;
             text-transform: uppercase;
             letter-spacing: 1px;
+            font-family: 'Nunito', sans-serif;
+        }
+
+        button:active {
+            transform: translateY(4px);
+            margin-top: 4px;
+            margin-bottom: -4px;
         }
 
         .btn-complete {
-            background: linear-gradient(135deg, #4ece47, #2d7a1a);
+            background: #58cc02;
+            border-bottom: 4px solid #58a700;
             color: white;
         }
 
-        .btn-complete:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(76, 206, 71, 0.4);
+        .btn-complete:active {
+            border-bottom-width: 0px;
         }
 
         .btn-quit {
-            background: rgba(255, 107, 107, 0.2);
-            border: 2px solid rgba(255, 107, 107, 0.6);
-            color: #ff6b6b;
+            background: rgba(255, 75, 75, 0.1);
+            border: 2px solid rgba(255, 75, 75, 0.5);
+            border-bottom: 4px solid rgba(255, 75, 75, 0.5);
+            color: #ff4b4b;
         }
 
-        .btn-quit:hover {
-            background: rgba(255, 107, 107, 0.3);
-            transform: translateY(-2px);
+        .btn-quit:active {
+            border-bottom-width: 2px;
         }
 
         /* Win/Loss Overlay */

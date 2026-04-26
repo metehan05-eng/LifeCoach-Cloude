@@ -9,7 +9,7 @@
     <title>Giriş — LifeCoach AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/svg+xml" href="/lifecoach_ai_logo.svg">
     <link rel="apple-touch-icon" href="/lifecoach_ai_logo.svg">
     <link rel="manifest" href="/manifest.json">
@@ -107,8 +107,8 @@
     <style>
         * { box-sizing: border-box; }
         body {
-            font-family: 'Inter', sans-serif;
-            background: #050008;
+            font-family: 'Nunito', sans-serif;
+            background: #131f24;
             min-height: 100dvh;
             display: flex;
             align-items: center;
@@ -281,38 +281,25 @@
         /* Submit button */
         .btn-submit {
             width: 100%;
-            background: linear-gradient(135deg, #4F46E5, #A855F7);
-            border: 1px solid rgba(168, 85, 247, 0.35);
-            border-radius: 14px;
+            background: #58cc02;
+            border-bottom: 4px solid #58a700;
+            border-radius: 16px;
             color: white;
             padding: 13px 20px;
             font-size: 0.9rem;
-            font-weight: 600;
-            font-family: 'Inter', sans-serif;
+            font-weight: 800;
+            font-family: 'Nunito', sans-serif;
+            text-transform: uppercase;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 4px 25px rgba(79, 70, 229, 0.45);
+            transition: all 0.15s;
             margin-top: 8px;
         }
 
-        .btn-submit::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, rgba(255,255,255,0.14), transparent);
-            opacity: 0;
-            transition: opacity 0.3s;
+        .btn-submit:active {
+            border-bottom-width: 0px;
+            transform: translateY(4px);
+            margin-top: 12px;
         }
-
-        .btn-submit:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 35px rgba(168, 85, 247, 0.6), 0 0 0 1px rgba(192, 132, 252, 0.35);
-        }
-
-        .btn-submit:hover::before { opacity: 1; }
-        .btn-submit:active { transform: translateY(0); }
 
         .btn-submit.loading {
             pointer-events: none;

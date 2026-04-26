@@ -7,20 +7,20 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            --discord-dark: #313338;
-            --discord-sidebar: #2b2d31;
-            --discord-servers: #1e1f22;
-            --discord-accent: #5865f2;
-            --discord-text: #dbdee1;
-            --discord-muted: #949ba4;
+            --discord-dark: #131f24;
+            --discord-sidebar: #202f36;
+            --discord-servers: #18252a;
+            --discord-accent: #58cc02;
+            --discord-text: #ffffff;
+            --discord-muted: #afafaf;
         }
 
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Nunito', sans-serif;
             background-color: var(--discord-dark);
             color: var(--discord-text);
             overflow: hidden;
@@ -126,7 +126,7 @@
     </aside>
 
     <!-- 2. CHANNELS SIDEBAR -->
-    <aside class="w-64 bg-[var(--discord-sidebar)] flex flex-col h-full border-r border-[#1e1f22]">
+    <aside id="mobile-sidebar" class="w-64 bg-[var(--discord-sidebar)] flex flex-col h-full border-r border-[#1e1f22] absolute md:relative z-50 transition-transform duration-300 -translate-x-full md:translate-x-0">
         <!-- Server Header -->
         <div class="relative group">
             <div onclick="toggleServerMenu()" class="h-12 px-4 flex items-center justify-between border-b border-[#1e1f22] shadow-sm cursor-pointer hover:bg-white/5 transition-colors">
@@ -205,6 +205,9 @@
         <!-- Chat Header -->
         <header class="h-12 px-4 flex items-center justify-between border-b border-[#1e1f22] shadow-sm">
             <div class="flex items-center gap-2">
+                <button class="md:hidden text-slate-400 hover:text-white mr-2" onclick="document.getElementById('mobile-sidebar').classList.toggle('-translate-x-full')">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
                 <i class="fa-solid fa-hashtag text-[var(--discord-muted)] text-xl"></i>
                 <h2 id="current-channel-display" class="font-bold text-sm">genel</h2>
                 <div class="h-6 w-[1px] bg-white/10 mx-2"></div>
