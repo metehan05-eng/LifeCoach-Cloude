@@ -4360,6 +4360,86 @@ app.post('/api/avatar/generate', authenticateToken, async (req, res) => {
     }
 });
 
+// === WAFFLE (Görsel Üretim) ENDPOINTLERİ ===
+app.post('/api/waffle', authenticateToken, async (req, res) => {
+    try {
+        const { prompt, style, imageUrl, action } = req.body;
+        const userId = req.user.id;
+        const FLAME_COST = 10;
+        
+        if (!prompt) return res.status(400).json({ error: 'Görsel açıklama (prompt) gereklidir' });
+        
+        if (action === 'enhancePrompt') {
+            try {
+                const systemPrompt = `You are a world-class prompt engineer for AI image generators (like Midjourney, DALL-E).`;
+                const userPrompt = `Translate the following idea into a highly detailed, comma-separated English prompt for an image generator. 
+Make sure you STRICTLY follow the user's concepts (e.g. if they say a car in a forest, do NOT put it in a city).
+Enhance it with descriptive keywords for lighting, atmosphere, and high quality (e.g., 8k, masterpiece, highly detailed, photorealistic).
+Do not output any introductory or concluding text, JUST the English prompt.
+
+User idea: "${prompt}"`;
+                
+                const enhancedPrompt = await generateAIResponse(userPrompt, [], systemPrompt);
+                return res.status(200).json({ enhancedPrompt: enhancedPrompt.trim() });
+            } catch (e) {
+                console.error('Enhance prompt error:', e);
+                return res.status(200).json({ enhancedPrompt: prompt + ", visually stunning, 8k resolution, masterpiece, highly detailed" });
+            }
+        }
+        
+        // Use consistent per-user stats key
+        const userStats = await getKVData(`user_stats:${userId}`) || { userId, xp: 0, flameLevel: 0, level: 1, history: [] };
+        
+        if (action !== 'saveOnly') {
+            if (userStats.flameLevel < FLAME_COST) {
+                return res.status(400).json({ error: `Yeterli alev seviyesi yok. Gerekli: ${FLAME_COST}`, requiredFlame: FLAME_COST, currentFlame: userStats.flameLevel });
+            }
+            userStats.flameLevel -= FLAME_COST;
+            userStats.history.push({ type: 'waffle_ai_image', xp: 0, flame: -FLAME_COST, timestamp: new Date().toISOString(), details: { prompt, style } });
+            if (userStats.history.length > 100) userStats.history = userStats.history.slice(-100);
+            await setKVData(`user_stats:${userId}`, userStats);
+        }
+        
+        // Use consistent per-user waffle generations key
+        const userWaffles = await getKVData(`waffle_generations:${userId}`) || [];
+        
+        const waffleRecord = {
+            id: Date.now().toString(),
+            prompt,
+            style: style || 'realistic',
+            flameCost: FLAME_COST,
+            createdAt: new Date().toISOString(),
+            imageUrl: imageUrl || null,
+            status: imageUrl ? 'completed' : 'pending'
+        };
+        
+        userWaffles.push(waffleRecord);
+        await setKVData(`waffle_generations:${userId}`, userWaffles);
+        
+        return res.status(200).json({ message: 'Başarılı', record: waffleRecord, remainingFlame: userStats.flameLevel, stats: userStats });
+    } catch (err) {
+        console.error('Waffle POST error:', err);
+        return res.status(500).json({ error: 'İşlem başarısız oldu' });
+    }
+});
+
+app.get('/api/waffle', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const userWaffles = await getKVData(`waffle_generations:${userId}`) || [];
+        // Ensure it's an array (local storage fallback might return {} if key doesn't exist)
+        const waffleList = Array.isArray(userWaffles) ? userWaffles : [];
+        
+        return res.status(200).json({
+            generations: waffleList.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
+            totalGenerated: waffleList.length
+        });
+    } catch (error) {
+        console.error('Waffle GET error:', error);
+        return res.status(500).json({ error: 'Kayıtlar yüklenemedi' });
+    }
+});
+
 // === VARSAYILAN ROTA (Catch-all) ===
 // Diğer rotalarla eşleşmezse ana uygulama sayfasını sunar.
 app.get('*', (req, res) => {
