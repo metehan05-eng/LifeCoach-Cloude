@@ -798,6 +798,22 @@ const WaffleService = {
         }
     },
 
+    async enhancePrompt(prompt) {
+        try {
+            const res = await fetch('/api/waffle', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ prompt, action: 'enhancePrompt' })
+            });
+            if (!res.ok) throw new Error('Failed to enhance prompt');
+            const data = await res.json();
+            return data.enhancedPrompt || prompt;
+        } catch (error) {
+            console.error('WaffleService.enhancePrompt error:', error);
+            return prompt; // Fallback to raw Turkish prompt
+        }
+    },
+
     async saveGeneratedImage(prompt, imageUrl, style = 'realistic') {
         try {
             const res = await fetch('/api/waffle', {
