@@ -1,5 +1,6 @@
 import { getKVData, setKVData } from '../../lib/db.js';
 import jwt from 'jsonwebtoken';
+import { callGeminiWithFallback } from '../../lib/gemini-multi-api.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'gizli-anahtar-degistir';
 
@@ -36,6 +37,25 @@ export default async function handler(req, res) {
             
             if (!prompt) {
                 return res.status(400).json({ error: 'Görseşel açıklama (prompt) gereklidir' });
+            }
+            
+            if (action === 'enhancePrompt') {
+                try {
+                    const systemPrompt = `You are a world-class prompt engineer for AI image generators (like Midjourney, DALL-E).`;
+                    const userPrompt = `Translate the following idea into a highly detailed, comma-separated English prompt for an image generator. 
+Make sure you STRICTLY follow the user's concepts (e.g. if they say a car in a forest, do NOT put it in a city).
+Enhance it with descriptive keywords for lighting, atmosphere, and high quality (e.g., 8k, masterpiece, highly detailed, photorealistic).
+Do not output any introductory or concluding text, JUST the English prompt.
+
+User idea: "${prompt}"`;
+                    
+                    const enhancedPrompt = await callGeminiWithFallback(userPrompt, systemPrompt);
+                    return res.status(200).json({ enhancedPrompt: enhancedPrompt.trim() });
+                } catch (e) {
+                    console.error('Enhance prompt error:', e);
+                    // Fallback to basic translation if failed
+                    return res.status(200).json({ enhancedPrompt: prompt + ", visually stunning, 8k resolution, masterpiece, highly detailed" });
+                }
             }
             
             // Check user's flame level

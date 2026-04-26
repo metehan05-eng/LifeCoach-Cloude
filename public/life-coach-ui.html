@@ -11312,11 +11312,22 @@
                 statusSub.innerText = `${FLAME_COST} alev seviyesi harcandı. Isı ayarlanıyor, malzemeler karıştırılıyor...`;
 
                 try {
-                    const seed = Math.floor(Math.random() * 999999);
-                    const encodedPrompt = encodeURIComponent(prompt + ", visually stunning, 8k resolution, masterpiece, highly detailed, sharp focus");
-                    const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true&enhance=true&seed=${seed}`;
+                    // Phase 1: Refining Prompt (Gemini)
+                    let finalPrompt = prompt + ", visually stunning, 8k resolution, masterpiece, highly detailed, sharp focus";
+                    if (typeof WaffleService !== 'undefined' && WaffleService.enhancePrompt) {
+                        statusSub.innerText = "Yapay zeka (Gemini) tarifi inceliyor ve görsel sınırları çiziyor...";
+                        const enhanced = await WaffleService.enhancePrompt(prompt);
+                        if (enhanced) finalPrompt = enhanced;
+                    }
+                    
+                    statusSub.innerText = "Tarif onaylandı. Isı ayarlanıyor, malzemeler karıştırılıyor...";
 
-                    // Phase 1: Baking (2 seconds)
+                    const seed = Math.floor(Math.random() * 999999);
+                    // enhance=true is removed since Gemini is doing the strict enhancing now
+                    const encodedPrompt = encodeURIComponent(finalPrompt);
+                    const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true&seed=${seed}`;
+
+                    // Phase 2: Baking (2 seconds)
                     await new Promise(r => setTimeout(r, 2000));
 
                     // Phase 2: Finished Baking (Switch icons)
