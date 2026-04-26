@@ -32,7 +32,7 @@ export default async function handler(req, res) {
     
     if (req.method === 'POST') {
         try {
-            const { prompt, style } = req.body;
+            const { prompt, style, imageUrl, action } = req.body;
             
             if (!prompt) {
                 return res.status(400).json({ error: 'Görseşel açıklama (prompt) gereklidir' });
@@ -48,24 +48,28 @@ export default async function handler(req, res) {
                 history: []
             };
             
-            if (userStats.flameLevel < FLAME_COST) {
-                return res.status(400).json({ 
-                    error: `Yeterli alev seviyesi yok. Gerekli: ${FLAME_COST}, Mevcut: ${userStats.flameLevel}`,
-                    requiredFlame: FLAME_COST,
-                    currentFlame: userStats.flameLevel
-                });
+            if (action !== 'saveOnly') {
+                if (userStats.flameLevel < FLAME_COST) {
+                    return res.status(400).json({ 
+                        error: `Yeterli alev seviyesi yok. Gerekli: ${FLAME_COST}, Mevcut: ${userStats.flameLevel}`,
+                        requiredFlame: FLAME_COST,
+                        currentFlame: userStats.flameLevel
+                    });
+                }
+                
+                // Consume flame level
+                userStats.flameLevel -= FLAME_COST;
             }
             
-            // Consume flame level
-            userStats.flameLevel -= FLAME_COST;
-            
-            userStats.history.push({
-                type: 'waffle_ai_image',
-                xp: 0,
-                flame: -FLAME_COST,
-                timestamp: new Date().toISOString(),
-                details: { prompt, style }
-            });
+            if (action !== 'saveOnly') {
+                userStats.history.push({
+                    type: 'waffle_ai_image',
+                    xp: 0,
+                    flame: -FLAME_COST,
+                    timestamp: new Date().toISOString(),
+                    details: { prompt, style }
+                });
+            }
             
             if (userStats.history.length > 100) {
                 userStats.history = userStats.history.slice(-100);
@@ -84,10 +88,9 @@ export default async function handler(req, res) {
                 style: style || 'realistic',
                 flameCost: FLAME_COST,
                 createdAt: new Date().toISOString(),
-                // In a real implementation, you'd call an external API here (DALL-E, Stable Diffusion, etc.)
-                // For now, we're just recording the request
-                imageUrl: null, // Would be populated by actual API call
-                status: 'pending' // pending, completed, failed
+                // If imageUrl is provided from client (Pollinations), use it and mark completed
+                imageUrl: imageUrl || null,
+                status: imageUrl ? 'completed' : 'pending' // pending, completed, failed
             };
             
             userWaffles.push(waffleRecord);

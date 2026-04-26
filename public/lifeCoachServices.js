@@ -798,6 +798,24 @@ const WaffleService = {
         }
     },
 
+    async saveGeneratedImage(prompt, imageUrl, style = 'realistic') {
+        try {
+            const res = await fetch('/api/waffle', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ prompt, style, imageUrl, action: 'saveOnly' })
+            });
+            if (!res.ok) {
+                const error = await res.json();
+                throw new Error(error.error || 'Failed to save generated image');
+            }
+            return await res.json();
+        } catch (error) {
+            console.error('WaffleService.saveGeneratedImage error:', error);
+            throw error;
+        }
+    },
+
     async getGenerations() {
         try {
             const res = await fetch('/api/waffle', {

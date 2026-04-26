@@ -11353,6 +11353,15 @@
                     const history = JSON.parse(localStorage.getItem('waffle-history') || '[]');
                     history.unshift({ url: imageUrl, prompt, date: new Date().toISOString() });
                     localStorage.setItem('waffle-history', JSON.stringify(history.slice(0, 30)));
+                    
+                    // Sync to backend for cross-device visibility
+                    if (typeof WaffleService !== 'undefined') {
+                        WaffleService.saveGeneratedImage(prompt, imageUrl).catch(e => console.error('Failed to sync waffle:', e));
+                    }
+                    
+                    // Hide empty state if present
+                    const emptyState = document.getElementById('waffle-empty-state');
+                    if (emptyState) emptyState.classList.add('hidden');
 
                     showToast('🧇 Mis gibi Waffle hazır! Afiyet olsun.');
                     if (typeof addXP !== 'undefined') addXP(15, 'Görsel üretildi');
@@ -11364,10 +11373,43 @@
                 }
             }
 
-            function loadWaffleHistory() {
-                const history = JSON.parse(localStorage.getItem('waffle-history') || '[]');
+            async function loadWaffleHistory() {
                 const galleryEl = document.getElementById('waffle-gallery');
-                if (!galleryEl || history.length === 0) return;
+                const emptyState = document.getElementById('waffle-empty-state');
+                if (!galleryEl) return;
+                
+                let history = JSON.parse(localStorage.getItem('waffle-history') || '[]');
+                
+                try {
+                    // Fetch cross-device history from server
+                    if (typeof WaffleService !== 'undefined') {
+                        const serverData = await WaffleService.getGenerations();
+                        if (serverData && serverData.generations) {
+                            serverData.generations.forEach(sg => {
+                                if (sg.imageUrl && !history.find(h => h.url === sg.imageUrl)) {
+                                    history.push({
+                                        url: sg.imageUrl,
+                                        prompt: sg.prompt,
+                                        date: sg.createdAt
+                                    });
+                                }
+                            });
+                            // Sort by date descending
+                            history.sort((a,b) => new Date(b.date) - new Date(a.date));
+                            localStorage.setItem('waffle-history', JSON.stringify(history.slice(0, 30)));
+                        }
+                    }
+                } catch(e) {
+                    console.error("Could not sync waffle history from server", e);
+                }
+
+                if (history.length === 0) {
+                    if (emptyState) emptyState.classList.remove('hidden');
+                    galleryEl.innerHTML = '';
+                    return;
+                }
+                
+                if (emptyState) emptyState.classList.add('hidden');
 
                 galleryEl.innerHTML = history.map(item => `
                     <div class="relative group rounded-3xl overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.5)] border border-orange-500/20 transform transition duration-500 hover:scale-[1.02]">
