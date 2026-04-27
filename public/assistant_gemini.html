@@ -857,6 +857,16 @@
                 font-size: 12px;
             }
         }
+        .typing-cursor {
+            display: inline-block;
+            width: 2px;
+            height: 1em;
+            background: var(--teal);
+            margin-left: 2px;
+            animation: blink 0.8s infinite;
+            vertical-align: middle;
+        }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
     </style>
 </head>
 <body>
@@ -1144,7 +1154,7 @@
     }
 
     // ── Render message ───────────────────────────────
-    function renderMsg(role, text, id) {
+    async function renderMsg(role, text, id, animate = false) {
         const div = document.createElement('div');
         div.className = `msg ${role}`;
         div.dataset.id = id || Date.now();
@@ -1159,14 +1169,15 @@
                     <div class="user-bubble">${escapeHtml(text)}</div>
                     <div class="msg-time">${timeStr}</div>
                 </div>`;
+            msgWrap.appendChild(div);
         } else {
             const cleaned = cleanText(text);
             div.innerHTML = `
                 <div class="msg-avatar">${avatar}</div>
                 <div class="msg-body">
                     <div class="msg-sender">LifeCoach AI</div>
-                    <div class="msg-text" id="msg-text-${div.dataset.id}">${formatMarkdown(text)}</div>
-                    <div class="msg-actions">
+                    <div class="msg-text" id="msg-text-${div.dataset.id}"></div>
+                    <div class="msg-actions" style="opacity: 0; pointer-events: none; transition: opacity 0.3s;">
                         <button class="msg-act-btn" title="Kopyala" onclick="copyMsg(this, \`${escapeHtml(cleaned)}\`)">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                         </button>
@@ -1179,9 +1190,30 @@
                     </div>
                     <div class="msg-time">${timeStr}</div>
                 </div>`;
+            msgWrap.appendChild(div);
+            
+            const textEl = div.querySelector('.msg-text');
+            const actionsEl = div.querySelector('.msg-actions');
+            
+            if (animate) {
+                const words = cleaned.split(' ');
+                let currentText = '';
+                for (let i = 0; i < words.length; i++) {
+                    currentText += words[i] + ' ';
+                    textEl.innerHTML = formatMarkdown(currentText) + '<span class="typing-cursor"></span>';
+                    if (i % 3 === 0) scrollBottom();
+                    await new Promise(r => setTimeout(r, 20 + Math.random() * 30));
+                }
+                textEl.innerHTML = formatMarkdown(cleaned);
+                actionsEl.style.opacity = '1';
+                actionsEl.style.pointerEvents = 'auto';
+            } else {
+                textEl.innerHTML = formatMarkdown(text);
+                actionsEl.style.opacity = '1';
+                actionsEl.style.pointerEvents = 'auto';
+            }
         }
 
-        msgWrap.appendChild(div);
         scrollBottom();
         return div;
     }
@@ -1437,7 +1469,7 @@ Features: Formulas, Charts, Pivot Tables</div></div>
             } else {
                 const reply = data.response || 'Üzgünüm, yanıt alınamadı.';
                 messages.push({ role: 'assistant', content: reply });
-                const currentMsgEl = renderMsg('assistant', reply);
+                const currentMsgEl = await renderMsg('assistant', reply, null, true);
                 
                 // Highlight code blocks if any
                 setTimeout(() => {
