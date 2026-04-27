@@ -3304,7 +3304,54 @@
                     <div id="react-system-priority-root" class="mb-6"></div>
 
                     <!-- React Dashboard Stats Root -->
-                    <div id="react-dashboard-stats-root" class="mb-8"></div>
+                    <div id="react-dashboard-stats-root" class="mb-6"></div>
+
+                    <!-- RPG Skill Trees (Yetenek Ağacı) -->
+                    <div class="mb-8 bg-slate-900/50 border border-white/5 rounded-3xl p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-tree text-emerald-400"></i> Yetenek Ağacı
+                            </h3>
+                            <div class="text-xs text-slate-400">Sınıf: <span class="text-amber-400 font-bold">Teknoloji Büyücüsü</span></div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <!-- Skill 1 -->
+                            <div class="group">
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span class="text-teal-400 font-bold"><i class="fa-solid fa-brain mr-1"></i> Zeka (Yazılım & Odak)</span>
+                                    <span class="text-slate-400 text-xs">Seviye 12 (60%)</span>
+                                </div>
+                                <div class="h-3 w-full bg-slate-800 rounded-full overflow-hidden">
+                                    <div class="h-full bg-gradient-to-r from-teal-500 to-cyan-400 w-[60%] relative group-hover:brightness-110 transition-all">
+                                        <div class="absolute inset-0 bg-white/20 w-1/2 skew-x-[-20deg] animate-[shine_2s_infinite]"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Skill 2 -->
+                            <div class="group">
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span class="text-emerald-400 font-bold"><i class="fa-solid fa-dumbbell mr-1"></i> Fiziksel Güç (Spor & Sağlık)</span>
+                                    <span class="text-slate-400 text-xs">Seviye 5 (30%)</span>
+                                </div>
+                                <div class="h-3 w-full bg-slate-800 rounded-full overflow-hidden">
+                                    <div class="h-full bg-gradient-to-r from-emerald-500 to-green-400 w-[30%] relative group-hover:brightness-110 transition-all"></div>
+                                </div>
+                            </div>
+
+                            <!-- Skill 3 -->
+                            <div class="group">
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span class="text-purple-400 font-bold"><i class="fa-solid fa-users mr-1"></i> Karizma (İletişim & Sosyal)</span>
+                                    <span class="text-slate-400 text-xs">Seviye 3 (85%)</span>
+                                </div>
+                                <div class="h-3 w-full bg-slate-800 rounded-full overflow-hidden">
+                                    <div class="h-full bg-gradient-to-r from-purple-500 to-pink-400 w-[85%] relative group-hover:brightness-110 transition-all"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     <!-- Quick Actions -->
                     <div class="grid md:grid-cols-3 gap-4">
@@ -3368,7 +3415,83 @@
 
             <!-- AI Arena Section -->
             <div id="section-arena" class="section-content hidden flex-col">
-                <div id="react-arena-root" style="width: 100%;"></div>
+                <div class="max-w-5xl mx-auto w-full">
+                    <div class="text-center mb-10">
+                        <h2 class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-400 font-display mb-2 drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]">AI ARENA ⚔️</h2>
+                        <p class="text-slate-400 text-sm">Arkadaşlarına meydan oku, sıralamada yüksel ve marketten güçlendirmeler al!</p>
+                    </div>
+
+                    <div class="grid md:grid-cols-3 gap-6">
+                        <!-- Leaderboard -->
+                        <div class="md:col-span-2 bg-slate-900/50 border border-white/5 rounded-3xl p-6 relative overflow-hidden">
+                            <div class="absolute top-0 right-0 w-64 h-64 bg-red-500/10 rounded-full blur-[80px] pointer-events-none"></div>
+                            <h3 class="text-xl font-bold text-white mb-6 flex items-center gap-2"><i class="fa-solid fa-trophy text-yellow-400"></i> Global Sıralama</h3>
+                            
+                            <div class="space-y-3">
+                                <!-- Rank 1 -->
+                                <div class="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-yellow-500/20 to-yellow-600/5 border border-yellow-500/20">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-10 h-10 rounded-full bg-yellow-500/20 text-yellow-400 flex items-center justify-center font-bold text-lg">1</div>
+                                        <div class="w-12 h-12 rounded-full overflow-hidden border-2 border-yellow-400/50">
+                                            <img src="https://api.dicebear.com/7.x/adventurer/svg?seed=Felix" alt="Avatar" class="w-full h-full object-cover">
+                                        </div>
+                                        <div>
+                                            <div class="font-bold text-white">GhostBlade</div>
+                                            <div class="text-xs text-slate-400">Siber Ninja • Seviye 42</div>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-yellow-400 font-black">12,450 XP</div>
+                                        <div class="text-xs text-slate-400">🔥 14 Gün Seri</div>
+                                    </div>
+                                </div>
+
+                                <!-- Rank 2 -->
+                                <div class="flex items-center justify-between p-4 rounded-xl bg-slate-800/50 border border-white/5">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-10 h-10 rounded-full bg-slate-700 text-slate-300 flex items-center justify-center font-bold text-lg">2</div>
+                                        <div class="w-12 h-12 rounded-full overflow-hidden border-2 border-slate-600">
+                                            <img src="https://api.dicebear.com/7.x/adventurer/svg?seed=Luna" alt="Avatar" class="w-full h-full object-cover">
+                                        </div>
+                                        <div>
+                                            <div class="font-bold text-white">Sen (Neo)</div>
+                                            <div class="text-xs text-slate-400">Teknoloji Büyücüsü • Seviye 38</div>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-slate-300 font-black">10,200 XP</div>
+                                        <div class="text-xs text-slate-400">🔥 7 Gün Seri</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button class="w-full py-4 mt-6 rounded-xl border border-dashed border-white/10 text-slate-400 hover:text-white hover:border-white/30 transition-all font-medium" onclick="showToast('Tüm sıralama yükleniyor...', 'info')">Tüm Sıralamayı Gör</button>
+                        </div>
+
+                        <!-- Arena Actions & Store -->
+                        <div class="space-y-6">
+                            <!-- Challenge Friend -->
+                            <div class="bg-gradient-to-br from-orange-500/20 to-red-600/10 border border-orange-500/30 rounded-3xl p-6 group cursor-pointer hover:border-orange-500/60 transition-all" onclick="showToast('Düello isteği yakında aktif olacak! ⚔️', 'warning')">
+                                <div class="w-14 h-14 rounded-2xl bg-orange-500/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                                    <i class="fa-solid fa-khanda text-2xl text-orange-400"></i>
+                                </div>
+                                <h3 class="font-bold text-white mb-2">Arkadaşına Meydan Oku</h3>
+                                <p class="text-sm text-slate-400 mb-4">7 günlük seride kim daha dayanıklı? Kaybeden XP öder!</p>
+                                <div class="text-xs font-black text-orange-400 tracking-wider">DÜELLO BAŞLAT &rarr;</div>
+                            </div>
+
+                            <!-- Cosmetics Store -->
+                            <div class="bg-gradient-to-br from-purple-500/20 to-pink-600/10 border border-purple-500/30 rounded-3xl p-6 group cursor-pointer hover:border-purple-500/60 transition-all" onclick="showToast('Mağazadan yeni Asistan temaları yakında eklenecek! 💎', 'warning')">
+                                <div class="w-14 h-14 rounded-2xl bg-purple-500/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                                    <i class="fa-solid fa-gem text-2xl text-purple-400"></i>
+                                </div>
+                                <h3 class="font-bold text-white mb-2">Kozmetik Mağazası</h3>
+                                <p class="text-sm text-slate-400 mb-4">Flame'lerle yeni profiller, Asistan sesleri ve renk temaları satın al.</p>
+                                <div class="text-xs font-black text-purple-400 tracking-wider">MARKETE GİR &rarr;</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Goals Section -->
@@ -3379,10 +3502,16 @@
                                 <h2 class="text-3xl font-bold text-white font-display mb-2">Hedeflerim 🎯</h2>
                                 <p class="text-slate-400 text-sm">Hedeflerini oluştur ve takip et</p>
                             </div>
-                            <button onclick="openGoalModal()" class="btn-primary flex items-center gap-2">
-                                <i class="fa-solid fa-plus text-sm"></i>
-                                <span>Yeni Hedef</span>
-                            </button>
+                            <div class="flex gap-2">
+                                <button onclick="toggleZenMode()" class="px-5 py-3 rounded-xl bg-indigo-500/20 text-indigo-400 font-bold border border-indigo-500/30 hover:bg-indigo-500/30 transition-all flex items-center gap-2">
+                                    <i class="fa-solid fa-headphones"></i>
+                                    <span>Odaklan (Zen)</span>
+                                </button>
+                                <button onclick="openGoalModal()" class="btn-primary flex items-center gap-2 shadow-[0_0_15px_rgba(88,204,2,0.4)]">
+                                    <i class="fa-solid fa-plus text-sm"></i>
+                                    <span>Yeni Hedef</span>
+                                </button>
+                            </div>
                         </div>
 
                         <!-- React Goals Stats Root -->
@@ -13227,6 +13356,318 @@
             musicCtx.stroke();
         }
 
+    </script>
+
+    <!-- ================= ZEN MODE OVERLAY ================= -->
+    <div id="zen-mode-overlay" class="fixed inset-0 z-[9999] bg-[#0A0A0A] hidden flex-col items-center justify-center transition-all duration-700 opacity-0">
+        <!-- Ambient Background Animation -->
+        <div class="absolute inset-0 overflow-hidden pointer-events-none">
+            <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-900/20 rounded-full blur-[120px] mix-blend-screen animate-pulse" style="animation-duration: 3s;"></div>
+            <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-emerald-900/10 rounded-full blur-[100px] mix-blend-screen animate-pulse" style="animation-duration: 5s; animation-delay: 2s;"></div>
+        </div>
+
+        <!-- Exit Button -->
+        <button onclick="toggleZenMode()" class="absolute top-8 right-8 text-white/50 hover:text-white transition-all bg-white/5 hover:bg-white/10 p-4 rounded-full backdrop-blur-md">
+            <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+
+        <!-- Main Content -->
+        <div class="z-10 text-center flex flex-col items-center">
+            <div class="w-24 h-24 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center mb-8 shadow-[0_0_50px_rgba(99,102,241,0.5)] animate-bounce" style="animation-duration: 3s;">
+                <i class="fa-solid fa-spa text-4xl text-white"></i>
+            </div>
+            
+            <h1 class="text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-white/50 mb-4 tracking-tighter">
+                Derin Odaklanma
+            </h1>
+            <p id="zen-current-task" class="text-xl text-indigo-200/80 mb-12 font-medium max-w-lg mx-auto italic">
+                "Şu anki hedefine odaklan. Dünya bekleyebilir."
+            </p>
+
+            <!-- Timer -->
+            <div class="relative w-64 h-64 mb-12">
+                <svg class="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="2" />
+                    <circle id="zen-timer-ring" cx="50" cy="50" r="45" fill="none" stroke="#6366F1" stroke-width="4" stroke-dasharray="283" stroke-dashoffset="0" class="transition-all duration-1000 ease-linear" stroke-linecap="round" />
+                </svg>
+                <div class="absolute inset-0 flex items-center justify-center flex-col">
+                    <span id="zen-time-display" class="text-5xl font-bold text-white font-mono tracking-wider">25:00</span>
+                    <span class="text-xs text-indigo-400 font-bold uppercase tracking-widest mt-2">Pomodoro</span>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="flex items-center gap-6">
+                <button onclick="toggleZenTimer()" id="zen-play-btn" class="w-16 h-16 rounded-full bg-white text-black flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-[0_0_30px_rgba(255,255,255,0.3)]">
+                    <i class="fa-solid fa-play text-xl ml-1"></i>
+                </button>
+                <button onclick="resetZenTimer()" class="w-12 h-12 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20 transition-all">
+                    <i class="fa-solid fa-rotate-right"></i>
+                </button>
+                <button onclick="toggleLoFi()" id="zen-lofi-btn" class="w-12 h-12 rounded-full bg-white/10 text-slate-400 flex items-center justify-center hover:bg-white/20 hover:text-white transition-all overflow-hidden relative">
+                    <i class="fa-solid fa-music"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ZEN MODE LOGIC -->
+    <script>
+        let zenActive = false;
+        let zenTimeLeft = 25 * 60;
+        let zenTotalTime = 25 * 60;
+        let zenTimerObj = null;
+        let isZenPlaying = false;
+        let lofiAudio = null;
+
+        function toggleZenMode() {
+            const overlay = document.getElementById('zen-mode-overlay');
+            zenActive = !zenActive;
+            
+            if (zenActive) {
+                overlay.classList.remove('hidden');
+                setTimeout(() => {
+                    overlay.classList.remove('opacity-0');
+                    overlay.classList.add('opacity-100');
+                }, 10);
+            } else {
+                overlay.classList.remove('opacity-100');
+                overlay.classList.add('opacity-0');
+                setTimeout(() => {
+                    overlay.classList.add('hidden');
+                }, 700);
+                if (isZenPlaying) toggleZenTimer();
+                if (lofiAudio && !lofiAudio.paused) toggleLoFi();
+            }
+        }
+
+        function updateZenDisplay() {
+            const m = Math.floor(zenTimeLeft / 60).toString().padStart(2, '0');
+            const s = (zenTimeLeft % 60).toString().padStart(2, '0');
+            document.getElementById('zen-time-display').innerText = `${m}:${s}`;
+            
+            const offset = 283 - ((zenTimeLeft / zenTotalTime) * 283);
+            document.getElementById('zen-timer-ring').style.strokeDashoffset = offset;
+        }
+
+        function toggleZenTimer() {
+            isZenPlaying = !isZenPlaying;
+            const btn = document.getElementById('zen-play-btn');
+            
+            if (isZenPlaying) {
+                btn.innerHTML = '<i class="fa-solid fa-pause text-xl"></i>';
+                zenTimerObj = setInterval(() => {
+                    if (zenTimeLeft > 0) {
+                        zenTimeLeft--;
+                        updateZenDisplay();
+                    } else {
+                        clearInterval(zenTimerObj);
+                        isZenPlaying = false;
+                        btn.innerHTML = '<i class="fa-solid fa-play text-xl ml-1"></i>';
+                        showToast('Pomodoro tamamlandı! +50 XP 🎉', 'success');
+                        if (typeof addXP !== 'undefined') addXP(50, 'Odaklanma Seansı');
+                    }
+                }, 1000);
+            } else {
+                btn.innerHTML = '<i class="fa-solid fa-play text-xl ml-1"></i>';
+                clearInterval(zenTimerObj);
+            }
+        }
+
+        function resetZenTimer() {
+            clearInterval(zenTimerObj);
+            isZenPlaying = false;
+            zenTimeLeft = 25 * 60;
+            document.getElementById('zen-play-btn').innerHTML = '<i class="fa-solid fa-play text-xl ml-1"></i>';
+            updateZenDisplay();
+        }
+
+        function toggleLoFi() {
+            const btn = document.getElementById('zen-lofi-btn');
+            if (!lofiAudio) {
+                // Free royalty usage file from pixabay
+                lofiAudio = new Audio('https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3'); 
+                lofiAudio.loop = true;
+                lofiAudio.volume = 0.5;
+            }
+            
+            if (lofiAudio.paused) {
+                lofiAudio.play();
+                btn.classList.add('text-indigo-400');
+                btn.classList.remove('text-slate-400');
+                btn.classList.add('animate-pulse');
+            } else {
+                lofiAudio.pause();
+                btn.classList.remove('text-indigo-400');
+                btn.classList.add('text-slate-400');
+                btn.classList.remove('animate-pulse');
+            }
+        }
+    </script>
+    
+    <!-- ================= EQ MOOD TRACKER MODAL ================= -->
+    <div id="eq-mood-modal" class="fixed inset-0 z-[10000] bg-black/80 backdrop-blur-md hidden flex-col items-center justify-center transition-all duration-300 opacity-0">
+        <div class="bg-slate-900 border border-white/10 rounded-3xl p-8 max-w-md w-full shadow-2xl relative transform scale-95 transition-all outline-none" tabindex="0">
+            <div class="text-center mb-8">
+                <div class="w-20 h-20 bg-gradient-to-br from-teal-400 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
+                    <i class="fa-solid fa-brain text-4xl text-white"></i>
+                </div>
+                <h2 class="text-2xl font-black text-white mb-2">Bugün Nasıl Hissediyorsun?</h2>
+                <p class="text-slate-400 text-sm">LifeCoach AI, ruh haline göre sana özel hedefler ve öneriler sunacak.</p>
+            </div>
+            
+            <div class="space-y-3">
+                <button onclick="saveMood('harika')" class="w-full p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-white flex items-center justify-between group transition-all">
+                    <span class="font-bold flex items-center gap-3"><span class="text-2xl group-hover:scale-125 transition-transform">⚡</span> Harika & Enerjik</span>
+                    <i class="fa-solid fa-chevron-right text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                </button>
+                <button onclick="saveMood('normal')" class="w-full p-4 rounded-xl border border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 text-white flex items-center justify-between group transition-all">
+                    <span class="font-bold flex items-center gap-3"><span class="text-2xl group-hover:scale-125 transition-transform">👍</span> Normal / Stabil</span>
+                    <i class="fa-solid fa-chevron-right text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                </button>
+                <button onclick="saveMood('stresli')" class="w-full p-4 rounded-xl border border-orange-500/30 bg-orange-500/10 hover:bg-orange-500/20 text-white flex items-center justify-between group transition-all">
+                    <span class="font-bold flex items-center gap-3"><span class="text-2xl group-hover:scale-125 transition-transform">😫</span> Stresli veya Yorgun</span>
+                    <i class="fa-solid fa-chevron-right text-orange-400 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- EQ LOGIC -->
+    <script>
+        function checkDailyMood() {
+            const today = new Date().toISOString().split('T')[0];
+            const lastMoodDate = localStorage.getItem('last_mood_date');
+            
+            // Show if not set today
+            if (lastMoodDate !== today) {
+                const modal = document.getElementById('eq-mood-modal');
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    modal.classList.remove('opacity-0');
+                    modal.firstElementChild.classList.remove('scale-95');
+                    modal.firstElementChild.classList.add('scale-100');
+                }, 100);
+            }
+        }
+
+        function saveMood(mood) {
+            const today = new Date().toISOString().split('T')[0];
+            localStorage.setItem('last_mood_date', today);
+            localStorage.setItem('current_mood', mood);
+            
+            const modal = document.getElementById('eq-mood-modal');
+            modal.classList.add('opacity-0');
+            modal.firstElementChild.classList.remove('scale-100');
+            modal.firstElementChild.classList.add('scale-95');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                
+                // Show dynamic EQ toast
+                if (mood === 'stresli') {
+                    showToast('Asistanın bugünkü görevleri senin yorgunluk seviyene göre hafifletecek. Lütfen dinlenmeye zaman ayır! ❤️', 'info');
+                } else if (mood === 'harika') {
+                    showToast('Harika! Asistan motivasyonuna uygun ekstra hedefler önerebilir. 🚀', 'success');
+                } else {
+                    showToast('Ruh halin kaydedildi, iyi çalışmalar! 👍', 'success');
+                }
+            }, 300);
+        }
+
+        // Initialize Mood Check on load
+        document.addEventListener('DOMContentLoaded', () => {
+             setTimeout(checkDailyMood, 1500); // Popup 1.5 seconds after load
+        });
+    </script>
+    <!-- ================= SMART MUSIC WIDGET ================= -->
+    <div id="smart-music-widget" class="fixed bottom-6 right-6 z-[9000] flex flex-col items-end transition-all duration-500 transform translate-y-0 translate-x-0">
+        <!-- Toggle logic using peer -->
+        <input type="checkbox" id="music-toggle" class="absolute hidden peer">
+        
+        <!-- Album / Card Container -->
+        <div class="peer-checked:opacity-100 peer-checked:scale-100 opacity-0 scale-95 origin-bottom-right transition-all duration-300 w-72 bg-slate-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden mb-4 pointer-events-auto">
+            <div class="p-3 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border-b border-white/5 flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-300 flex items-center gap-2"><i class="fa-solid fa-compact-disc animate-[spin_3s_linear_infinite]"></i> Sana Özel Öneriler</span>
+                <label for="music-toggle" class="text-slate-500 hover:text-white cursor-pointer"><i class="fa-solid fa-xmark"></i></label>
+            </div>
+            <div class="p-4 flex gap-4 items-center">
+                <div class="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 relative">
+                    <img id="music-cover" src="https://images.unsplash.com/photo-1542382257-80dedb725088?w=300&q=80" class="w-full h-full object-cover">
+                    <!-- equalizer overlay when playing -->
+                    <div id="music-eq" class="absolute inset-0 bg-black/50 flex items-end justify-center gap-1 p-2 hidden">
+                        <div class="w-1 bg-white h-[40%] animate-pulse"></div>
+                        <div class="w-1 bg-white h-[80%] animate-pulse" style="animation-delay:0.1s"></div>
+                        <div class="w-1 bg-white h-[30%] animate-pulse" style="animation-delay:0.2s"></div>
+                    </div>
+                </div>
+                <div>
+                    <h4 id="music-title" class="text-sm font-bold text-white line-clamp-1">Kodlama Ruhu (Lo-Fi)</h4>
+                    <p id="music-artist" class="text-xs text-slate-400 line-clamp-1">Asistan Klasikleri</p>
+                </div>
+            </div>
+            
+            <!-- Controls -->
+            <div class="flex items-center justify-between p-3 bg-white/5">
+                <button onclick="changeTrack(-1)" class="w-8 h-8 rounded-full hover:bg-white/10 text-white flex items-center justify-center transition"><i class="fa-solid fa-backward-step text-xs"></i></button>
+                <button id="smart-play-btn" onclick="toggleSmartMusic()" class="w-10 h-10 rounded-full bg-indigo-500 text-white flex items-center justify-center hover:scale-105 transition shadow-[0_0_15px_rgba(99,102,241,0.5)]"><i class="fa-solid fa-play ml-1"></i></button>
+                <button onclick="changeTrack(1)" class="w-8 h-8 rounded-full hover:bg-white/10 text-white flex items-center justify-center transition"><i class="fa-solid fa-forward-step text-xs"></i></button>
+            </div>
+        </div>
+
+        <!-- Float Trigger Button -->
+        <label for="music-toggle" class="peer-checked:rotate-180 peer-checked:bg-slate-700 bg-gradient-to-r from-indigo-500 to-purple-600 w-14 h-14 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(99,102,241,0.4)] text-white text-xl cursor-pointer hover:scale-110 transition-all pointer-events-auto">
+            <i class="fa-solid fa-music"></i>
+        </label>
+    </div>
+
+    <!-- SMART MUSIC LOGIC -->
+    <script>
+        const trackList = [
+            { title: "Kodlama Ruhu (Lo-Fi)", artist: "Asistan Klasikleri", url: "https://audio.jukehost.co.uk/zH7j7pP61WdG6lCjJzH7j7pP61WdG6lC", img: "https://images.unsplash.com/photo-1542382257-80dedb725088?w=300&q=80" },
+            { title: "Deep Focus Synth", artist: "Cyberpunk Mood", url: "https://cdn.pixabay.com/download/audio/2022/10/18/audio_31c2730e64.mp3?filename=synthwave-80s-122024.mp3", img: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=300&q=80" },
+            { title: "E-Spor Motivasyon", artist: "Arena Günü", url: "https://cdn.pixabay.com/download/audio/2023/04/23/audio_f553a812e9.mp3?filename=trap-beat-146950.mp3", img: "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=300&q=80" },
+            { title: "Zihin Açıcı (Chill)", artist: "LifeCoach AI", url: "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3", img: "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=300&q=80" }
+        ];
+        
+        let currentTrackIdx = 0;
+        let smartAudioObj = new Audio(trackList[currentTrackIdx].url);
+        smartAudioObj.loop = true;
+        let isSmartPlaying = false;
+
+        function updateTrackUI() {
+            const track = trackList[currentTrackIdx];
+            document.getElementById('music-title').innerText = track.title;
+            document.getElementById('music-artist').innerText = track.artist;
+            document.getElementById('music-cover').src = track.img;
+            smartAudioObj.src = track.url;
+            if(isSmartPlaying) smartAudioObj.play();
+        }
+
+        function toggleSmartMusic() {
+            isSmartPlaying = !isSmartPlaying;
+            const btn = document.getElementById('smart-play-btn');
+            const eq = document.getElementById('music-eq');
+            
+            if (isSmartPlaying) {
+                smartAudioObj.play();
+                btn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+                eq.classList.remove('hidden');
+                document.querySelector('#smart-music-widget label.bg-gradient-to-r').classList.add('animate-[pulse_2s_infinite]');
+            } else {
+                smartAudioObj.pause();
+                btn.innerHTML = '<i class="fa-solid fa-play ml-1"></i>';
+                eq.classList.add('hidden');
+                document.querySelector('#smart-music-widget label.bg-gradient-to-r').classList.remove('animate-[pulse_2s_infinite]');
+            }
+        }
+
+        function changeTrack(direction) {
+            currentTrackIdx += direction;
+            if(currentTrackIdx < 0) currentTrackIdx = trackList.length - 1;
+            if(currentTrackIdx >= trackList.length) currentTrackIdx = 0;
+            updateTrackUI();
+        }
     </script>
 </body>
 
