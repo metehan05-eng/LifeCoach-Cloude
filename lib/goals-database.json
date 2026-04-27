@@ -1,0 +1,61 @@
+{
+  "categories": {
+    "programming": { "name": "Programlama", "icon": "💻", "color": "#2DD4BF" },
+    "languages": { "name": "Dil Öğrenimi", "icon": "🌍", "color": "#3B82F6" },
+    "fitness": { "name": "Spor & Sağlık", "icon": "🏋️", "color": "#EF4444" },
+    "business": { "name": "Girişimcilik", "icon": "💼", "color": "#F59E0B" },
+    "design": { "name": "Tasarım & Sanat", "icon": "🎨", "color": "#EC4899" },
+    "productivity": { "name": "Verimlilik", "icon": "⏱️", "color": "#8B5CF6" }
+  },
+  "masterPlans": [
+    {
+      "id": "cpp-basics",
+      "keywords": ["c++", "cpp", "c plus plus"],
+      "title": "C++ Temelleri",
+      "category": "programming",
+      "description": "C++ dilinin temel yapı taşlarını ve algoritma mantığını öğrenin.",
+      "timelineWeeks": 4,
+      "milestones": [
+        { "week": 1, "target": "Temel Sözdizimi ve Değişkenler", "xpReward": 100, "checkpoints": ["Kurulum", "Data tipleri", "İşleçler"] },
+        { "week": 2, "target": "Kontrol Yapıları", "xpReward": 150, "checkpoints": ["If-Else", "Loops"] },
+        { "week": 4, "target": "İlk Küçük Proje", "xpReward": 300, "checkpoints": ["Proje Tamamlama"] }
+      ]
+    },
+    {
+      "id": "python-data",
+      "keywords": ["python", "veri bilimi", "data science"],
+      "title": "Python ile Veri Analizi",
+      "category": "programming",
+      "timelineWeeks": 8,
+      "milestones": [
+        { "week": 2, "target": "Pandas & Numpy", "xpReward": 150, "checkpoints": ["DataFrame işlemleri", "Vektörel hesaplamalar"] },
+        { "week": 5, "target": "Veri Görselleştirme", "xpReward": 200, "checkpoints": ["Matplotlib", "Seaborn"] },
+        { "week": 8, "target": "Bitirme Projesi", "xpReward": 400, "checkpoints": ["Gerçek dünya veri analizi"] }
+      ]
+    },
+    {
+      "id": "weight-loss",
+      "keywords": ["kilo ver", "zayıfla", "fit ol", "diyet"],
+      "title": "Sürdürülebilir Kilo Verme",
+      "category": "fitness",
+      "timelineWeeks": 12,
+      "milestones": [
+        { "week": 3, "target": "Alışkanlık Kazanımı", "xpReward": 100, "checkpoints": ["Su tüketimi", "Öğün takibi"] },
+        { "week": 6, "target": "Yağ Yakımı Başlangıcı", "xpReward": 200, "checkpoints": ["Haftalık tartı kontrolü"] },
+        { "week": 12, "target": "Hedef Kiloya Ulaşım", "xpReward": 500, "checkpoints": ["Vücut kompozisyonu analizi"] }
+      ]
+    },
+    {
+      "id": "english-mastery",
+      "keywords": ["ingilizce", "english", "toefl", "ielts"],
+      "title": "İleri Seviye İngilizce",
+      "category": "languages",
+      "timelineWeeks": 16,
+      "milestones": [
+        { "week": 4, "target": "Akıcı Konuşma", "xpReward": 200, "checkpoints": ["Kelime hazinesi", "Pronunciation"] },
+        { "week": 8, "target": "Akademik Yazım", "xpReward": 250, "checkpoints": ["Essay writing"] },
+        { "week": 16, "target": "Profesyonel Fluentlik", "xpReward": 600, "checkpoints": ["Sertifika alma"] }
+      ]
+    }
+  ]
+}

@@ -788,9 +788,9 @@ app.post('/api/chat', optionalAuth, async (req, res) => {
         let personaInjection = "";
 
         const PERSONAS = {
-            drill: "Sen bir sert disiplin koçusun. Mazeret kabul etmezsin. Kullanıcıya doğrudan, net ve sonuç odaklı konuşursun. Zaman zaman hesap sorarsın. Yumuşamazsın, ama amacın zarar vermek değil itici kuvvet olmak. Şerbet değil zehirli bir ilaç gibi dürüst ol.",
-            kind: "Sen nazik, empatik ve destekleyici bir yaşam koçusun. Her zaman anlayışla yaklaşırsın. Küçük adımları bile büyük başarı olarak kutlarsın. Kullanıcıyı asla yargılamazsın.",
-            sage: "Sen Sokratik yöntemi kullanan bilge bir koçsun. Doğrudan cevap vermek yerine sorular sorarak kullanıcının kendi cevabını bulmasına rehberlik edersin. Derin düşündürürsün. Bilgece ve felsefi bir ton kullan."
+            drill: "Sen son teknoloji bir disiplin koçusun. Hedef odaklı, net ve kararlısın. Bahaneleri analiz eder ve onları aşmak için mantıklı yollar sunarsın. Sert ama her zaman kullanıcının başarısını isteyen bir dahi gibi davran.",
+            kind: "Sen derin bir empati yeteneğine sahip, bilge bir yaşam koçusun. Kullanıcıyı anlar, ona psikolojik destek sunar ve küçük başarıların değerini vurgulayarak motivasyon sağlarsın. Nazik ama yönlendiricisin.",
+            sage: "Sen Sokratik yöntemi mükemmelleştirmiş bir entelektüelsin. Sorular sorarak kullanıcının içindeki dehayı ortaya çıkarırsın. Felsefi, derin ve stratejik düşünmeyi teşvik eden bir üslubun var."
         };
 
         // Akıllı Dil ve Konum Tespiti
@@ -1091,6 +1091,20 @@ Never provide:
 
 Redirect unsafe requests into safe alternatives.
 
+--- 🧬 MISSION & PERSONALITY 🧬 ---
+
+You are HAN 4.2 Ultra Core, the premier intelligence engine of LifeCoach AI.
+Your goal is to provide profound, logical, and structured assistance. 
+You speak with the authority of a global expert and the warmth of a trusted mentor.
+
+--- 🧬 AI PERSONALITY DISCIPLINE 🧬 ---
+* BE PROFOUND: Always look for the deeper meaning. Don't just answer "what", answer "how" and "why" with logical clarity.
+* NATURAL FLOW: Speak like a top-tier AI (Gemini/ChatGPT style). Avoid rigid templates or robotic lists. Your prose should be elegant and intellectually stimulating.
+* SMART SEARCH: Use web search ONLY when you genuinely lack the information. For logic, math, standard programming, or historical facts, rely on your internal knowledge.
+* LANGUAGE & TERMINOLOGY: Yanıtlarını profesyonel, akademik düzeyde düzgün bir İngilizce ile ve teknik terimleri doğru kullanarak ver. Kelime çevirilerinde bağlamı esas al ve bağlama göre en isabetli karşılığı seç.
+-----------------------------------------
+
+
 GAME RECOMMENDATION RULES (OYUN ÖNERİSİ KURALLARI):
 Eğer kullanıcı "hangi oyunları önerirsin" gibi oyun tavsiyesi isterse, KESİNLİKLE HEMEN OYUN ÖNERME. 
 ÖNCE SADECE şu soruyu sor: "Rekabet mi istiyorsun, rahatlamak mı, hikaye mi yoksa aksiyon mu?"
@@ -1106,15 +1120,6 @@ SUPERHERO INTERACTION RULES (SÜPER KAHRAMAN KURALLARI):
 Eğer kullanıcı "en sevdiğin süper kahraman kim" veya benzeri bir soru sorarsa, KESİNLİKLE tek bir isim vererek konuyu kapatma. 
 Bunun yerine şu kahramanları seçenek olarak sun ve kullanıcının fikrini sor: Homelander, Iron Man, Spider-Man, Dr. Doom, Batman, Magneto.
 Kullanıcıya "Senin favorin hangisi?" veya "Sence hangisi daha karizmatik / güçlü?" gibi sorular sorarak onu sohbetin içine çek.
-
-MISSION
-
-You exist to help users:
-
-think clearly  
-build discipline  
-solve problems intelligently  
-and create meaningful progress in their lives.
 
 DEEP SEARCH & WEB ACCESS:
 If the user asks for real-time information, research, or anything requiring internet access, you can mention that you are performing a 'Deep Search'.
@@ -1348,8 +1353,8 @@ ${localizationInjection}`;
             const isShortQuery = lastMessageText.trim().split(/\s+/).length < 3;
             
             const isInformationalQuery = deepSearch || (!isGreeting && !isShortQuery && (
-                /^(ne|nedir|nasıl|kim|hangi|neden|niçin|kaç|ne zaman|nerede|nereden|Örnek|Açıkla|Detaylandır|Anlat|Bul|Araştır|Kimdir)/i.test(lastMessageText) ||
-                lastMessageText.length > 60
+                /(haber|güncel|bugün|yarın|son durum|puan durumu|hava durumu|borsa|fiyatı nedir|fiyatları|dolar|euro|altın|kimdir|nedir)/i.test(lastMessageText) ||
+                lastMessageText.length > 200
             ));
 
             if (isInformationalQuery) {
@@ -4440,11 +4445,56 @@ app.get('/api/waffle', authenticateToken, async (req, res) => {
     }
 });
 
+// === WAFFLE VISION ENDPOINT ===
+// Kullanıcının yüklediği referans resmi Gemini Vision ile analiz edip
+// daha iyi bir Pollinations.ai prompt'u oluşturur.
+app.post('/api/waffle/vision', authenticateToken, async (req, res) => {
+    try {
+        const { prompt, image } = req.body;
+        if (!image) return res.status(400).json({ error: 'Image data required' });
+
+        const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
+
+        const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+        const visionPrompt = `You are an expert AI image prompt engineer.
+
+The user uploaded a reference image and has this creative request: "${prompt || 'Enhance and reimagine this image'}"
+
+Analyze the reference image carefully (style, color palette, composition, subject, mood, lighting, textures) and create a detailed ENGLISH image generation prompt for Pollinations.ai that:
+1. Preserves the core essence and style of the reference image
+2. Incorporates the user's request
+3. Adds professional quality modifiers like: cinematic lighting, masterpiece, highly detailed, 8k, sharp focus
+
+Return ONLY the final prompt text. No explanations, no quotes, just the prompt.`;
+
+        const result = await model.generateContent([
+            visionPrompt,
+            {
+                inlineData: {
+                    data: base64Data,
+                    mimeType: 'image/jpeg'
+                }
+            }
+        ]);
+
+        const enhancedPrompt = result.response.text().trim();
+        res.json({ success: true, enhancedPrompt });
+
+    } catch (error) {
+        console.error('Waffle Vision Error:', error);
+        // Fallback: return original prompt with quality enhancers
+        const fallback = (req.body.prompt || '') + ', cinematic lighting, masterpiece, highly detailed, 8k, sharp focus';
+        res.json({ success: false, enhancedPrompt: fallback });
+    }
+});
+
 // === VARSAYILAN ROTA (Catch-all) ===
-// Diğer rotalarla eşleşmezse ana uygulama sayfasını sunar.
 app.get('*', (req, res) => {
     res.sendFile(path.join(process.cwd(), 'public', 'life-coach-ui.html'));
 });
+
 
 // === GLOBAL HATA YAKALAYICI (Global Error Handler) ===
 app.use((err, req, res, next) => {

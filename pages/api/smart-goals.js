@@ -1,4 +1,58 @@
 import { callGeminiWithFallback } from '@/lib/gemini-multi-api';
+import goalsDB from '@/lib/goals-database.json' assert { type: 'json' };
+
+/**
+ * TOKEN TASARRUFU: Önce yerel JSON veritabanında arama yap.
+ * Eğer eşleşme bulunursa AI çağrısı yapma ve token harca.
+ * Sadece bilinmeyen hedefler için AI kullan.
+ */
+function findLocalMatch(goalTitle) {
+  const title = goalTitle.toLowerCase();
+  for (const plan of goalsDB.masterPlans) {
+    if (plan.keywords && plan.keywords.some(kw => title.includes(kw))) {
+      // Build a structure identical to what AI would return
+      return {
+        success: true,
+        mainGoal: goalTitle,
+        goalSummary: plan.description || `${goalTitle} hedefine ulaşmak için yapılandırılmış plan.`,
+        timelineWeeks: plan.timelineWeeks || 8,
+        difficulty: 'medium',
+        priority: 'high',
+        subgoals: plan.milestones.map((m, i) => ({
+          id: i + 1,
+          title: m.target,
+          description: m.checkpoints.join(', '),
+          weekTarget: m.week,
+          xpReward: m.xpReward || 100,
+          difficulty: i === 0 ? 'easy' : i === plan.milestones.length - 1 ? 'hard' : 'medium'
+        })),
+        milestones: plan.milestones.map(m => ({
+          week: m.week,
+          target: m.target,
+          xpReward: m.xpReward || 100,
+          celebration: m.week === plan.timelineWeeks ? '🏆 Tamamladın!' : '🔥 Devam et!',
+          checkpoints: m.checkpoints
+        })),
+        dailyHabits: [
+          { habit: 'Günlük 30 dk çalış', frequency: 'daily', duration: '30 dk', impact: 'Sürekli ilerleme' }
+        ],
+        riskAnalysis: [
+          { risk: 'Motivasyon kaybı', likelihood: 'medium', impact: 'Gecikme', mitigation: 'Milestone kutlamaları yap' }
+        ],
+        successMetrics: plan.milestones.map(m => m.target),
+        motivationReminders: ['Her gün küçük adımlar büyük başarılar yaratır!', 'Hedefe odaklan, yola devam!'],
+        potentialObstacles: [{ obstacle: 'Zaman yetersizliği', preventionStrategy: 'Takvime bloklama koy' }],
+        dependencyGoals: [],
+        celebrationPlan: 'Hedefe ulaşınca kendini güzel bir şey ile ödüllendir!',
+        confidenceScore: 0.9,
+        fromLocalDB: true // Token harcamadan yerel cache'den geldi
+      };
+    }
+  }
+  return null;
+}
+
+
 
 /**
  * Generate structured goal breakdown using AI
@@ -301,6 +355,14 @@ export default async function handler(req, res) {
     }
 
     if (action === 'breakdown') {
+      // TOKEN TASARRUFU: Önce yerel veritabanında ara
+      const localMatch = findLocalMatch(goalTitle);
+      if (localMatch) {
+        console.log(`[Smart-Goals] Local DB hit for "${goalTitle}" - no AI tokens used`);
+        return res.status(200).json(localMatch);
+      }
+
+      // Yerel eşleşme yoksa AI çağır
       const breakdown = await generateStructuredGoalBreakdown(
         goalTitle,
         goalDescription || '',
@@ -309,6 +371,7 @@ export default async function handler(req, res) {
 
       return res.status(200).json(breakdown);
     }
+
 
     if (action === 'refine') {
       if (!goalBreakdown || !feedback) {
