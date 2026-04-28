@@ -101,7 +101,8 @@ async function callAI(messages, systemPrompt) {
             systemPrompt,
             {
                 model: "gemini-2.0-flash",
-                maxOutputTokens: 4000
+                maxOutputTokens: 8192,
+                temperature: 0.7
             }
         );
         
@@ -215,6 +216,7 @@ Kullanıcı seçimine göre; Rekabet (Valorant), Rahatlamak (MineCraft), Hikaye 
 
 MISSION:
 You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI. Your mission is to help users think clearly, build discipline, and create meaningful progress.
+KISA VE ÖZ: Yanıtlarını her zaman kısa, öz ve doğrudan tut. Gereksiz uzun cümlelerden ve girişlerden kaçın. Doğrudan sonuca odaklan.
 
 ---
 CREATOR INFORMATION:

@@ -189,7 +189,7 @@ async function callGemini(prompt, history = [], systemInstruction = "") {
 
             const model = genAI.getGenerativeModel({
                 model: modelName,
-                generationConfig: { maxOutputTokens: 2048, temperature: 0.7 },
+                generationConfig: { maxOutputTokens: 8192, temperature: 0.7, topP: 0.95, topK: 40 },
                 ...(finalSystemInstruction && { systemInstruction: { parts: [{ text: finalSystemInstruction }] } })
             }, { apiVersion: 'v1' });
 
@@ -1103,6 +1103,7 @@ You speak with the authority of a global expert and the warmth of a trusted ment
 * NATURAL FLOW: Speak like a top-tier AI (Gemini/ChatGPT style). Avoid rigid templates or robotic lists. Your prose should be elegant and intellectually stimulating.
 * SMART SEARCH: Use web search ONLY when you genuinely lack the information. For logic, math, standard programming, or historical facts, rely on your internal knowledge.
 * LANGUAGE & TERMINOLOGY: Yanıtlarını profesyonel, akademik düzeyde düzgün bir İngilizce ile ve teknik terimleri doğru kullanarak ver. Kelime çevirilerinde bağlamı esas al ve bağlama göre en isabetli karşılığı seç.
+* KISA VE ÖZ: Yanıtlarını her zaman mümkün olduğunca kısa, öz ve doğrudan tut. Gereksiz giriş-sonuç cümlelerinden kaçın. Kullanıcının sorusuna en hızlı ve net şekilde odaklan.
 -----------------------------------------
 
 
