@@ -3027,8 +3027,8 @@
                 </button>
 
                 <!-- ===== SOSYAL SEKSİYONU ===== -->
-                <div class="px-3 py-4 mt-2">
-                    <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Sosyal</div>
+                <div class="px-3 py-4 mt-2 cursor-pointer hover:bg-white/5 rounded-xl transition-all group" onclick="showSection('study-groups')">
+                    <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider group-hover:text-cyan-400 transition-colors">Sosyal</div>
                 </div>
 
                 <!-- Çalışma Grupları -->
@@ -3092,9 +3092,9 @@
                 </button>
 
                 <!-- ===== YENİ ÖZELLİKLER ===== -->
-                <div class="px-1 pt-3 pb-1">
+                <div class="px-1 pt-3 pb-1 cursor-pointer hover:bg-white/5 rounded-xl transition-all group" onclick="showSection('persona')">
                     <div
-                        class="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-2 mb-1 flex items-center gap-2">
+                        class="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-2 mb-1 flex items-center gap-2 group-hover:text-purple-400 transition-colors">
                         <span>Gelişmiş AI Analiz</span>
                         <div class="h-px bg-slate-700/50 flex-1"></div>
                     </div>
@@ -9062,9 +9062,14 @@
 
             // ==================== NAVIGATION ====================
 
-            function showSection(sectionName) {
+            async function showSection(sectionName) {
+                console.log('[Navigation] Switching to:', sectionName);
+                
                 // Hide all sections
-                document.querySelectorAll('.section-content').forEach(el => el.classList.add('hidden'));
+                document.querySelectorAll('.section-content').forEach(el => {
+                    el.classList.add('hidden');
+                    el.style.display = 'none';
+                });
 
                 // Toggle body class for chat to handle its fixed layout
                 if (sectionName === 'chat') {
@@ -9077,28 +9082,22 @@
                 const section = document.getElementById('section-' + sectionName);
                 if (section) {
                     section.classList.remove('hidden');
-                    // Force display — overrides any residual Tailwind hidden
-                    if (sectionName === 'chat') {
-                        section.style.display = 'flex';
-                        section.style.flexDirection = 'column';
-                    } else {
-                        section.style.display = 'flex';
-                        section.style.flexDirection = 'column';
-                    }
+                    section.style.display = 'flex';
+                    section.style.flexDirection = 'column';
+                    
                     // Scroll to top
                     const sectionsWrapper = document.getElementById('sections-wrapper');
                     if (sectionsWrapper) sectionsWrapper.scrollTop = 0;
                     const mainContent = document.getElementById('main-content');
                     if (mainContent) mainContent.scrollTop = 0;
                     window.scrollTo(0, 0);
+                } else {
+                    console.warn('[Navigation] Section not found:', 'section-' + sectionName);
                 }
 
-                // Update nav item active state — Aurora Dark violet palette
+                // Update nav item active state - Generic approach
                 document.querySelectorAll('.nav-item').forEach(el => {
-                    el.classList.remove(
-                        'bg-teal-500/20', 'text-teal-400', 'border-teal-500/30',
-                        'bg-violet-500/20', 'text-violet-300', 'border-violet-500/30'
-                    );
+                    el.classList.remove('bg-violet-500/20', 'text-violet-300', 'border-violet-500/30', 'bg-teal-500/20', 'text-teal-400', 'border-teal-500/30');
                     el.classList.add('text-slate-400');
                 });
 
@@ -9108,64 +9107,45 @@
                     activeNav.classList.remove('text-slate-400');
                 }
 
-                // Specific logic for dashboard/panel refresh
-                if (sectionName === 'dashboard') {
-                    loadDashboard();
-                }
-
-                // Chat input visibility control
-                const chatInputContainer = document.getElementById('chat-input-container');
-                const chatContainer = document.getElementById('chat-container');
-                const welcomeScreen = document.getElementById('welcome-screen');
-
-                if (chatInputContainer) {
-                    if (sectionName === 'chat') {
-                        // Show bottom input always when in chat
-                        chatInputContainer.classList.remove('hidden');
-                        chatInputContainer.style.display = 'block';
-
-                        // If entering chat from a different section, start fresh as requested
-                        // Check active nav before we updated it to determine if it's a switch
-                        const currentActiveNav = document.querySelector('.nav-item.bg-teal-500\\/20');
-                        const isSwitchingToChat = currentActiveNav && currentActiveNav.getAttribute('data-section') !== 'chat';
-
-                        if (isSwitchingToChat || !currentActiveNav) {
-                            startNewChat();
-                        }
-                    } else {
-                        chatInputContainer.classList.add('hidden');
-                        chatInputContainer.style.display = 'none';
+                // Load data based on section with error handling
+                try {
+                    switch(sectionName) {
+                        case 'dashboard': await loadDashboard(); break;
+                        case 'goals': if(window.loadGoals) await window.loadGoals(); break;
+                        case 'habits': if(window.loadHabits) await window.loadHabits(); break;
+                        case 'plans': if(window.loadPlans) await window.loadPlans(); break;
+                        case 'progress': if(window.loadProgress) await window.loadProgress(); break;
+                        case 'focus': if(window.loadFocusSessions) await window.loadFocusSessions(); break;
+                        case 'reflection': if(window.loadReflections) await window.loadReflections(); break;
+                        case 'coach': if(window.loadSmartCoach) await window.loadSmartCoach(); break;
+                        case 'persona': if(window.loadPersonaSection) await window.loadPersonaSection(); break;
+                        case 'mood': if(window.loadMoodSection) await window.loadMoodSection(); break;
+                        case 'taskbreak': if(window.loadTaskBreakSection) await window.loadTaskBreakSection(); break;
+                        case 'achievements': if(window.loadAchievements) await window.loadAchievements(); break;
+                        case 'waffle': if(window.loadWaffleSection) await window.loadWaffleSection(); break;
+                        case 'study-groups': if(window.loadStudyGroups) await window.loadStudyGroups(); break;
+                        case 'avatar': if(window.loadAvatarSection) await window.loadAvatarSection(); break;
+                        case 'accountability': if(window.loadAccountability) await window.loadAccountability(); break;
+                        case 'challenges': if(window.loadChallenges) await window.loadChallenges(); break;
+                        case 'leaderboard': if(window.loadLeaderboard) await window.loadLeaderboard(); break;
+                        case 'analytics': if(window.loadAnalytics) await window.loadAnalytics(); break;
+                        case 'chat':
+                            const welcomeScreen = document.getElementById('welcome-screen');
+                            if (welcomeScreen && (window.messageHistory || []).length === 0) {
+                                welcomeScreen.classList.remove('hidden');
+                            }
+                            if(window.loadHistory) await window.loadHistory();
+                            
+                            // Fresh chat logic if switching
+                            const isSwitchingToChat = !document.body.classList.contains('chat-active-prev');
+                            if (isSwitchingToChat && window.startNewChat) window.startNewChat();
+                            document.body.classList.add('chat-active-prev');
+                            break;
+                        default:
+                            document.body.classList.remove('chat-active-prev');
                     }
-                }
-
-                // Load data based on section
-                if (sectionName === 'dashboard') loadDashboard();
-                if (sectionName === 'goals') loadGoals();
-                if (sectionName === 'habits') loadHabits();
-                if (sectionName === 'plans') loadPlans();
-                if (sectionName === 'progress') loadProgress();
-                if (sectionName === 'focus') loadFocusSessions();
-                if (sectionName === 'reflection') loadReflections();
-                if (sectionName === 'coach') loadSmartCoach();
-                // ===== YENİ SECTION LOADERS =====
-                if (sectionName === 'persona') loadPersonaSection();
-                if (sectionName === 'mood') loadMoodSection();
-                if (sectionName === 'taskbreak') loadTaskBreakSection();
-                if (sectionName === 'achievements') loadAchievements();
-                if (sectionName === 'waffle') loadWaffleSection();
-                // ===== SOSYAL SECTION LOADERS =====
-                if (sectionName === 'study-groups') loadStudyGroups();
-                if (sectionName === 'accountability') loadAccountability();
-                if (sectionName === 'challenges') loadChallenges();
-                if (sectionName === 'leaderboard') loadLeaderboard();
-                if (sectionName === 'analytics') loadAnalytics();
-                if (sectionName === 'chat') {
-                    // Show welcome screen if no messages
-                    const welcomeScreen = document.getElementById('welcome-screen');
-                    if (welcomeScreen && messageHistory.length === 0) {
-                        welcomeScreen.classList.remove('hidden');
-                    }
-                    loadHistory();
+                } catch (err) {
+                    console.error('[Navigation] Error loading section data:', err);
                 }
             }
 
