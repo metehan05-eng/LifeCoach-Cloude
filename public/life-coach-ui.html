@@ -6763,31 +6763,29 @@
 
         // ==================== NOTIFICATIONS ====================
         function initializeNotifications() {
-            // Request notification permission on first visit
-            if ('Notification' in window && Notification.permission === 'default') {
-                Notification.requestPermission().then(permission => {
-                    if (permission === 'granted') {
-                        console.log('Notifications enabled');
-                    }
-                });
+            if (!('Notification' in window)) return;
+            
+            if (Notification.permission === 'default') {
+                // We'll ask explicitly via requestNotificationPermission when needed
+            } else if (Notification.permission === 'granted') {
+                scheduleMotivationNotifications();
             }
 
             // Check for pending notifications every minute
             setInterval(async () => {
                 const token = storage.get('token');
-                if (!token) return; // Only check if user is logged in
+                if (!token) return;
 
                 try {
                     const result = await NotificationsService.getPendingNotifications();
-                    if (result.notifications && result.notifications.length > 0) {
+                    if (result && result.notifications && result.notifications.length > 0) {
                         result.notifications.forEach(notif => {
                             NotificationsService.showLocalNotification(
                                 notif.title,
                                 notif.message,
                                 {
-                                    tag: `habit-${notif.habitId}`,
-                                    badge: '/manifest.json',
-                                    data: { habitId: notif.habitId }
+                                    tag: `notif-${Date.now()}`,
+                                    badge: '/lifecoach-favicon.svg'
                                 }
                             );
                         });
@@ -6795,7 +6793,43 @@
                 } catch (error) {
                     console.error('Notification check error:', error);
                 }
-            }, 60000); // Check every 60 seconds
+            }, 60000);
+        }
+
+        function requestNotificationPermission() {
+            if (!('Notification' in window)) { 
+                showToast('Tarayıcınız bildirimleri desteklemiyor.', 'warning'); 
+                return; 
+            }
+            Notification.requestPermission().then(perm => {
+                if (perm === 'granted') {
+                    showToast('🔔 Bildirimler aktif! Motivasyon bildirimleri alacaksınız.', 'success');
+                    scheduleMotivationNotifications();
+                } else {
+                    showToast('Bildirim izni verilmedi.', 'info');
+                }
+            });
+        }
+
+        function scheduleMotivationNotifications() {
+            const user = getSafeUser();
+            const userName = user ? (user.name || 'Arkadaşım') : 'Arkadaşım';
+            const msgs = [
+                `${userName}, bugün hedefine bir adım daha at! 💪`,
+                `${userName}, nasılsın? Bugün ne üzerinde çalışıyorsun? 🎯`,
+                `Küçük adımlar büyük yolculuklar yaratır. Devam et! 🌱`,
+                `Başarı, her gün tekrarlanan küçük disiplinlerin toplamıdır. 🚀`
+            ];
+            
+            if (window._motivationInterval) clearInterval(window._motivationInterval);
+            window._motivationInterval = setInterval(() => {
+                if (Notification.permission === 'granted' && document.visibilityState === 'hidden') {
+                    new Notification('LifeCoach AI 🌿', { 
+                        body: msgs[Math.floor(Math.random() * msgs.length)], 
+                        icon: './lifecoach-favicon.svg' 
+                    });
+                }
+            }, 4 * 60 * 60 * 1000);
         }
 
         function showToast(message, type = 'success') {
@@ -9062,92 +9096,8 @@
 
             // ==================== NAVIGATION ====================
 
-            async function showSection(sectionName) {
-                console.log('[Navigation] Switching to:', sectionName);
-                
-                // Hide all sections
-                document.querySelectorAll('.section-content').forEach(el => {
-                    el.classList.add('hidden');
-                    el.style.display = 'none';
-                });
+            // Navigation function moved to global scope below
 
-                // Toggle body class for chat to handle its fixed layout
-                if (sectionName === 'chat') {
-                    document.body.classList.add('chat-active');
-                } else {
-                    document.body.classList.remove('chat-active');
-                }
-
-                // Show selected section
-                const section = document.getElementById('section-' + sectionName);
-                if (section) {
-                    section.classList.remove('hidden');
-                    section.style.display = 'flex';
-                    section.style.flexDirection = 'column';
-                    
-                    // Scroll to top
-                    const sectionsWrapper = document.getElementById('sections-wrapper');
-                    if (sectionsWrapper) sectionsWrapper.scrollTop = 0;
-                    const mainContent = document.getElementById('main-content');
-                    if (mainContent) mainContent.scrollTop = 0;
-                    window.scrollTo(0, 0);
-                } else {
-                    console.warn('[Navigation] Section not found:', 'section-' + sectionName);
-                }
-
-                // Update nav item active state - Generic approach
-                document.querySelectorAll('.nav-item').forEach(el => {
-                    el.classList.remove('bg-violet-500/20', 'text-violet-300', 'border-violet-500/30', 'bg-teal-500/20', 'text-teal-400', 'border-teal-500/30');
-                    el.classList.add('text-slate-400');
-                });
-
-                const activeNav = document.querySelector(`.nav-item[data-section="${sectionName}"]`);
-                if (activeNav) {
-                    activeNav.classList.add('bg-violet-500/20', 'text-violet-300', 'border-violet-500/30');
-                    activeNav.classList.remove('text-slate-400');
-                }
-
-                // Load data based on section with error handling
-                try {
-                    switch(sectionName) {
-                        case 'dashboard': await loadDashboard(); break;
-                        case 'goals': if(window.loadGoals) await window.loadGoals(); break;
-                        case 'habits': if(window.loadHabits) await window.loadHabits(); break;
-                        case 'plans': if(window.loadPlans) await window.loadPlans(); break;
-                        case 'progress': if(window.loadProgress) await window.loadProgress(); break;
-                        case 'focus': if(window.loadFocusSessions) await window.loadFocusSessions(); break;
-                        case 'reflection': if(window.loadReflections) await window.loadReflections(); break;
-                        case 'coach': if(window.loadSmartCoach) await window.loadSmartCoach(); break;
-                        case 'persona': if(window.loadPersonaSection) await window.loadPersonaSection(); break;
-                        case 'mood': if(window.loadMoodSection) await window.loadMoodSection(); break;
-                        case 'taskbreak': if(window.loadTaskBreakSection) await window.loadTaskBreakSection(); break;
-                        case 'achievements': if(window.loadAchievements) await window.loadAchievements(); break;
-                        case 'waffle': if(window.loadWaffleSection) await window.loadWaffleSection(); break;
-                        case 'study-groups': if(window.loadStudyGroups) await window.loadStudyGroups(); break;
-                        case 'avatar': if(window.loadAvatarSection) await window.loadAvatarSection(); break;
-                        case 'accountability': if(window.loadAccountability) await window.loadAccountability(); break;
-                        case 'challenges': if(window.loadChallenges) await window.loadChallenges(); break;
-                        case 'leaderboard': if(window.loadLeaderboard) await window.loadLeaderboard(); break;
-                        case 'analytics': if(window.loadAnalytics) await window.loadAnalytics(); break;
-                        case 'chat':
-                            const welcomeScreen = document.getElementById('welcome-screen');
-                            if (welcomeScreen && (window.messageHistory || []).length === 0) {
-                                welcomeScreen.classList.remove('hidden');
-                            }
-                            if(window.loadHistory) await window.loadHistory();
-                            
-                            // Fresh chat logic if switching
-                            const isSwitchingToChat = !document.body.classList.contains('chat-active-prev');
-                            if (isSwitchingToChat && window.startNewChat) window.startNewChat();
-                            document.body.classList.add('chat-active-prev');
-                            break;
-                        default:
-                            document.body.classList.remove('chat-active-prev');
-                    }
-                } catch (err) {
-                    console.error('[Navigation] Error loading section data:', err);
-                }
-            }
 
             // ==================== DASHBOARD ====================
 
@@ -12377,8 +12327,98 @@
                 if (splash) {
                     splash.classList.add('fade-out');
                 }
-            }, 1500);
+            }, 1000);
         });
+
+        // ==================== GLOBAL NAVIGATION ====================
+        async function showSection(sectionName) {
+            console.log('[Navigation] Switching to:', sectionName);
+            
+            // Hide all sections
+            document.querySelectorAll('.section-content').forEach(el => {
+                el.classList.add('hidden');
+                el.style.display = 'none';
+            });
+
+            // Toggle body class for chat to handle its fixed layout
+            if (sectionName === 'chat') {
+                document.body.classList.add('chat-active');
+            } else {
+                document.body.classList.remove('chat-active');
+            }
+
+            // Show selected section
+            const section = document.getElementById('section-' + sectionName);
+            if (section) {
+                section.classList.remove('hidden');
+                section.style.display = 'flex';
+                section.style.flexDirection = 'column';
+                
+                // Scroll to top
+                const sectionsWrapper = document.getElementById('sections-wrapper');
+                if (sectionsWrapper) sectionsWrapper.scrollTop = 0;
+                const mainContent = document.getElementById('main-content');
+                if (mainContent) mainContent.scrollTop = 0;
+                window.scrollTo(0, 0);
+            } else {
+                console.warn('[Navigation] Section not found:', 'section-' + sectionName);
+            }
+
+            // Update nav item active state - Generic approach
+            document.querySelectorAll('.nav-item').forEach(el => {
+                el.classList.remove('bg-violet-500/20', 'text-violet-300', 'border-violet-500/30', 'bg-teal-500/20', 'text-teal-400', 'border-teal-500/30');
+                el.classList.add('text-slate-400');
+            });
+
+            const activeNav = document.querySelector(`.nav-item[data-section="${sectionName}"]`);
+            if (activeNav) {
+                activeNav.classList.add('bg-violet-500/20', 'text-violet-300', 'border-violet-500/30');
+                activeNav.classList.remove('text-slate-400');
+            }
+
+            // Load data based on section with error handling
+            try {
+                switch(sectionName) {
+                    case 'dashboard': await loadDashboard(); break;
+                    case 'goals': if(typeof loadGoals === 'function') await loadGoals(); break;
+                    case 'habits': if(typeof loadHabits === 'function') await loadHabits(); break;
+                    case 'plans': if(typeof loadPlans === 'function') await loadPlans(); break;
+                    case 'progress': if(typeof loadProgress === 'function') await loadProgress(); break;
+                    case 'focus': if(typeof loadFocusSessions === 'function') await loadFocusSessions(); break;
+                    case 'reflection': if(typeof loadReflections === 'function') await loadReflections(); break;
+                    case 'coach': if(typeof loadSmartCoach === 'function') await loadSmartCoach(); break;
+                    case 'persona': if(typeof loadPersonaSection === 'function') await loadPersonaSection(); break;
+                    case 'mood': if(typeof loadMoodSection === 'function') await loadMoodSection(); break;
+                    case 'taskbreak': if(typeof loadTaskBreakSection === 'function') await loadTaskBreakSection(); break;
+                    case 'achievements': if(typeof loadAchievements === 'function') await loadAchievements(); break;
+                    case 'waffle': if(typeof loadWaffleSection === 'function') await loadWaffleSection(); break;
+                    case 'study-groups': if(typeof loadStudyGroups === 'function') await loadStudyGroups(); break;
+                    case 'avatar': if(typeof loadAvatarSection === 'function') await loadAvatarSection(); break;
+                    case 'accountability': if(typeof loadAccountability === 'function') await loadAccountability(); break;
+                    case 'challenges': if(typeof loadChallenges === 'function') await loadChallenges(); break;
+                    case 'leaderboard': if(typeof loadLeaderboard === 'function') await loadLeaderboard(); break;
+                    case 'analytics': if(typeof loadAnalytics === 'function') await loadAnalytics(); break;
+                    case 'chat':
+                        const welcomeScreen = document.getElementById('welcome-screen');
+                        if (welcomeScreen && (window.messageHistory || []).length === 0) {
+                            welcomeScreen.classList.remove('hidden');
+                        }
+                        if(typeof loadHistory === 'function') await loadHistory();
+                        
+                        // Fresh chat logic if switching
+                        const isSwitchingToChat = !document.body.classList.contains('chat-active-prev');
+                        if (isSwitchingToChat && typeof startNewChat === 'function') startNewChat();
+                        document.body.classList.add('chat-active-prev');
+                        break;
+                    default:
+                        document.body.classList.remove('chat-active-prev');
+                }
+            } catch (err) {
+                console.error('[Navigation] Error loading section data:', err);
+            }
+        }
+        window.showSection = showSection;
+
     </script>
 
     <!-- Unified React Engine -->
