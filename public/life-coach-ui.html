@@ -2865,6 +2865,17 @@
         </div>
         <div class="splash-text">LIFECOACH AI</div>
     </div>
+    
+    <script>
+        // Failsafe: Splash screen should never stay more than 5 seconds
+        setTimeout(function() {
+            var splash = document.getElementById('splash-screen');
+            if (splash && !splash.classList.contains('fade-out')) {
+                console.warn('Failsafe: Splash screen hidden via timeout');
+                splash.classList.add('fade-out');
+            }
+        }, 5000);
+    </script>
 
     <!-- Animated Background -->
     <div class="bg-mesh"></div>

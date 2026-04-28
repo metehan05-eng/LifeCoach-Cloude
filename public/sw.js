@@ -1,4 +1,4 @@
-const CACHE_NAME = 'v2'; // Cache sürümünü v2'ye yükselttik, eski agrasif cache silinecek!
+const CACHE_NAME = 'v3'; // Cache sürümünü v3'e yükselttik, eski hatalı cache temizlenecek.
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -17,29 +17,34 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Sadece GET isteklerini önbellekle
+  // Sadece GET isteklerini işle, POST vb. tarayıcıya bırak
   if (event.request.method !== 'GET') return;
 
+  // Sadece kendi domainimizdeki dosyaları işle
+  // Harici kaynakları (Google Fonts, CDN vb.) tarayıcıya bırakıyoruz ki CORS sorunları oluşmasın
+  if (!event.request.url.startsWith(self.location.origin)) return;
+
   event.respondWith(
-    // NETWORK FIRST STRATEJİSİ: Önce her zaman güncel dosyayı internetten çekmeyi dene!
     fetch(event.request).then((networkResponse) => {
-      // Başarılı olursa cache'i güncelle (Gelecekte offline olursa en sonuncuyu sorsun diye)
-      if (networkResponse.ok) {
-        return caches.open(CACHE_NAME).then((cache) => {
-          // Eklentiler veya farklı DOMAIN'lerden gelen istekleri bazen cache'leyemeyebilir
-          if (event.request.url.startsWith(self.location.origin)) {
-             // API endpointlerini cacheleme!
-             if (!event.request.url.includes('/api/')) {
-               cache.put(event.request, networkResponse.clone());
-             }
-          }
-          return networkResponse;
+      // Başarılı ise cache'e ekle (API çağrıları hariç)
+      if (networkResponse && networkResponse.ok && !event.request.url.includes('/api/')) {
+        const responseToCache = networkResponse.clone();
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(event.request, responseToCache);
         });
       }
       return networkResponse;
     }).catch(() => {
-      // INTERNET YOKSA (Offline isek) cache'den dön!
-      return caches.match(event.request);
+      // İnternet hatası durumunda cache'den yükle
+      return caches.match(event.request).then((cachedResponse) => {
+        if (cachedResponse) return cachedResponse;
+        
+        // Eğer cache'de de yoksa, anlamlı bir hata Response'u dön (undefined değil!)
+        return new Response('İnternet bağlantısı yok ve kaynak önbellekte bulunamadı.', {
+          status: 503,
+          headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+        });
+      });
     })
   );
 });
