@@ -1202,7 +1202,7 @@
                     currentText += words[i] + ' ';
                     textEl.innerHTML = formatMarkdown(currentText) + '<span class="typing-cursor"></span>';
                     if (i % 3 === 0) scrollBottom();
-                    await new Promise(r => setTimeout(r, 20 + Math.random() * 30));
+                    await new Promise(r => setTimeout(r, 5 + Math.random() * 10));
                 }
                 textEl.innerHTML = formatMarkdown(cleaned);
                 actionsEl.style.opacity = '1';
