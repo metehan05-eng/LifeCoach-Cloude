@@ -2889,7 +2889,7 @@
     </div>
 
     <!-- Sidebar -->
-    <aside id="main-sidebar" class="hidden md:flex w-80 flex-col z-20 relative" style="width: 320px; max-width: 100%;">
+    <aside id="main-sidebar" class="hidden md:flex w-80 flex-col z-20 relative min-h-screen h-screen sticky top-0" style="width: 320px; max-width: 100%;">
 
         <div class="sidebar-logo">
             <div class="flex items-center gap-3">
@@ -3264,7 +3264,7 @@
 
 
             <!-- Auth Section -->
-            <div class="p-4 border-t border-white/5" id="auth-container">
+            <div class="p-4 border-t border-white/5 mt-auto" id="auth-container" style="min-height: 100px;">
                 <!-- JS ile doldurulacak -->
             </div>
     </aside>
@@ -6969,7 +6969,7 @@
                     ? `<img src="${avatarUrl}" alt="${displayName}" class="w-9 h-9 rounded-xl object-cover border border-white/10" onerror="this.onerror=null; this.outerHTML='<div class=\\'w-9 h-9 rounded-xl flex items-center justify-center font-bold text-white text-sm\\' style=\\'background: linear-gradient(135deg, #0F766E, #2DD4BF);\\'>${displayName.charAt(0).toUpperCase()}</div>'">`
                     : `<div class="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-white text-sm" style="background: linear-gradient(135deg, #0F766E, #2DD4BF);">${displayName.charAt(0).toUpperCase()}</div>`;
 
-                const currentStatus = await fetch('/api/user/status', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }).then(r => r.json()).catch(() => ({ text: 'Çevrimiçi', emoji: '🟢' }));
+                const currentStatus = { text: 'Çevrimiçi', emoji: '🟢' };
 
                 authContainer.innerHTML = `
                     <div class="auth-section">
@@ -7001,6 +7001,18 @@
                         </div>
                     </div>
                 `;
+
+                // Fetch real status in background so it doesn't block UI load
+                fetch('/api/user/status', { 
+                    headers: { 'Authorization': `Bearer ${token}` } 
+                }).then(r => r.json()).then(data => {
+                    if (data && data.emoji) {
+                        const iconEl = document.getElementById('user-current-status-dot');
+                        const textEl = document.getElementById('user-current-status-text');
+                        if (iconEl) iconEl.textContent = data.emoji;
+                        if (textEl) textEl.textContent = data.text;
+                    }
+                }).catch(() => {});
 
                 if (!welcomeShown) {
                     // Welcome toast removed as per user request
@@ -13635,7 +13647,7 @@
     <!-- SMART MUSIC LOGIC -->
     <script>
         const trackList = [
-            { title: "Kodlama Ruhu (Lo-Fi)", artist: "Asistan Klasikleri", url: "https://audio.jukehost.co.uk/zH7j7pP61WdG6lCjJzH7j7pP61WdG6lC", img: "https://images.unsplash.com/photo-1542382257-80dedb725088?w=300&q=80" },
+            { title: "Kodlama Ruhu (Lo-Fi)", artist: "Asistan Klasikleri", url: "https://cdn.pixabay.com/download/audio/2022/02/22/audio_d171691238.mp3?filename=lofi-chill-medium-version-126735.mp3", img: "https://images.unsplash.com/photo-1542382257-80dedb725088?w=300&q=80" },
             { title: "Deep Focus Synth", artist: "Cyberpunk Mood", url: "https://cdn.pixabay.com/download/audio/2022/10/18/audio_31c2730e64.mp3?filename=synthwave-80s-122024.mp3", img: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=300&q=80" },
             { title: "E-Spor Motivasyon", artist: "Arena Günü", url: "https://cdn.pixabay.com/download/audio/2023/04/23/audio_f553a812e9.mp3?filename=trap-beat-146950.mp3", img: "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=300&q=80" },
             { title: "Zihin Açıcı (Chill)", artist: "LifeCoach AI", url: "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3", img: "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=300&q=80" }
@@ -13651,25 +13663,40 @@
             document.getElementById('music-title').innerText = track.title;
             document.getElementById('music-artist').innerText = track.artist;
             document.getElementById('music-cover').src = track.img;
+            
+            const wasPlaying = isSmartPlaying;
+            if(isSmartPlaying) smartAudioObj.pause();
+            
             smartAudioObj.src = track.url;
-            if(isSmartPlaying) smartAudioObj.play();
+            smartAudioObj.load();
+            
+            if(wasPlaying) {
+                smartAudioObj.play().catch(e => console.warn("Auto-play blocked or failed", e));
+            }
         }
 
-        function toggleSmartMusic() {
+        async function toggleSmartMusic() {
             isSmartPlaying = !isSmartPlaying;
             const btn = document.getElementById('smart-play-btn');
             const eq = document.getElementById('music-eq');
             
-            if (isSmartPlaying) {
-                smartAudioObj.play();
-                btn.innerHTML = '<i class="fa-solid fa-pause"></i>';
-                eq.classList.remove('hidden');
-                document.querySelector('#smart-music-widget label.bg-gradient-to-r').classList.add('animate-[pulse_2s_infinite]');
-            } else {
-                smartAudioObj.pause();
+            try {
+                if (isSmartPlaying) {
+                    await smartAudioObj.play();
+                    btn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+                    eq.classList.remove('hidden');
+                    document.querySelector('#smart-music-widget label.bg-gradient-to-r').classList.add('animate-[pulse_2s_infinite]');
+                } else {
+                    smartAudioObj.pause();
+                    btn.innerHTML = '<i class="fa-solid fa-play ml-1"></i>';
+                    eq.classList.add('hidden');
+                    document.querySelector('#smart-music-widget label.bg-gradient-to-r').classList.remove('animate-[pulse_2s_infinite]');
+                }
+            } catch (error) {
+                console.error("Smart Music Error:", error);
+                isSmartPlaying = false;
                 btn.innerHTML = '<i class="fa-solid fa-play ml-1"></i>';
-                eq.classList.add('hidden');
-                document.querySelector('#smart-music-widget label.bg-gradient-to-r').classList.remove('animate-[pulse_2s_infinite]');
+                showToast("Müzik yüklenemedi. Lütfen internetini kontrol et.", "error");
             }
         }
 
