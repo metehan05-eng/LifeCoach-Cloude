@@ -255,7 +255,7 @@ async function generateAIResponse(prompt, history = [], systemInstruction = "") 
 }
 
 // ── Tavily AI Search Helper ──────────────────────────────
-async function searchTavily(query, numResults = 5) {
+async function searchTavily(query, numResults = 5, deepSearch = false) {
     if (!TAVILY_API_KEY) {
         console.warn('[TavilySearch] TAVILY_API_KEY ayarlanmamış');
         return null;
@@ -270,12 +270,13 @@ async function searchTavily(query, numResults = 5) {
             },
             body: JSON.stringify({
                 query: query,
-                search_depth: 'advanced',
-                max_results: numResults,
+                search_depth: deepSearch ? 'advanced' : 'basic',
+                max_results: Math.min(numResults, deepSearch ? 10 : 5),
                 include_answer: true,
                 include_images: false,
                 include_raw_content: false
-            })
+            }),
+            signal: AbortSignal.timeout(4000) // 4 saniye timeout
         });
 
         if (!response.ok) {
@@ -1353,8 +1354,8 @@ ${localizationInjection}`;
             const isShortQuery = lastMessageText.trim().split(/\s+/).length < 3;
             
             const isInformationalQuery = deepSearch || (!isGreeting && !isShortQuery && (
-                /(haber|güncel|bugün|yarın|son durum|puan durumu|hava durumu|borsa|fiyatı nedir|fiyatları|dolar|euro|altın|kimdir|nedir)/i.test(lastMessageText) ||
-                lastMessageText.length > 200
+                /(haber|güncel|bugün|yarın|son durum|puan durumu|hava durumu|borsa|fiyatı nedir|fiyatları|dolar|euro|altın|kimdir|nedir|vizyondaki|sinema|maç sonucu)/i.test(lastMessageText) ||
+                (lastMessageText.length > 600 && lastMessageText.includes('?'))
             ));
 
             if (isInformationalQuery) {
@@ -1374,7 +1375,7 @@ ${localizationInjection}`;
                         let searchResults = null;
                         if (TAVILY_API_KEY) {
                             console.log(`[Search] Tavily ile ${isCyberPrompt ? 'SİBER ' : ''}arama yapılıyor: "${finalSearchQuery}"`);
-                            searchResults = await searchTavily(finalSearchQuery, 8); // Siber güvenlikte daha fazla sonuç
+                            searchResults = await searchTavily(finalSearchQuery, isCyberPrompt ? 10 : 6, deepSearch); // Dinamik sonuç sayısı ve derinlik
                         }
                         
                         // Tavily yoksa veya başarısızsa Python/DDG yedeklemesi
@@ -1389,7 +1390,7 @@ ${localizationInjection}`;
                                 const timeout = setTimeout(() => {
                                     pythonProcess.kill();
                                     resolve(null);
-                                }, 8000); // 8 saniye timeout
+                                }, 3500); // 3.5 saniye timeout (Vercel sınırları için kritik)
                                 
                                 pythonProcess.stdin.write(JSON.stringify({ mode: 'search', query: finalSearchQuery }));
                                 pythonProcess.stdin.end();
