@@ -57,7 +57,6 @@ import {
   TbPhoto,
   TbMessage,
   TbSearch,
-  TbSpark,
   TbCheck,
   TbCheckupList,
 } from "react-icons/tb";
@@ -720,7 +719,7 @@ export default function SocialClientPage() {
             {showSuggestions && aiSuggestions.length > 0 && (
               <Box p={3} bg={useColorModeValue("purple.50", "purple.900")} borderBottomWidth={1} borderColor={sidebarBorder}>
                 <HStack mb={2}>
-                  <Icon as={TbSpark} color="purple.500" />
+                  <Icon as={TbSparkles} color="purple.500" />
                   <Text fontSize="xs" fontWeight="bold" color="purple.500">AI Önerileri</Text>
                 </HStack>
                 <HStack spacing={2} flexWrap="wrap">
