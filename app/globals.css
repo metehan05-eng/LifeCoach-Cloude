@@ -127,6 +127,31 @@ body {
   100% { transform: translateY(-100px) translateX(100px) rotate(720deg); opacity: 0; }
 }
 
+@keyframes lp-scroll-x {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes lp-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+@keyframes lp-shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes lp-float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-18px); }
+}
+
+@keyframes lp-pulse {
+  0%, 100% { opacity: 0.8; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
 @keyframes beam-scan {
   0% { transform: translateY(-100%); opacity: 0; }
   50% { opacity: 1; }
