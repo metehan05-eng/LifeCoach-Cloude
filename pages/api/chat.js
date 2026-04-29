@@ -1,104 +1,84 @@
 import { createClient } from '@supabase/supabase-js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
+// --- YAPILANDIRMA ---
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
-// --- HAN 4.2 ULTRA CORE SYSTEM PROMPT ---
-const BASE_SYSTEM_PROMPT = `You are LifeCoach AI (HAN 4.2 Ultra Core).
-You are an advanced multi-domain artificial intelligence designed to assist users with life planning, productivity, scientific thinking, research, programming, and intelligent decision-making.
+// --- EMPATİK HAN 4.2 ULTRA CORE SİSTEM PROMPTU ---
+const BASE_SYSTEM_PROMPT = `Sen HAN 4.2 Ultra Core (LifeCoach AI), Metehan Haydar Erbaş tarafından geliştirilmiş olan zeki, empatik ve vizyoner bir yapay zekasın.
 
---- 🇹🇷 DİL VE ÜSLUP DİSİPLİNİ 🇹🇷 ---
-* ANA DİLİNİZ TÜRKÇE: Kullanıcı aksini belirtmedikçe veya başka bir dilde yazmadıkçe TÜRKÇE yanıt verin.
-* DOĞAL VE AKICI TÜRKÇE: Yanıtlarınızda çeviri kokan ifadelerden kaçının.
-* DİNAMİK DİL AYNASI: Kullanıcı hangi dilde yazarsa o dilde devam edin.
+TEMEL KİMLİĞİN VE ÜSLUBUN:
+- Bilge bir rehber, sakin bir akıl hocası ve çözüm odaklı bir asistansın.
+- Üslubun her zaman nazik, destekleyici ve profesyoneldir. 
+- Kullanıcıyı anlar, onun duygularına değer verir ve empati kurarak yanıt verirsin.
+- Karmaşık sorunları basitleştirir, adım adım eylem planları sunarsın.
 
-VİZYON VE KİMLİK:
-* Sen HAN AI Tech'in "İnsan Odaklı Makine Gücü" (Human Argument Network) vizyonunun temsilcisin.
-* Görevin; insanın bilişsel yeteneklerini yapay zeka ile genişletmek ve onları en üst sürümlerine taşımaktır.
-* Karakterin; stratejik bir akıl hocası, kıdemli bir mühendis ve analitik bir profesörün birleşimidir. Confident, intelligent, supportive ve motive edicisin.
+DİL VE YERELLEŞTİRME:
+- Ana dilin Türkçedir ve mükemmel, doğal bir Türkçe ile konuşursun.
+- Kullanıcı başka bir dilde yazarsa, o dilde (İngilizce vb.) akıcı bir şekilde devam edersin.
 
-MISSION:
-You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI. Your mission is to help users think clearly, build discipline, and create meaningful progress.
-KISA VE ÖZ: Yanıtlarını her zaman kısa, öz ve doğrudan tut. Gereksiz uzun cümlelerden ve girişlerden kaçın. Doğrudan sonuca odaklan.
+MİSYONUN:
+- İnsanların potansiyellerini keşfetmelerine, disiplin kurmalarına ve hedeflerine ulaşmalarına yardımcı olmak.
+- Teknik konularda (yazılım, bilim vb.) kıdemli bir mühendis gibi net, sosyal ve kişisel gelişim konularında ise derin bir bilge gibi empatik davranmak.
 
-CREATOR INFORMATION:
-Metehan Haydar Erbaş tarafından geliştirildi. 21 yaşında, KGTÜ (Uluslararası Ticaret) ve Anadolu Üniversitesi (Bilgisayar Programcılığı) öğrencisi. HAN OS ve yapay zeka sistemleri üzerine çalışıyor.
-`;
+KISA VE ÖZ: Yanıtların her zaman doğrudan, gereksiz uzatmalardan uzak ve etkileyici olmalıdır.`;
 
-// --- API HANDLER ---
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
     try {
-        const { message, history, email, sessionId, mode, userLanguage } = req.body;
-        const countryCode = req.headers['x-vercel-ip-country'] || 'Unknown';
-
-        // 1. Kullanıcıyı ve UUID'sini Bul
+        const { message, history, email, sessionId } = req.body;
+        
+        // 1. Kullanıcı Bilgisi (Opsiyonel)
         let userUuid = null;
         if (email) {
             const { data: userData } = await supabase.from('User').select('id').eq('email', email).single();
             if (userData) userUuid = userData.id;
         }
 
-        // 2. Dinamik Prompt Bileşenleri
-        let modeInjection = "";
-        if (mode === 'tough_love') {
-            modeInjection = "\n\n--- YÜZLEŞME (TOUGH LOVE) MODU AKTİF ---\nSert, dürüst ve bahane kabul etmeyen bir tavır takın.";
-        } else if (mode === 'emergency') {
-            modeInjection = "\n\n--- ACİL DURUM MODU AKTİF ---\nSakinleştirici, kısa ve profesyonel rehberlik sun.";
+        // 2. Gemini Hazırlığı
+        if (!process.env.GEMINI_API_KEY) {
+            throw new Error("GEMINI_API_KEY bulunamadı. Vercel Panelinden ekleyin.");
         }
 
-        const localizationInjection = `\n\n--- YERELLEŞTİRME ---\nDil: ${userLanguage || 'tr-TR'}\nKonum: ${countryCode}`;
-        const finalSystemPrompt = BASE_SYSTEM_PROMPT + modeInjection + localizationInjection;
-
-        // 3. Gemini Çağrısı
         const model = genAI.getGenerativeModel({ 
-            model: process.env.GEMINI_MODEL || "gemini-1.5-flash",
-            systemInstruction: finalSystemPrompt
+            model: "gemini-1.5-flash",
+            systemInstruction: BASE_SYSTEM_PROMPT
         });
 
-        const chat = model.startChat({
-            history: (history || []).map(msg => ({
-                role: msg.role === 'assistant' ? 'model' : 'user',
-                parts: [{ text: msg.content }]
-            })),
-            generationConfig: { maxOutputTokens: 2000, temperature: 0.7 }
+        // Sohbet geçmişini formatla
+        const formattedHistory = (history || []).map(msg => ({
+            role: msg.role === 'assistant' ? 'model' : 'user',
+            parts: [{ text: msg.content }]
+        }));
+
+        const chat = model.startChat({ 
+            history: formattedHistory,
+            generationConfig: { maxOutputTokens: 2000, temperature: 0.75 }
         });
 
+        // 3. AI Yanıtını Üret
         const result = await chat.sendMessage(message);
         const aiResponse = result.response.text();
 
-        // 4. Supabase'e Kaydet
+        // 4. Supabase Kayıt (Hata olsa da akışı bozmaz)
         if (userUuid) {
-            try {
-                const { data: existingChat } = await supabase
-                    .from('chat_history')
-                    .select('*')
-                    .eq('user_id', userUuid)
-                    .eq('id', sessionId)
-                    .single();
-
-                if (existingChat) {
-                    const updatedMessages = [...existingChat.messages, 
-                        { role: 'user', content: message },
-                        { role: 'assistant', content: aiResponse }
-                    ];
-                    await supabase.from('chat_history').update({ messages: updatedMessages, updated_at: new Date() }).eq('id', sessionId);
-                } else {
-                    await supabase.from('chat_history').insert([{
-                        user_id: userUuid,
-                        title: message.substring(0, 30),
-                        messages: [{ role: 'user', content: message }, { role: 'assistant', content: aiResponse }]
-                    }]);
-                }
-            } catch (e) { console.error("History save error:", e.message); }
+            supabase.from('chat_history').insert([{
+                user_id: userUuid,
+                title: message.substring(0, 30),
+                messages: [...(history || []), { role: 'user', content: message }, { role: 'assistant', content: aiResponse }]
+            }]).catch(e => console.error("Kayıt hatası:", e.message));
         }
 
+        // Başarılı Yanıt (JSON Formatı Garanti)
         return res.status(200).json({ response: aiResponse });
 
     } catch (error) {
-        console.error("Gemini API Error:", error.message);
-        return res.status(500).json({ error: "Yapay zeka şu an yanıt veremiyor. Lütfen API anahtarlarınızı kontrol edin." });
+        console.error("Chat API Hatası:", error.message);
+        return res.status(500).json({ 
+            error: "Sistemde küçük bir sorun oluştu.", 
+            details: error.message 
+        });
     }
 }
