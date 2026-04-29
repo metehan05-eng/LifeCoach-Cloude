@@ -516,12 +516,17 @@
             .replace(/---+\s*$/g, '')
             .trim();
 
-        // ── 4. Extract [ ] checklist items
+        // ── 4. Extract [ ] checklist items (handles - [ ], * [ ], [ ])
         const checklistItems = [];
-        clean = clean.replace(/^\s*\[\s*\]\s+(.+)$/gm, (match, text) => {
+        clean = clean.replace(/^[\s\-\*]*\[\s*\]\s+(.+)$/gm, (match, text) => {
             checklistItems.push(text.trim());
-            return '';
+            return ''; // We remove from main text to show in the special checklist section
         });
+
+        // ── 4.1. If clean is empty but we have items, let's keep some introduction
+        if (clean.trim() === '' && checklistItems.length > 0) {
+            clean = "### Bugünkü Görevlerin\nAşağıdaki adımları takip ederek hedefine bir adım daha yaklaşabilirsin:";
+        }
 
         // ── 5. Render main markdown
         document.getElementById('briefingContent').innerHTML = marked.parse(clean);

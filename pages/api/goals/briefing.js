@@ -271,19 +271,7 @@ Bugünün Tarihi: ${today}
 ${searchContext}
 
 Görev: Bu hedefe ulaşmak için bugün neler yapılabileceğini detaylandırın.
-Kullanıcının mevcut ilerlemesini (%${currentProgress}) ve daha önce ${completionCount} gün çalıştığını göz önünde bulundurarak, "Yol Haritası"nın bir sonraki mantıklı adımını önerin.
-
-Yanıt formatı (Markdown kullan):
-1. **Bugün çalışılması gereken ana konu**.
-2. **Konunun açıklaması**.
-${dynamicSection}
-5. **Günlük Motivasyon ve Görev**.
-
----
-SEARCH_QUERY: [Bu konuyu öğrenmek için YouTube'da aranacak Türkçe arama terimi]
----
-
-Yanıt dili Türkçe olmalı. En sona mutlaka SEARCH_QUERY ifadesini bırakıp konuya özel aranacak kelimeyi tam olarak verin.`;
+Kullanıcının mevcut ilerlemesini (%${currentProgress}) ve daha önce ${completionCount} gün çalıştığını göz önünde bulundurarak, "Yol Haritası"nın bir sonraki mantıklı adımını önerin.`;
 
         try {
             const aiText = await generateAIContent(userPrompt, systemPrompt);
