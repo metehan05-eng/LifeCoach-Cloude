@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #09090b;
+  --foreground: #fafafa;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: 'Inter', sans-serif;
+  overflow-x: hidden;
+}
+
+/* Custom Duolingo-style button effects */
+.btn-duo {
+  position: relative;
+  transition: all 0.1s ease;
+  border-bottom-width: 4px;
+}
+
+.btn-duo:active {
+  transform: translateY(2px);
+  border-bottom-width: 0px;
+  margin-bottom: 2px;
+}
+
+/* Glassmorphism */
+.glass-panel {
+  background: rgba(24, 24, 27, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Defne AI Glow */
+.defne-glow {
+  filter: drop-shadow(0 0 15px rgba(59, 130, 246, 0.5));
+}
