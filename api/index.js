@@ -229,6 +229,9 @@ async function callGemini(prompt, history = [], systemInstruction = "") {
 // ── AI Yanıt Fonksiyonu (Gemini & OpenRouter Fallback) ──────────────────────────────
 async function generateAIResponse(prompt, history = [], systemInstruction = "") {
     try {
+        if (!genAI && !OPENROUTER_API_KEY) {
+            return "⚠️ Yapay zeka hizmeti henüz yapılandırılmamış. Lütfen .env.local dosyasına GEMINI_API_KEY veya OPENROUTER_API_KEY ekleyin.";
+        }
         // 1. Önce Gemini'yi dene (Max 6 saniye)
         const result = await callGemini(prompt, history, systemInstruction);
         return result.text;
@@ -242,7 +245,6 @@ async function generateAIResponse(prompt, history = [], systemInstruction = "") 
             }));
             messages.push({ role: 'user', content: prompt });
 
-            // Sadece ilk OpenRouter modelini dene (Zaman kısıtlı!)
             try {
                 const orResult = await callOpenRouter(messages, OPENROUTER_MODELS[0], systemInstruction);
                 return orResult.text;
@@ -250,7 +252,7 @@ async function generateAIResponse(prompt, history = [], systemInstruction = "") 
                 console.error("[AI] Tüm modeller zaman aşımına uğruyor.");
             }
         }
-        throw new Error("Yapay zeka yanıt veremedi, lütfen tekrar deneyin.");
+        return "Yapay zeka şu an yoğun veya yapılandırılmamış. Lütfen daha sonra tekrar deneyin veya API anahtarlarınızı kontrol edin.";
     }
 }
 

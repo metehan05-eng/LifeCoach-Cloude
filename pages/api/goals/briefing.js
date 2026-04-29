@@ -161,7 +161,7 @@ async function generateAIContent(prompt, systemPrompt = "") {
         return result.text;
     } catch (error) {
         console.error('[AI-Briefing] Gemini hatası:', error.message);
-        return null;
+        return "Yapay zeka modülü (Gemini) şu an yapılandırılmamış veya hazır değil. Lütfen .env.local dosyasındaki GEMINI_API_KEY anahtarını kontrol edin.";
     }
 }
 

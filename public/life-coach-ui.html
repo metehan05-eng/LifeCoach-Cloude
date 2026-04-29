@@ -96,8 +96,23 @@
                         'fade-in-left': 'fade-in-left 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
                         'fade-in-right': 'fade-in-right 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
                         'fade-in': 'fade-in 0.3s ease-out',
+                        'idle-breathing': 'breathing 3s ease-in-out infinite',
+                        'blinking': 'blink 4s infinite',
+                        'message-pop': 'pop 0.3s ease-out forwards',
                     },
                     keyframes: {
+                        breathing: {
+                            '0%, 100%': { transform: 'scale(1)' },
+                            '50%': { transform: 'scale(1.02)' },
+                        },
+                        blink: {
+                            '0%, 9%, 11%, 100%': { transform: 'scaleY(1)' },
+                            '10%': { transform: 'scaleY(0.1)' },
+                        },
+                        pop: {
+                            '0%': { opacity: '0', transform: 'scale(0.8) translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'scale(1) translateY(0)' },
+                        },
                         float: {
                             '0%, 100%': { transform: 'translateY(0px)' },
                             '50%': { transform: 'translateY(-10px)' },
@@ -3135,6 +3150,18 @@
                     <span class="ml-auto text-[10px] text-pink-400 font-bold"><i class="fa-solid fa-bolt"></i> Sims
                         Modeli</span>
                 </button>
+
+                <!-- Interactive Lesson (New) -->
+                <a href="/interactive" 
+                    class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all group">
+                    <div
+                        class="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500/10 to-blue-400/5 border border-blue-500/20 group-hover:from-blue-500/20 group-hover:to-blue-400/10 group-hover:border-blue-500/30 transition-all shadow-md shadow-blue-500/10 group-hover:shadow-lg group-hover:shadow-blue-500/20">
+                        <i
+                            class="fa-solid fa-graduation-cap text-blue-400 text-[13px] group-hover:scale-110 transition-transform duration-300"></i>
+                    </div>
+                    <span class="text-sm font-medium group-hover:font-semibold transition-colors">İnteraktif Ders</span>
+                    <span class="ml-auto text-[9px] px-1.5 py-0.5 rounded-md bg-blue-500/20 text-blue-400 font-bold border border-blue-500/30">CANLI</span>
+                </a>
 
                 <!-- Duygu Durumu -->
                 <button onclick="showSection('mood'); closeSidebarMobile();"
@@ -13586,7 +13613,6 @@
             const today = new Date().toISOString().split('T')[0];
             const lastMoodDate = localStorage.getItem('last_mood_date');
             
-            // Show if not set today
             if (lastMoodDate !== today) {
                 const modal = document.getElementById('eq-mood-modal');
                 modal.classList.remove('hidden');
@@ -13610,8 +13636,6 @@
             
             setTimeout(() => {
                 modal.classList.add('hidden');
-                
-                // Show dynamic EQ toast
                 if (mood === 'stresli') {
                     showToast('Asistanın bugünkü görevleri senin yorgunluk seviyene göre hafifletecek. Lütfen dinlenmeye zaman ayır! ❤️', 'info');
                 } else if (mood === 'harika') {
@@ -13622,17 +13646,15 @@
             }, 300);
         }
 
-        // Initialize Mood Check on load
         document.addEventListener('DOMContentLoaded', () => {
-             setTimeout(checkDailyMood, 1500); // Popup 1.5 seconds after load
+             setTimeout(checkDailyMood, 1500);
         });
     </script>
+
     <!-- ================= SMART MUSIC WIDGET ================= -->
-    <div id="smart-music-widget" class="fixed bottom-6 right-6 z-[9000] flex flex-col items-end transition-all duration-500 transform translate-y-0 translate-x-0">
-        <!-- Toggle logic using peer -->
+    <div id="smart-music-widget" class="fixed bottom-24 right-6 z-[9000] flex flex-col items-end transition-all duration-500">
         <input type="checkbox" id="music-toggle" class="absolute hidden peer">
         
-        <!-- Album / Card Container -->
         <div class="peer-checked:opacity-100 peer-checked:scale-100 opacity-0 scale-95 origin-bottom-right transition-all duration-300 w-72 bg-slate-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden mb-4 pointer-events-auto">
             <div class="p-3 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border-b border-white/5 flex items-center justify-between">
                 <span class="text-xs font-bold text-slate-300 flex items-center gap-2"><i class="fa-solid fa-compact-disc animate-[spin_3s_linear_infinite]"></i> Sana Özel Öneriler</span>
@@ -13641,7 +13663,6 @@
             <div class="p-4 flex gap-4 items-center">
                 <div class="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 relative">
                     <img id="music-cover" src="https://images.unsplash.com/photo-1542382257-80dedb725088?w=300&q=80" class="w-full h-full object-cover">
-                    <!-- equalizer overlay when playing -->
                     <div id="music-eq" class="absolute inset-0 bg-black/50 flex items-end justify-center gap-1 p-2 hidden">
                         <div class="w-1 bg-white h-[40%] animate-pulse"></div>
                         <div class="w-1 bg-white h-[80%] animate-pulse" style="animation-delay:0.1s"></div>
@@ -13654,7 +13675,6 @@
                 </div>
             </div>
             
-            <!-- Controls -->
             <div class="flex items-center justify-between p-3 bg-white/5">
                 <button onclick="changeTrack(-1)" class="w-8 h-8 rounded-full hover:bg-white/10 text-white flex items-center justify-center transition"><i class="fa-solid fa-backward-step text-xs"></i></button>
                 <button id="smart-play-btn" onclick="toggleSmartMusic()" class="w-10 h-10 rounded-full bg-indigo-500 text-white flex items-center justify-center hover:scale-105 transition shadow-[0_0_15px_rgba(99,102,241,0.5)]"><i class="fa-solid fa-play ml-1"></i></button>
@@ -13662,75 +13682,122 @@
             </div>
         </div>
 
-        <!-- Float Trigger Button -->
-        <label for="music-toggle" class="peer-checked:rotate-180 peer-checked:bg-slate-700 bg-gradient-to-r from-indigo-500 to-purple-600 w-14 h-14 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(99,102,241,0.4)] text-white text-xl cursor-pointer hover:scale-110 transition-all pointer-events-auto">
+        <label for="music-toggle" class="peer-checked:rotate-180 peer-checked:opacity-0 bg-gradient-to-r from-indigo-500 to-purple-600 w-14 h-14 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(99,102,241,0.4)] text-white text-xl cursor-pointer hover:scale-110 transition-all pointer-events-auto">
             <i class="fa-solid fa-music"></i>
         </label>
     </div>
 
-    <!-- SMART MUSIC LOGIC -->
-    <script>
-        const trackList = [
-            { title: "Kodlama Ruhu (Lo-Fi)", artist: "Asistan Klasikleri", url: "https://cdn.pixabay.com/download/audio/2022/02/22/audio_d171691238.mp3?filename=lofi-chill-medium-version-126735.mp3", img: "https://images.unsplash.com/photo-1542382257-80dedb725088?w=300&q=80" },
-            { title: "Deep Focus Synth", artist: "Cyberpunk Mood", url: "https://cdn.pixabay.com/download/audio/2022/10/18/audio_31c2730e64.mp3?filename=synthwave-80s-122024.mp3", img: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=300&q=80" },
-            { title: "E-Spor Motivasyon", artist: "Arena Günü", url: "https://cdn.pixabay.com/download/audio/2023/04/23/audio_f553a812e9.mp3?filename=trap-beat-146950.mp3", img: "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=300&q=80" },
-            { title: "Zihin Açıcı (Chill)", artist: "LifeCoach AI", url: "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3", img: "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=300&q=80" }
-        ];
+    <!-- Defne AI Character -->
+    <div id="defne-ai-container" class="fixed bottom-6 right-6 z-[9999] flex flex-col items-end pointer-events-none">
+        <div id="defne-bubble" class="hidden max-w-[280px] bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-2xl p-4 mb-4 shadow-2xl animate-message-pop pointer-events-auto">
+            <p id="defne-text" class="text-xs text-slate-200 leading-relaxed"></p>
+            <div class="absolute -bottom-2 right-6 w-4 h-4 bg-slate-900 border-r border-b border-white/10 rotate-45"></div>
+        </div>
         
+        <div id="defne-avatar" class="w-16 h-16 md:w-20 md:h-20 cursor-pointer pointer-events-auto transition-transform hover:scale-110 active:scale-95">
+            <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-[0_0_15px_rgba(45,212,191,0.3)]">
+                <path d="M20,50 Q20,30 50,20 Q80,30 80,50 L80,70 Q50,80 20,70 Z" fill="#2D3748" />
+                <path d="M30,80 Q50,75 70,80 L75,100 L25,100 Z" fill="#0D9488" class="animate-idle-breathing" />
+                <rect x="45" y="70" width="10" height="10" fill="#FBD38D" />
+                <circle cx="50" cy="50" r="25" fill="#FBD38D" />
+                <g class="animate-blinking">
+                    <circle cx="42" cy="48" r="3" fill="#1A202C" />
+                    <circle cx="58" cy="48" r="3" fill="#1A202C" />
+                </g>
+                <path d="M25,50 Q25,30 50,25 Q75,30 75,50 Q75,40 50,40 Q25,40 25,50 Z" fill="#2D3748" />
+                <circle cx="70" cy="30" r="4" fill="white" class="animate-pulse" opacity="0.6"><animate attributeName="r" values="3;5;3" dur="2s" repeatCount="indefinite" /></circle>
+            </svg>
+            <div class="absolute bottom-1 right-1 w-4 h-4 bg-emerald-500 border-2 border-slate-900 rounded-full shadow-[0_0_8px_#10b981]"></div>
+        </div>
+    </div>
+
+    <script>
+        // Music Logic
+        const musicTracks = [
+            { title: "Kodlama Ruhu (Lo-Fi)", artist: "Asistan Klasikleri", url: "https://cdn.pixabay.com/download/audio/2022/02/22/audio_d171691238.mp3?filename=lofi-chill-medium-version-126735.mp3", img: "https://images.unsplash.com/photo-1542382257-80dedb725088?w=300&q=80" },
+            { title: "Deep Focus Synth", artist: "Cyberpunk Mood", url: "https://cdn.pixabay.com/download/audio/2022/10/18/audio_31c2730e64.mp3?filename=synthwave-80s-122024.mp3", img: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=300&q=80" }
+        ];
         let currentTrackIdx = 0;
-        let smartAudioObj = new Audio(trackList[currentTrackIdx].url);
-        smartAudioObj.loop = true;
-        let isSmartPlaying = false;
+        let audioObj = new Audio(musicTracks[currentTrackIdx].url);
+        audioObj.loop = true;
+        let isPlaying = false;
 
         function updateTrackUI() {
-            const track = trackList[currentTrackIdx];
+            const track = musicTracks[currentTrackIdx];
             document.getElementById('music-title').innerText = track.title;
             document.getElementById('music-artist').innerText = track.artist;
             document.getElementById('music-cover').src = track.img;
-            
-            const wasPlaying = isSmartPlaying;
-            if(isSmartPlaying) smartAudioObj.pause();
-            
-            smartAudioObj.src = track.url;
-            smartAudioObj.load();
-            
-            if(wasPlaying) {
-                smartAudioObj.play().catch(e => console.warn("Auto-play blocked or failed", e));
-            }
+            audioObj.src = track.url;
+            if(isPlaying) audioObj.play();
         }
 
         async function toggleSmartMusic() {
-            isSmartPlaying = !isSmartPlaying;
+            isPlaying = !isPlaying;
             const btn = document.getElementById('smart-play-btn');
             const eq = document.getElementById('music-eq');
-            
-            try {
-                if (isSmartPlaying) {
-                    await smartAudioObj.play();
+            if (isPlaying) {
+                try {
+                    await audioObj.play();
                     btn.innerHTML = '<i class="fa-solid fa-pause"></i>';
                     eq.classList.remove('hidden');
-                    document.querySelector('#smart-music-widget label.bg-gradient-to-r').classList.add('animate-[pulse_2s_infinite]');
-                } else {
-                    smartAudioObj.pause();
-                    btn.innerHTML = '<i class="fa-solid fa-play ml-1"></i>';
-                    eq.classList.add('hidden');
-                    document.querySelector('#smart-music-widget label.bg-gradient-to-r').classList.remove('animate-[pulse_2s_infinite]');
+                } catch (e) {
+                    isPlaying = false;
+                    showToast("Müzik yüklenemedi.", "error");
                 }
-            } catch (error) {
-                console.error("Smart Music Error:", error);
-                isSmartPlaying = false;
+            } else {
+                audioObj.pause();
                 btn.innerHTML = '<i class="fa-solid fa-play ml-1"></i>';
-                showToast("Müzik yüklenemedi. Lütfen internetini kontrol et.", "error");
+                eq.classList.add('hidden');
             }
         }
 
-        function changeTrack(direction) {
-            currentTrackIdx += direction;
-            if(currentTrackIdx < 0) currentTrackIdx = trackList.length - 1;
-            if(currentTrackIdx >= trackList.length) currentTrackIdx = 0;
+        function changeTrack(dir) {
+            currentTrackIdx = (currentTrackIdx + dir + musicTracks.length) % musicTracks.length;
             updateTrackUI();
         }
+
+        // Defne AI Logic
+        const DefneAI = {
+            element: document.getElementById('defne-bubble'),
+            textElement: document.getElementById('defne-text'),
+            avatar: document.getElementById('defne-avatar'),
+            messages: [
+                "Merhaba! Ben Defne. Bugün harika bir gün olacak! 🌟", 
+                "Hedeflerine odaklanman için buradayım. 💪", 
+                "Öğrenmeye hazır mısın? İnteraktif derslere göz at! 🎓",
+                "Harika gidiyorsun, motivasyonunu yüksek tut! 🔥"
+            ],
+            init() {
+                if (!this.avatar) return;
+                this.avatar.onclick = () => this.speak();
+                setTimeout(() => this.speak("Hoş geldin! Seninle tekrar karşılaşmak harika. 😊"), 1500);
+            },
+            speak(manualText) {
+                const text = manualText || this.messages[Math.floor(Math.random() * this.messages.length)];
+                if (this.element) this.element.classList.remove('hidden');
+                this.typeWriter(text);
+                clearTimeout(this.hideTimeout);
+                this.hideTimeout = setTimeout(() => { if (this.element) this.element.classList.add('hidden'); }, 7000);
+            },
+            typeWriter(text) {
+                if (!this.textElement) return;
+                this.textElement.textContent = '';
+                let i = 0;
+                const type = () => {
+                    if (i < text.length) { 
+                        this.textElement.textContent += text.charAt(i); 
+                        i++; 
+                        setTimeout(type, 35); 
+                    }
+                };
+                type();
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            DefneAI.init();
+            if (typeof updateTrackUI === 'function') updateTrackUI();
+        });
     </script>
 </body>
-
 </html>
