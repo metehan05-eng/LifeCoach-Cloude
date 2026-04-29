@@ -43,7 +43,7 @@
     "natural": "^6.11.2",
     "next": "^14.2.35",
     "next-auth": "^4.24.14",
-    "nodemailer": "^6.9.13",
+    "nodemailer": "^7.0.7",
     "pdf-parse": "^1.1.1",
     "peer": "^1.0.2",
     "pg": "^8.11.5",
