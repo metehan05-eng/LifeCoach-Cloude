@@ -1,5 +1,5 @@
 import ky from "ky";
-import { CSVLoader } from "langchain/document_loaders/fs/csv";
+import { CSVLoader } from "@langchain/community/document_loaders/fs/csv";
 import Metal from "@getmetal/metal-sdk";
 import { v4 as uuidv4 } from "uuid";
 

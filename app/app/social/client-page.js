@@ -81,7 +81,6 @@ export default function SocialClientPage() {
   const [receivedFiles, setReceivedFiles] = useState([]);
   const [aiSuggestions, setAiSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [isSending, setIsSending] = useState(false);
