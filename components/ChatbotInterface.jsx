@@ -24,23 +24,31 @@ export default function ChatbotInterface() {
   const router = useRouter();
   const isMobile = useIsMobile();
 
-  const [sessions, setSessions] = useState([
-    { id: 1, title: 'Yeni Sohbet', messages: [], createdAt: new Date() }
-  ]);
-  const [activeSessionId, setActiveSessionId] = useState(1);
+  const [isMounted, setIsMounted] = useState(false);
+  const [sessions, setSessions] = useState([]);
+  const [activeSessionId, setActiveSessionId] = useState(null);
+
+  useEffect(() => {
+    setIsMounted(true);
+    const initialId = Date.now();
+    setSessions([{ id: initialId, title: 'Yeni Sohbet', messages: [], createdAt: new Date() }]);
+    setActiveSessionId(initialId);
+  }, []);
+
   const [isTyping, setIsTyping] = useState(false);
-  // Desktop: open by default, mobile: closed by default
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [streamText, setStreamText] = useState('');
 
-  // On mobile, close sidebar by default
+  // UI state adjustment after mount/isMobile change
   useEffect(() => {
-    if (isMobile) setSidebarOpen(false);
-    else setSidebarOpen(true);
-  }, [isMobile]);
+    if (isMounted) {
+      if (isMobile) setSidebarOpen(false);
+      else setSidebarOpen(true);
+    }
+  }, [isMounted, isMobile]);
 
   // Auth protection
   useEffect(() => {
@@ -132,6 +140,8 @@ export default function ChatbotInterface() {
   }, [activeSessionId, messages, isLoading]);
 
   const toggleSidebar = () => setSidebarOpen(p => !p);
+
+  if (!isMounted) return null;
 
   return (
     <div className={styles.root}>
