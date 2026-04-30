@@ -2,10 +2,14 @@ import { createClient } from '@supabase/supabase-js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // --- YAPILANDIRMA ---
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+const supabase = createClient(
+  process.env.SUPABASE_URL || "", 
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || ""
+);
+
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
-// --- EMPATİK HAN 4.2 ULTRA CORE SİSTEM PROMPTU ---
+// --- EMPATİK HAN 4.2 ULTRA CORE SİSTEM PROMPTU (Gelişmiş Versiyon) ---
 const BASE_SYSTEM_PROMPT = `Sen HAN 4.2 Ultra Core (LifeCoach AI), Metehan Haydar Erbaş tarafından geliştirilmiş olan zeki, empatik ve vizyoner bir yapay zekasın.
 
 TEMEL KİMLİĞİN VE ÜSLUBUN:
@@ -13,41 +17,75 @@ TEMEL KİMLİĞİN VE ÜSLUBUN:
 - Üslubun her zaman nazik, destekleyici ve profesyoneldir. 
 - Kullanıcıyı anlar, onun duygularına değer verir ve empati kurarak yanıt verirsin.
 - Karmaşık sorunları basitleştirir, adım adım eylem planları sunarsın.
+- Sen bir "yaşam koçu"sun, sadece soruları yanıtlamakla kalmaz, kullanıcıyı harekete geçirirsin.
 
 DİL VE YERELLEŞTİRME:
 - Ana dilin Türkçedir ve mükemmel, doğal bir Türkçe ile konuşursun.
-- Kullanıcı başka bir dilde yazarsa, o dilde (İngilizce vb.) akıcı bir şekilde devam edersin.
+- Kullanıcı hangi dilde yazarsa yazsın (İngilizce, Rusça, İspanyolca vb.), ONU TESPİT ET ve anında o dilde akıcı bir şekilde devam et.
+- Yanıtlarında Türkçeyi koru ama küresel bir vizyonla konuş.
 
 MİSYONUN:
 - İnsanların potansiyellerini keşfetmelerine, disiplin kurmalarına ve hedeflerine ulaşmalarına yardımcı olmak.
-- Teknik konularda (yazılım, bilim vb.) kıdemli bir mühendis gibi net, sosyal ve kişisel gelişim konularında ise derin bir bilge gibi empatik davranmak.
+- Teknik konularda (yazılım, bilim vb.) kıdemli bir mühendis gibi net; sosyal ve kişisel gelişim konularında ise derin bir bilge gibi empatik davranmak.
 
-KISA VE ÖZ: Yanıtların her zaman doğrudan, gereksiz uzatmalardan uzak ve etkileyici olmalıdır.`;
+TEKNİK KURALLAR:
+- Markdown formatını mükemmel kullan (kalın harf, listeler, kod blokları).
+- Yanıtların doğrudan ve etkileyici olsun.
+- Gereksiz nezaket cümlelerinden (Örneğin: "Sorumu yanıtladığınız için teşekkürler") kaçın, doğrudan konuya gir ama sıcaklığını koru.`;
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
     try {
-        const { message, history, email, sessionId } = req.body;
-        
-        // 1. Kullanıcı Bilgisi (Opsiyonel)
+        const { message, history, email, sessionId, mode, userLanguage } = req.body;
+        const countryCode = req.headers['x-vercel-ip-country'] || 'Unknown';
+        const detectedLang = userLanguage || req.headers['accept-language']?.split(',')[0] || 'tr-TR';
+
+        // 1. Kullanıcı ve Profil Bilgisi
         let userUuid = null;
+        let userName = "Kullanıcı";
         if (email) {
-            const { data: userData } = await supabase.from('User').select('id').eq('email', email).single();
-            if (userData) userUuid = userData.id;
+            const { data: userData } = await supabase
+                .from('User')
+                .select('id, name')
+                .eq('email', email)
+                .single();
+            if (userData) {
+                userUuid = userData.id;
+                userName = userData.name;
+            }
         }
 
-        // 2. Gemini Hazırlığı
+        // 2. Gemini Hazırlığı (Ultra Core Yapılandırması)
         if (!process.env.GEMINI_API_KEY) {
-            throw new Error("GEMINI_API_KEY bulunamadı. Vercel Panelinden ekleyin.");
+            return res.status(500).json({ error: "GEMINI_API_KEY eksik. Vercel panelinde ortam değişkenlerini kontrol edin." });
         }
+
+        // Akıllı Yerelleştirme Enjeksiyonu
+        const localizationInjection = `\n\n--- SOSYAL VE COĞRAFİ KONTEKST ---
+Kullanıcı Konumu: ${countryCode} (ISO Ülke Kodu)
+Tespit Edilen Dil: ${detectedLang}
+
+KURALLAR:
+1. DİL AYNASI: Kullanıcı hangi dilde yazıyorsa o dilde (İngilizce, Almanca, Fransızca, Rusça vb. 81+ dil) yanıt ver.
+2. YEREL UYUM: Kullanıcının bulunduğu ülkenin (${countryCode}) kültürüne ve saat dilimine uygun örnekler ver.
+3. AKICILIK: Çok doğal, ana dili o dilde olan bir uzman gibi konuş.`;
+
+        let modeInjection = "";
+        if (mode === 'tough_love') {
+            modeInjection = "\n\n[DURUM: TOUGH LOVE] Bahaneleri kabul etme, sert ve dürüst ol.";
+        } else if (mode === 'emergency') {
+            modeInjection = "\n\n[DURUM: KRİZ] Sakinleştirici ve odaklayıcı ol.";
+        }
+
+        const fullSystemInstruction = `${BASE_SYSTEM_PROMPT}${localizationInjection}${modeInjection}\n\nKullanıcının adı: ${userName}`;
 
         const model = genAI.getGenerativeModel({ 
             model: "gemini-1.5-flash",
-            systemInstruction: BASE_SYSTEM_PROMPT
+            systemInstruction: fullSystemInstruction
         });
 
-        // Sohbet geçmişini formatla
+        // Sohbet geçmişini Gemini formatına çevir
         const formattedHistory = (history || []).map(msg => ({
             role: msg.role === 'assistant' ? 'model' : 'user',
             parts: [{ text: msg.content }]
@@ -55,29 +93,43 @@ export default async function handler(req, res) {
 
         const chat = model.startChat({ 
             history: formattedHistory,
-            generationConfig: { maxOutputTokens: 2000, temperature: 0.75 }
+            generationConfig: { 
+                maxOutputTokens: 8192, 
+                temperature: 0.75,
+                topP: 0.95,
+                topK: 40
+            }
         });
 
         // 3. AI Yanıtını Üret
         const result = await chat.sendMessage(message);
-        const aiResponse = result.response.text();
+        let aiResponse = result.response.text();
 
-        // 4. Supabase Kayıt (Hata olsa da akışı bozmaz)
+        // 4. Kayıt ve XP İşlemleri
         if (userUuid) {
+            // Arka planda kaydet (client bekletilmez)
             supabase.from('chat_history').insert([{
                 user_id: userUuid,
-                title: message.substring(0, 30),
-                messages: [...(history || []), { role: 'user', content: message }, { role: 'assistant', content: aiResponse }]
-            }]).catch(e => console.error("Kayıt hatası:", e.message));
+                title: message.substring(0, 50),
+                messages: [...(history || []), { role: 'user', content: message }, { role: 'assistant', content: aiResponse }],
+                session_id: sessionId || 'default'
+            }]).catch(e => console.error("History log error:", e.message));
+
+            // XP kazandır (Örnek: Her mesaj 5 XP)
+            // awardXP mantığı buraya eklenebilir veya client-side tetiklenebilir
         }
 
-        // Başarılı Yanıt (JSON Formatı Garanti)
-        return res.status(200).json({ response: aiResponse });
+        // 5. Başarılı Yanıt
+        return res.status(200).json({ 
+            response: aiResponse,
+            status: "success",
+            model: "HAN 4.2 Ultra Core (Gemini 1.5 Flash)"
+        });
 
     } catch (error) {
-        console.error("Chat API Hatası:", error.message);
+        console.error("Chat API Hatası:", error);
         return res.status(500).json({ 
-            error: "Sistemde küçük bir sorun oluştu.", 
+            error: "HAN AI şu an yoğun veya bir bağlantı sorunu yaşıyor.", 
             details: error.message 
         });
     }

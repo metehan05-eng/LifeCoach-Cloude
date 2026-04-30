@@ -1,242 +1,159 @@
 "use client";
 import React, { useEffect, useRef } from 'react';
 
+/* ── Markdown formatter ── */
+const formatMarkdown = (text) => {
+  // Code blocks (multi-line) first
+  text = text.replace(/```(\w+)?\n?([\s\S]*?)```/g, (_, lang, code) =>
+    `<pre style="background:rgba(0,0,0,0.4);border:1px solid rgba(99,102,241,0.2);border-radius:10px;padding:14px 16px;overflow-x:auto;margin:10px 0;font-family:'JetBrains Mono','Fira Code',monospace;font-size:12.5px;line-height:1.6;color:#c4b5fd"><code>${code.trim()}</code></pre>`
+  );
+  // Inline code
+  text = text.replace(/`([^`]+)`/g, '<code style="background:rgba(99,102,241,0.18);padding:2px 7px;border-radius:5px;font-size:12.5px;font-family:monospace;color:#a5b4fc">$1</code>');
+  // Bold
+  text = text.replace(/\*\*(.*?)\*\*/g, '<strong style="font-weight:700;color:#e8e8ff">$1</strong>');
+  // Italic
+  text = text.replace(/\*(.*?)\*/g, '<em style="font-style:italic;color:#c4b5fd">$1</em>');
+  // H3
+  text = text.replace(/^### (.*$)/gm, '<h3 style="font-size:14px;font-weight:700;margin:14px 0 6px;color:#c4b5fd;letter-spacing:-0.3px">$1</h3>');
+  // H2
+  text = text.replace(/^## (.*$)/gm, '<h2 style="font-size:16px;font-weight:700;margin:16px 0 8px;color:#a5b4fc;letter-spacing:-0.4px">$1</h2>');
+  // H1
+  text = text.replace(/^# (.*$)/gm, '<h1 style="font-size:18px;font-weight:800;margin:18px 0 10px;color:#818cf8;letter-spacing:-0.5px">$1</h1>');
+  // Unordered list
+  text = text.replace(/^[\*\-] (.*$)/gm,
+    '<div style="display:flex;gap:10px;margin:4px 0;align-items:flex-start"><span style="color:#6366f1;font-size:10px;margin-top:5px;flex-shrink:0">●</span><span>$1</span></div>'
+  );
+  // Numbered list
+  text = text.replace(/^\d+\. (.*$)/gm,
+    '<div style="display:flex;gap:10px;margin:4px 0;align-items:flex-start"><span style="color:#8b5cf6;font-weight:700;flex-shrink:0;font-size:11px;margin-top:3px">▸</span><span>$1</span></div>'
+  );
+  // Line breaks
+  text = text.replace(/\n\n/g, '<div style="height:10px"></div>');
+  text = text.replace(/\n/g, '<br/>');
+  return text;
+};
+
+/* ── Typing dots indicator ── */
 const TypingIndicator = () => (
-  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '4px 0' }}>
-    {/* Avatar */}
+  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', padding: '4px 0', maxWidth: '760px', margin: '0 auto', width: '100%' }}>
     <div style={{
-      width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0,
+      width: '34px', height: '34px', borderRadius: '50%', flexShrink: 0,
       background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: '16px', boxShadow: '0 4px 16px rgba(99,102,241,0.35)',
+      fontSize: '15px', boxShadow: '0 2px 12px rgba(99,102,241,0.35)',
     }}>⚡</div>
     <div style={{
-      background: 'rgba(22,22,42,0.8)',
-      border: '1px solid rgba(99,102,241,0.15)',
-      borderRadius: '4px 18px 18px 18px',
-      padding: '14px 18px',
-      display: 'flex', alignItems: 'center', gap: '5px',
+      padding: '12px 16px', borderRadius: '4px 18px 18px 18px',
+      background: 'transparent',
+      display: 'flex', alignItems: 'center', gap: '5px', marginTop: '4px',
     }}>
       {[0, 1, 2].map(i => (
         <div key={i} style={{
-          width: '6px', height: '6px', borderRadius: '50%',
-          background: '#6366f1',
-          animation: `typing-bounce 1.2s ease-in-out ${i * 0.2}s infinite`,
+          width: '7px', height: '7px', borderRadius: '50%',
+          background: 'rgba(99,102,241,0.7)',
+          animation: `ci-typing 1.3s ease-in-out ${i * 0.22}s infinite`,
         }} />
       ))}
     </div>
   </div>
 );
 
-const formatMarkdown = (text) => {
-  // Bold
-  text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-  // Italic
-  text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
-  // Code inline
-  text = text.replace(/`([^`]+)`/g, '<code style="background:rgba(99,102,241,0.2);padding:2px 6px;border-radius:5px;font-size:12.5px;font-family:monospace">$1</code>');
-  // Headings
-  text = text.replace(/^### (.*$)/gm, '<h3 style="font-size:15px;font-weight:700;margin:10px 0 4px;color:#c4b5fd">$1</h3>');
-  text = text.replace(/^## (.*$)/gm, '<h2 style="font-size:17px;font-weight:700;margin:12px 0 5px;color:#a5b4fc">$1</h2>');
-  text = text.replace(/^# (.*$)/gm, '<h1 style="font-size:20px;font-weight:800;margin:14px 0 6px;color:#818cf8">$1</h1>');
-  // Lists
-  text = text.replace(/^[\*\-] (.*$)/gm, '<div style="display:flex;gap:8px;margin:2px 0"><span style="color:#6366f1;margin-top:2px">◆</span><span>$1</span></div>');
-  // Numbered
-  text = text.replace(/^\d+\. (.*$)/gm, '<div style="display:flex;gap:8px;margin:2px 0"><span style="color:#8b5cf6;font-weight:600;min-width:16px">•</span><span>$1</span></div>');
-  // Line breaks
-  text = text.replace(/\n\n/g, '<br/><br/>');
-  text = text.replace(/\n/g, '<br/>');
-  return text;
-};
-
+/* ── Single message bubble ── */
 function MessageBubble({ message, isStream }) {
   const isUser = message.role === 'user';
 
+  if (isUser) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'flex-end',
+        padding: '2px 0',
+        animation: 'ci-slide-up 0.3s ease both',
+        maxWidth: '760px', margin: '0 auto', width: '100%',
+      }}>
+        <div style={{
+          maxWidth: 'min(70%, 520px)',
+          background: 'rgba(99,102,241,0.15)',
+          border: '1px solid rgba(99,102,241,0.22)',
+          borderRadius: '18px 4px 18px 18px',
+          padding: '11px 16px',
+          fontSize: '15px', lineHeight: 1.65, color: '#e8e8ff',
+          backdropFilter: 'blur(10px)',
+        }}>
+          {message.content}
+        </div>
+      </div>
+    );
+  }
+
+  /* AI message — full width, no bubble background, like Claude */
   return (
     <div style={{
       display: 'flex',
-      flexDirection: isUser ? 'row-reverse' : 'row',
       alignItems: 'flex-start',
-      gap: '12px',
-      padding: '4px 0',
-      animation: 'slide-up 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both',
-      maxWidth: '100%',
+      gap: '14px',
+      padding: '2px 0',
+      animation: 'ci-slide-up 0.3s ease both',
+      maxWidth: '760px', margin: '0 auto', width: '100%',
     }}>
-      {/* Avatar */}
       <div style={{
-        width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0,
-        background: isUser
-          ? 'linear-gradient(135deg, #06b6d4, #3b82f6)'
-          : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+        width: '34px', height: '34px', borderRadius: '50%', flexShrink: 0,
+        background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: '15px',
-        boxShadow: isUser
-          ? '0 4px 16px rgba(6,182,212,0.3)'
-          : '0 4px 16px rgba(99,102,241,0.35)',
-      }}>
-        {isUser ? '👤' : '⚡'}
-      </div>
+        fontSize: '15px', boxShadow: '0 2px 12px rgba(99,102,241,0.3)',
+        marginTop: '2px',
+      }}>⚡</div>
 
-      {/* Bubble */}
-      <div style={{
-        maxWidth: 'min(72%, 700px)',
-        background: isUser
-          ? 'linear-gradient(135deg, rgba(6,182,212,0.18), rgba(59,130,246,0.12))'
-          : 'rgba(22,22,42,0.75)',
-        border: isUser
-          ? '1px solid rgba(6,182,212,0.25)'
-          : '1px solid rgba(99,102,241,0.14)',
-        borderRadius: isUser ? '18px 4px 18px 18px' : '4px 18px 18px 18px',
-        padding: '13px 18px',
-        backdropFilter: 'blur(10px)',
-        position: 'relative',
-      }}>
-        {/* Role label */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        {/* Name row */}
         <div style={{
-          fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.8px',
-          textTransform: 'uppercase',
-          color: isUser ? 'rgba(6,182,212,0.7)' : 'rgba(99,102,241,0.7)',
-          marginBottom: '6px',
+          fontSize: '12px', fontWeight: 700, color: 'rgba(99,102,241,0.7)',
+          marginBottom: '6px', letterSpacing: '0.3px',
+          display: 'flex', alignItems: 'center', gap: '6px',
         }}>
-          {isUser ? 'Sen' : 'HAN AI'}
-          {isStream && <span style={{ marginLeft: '6px', animation: 'pulse 1s infinite' }}>▊</span>}
+          HAN AI
+          {isStream && <span style={{ animation: 'ci-blink 0.7s ease-in-out infinite', color: '#6366f1', fontSize: '14px' }}>▊</span>}
         </div>
-
-        {/* Content */}
-        {isUser ? (
-          <div style={{ fontSize: '14.5px', lineHeight: 1.65, color: '#e8e8ff' }}>
-            {message.content}
-          </div>
-        ) : (
-          <div
-            style={{ fontSize: '14.5px', lineHeight: 1.7, color: '#d0d0f0' }}
-            dangerouslySetInnerHTML={{ __html: formatMarkdown(message.content) }}
-          />
-        )}
+        {/* Content — no bubble, just text */}
+        <div
+          style={{ fontSize: '15px', lineHeight: 1.75, color: '#d8d8f0' }}
+          dangerouslySetInnerHTML={{ __html: formatMarkdown(message.content) }}
+        />
       </div>
     </div>
   );
 }
 
-const SUGGESTIONS = [
-  { icon: '🎯', text: 'Hedef belirleme stratejisi', sub: 'Uzun vadeli plan' },
-  { icon: '🧠', text: 'Üretkenlik sistemi kur', sub: 'Deep work yöntemleri' },
-  { icon: '💡', text: 'Karar vermede yardım et', sub: 'Mantıksal analiz' },
-  { icon: '🚀', text: 'Startup fikrim var', sub: 'Değerlendirme & yol haritası' },
-];
-
-export default function ChatMessages({ messages, isTyping, streamText, error }) {
+/* ── Main export ── */
+export default function ChatMessages({ messages, isTyping, streamText, error, isMobile = false }) {
   const bottomRef = useRef(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping, streamText]);
 
-  const isEmpty = messages.length === 0 && !isTyping;
-
   return (
     <div style={{
-      flex: 1,
-      overflowY: 'auto',
-      padding: '24px 20px',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '16px',
-      scrollbarWidth: 'thin',
-      scrollbarColor: 'rgba(99,102,241,0.2) transparent',
+      flex: 1, overflowY: 'auto',
+      padding: isMobile ? '16px 14px 12px' : '28px 24px 16px',
+      display: 'flex', flexDirection: 'column', gap: isMobile ? '14px' : '20px',
+      scrollbarWidth: 'thin', scrollbarColor: 'rgba(99,102,241,0.15) transparent',
     }}>
-      {/* Empty State */}
-      {isEmpty && (
-        <div style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '28px',
-          padding: '40px 20px',
-          animation: 'fade-in 0.5s ease',
-        }}>
-          {/* Logo */}
-          <div style={{ textAlign: 'center' }}>
-            <div style={{
-              width: '80px', height: '80px', borderRadius: '24px', margin: '0 auto 16px',
-              background: 'linear-gradient(135deg, #6366f1, #8b5cf6, #06b6d4)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '36px',
-              boxShadow: '0 0 40px rgba(99,102,241,0.4), 0 0 80px rgba(139,92,246,0.2)',
-              animation: 'pulse-glow 3s ease-in-out infinite',
-            }}>⚡</div>
-            <h2 style={{
-              fontSize: '26px', fontWeight: 800,
-              background: 'linear-gradient(135deg, #818cf8, #c4b5fd, #67e8f9)',
-              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-              marginBottom: '8px',
-            }}>
-              Merhaba! Ben HAN AI
-            </h2>
-            <p style={{ color: 'rgba(160,160,192,0.7)', fontSize: '14.5px', maxWidth: '380px' }}>
-              Hedeflerine ulaşmana yardım etmek için buradayım. Seninle birlikte büyüyorum.
-            </p>
-          </div>
-
-          {/* Suggestions */}
-          <div style={{
-            display: 'grid', gridTemplateColumns: '1fr 1fr',
-            gap: '10px', width: '100%', maxWidth: '520px',
-          }}>
-            {SUGGESTIONS.map((s, i) => (
-              <div key={i} style={{
-                padding: '14px 16px', borderRadius: '14px',
-                background: 'rgba(22,22,42,0.7)',
-                border: '1px solid rgba(99,102,241,0.15)',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                display: 'flex', alignItems: 'flex-start', gap: '10px',
-              }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.background = 'rgba(99,102,241,0.12)';
-                  e.currentTarget.style.borderColor = 'rgba(99,102,241,0.4)';
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.background = 'rgba(22,22,42,0.7)';
-                  e.currentTarget.style.borderColor = 'rgba(99,102,241,0.15)';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
-              >
-                <span style={{ fontSize: '20px', flexShrink: 0 }}>{s.icon}</span>
-                <div>
-                  <div style={{ fontSize: '13px', fontWeight: 600, color: '#d0d0f0', marginBottom: '2px' }}>{s.text}</div>
-                  <div style={{ fontSize: '11px', color: 'rgba(160,160,192,0.5)' }}>{s.sub}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Messages */}
-      {messages.map((msg) => (
+      {messages.map(msg => (
         <MessageBubble key={msg.id} message={msg} />
       ))}
 
-      {/* Streaming message */}
       {isTyping && streamText && (
-        <MessageBubble
-          message={{ role: 'assistant', content: streamText, id: 'stream' }}
-          isStream
-        />
+        <MessageBubble message={{ role: 'assistant', content: streamText, id: 'stream' }} isStream />
       )}
 
-      {/* Typing indicator (before text appears) */}
       {isTyping && !streamText && <TypingIndicator />}
 
-      {/* Error */}
       {error && (
         <div style={{
+          maxWidth: '760px', margin: '0 auto', width: '100%',
           padding: '12px 16px', borderRadius: '12px',
-          background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)',
+          background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)',
           color: '#f87171', fontSize: '13.5px', display: 'flex', gap: '8px', alignItems: 'center',
         }}>
           <span>⚠️</span> {error}
@@ -246,22 +163,15 @@ export default function ChatMessages({ messages, isTyping, streamText, error }) 
       <div ref={bottomRef} />
 
       <style>{`
-        @keyframes slide-up {
-          from { opacity: 0; transform: translateY(16px); }
+        @keyframes ci-slide-up {
+          from { opacity: 0; transform: translateY(12px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        @keyframes fade-in {
-          from { opacity: 0; } to { opacity: 1; }
-        }
-        @keyframes pulse-glow {
-          0%, 100% { box-shadow: 0 0 40px rgba(99,102,241,0.4), 0 0 80px rgba(139,92,246,0.2); }
-          50% { box-shadow: 0 0 60px rgba(99,102,241,0.6), 0 0 120px rgba(139,92,246,0.35), 0 0 200px rgba(6,182,212,0.15); }
-        }
-        @keyframes typing-bounce {
-          0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+        @keyframes ci-typing {
+          0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
           30% { transform: translateY(-6px); opacity: 1; }
         }
-        @keyframes pulse {
+        @keyframes ci-blink {
           0%, 100% { opacity: 1; }
           50% { opacity: 0; }
         }

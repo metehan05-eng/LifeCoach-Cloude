@@ -12,6 +12,13 @@ export const authOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      authorization: {
+        params: {
+          prompt: "consent",
+          access_type: "offline",
+          response_type: "code"
+        }
+      }
     }),
     GithubProvider({
       clientId: process.env.NEXT_PUBLIC_GITHUB_ID,
@@ -24,47 +31,58 @@ export const authOptions = {
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error("Geçersiz e-posta veya şifre.");
+        try {
+          if (!credentials?.email || !credentials?.password) {
+            throw new Error("E-posta ve şifre gereklidir.");
+          }
+
+          const user = await prismaClient.user.findUnique({
+            where: { email: credentials.email }
+          });
+
+          if (!user || !user.password) {
+            throw new Error("Kullanıcı kaydı bulunamadı.");
+          }
+
+          const isValid = await bcrypt.compare(credentials.password, user.password);
+
+          if (!isValid) {
+            throw new Error("Şifre hatalı.");
+          }
+
+          return user;
+        } catch (error) {
+          console.error("Auth Authorize Error:", error.message);
+          return null;
         }
-
-        const user = await prismaClient.user.findUnique({
-          where: { email: credentials.email }
-        });
-
-        if (!user || !user.password) {
-          throw new Error("Kullanıcı bulunamadı.");
-        }
-
-        const isValid = await bcrypt.compare(credentials.password, user.password);
-
-        if (!isValid) {
-          throw new Error("Hatalı şifre.");
-        }
-
-        return user;
       }
     }),
   ],
   pages: {
-    signIn: "/",
-    signOut: "/user/logout",
+    signIn: "/login",
+    error: "/login", // Hata durumunda login sayfasına at (querystring'i inceleyebiliriz)
   },
   callbacks: {
+    async signIn({ user, account, profile }) {
+      // Giriş yapılmasına izin ver
+      return true;
+    },
     async session({ session, token }) {
-      if (session?.user && token.sub) {
+      if (session?.user) {
         session.user.id = token.sub;
         
         try {
+          // Güncel kullanıcı bilgisini getir
           const dbUser = await prismaClient.user.findUnique({
             where: { id: token.sub },
-            select: { image: true, name: true }
+            select: { image: true, name: true, email: true }
           });
-          if (dbUser?.image) {
+          if (dbUser) {
             session.user.image = dbUser.image;
+            session.user.name = dbUser.name;
           }
         } catch (e) {
-          console.error("Session callback prisma error:", e);
+          console.error("Session callback error:", e);
         }
       }
       return session;
@@ -77,11 +95,20 @@ export const authOptions = {
         token.provider = account.provider;
       }
       return token;
+    },
+    async redirect({ url, baseUrl }) {
+      // Girişten sonra /chat sayfasına yönlendirmeyi zorla
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      else if (new URL(url).origin === baseUrl) return url;
+      return `${baseUrl}/chat`;
     }
   },
   session: {
     strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 gün
   },
+  secret: process.env.NEXTAUTH_SECRET,
+  debug: process.env.NODE_ENV === 'development',
 };
 
 export default NextAuth(authOptions);

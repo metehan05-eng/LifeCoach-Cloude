@@ -1,95 +1,99 @@
 "use client";
 import React from 'react';
 
-export default function ChatHeader({ onToggleSidebar, sidebarOpen, sessionTitle }) {
+export default function ChatHeader({ onToggleSidebar, sidebarOpen, sessionTitle, isMobile }) {
   return (
     <header style={{
-      height: '60px',
+      height: '56px',
       display: 'flex',
       alignItems: 'center',
-      padding: '0 20px',
-      gap: '14px',
-      background: 'rgba(12, 12, 24, 0.80)',
-      backdropFilter: 'blur(30px)',
-      borderBottom: '1px solid rgba(99,102,241,0.10)',
+      padding: '0 16px',
+      gap: '12px',
+      background: 'rgba(6,6,14,0.92)',
+      backdropFilter: 'blur(32px)',
+      WebkitBackdropFilter: 'blur(32px)',
+      borderBottom: '1px solid rgba(99,102,241,0.09)',
       flexShrink: 0,
       position: 'relative',
       zIndex: 20,
     }}>
-      {/* Toggle Sidebar */}
+      {/* Hamburger / sidebar toggle */}
       <button
         onClick={onToggleSidebar}
         title={sidebarOpen ? 'Sidebar gizle' : 'Sidebar göster'}
         style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           width: '36px', height: '36px', borderRadius: '10px',
-          background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)',
+          background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.18)',
           color: '#a5b4fc', cursor: 'pointer', flexShrink: 0,
           transition: 'all 0.2s ease',
-          fontSize: '18px',
         }}
         onMouseEnter={e => { e.currentTarget.style.background = 'rgba(99,102,241,0.22)'; }}
         onMouseLeave={e => { e.currentTarget.style.background = 'rgba(99,102,241,0.1)'; }}
       >
-        {sidebarOpen ? '◀' : '▶'}
+        {/* Hamburger icon lines */}
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+          {sidebarOpen && !isMobile
+            ? <><line x1="4" y1="4" x2="16" y2="16" stroke="#a5b4fc" strokeWidth="2" strokeLinecap="round"/><line x1="16" y1="4" x2="4" y2="16" stroke="#a5b4fc" strokeWidth="2" strokeLinecap="round"/></>
+            : <><line x1="3" y1="5" x2="17" y2="5" stroke="#a5b4fc" strokeWidth="1.8" strokeLinecap="round"/><line x1="3" y1="10" x2="17" y2="10" stroke="#a5b4fc" strokeWidth="1.8" strokeLinecap="round"/><line x1="3" y1="15" x2="17" y2="15" stroke="#a5b4fc" strokeWidth="1.8" strokeLinecap="round"/></>
+          }
+        </svg>
       </button>
 
-      {/* Title Area */}
+      {/* Session title */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{
-          fontSize: '14.5px', fontWeight: 600,
-          color: '#e0e0ff',
+          fontSize: isMobile ? '13px' : '14px',
+          fontWeight: 600, color: '#e0e0ff',
           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
         }}>
           {sessionTitle || 'Yeni Sohbet'}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '1px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '1px' }}>
           <div style={{
-            width: '6px', height: '6px', borderRadius: '50%',
-            background: '#10b981', boxShadow: '0 0 6px rgba(16,185,129,0.7)',
-            animation: 'pulse-dot 2s ease-in-out infinite',
+            width: '5px', height: '5px', borderRadius: '50%',
+            background: '#10b981', boxShadow: '0 0 5px rgba(16,185,129,0.8)',
+            animation: 'hdr-pulse 2.5s ease-in-out infinite',
           }} />
-          <span style={{ fontSize: '11.5px', color: 'rgba(160,160,192,0.6)', fontWeight: 500 }}>
-            HAN 4.2 Ultra Core · Çevrimiçi
+          <span style={{ fontSize: '10.5px', color: 'rgba(160,160,192,0.55)', fontWeight: 500 }}>
+            {isMobile ? 'Çevrimiçi' : 'HAN 4.2 Ultra Core · Çevrimiçi'}
           </span>
         </div>
       </div>
 
-      {/* Right Controls */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        {/* Model Badge */}
+      {/* Model badge — hidden on mobile to save space */}
+      {!isMobile && (
         <div style={{
-          padding: '5px 12px', borderRadius: '20px', fontSize: '11.5px', fontWeight: 600,
-          background: 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.15))',
-          border: '1px solid rgba(99,102,241,0.25)',
-          color: '#a5b4fc',
-          letterSpacing: '0.3px',
+          padding: '5px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: 600,
+          background: 'linear-gradient(135deg, rgba(99,102,241,0.18), rgba(139,92,246,0.12))',
+          border: '1px solid rgba(99,102,241,0.22)',
+          color: '#a5b4fc', whiteSpace: 'nowrap',
         }}>
           Gemini 2.0 Flash
         </div>
+      )}
 
-        {/* Settings */}
-        <button
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            width: '36px', height: '36px', borderRadius: '10px',
-            background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
-            color: '#a0a0c0', cursor: 'pointer',
-            transition: 'all 0.2s ease',
-            fontSize: '15px',
-          }}
-          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#e0e0ff'; }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = '#a0a0c0'; }}
-          title="Ayarlar"
-        >
-          ⚙
-        </button>
-      </div>
+      {/* Settings */}
+      <button
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          width: '34px', height: '34px', borderRadius: '10px',
+          background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)',
+          color: '#808098', cursor: 'pointer',
+          transition: 'all 0.2s ease',
+          fontSize: '15px', flexShrink: 0,
+        }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#e0e0ff'; }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = '#808098'; }}
+        title="Ayarlar"
+      >
+        ⚙
+      </button>
 
       <style>{`
-        @keyframes pulse-dot {
+        @keyframes hdr-pulse {
           0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.6; transform: scale(0.85); }
+          50% { opacity: 0.5; transform: scale(0.8); }
         }
       `}</style>
     </header>

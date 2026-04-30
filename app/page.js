@@ -165,18 +165,25 @@ function Background() {
           transform: translateY(-3px) scale(1.04);
           box-shadow: 0 20px 60px rgba(99,102,241,0.55);
         }
-        .lp-glow-btn span { position:relative; z-index:1; }
-        .lp-outline-btn {
-          background: rgba(255,255,255,0.04);
-          border: 1.5px solid rgba(99,102,241,0.25);
-          color: #a5b4fc; font-weight: 600; cursor: pointer;
-          transition: all 0.2s ease;
+        .lp-mobile-toggle { display: none; }
+        @media (max-width: 968px) {
+          .lp-desktop-links, .lp-desktop-auth { display: none !important; }
+          .lp-mobile-toggle { display: block !important; }
         }
-        .lp-outline-btn:hover {
-          background: rgba(99,102,241,0.12);
-          border-color: rgba(99,102,241,0.5);
-          transform: translateY(-2px);
+        @media (max-width: 768px) {
+          .lp-hero-section { text-align: center !important; flex-direction: column !important; padding-top: 80px !important; gap: 40px !important; min-height: auto !important; }
+          .lp-hero-content { align-items: center !important; flex: 1 1 100% !important; max-width: 100% !important; }
+          .lp-hero-trust { justify-content: center !important; }
+          .lp-stats-grid { grid-template-columns: 1fr 1fr !important; gap: 32px 16px !important; }
+          .lp-feature-grid { grid-template-columns: 1fr !important; }
+          .lp-section-header { margin-bottom: 36px !important; }
+          .lp-cta-box { padding: 40px 20px !important; }
+          .lp-cta-title { font-size: 28px !important; }
+          .lp-footer-grid { grid-template-columns: 1fr !important; gap: 40px !important; text-align: center !important; }
+          .lp-footer-logo { justify-content: center !important; }
+          .lp-footer-social { justify-content: center !important; }
         }
+        @keyframes lp-fade { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
       `}</style>
     </>
   );
@@ -185,6 +192,8 @@ function Background() {
 /* ── Navbar ── */
 function Navbar({ mounted }) {
   const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 40);
     window.addEventListener('scroll', fn);
@@ -192,54 +201,94 @@ function Navbar({ mounted }) {
   }, []);
 
   return (
-    <nav style={{
-      position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
-      padding: '0 24px',
-      background: scrolled ? 'rgba(3,3,8,0.85)' : 'transparent',
-      backdropFilter: scrolled ? 'blur(24px)' : 'none',
-      borderBottom: scrolled ? '1px solid rgba(99,102,241,0.1)' : 'none',
-      transition: 'all 0.3s ease',
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      height: '68px',
-      opacity: mounted ? 1 : 0,
-    }}>
-      {/* Logo */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <div style={{
-          width: '38px', height: '38px', borderRadius: '10px',
-          background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '18px', boxShadow: '0 4px 20px rgba(99,102,241,0.45)',
-        }}>⚡</div>
-        <div>
-          <div style={{ fontSize: '16px', fontWeight: 800, letterSpacing: '-0.3px' }}>
-            LifeCoach <span style={{ background: 'linear-gradient(135deg,#818cf8,#c4b5fd)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>AI</span>
+    <>
+      <nav style={{
+        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
+        padding: '0 24px',
+        background: (scrolled || mobileMenuOpen) ? 'rgba(3,3,8,0.92)' : 'transparent',
+        backdropFilter: (scrolled || mobileMenuOpen) ? 'blur(24px)' : 'none',
+        WebkitBackdropFilter: (scrolled || mobileMenuOpen) ? 'blur(24px)' : 'none',
+        borderBottom: (scrolled || mobileMenuOpen) ? '1px solid rgba(99,102,241,0.1)' : 'none',
+        transition: 'all 0.3s ease',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        height: '68px',
+        opacity: mounted ? 1 : 0,
+      }}>
+        {/* Logo */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{
+            width: '38px', height: '38px', borderRadius: '10px',
+            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '18px', boxShadow: '0 4px 20px rgba(99,102,241,0.45)',
+          }}>⚡</div>
+          <div>
+            <div style={{ fontSize: '16px', fontWeight: 800, letterSpacing: '-0.3px' }}>
+              LifeCoach <span style={{ background: 'linear-gradient(135deg,#818cf8,#c4b5fd)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>AI</span>
+            </div>
+            <div style={{ fontSize: '9px', color: 'rgba(99,102,241,0.7)', fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', marginTop: '-2px' }}>HAN 4.2 Ultra Core</div>
           </div>
-          <div style={{ fontSize: '9px', color: 'rgba(99,102,241,0.7)', fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', marginTop: '-2px' }}>HAN 4.2 Ultra Core</div>
         </div>
-      </div>
 
-      {/* Links */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '28px' }}>
-        <a href="#features" className="lp-nav-link">Özellikler</a>
-        <a href="#how" className="lp-nav-link">Nasıl Çalışır</a>
-        <a href="#testimonials" className="lp-nav-link">Yorumlar</a>
-      </div>
+        {/* Desktop Links */}
+        <div className="lp-desktop-links" style={{ display: 'flex', alignItems: 'center', gap: '28px' }}>
+          <a href="#features" className="lp-nav-link">Özellikler</a>
+          <a href="#how" className="lp-nav-link">Nasıl Çalışır</a>
+          <a href="#testimonials" className="lp-nav-link">Yorumlar</a>
+        </div>
 
-      {/* Auth */}
-      <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-        <Link href="/login" style={{ textDecoration: 'none' }}>
-          <button className="lp-outline-btn" style={{ padding: '8px 20px', borderRadius: '10px', fontSize: '14px' }}>
-            Giriş Yap
-          </button>
-        </Link>
-        <Link href="/chat" style={{ textDecoration: 'none' }}>
-          <button className="lp-glow-btn" style={{ padding: '8px 20px', borderRadius: '10px', fontSize: '14px' }}>
-            <span>Başla →</span>
-          </button>
-        </Link>
-      </div>
-    </nav>
+        {/* Desktop Auth */}
+        <div className="lp-desktop-auth" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <Link href="/login" style={{ textDecoration: 'none' }}>
+            <button className="lp-outline-btn" style={{ padding: '8px 20px', borderRadius: '10px', fontSize: '14px' }}>
+              Giriş Yap
+            </button>
+          </Link>
+          <Link href="/chat" style={{ textDecoration: 'none' }}>
+            <button className="lp-glow-btn" style={{ padding: '8px 20px', borderRadius: '10px', fontSize: '14px' }}>
+              <span>Başla →</span>
+            </button>
+          </Link>
+        </div>
+
+        {/* Mobile Menu Toggle */}
+        <button 
+          className="lp-mobile-toggle"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          style={{
+            display: 'none', background: 'transparent', border: 'none', 
+            color: '#a5b4fc', fontSize: '24px', cursor: 'pointer', outline: 'none'
+          }}
+        >
+          {mobileMenuOpen ? '✕' : '☰'}
+        </button>
+      </nav>
+
+      {/* Mobile Menu Overlay */}
+      {mobileMenuOpen && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 99,
+          background: 'rgba(3,3,8,0.98)', backdropFilter: 'blur(32px)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          gap: '32px', padding: '40px', animation: 'lp-fade 0.3s ease both'
+        }}>
+          <a href="#features" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: '24px', fontWeight: 700, color: '#f0f0ff', textDecoration: 'none' }}>Özellikler</a>
+          <a href="#how" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: '24px', fontWeight: 700, color: '#f0f0ff', textDecoration: 'none' }}>Nasıl Çalışır</a>
+          <a href="#testimonials" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: '24px', fontWeight: 700, color: '#f0f0ff', textDecoration: 'none' }}>Yorumlar</a>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', maxWidth: '280px', marginTop: '20px' }}>
+            <Link href="/login" style={{ textDecoration: 'none' }}>
+              <button className="lp-outline-btn" style={{ width: '100%', padding: '16px', borderRadius: '14px', fontSize: '16px' }}>Giriş Yap</button>
+            </Link>
+            <Link href="/chat" style={{ textDecoration: 'none' }}>
+              <button className="lp-glow-btn" style={{ width: '100%', padding: '16px', borderRadius: '14px', fontSize: '16px' }}>
+                <span>✦ Ücretsiz Başla</span>
+              </button>
+            </Link>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -392,14 +441,18 @@ export default function Home() {
       <Navbar mounted={mounted} />
 
       {/* ── HERO ── */}
-      <section style={{
+      <section className="lp-hero-section" style={{
         minHeight: '100vh', display: 'flex', alignItems: 'center',
         padding: '100px 24px 60px', position: 'relative', zIndex: 1,
         maxWidth: '1200px', margin: '0 auto',
         gap: '60px', flexWrap: 'wrap', justifyContent: 'center',
       }}>
         {/* Left */}
-        <div style={{ flex: '1 1 480px', maxWidth: '580px', opacity: mounted ? 1 : 0, transform: mounted ? 'none' : 'translateY(40px)', transition: 'all 0.8s cubic-bezier(0.34,1.56,0.64,1)' }}>
+        <div className="lp-hero-content" style={{
+          flex: '1 1 480px', maxWidth: '580px', opacity: mounted ? 1 : 0,
+          transform: mounted ? 'none' : 'translateY(40px)', transition: 'all 0.8s cubic-bezier(0.34,1.56,0.64,1)',
+          display: 'flex', flexDirection: 'column'
+        }}>
           {/* Badge */}
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: '8px',
@@ -439,7 +492,7 @@ export default function Home() {
             <strong style={{ color: '#a5b4fc', fontWeight: 600 }}> Ücretsiz başla.</strong>
           </p>
 
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'inherit' }}>
             <Link href="/chat" style={{ textDecoration: 'none' }}>
               <button className="lp-glow-btn" style={{ padding: '16px 36px', borderRadius: '14px', fontSize: '16px' }}>
                 <span>✦ Ücretsiz Başla</span>
@@ -453,7 +506,7 @@ export default function Home() {
           </div>
 
           {/* Trust */}
-          <div style={{ marginTop: '36px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div className="lp-hero-trust" style={{ marginTop: '36px', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
             <div style={{ display: 'flex' }}>
               {['#6366f1','#8b5cf6','#06b6d4','#10b981','#f59e0b'].map((c,i) => (
                 <div key={i} style={{
@@ -488,7 +541,7 @@ export default function Home() {
         borderTop: '1px solid rgba(99,102,241,0.08)', borderBottom: '1px solid rgba(99,102,241,0.08)',
         background: 'rgba(10,10,20,0.5)',
       }}>
-        <div style={{ maxWidth: '900px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '32px' }}>
+        <div className="lp-stats-grid" style={{ maxWidth: '900px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '32px' }}>
           {STATS.map((s, i) => (
             <div key={i} style={{ textAlign: 'center' }}>
               <div style={{
@@ -507,7 +560,7 @@ export default function Home() {
       {/* ── FEATURES ── */}
       <section id="features" style={{ padding: '100px 24px', position: 'relative', zIndex: 1 }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '64px' }}>
+          <div className="lp-section-header" style={{ textAlign: 'center', marginBottom: '64px' }}>
             <div style={{ display: 'inline-block', padding: '5px 14px', borderRadius: '100px', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', fontSize: '12px', color: '#a5b4fc', fontWeight: 600, marginBottom: '16px', letterSpacing: '0.5px' }}>
               ✦ ÖZELLİKLER
             </div>
@@ -519,7 +572,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '18px' }}>
+          <div className="lp-feature-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '18px' }}>
             {FEATURES.map((f, i) => (
               <div key={i} className="lp-feature-card" style={{
                 padding: '28px 26px', borderRadius: '20px',
@@ -547,7 +600,7 @@ export default function Home() {
       {/* ── HOW IT WORKS ── */}
       <section id="how" style={{ padding: '100px 24px', position: 'relative', zIndex: 1, background: 'rgba(8,8,18,0.6)' }}>
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '64px' }}>
+          <div className="lp-section-header" style={{ textAlign: 'center', marginBottom: '64px' }}>
             <div style={{ display: 'inline-block', padding: '5px 14px', borderRadius: '100px', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', fontSize: '12px', color: '#a5b4fc', fontWeight: 600, marginBottom: '16px', letterSpacing: '0.5px' }}>
               ⚡ NASIL ÇALIŞIR
             </div>
@@ -588,7 +641,7 @@ export default function Home() {
       {/* ── TESTIMONIALS ── */}
       <section id="testimonials" style={{ padding: '100px 0', position: 'relative', zIndex: 1, overflow: 'hidden' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 24px' }}>
-          <div style={{ textAlign: 'center', marginBottom: '64px' }}>
+          <div className="lp-section-header" style={{ textAlign: 'center', marginBottom: '64px' }}>
             <div style={{ display: 'inline-block', padding: '5px 14px', borderRadius: '100px', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', fontSize: '12px', color: '#a5b4fc', fontWeight: 600, marginBottom: '16px', letterSpacing: '0.5px' }}>
               💬 KULLANICI YORUMLARI
             </div>
@@ -645,7 +698,7 @@ export default function Home() {
               animation: 'lp-float 6s ease-in-out infinite',
             }}>⚡</div>
 
-            <h2 style={{ fontSize: 'clamp(32px,5vw,54px)', fontWeight: 900, letterSpacing: '-2px', lineHeight: 1.1, marginBottom: '20px' }}>
+            <h2 className="lp-cta-title" style={{ fontSize: 'clamp(32px,5vw,54px)', fontWeight: 900, letterSpacing: '-2px', lineHeight: 1.1, marginBottom: '20px' }}>
               Hazır mısın?{' '}
               <span style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6,#06b6d4)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text' }}>
                 Şimdi Başla.
@@ -681,15 +734,15 @@ export default function Home() {
         position: 'relative', zIndex: 1,
         background: 'rgba(6,6,14,0.8)',
       }}>
-        <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div className="lp-footer-grid" style={{ maxWidth: '1100px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+          <div className="lp-footer-logo" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px' }}>⚡</div>
             <span style={{ fontSize: '14px', fontWeight: 700, color: '#d0d0f0' }}>LifeCoach AI</span>
           </div>
           <div style={{ fontSize: '12px', color: 'rgba(160,160,200,0.3)', textAlign: 'center' }}>
             © 2026 LifeCoach AI · by <span style={{ color: 'rgba(99,102,241,0.6)' }}>Metehan Haydar Erbaş</span> · HAN AI Tech
           </div>
-          <div style={{ display: 'flex', gap: '20px' }}>
+          <div className="lp-footer-social" style={{ display: 'flex', gap: '20px' }}>
             {['Gizlilik', 'Kullanım', 'İletişim'].map(link => (
               <span key={link} style={{ fontSize: '12px', color: 'rgba(160,160,200,0.35)', cursor: 'pointer', transition: 'color 0.2s' }}
                 onMouseEnter={e => e.currentTarget.style.color = '#a5b4fc'}
