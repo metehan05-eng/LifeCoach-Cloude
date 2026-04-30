@@ -109,12 +109,12 @@ export default function ChatbotInterface() {
         }),
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Sunucu hatası');
+        throw new Error(data.details || data.error || 'Sunucu hatası');
       }
 
-      const data = await res.json();
       const aiText = data.response || '(Boş yanıt)';
 
       let displayed = '';

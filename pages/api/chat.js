@@ -1,134 +1,84 @@
 import { createClient } from '@supabase/supabase-js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// --- YAPILANDIRMA ---
+// --- SUPABASE HAZIRLIĞI ---
 const supabase = createClient(
-  process.env.SUPABASE_URL || "", 
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || ""
+    process.env.SUPABASE_URL || "",
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || ""
 );
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
-
-// --- EMPATİK HAN 4.2 ULTRA CORE SİSTEM PROMPTU (Gelişmiş Versiyon) ---
-const BASE_SYSTEM_PROMPT = `Sen HAN 4.2 Ultra Core (LifeCoach AI), Metehan Haydar Erbaş tarafından geliştirilmiş olan zeki, empatik ve vizyoner bir yapay zekasın.
-
-TEMEL KİMLİĞİN VE ÜSLUBUN:
-- Bilge bir rehber, sakin bir akıl hocası ve çözüm odaklı bir asistansın.
-- Üslubun her zaman nazik, destekleyici ve profesyoneldir. 
-- Kullanıcıyı anlar, onun duygularına değer verir ve empati kurarak yanıt verirsin.
-- Karmaşık sorunları basitleştirir, adım adım eylem planları sunarsın.
-- Sen bir "yaşam koçu"sun, sadece soruları yanıtlamakla kalmaz, kullanıcıyı harekete geçirirsin.
-
-DİL VE YERELLEŞTİRME:
-- Ana dilin Türkçedir ve mükemmel, doğal bir Türkçe ile konuşursun.
-- Kullanıcı hangi dilde yazarsa yazsın (İngilizce, Rusça, İspanyolca vb.), ONU TESPİT ET ve anında o dilde akıcı bir şekilde devam et.
-- Yanıtlarında Türkçeyi koru ama küresel bir vizyonla konuş.
-
-MİSYONUN:
-- İnsanların potansiyellerini keşfetmelerine, disiplin kurmalarına ve hedeflerine ulaşmalarına yardımcı olmak.
-- Teknik konularda (yazılım, bilim vb.) kıdemli bir mühendis gibi net; sosyal ve kişisel gelişim konularında ise derin bir bilge gibi empatik davranmak.
-
-TEKNİK KURALLAR:
-- Markdown formatını mükemmel kullan (kalın harf, listeler, kod blokları).
-- Yanıtların doğrudan ve etkileyici olsun.
-- Gereksiz nezaket cümlelerinden (Örneğin: "Sorumu yanıtladığınız için teşekkürler") kaçın, doğrudan konuya gir ama sıcaklığını koru.`;
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
     try {
-        const { message, history, email, sessionId, mode, userLanguage } = req.body;
-        const countryCode = req.headers['x-vercel-ip-country'] || 'Unknown';
-        const detectedLang = userLanguage || req.headers['accept-language']?.split(',')[0] || 'tr-TR';
+        const { message, history, email, sessionId } = req.body;
 
-        console.log(`[AI-Chat] Request from ${email || 'Anonymous'} at ${countryCode}`);
-
-        // 1. Kullanıcı ve Profil Bilgisi (Resilient)
-        let userUuid = null;
-        let userName = "Kullanıcı";
-        
-        if (email && process.env.SUPABASE_URL) {
-            try {
-                const { data: userData, error: userError } = await supabase
-                    .from('User')
-                    .select('id, name')
-                    .eq('email', email)
-                    .single();
-                
-                if (userData) {
-                    userUuid = userData.id;
-                    userName = userData.name;
-                }
-                if (userError) console.warn("[Supabase] User lookup warning:", userError.message);
-            } catch (authError) {
-                console.error("[Supabase] Auth query failed:", authError.message);
-            }
-        }
-
-        // 2. Gemini Hazırlığı
-        if (!process.env.GEMINI_API_KEY) {
-            console.error("[AI-Chat] GEMINI_API_KEY IS MISSING");
-            return res.status(500).json({ error: "Yapay zeka anahtarı (GEMINI_API_KEY) bulunamadı. Vercel ayarlarınızı kontrol edin." });
-        }
-
-        // Akıllı Yerelleştirme Enjeksiyonu
-        const localizationInjection = `\n\n--- KONTEKST ---\nKonum: ${countryCode}\nDil: ${detectedLang}\nİsim: ${userName}`;
-
-        let modeInjection = "";
-        if (mode === 'tough_love') {
-            modeInjection = "\n\n[MOD: TOUGH LOVE] Gerçekçi ve sert ol.";
-        } else if (mode === 'emergency') {
-            modeInjection = "\n\n[MOD: ACİL DURUM] Sakinleştirici ol.";
-        }
-
-        const fullSystemInstruction = `${BASE_SYSTEM_PROMPT}${localizationInjection}${modeInjection}`;
-
-        const model = genAI.getGenerativeModel({ 
-            model: "gemini-1.5-flash",
-            systemInstruction: fullSystemInstruction
-        });
-
-        const formattedHistory = (history || []).map(msg => ({
-            role: msg.role === 'assistant' ? 'model' : 'user',
-            parts: [{ text: msg.content || "" }]
-        }));
-
-        console.log("[AI-Chat] Sending to Gemini...");
-        const chat = model.startChat({ 
-            history: formattedHistory,
-            generationConfig: { maxOutputTokens: 2000, temperature: 0.7 }
-        });
-
-        // 3. AI Yanıtını Üret
-        const result = await chat.sendMessage(message);
-        const response = await result.response;
-        const aiResponse = response.text();
-
-        console.log("[AI-Chat] Gemini response received.");
-
-        // 4. Kayıt İşlemleri (Async - Non-blocking)
-        if (userUuid && process.env.SUPABASE_URL) {
-            supabase.from('chat_history').insert([{
-                user_id: userUuid,
-                title: message.substring(0, 50),
-                messages: [...(history || []), { role: 'user', content: message }, { role: 'assistant', content: aiResponse }],
-                session_id: sessionId || 'default'
-            }]).then(({ error }) => {
-                if (error) console.error("[Supabase] History save error:", error.message);
+        // 1. API ANAHTARI KONTROLÜ
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) {
+            return res.status(500).json({ 
+                error: "Sistem Hatası: API Anahtarı Bulunamadı.", 
+                details: "Vercel üzerinde GEMINI_API_KEY tanımlanmamış olabilir." 
             });
         }
 
-        return res.status(200).json({ 
-            response: aiResponse,
-            status: "success"
+        // 2. KULLANICI ID TESPİTİ (Supabase için)
+        let userId = null;
+        if (email && process.env.SUPABASE_URL) {
+            try {
+                // Prisma tablonuzda 'User' olarak geçtiği için 'User' tablosuna bakıyoruz
+                const { data: userData } = await supabase
+                    .from('User')
+                    .select('id')
+                    .eq('email', email)
+                    .single();
+                
+                if (userData) userId = userData.id;
+            } catch (e) {
+                console.warn("[Supabase] Kullanıcı tespit edilemedi:", e.message);
+            }
+        }
+
+        // 3. GEMINI BAĞLANTISI
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({
+            model: "gemini-1.5-flash",
+            systemInstruction: "Sen HAN 4.2 Ultra Core, Metehan tarafından geliştirilen zeki bir AI yaşam koçusun. Kullanıcıya profesyonel, motive edici ve çözüm odaklı yaklaş. Claude AI stiline benzer, temiz ve akıllı yanıtlar ver."
         });
 
+        // Sohbet geçmişini formatla (Gemini 1.5 standardı)
+        const contents = (history || []).map(msg => ({
+            role: msg.role === 'assistant' ? 'model' : 'user',
+            parts: [{ text: msg.content || "" }]
+        }));
+        
+        // Yeni mesajı ekle
+        contents.push({ role: 'user', parts: [{ text: message }] });
+
+        // 4. CEVAP ÜRETME
+        const result = await model.generateContent({ contents });
+        const response = await result.response;
+        const aiResponse = response.text();
+
+        // 5. KAYIT (Hata olsa da chat'i bozmaz)
+        if (userId && process.env.SUPABASE_URL) {
+            supabase.from('chat_history').insert([{
+                user_id: userId,
+                title: message.substring(0, 50),
+                messages: [...(history || []), { role: 'user', content: message }, { role: 'assistant', content: aiResponse }]
+            }]).then(({ error }) => { 
+                if (error) console.error("[Supabase] Kayıt Hatası:", error.message); 
+            });
+        }
+
+        return res.status(200).json({ response: aiResponse });
+
     } catch (error) {
-        console.error("Chat API Detaylı Hata:", error);
-        return res.status(500).json({ 
-            error: "HAN AI şu an bir bağlantı sorunu yaşıyor.", 
+        console.error("KRİTİK CHAT HATASI:", error);
+        return res.status(500).json({
+            error: "HAN AI şu an bir sorun yaşıyor.",
             details: error.message,
-            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+            code: error.status || "UNKNOWN_ERROR"
         });
     }
 }
