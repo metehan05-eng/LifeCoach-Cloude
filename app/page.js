@@ -1,6 +1,54 @@
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
+import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
+
+/* ── Components ── */
+
+function UserNav({ isMobile }) {
+  const { data: session } = useSession();
+
+  if (session) {
+    return (
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '12px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {session.user.image ? (
+            <img src={session.user.image} style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid #6366f1' }} alt="Avatar" />
+          ) : (
+            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px' }}>
+              {session.user.name?.[0] || 'U'}
+            </div>
+          )}
+          {!isMobile && <span style={{ fontSize: '14px', fontWeight: 600, color: '#e8e8ff' }}>{session.user.name}</span>}
+        </div>
+        <Link href="/chat" style={{ textDecoration: 'none', width: isMobile ? '100%' : 'auto' }}>
+          <button className="lp-glow-btn" style={{ padding: '8px 20px', borderRadius: '10px', fontSize: '14px', width: '100%' }}>
+            <span>Panele Git</span>
+          </button>
+        </Link>
+        <button onClick={() => signOut()} className="lp-outline-btn" style={{ padding: '8px 20px', borderRadius: '10px', fontSize: '14px', width: isMobile ? '100%' : 'auto' }}>
+          Çıkış Yap
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <Link href="/login" style={{ textDecoration: 'none', width: isMobile ? '100%' : 'auto' }}>
+        <button className="lp-outline-btn" style={{ padding: isMobile ? '16px' : '8px 20px', borderRadius: isMobile ? '14px' : '10px', fontSize: isMobile ? '16px' : '14px', width: '100%' }}>
+          Giriş Yap
+        </button>
+      </Link>
+      <Link href="/chat" style={{ textDecoration: 'none', width: isMobile ? '100%' : 'auto' }}>
+        <button className="lp-glow-btn" style={{ padding: isMobile ? '16px' : '8px 20px', borderRadius: isMobile ? '14px' : '10px', fontSize: isMobile ? '16px' : '14px', width: '100%' }}>
+          <span>{isMobile ? '✦ Ücretsiz Başla' : 'Başla →'}</span>
+        </button>
+      </Link>
+    </>
+  );
+}
+
 
 /* ── Animated Counter ── */
 function Counter({ target, suffix = '', duration = 2000 }) {
@@ -239,16 +287,7 @@ function Navbar({ mounted }) {
 
         {/* Desktop Auth */}
         <div className="lp-desktop-auth" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <Link href="/login" style={{ textDecoration: 'none' }}>
-            <button className="lp-outline-btn" style={{ padding: '8px 20px', borderRadius: '10px', fontSize: '14px' }}>
-              Giriş Yap
-            </button>
-          </Link>
-          <Link href="/chat" style={{ textDecoration: 'none' }}>
-            <button className="lp-glow-btn" style={{ padding: '8px 20px', borderRadius: '10px', fontSize: '14px' }}>
-              <span>Başla →</span>
-            </button>
-          </Link>
+          <UserNav />
         </div>
 
         {/* Mobile Menu Toggle */}
@@ -277,14 +316,7 @@ function Navbar({ mounted }) {
           <a href="#testimonials" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: '24px', fontWeight: 700, color: '#f0f0ff', textDecoration: 'none' }}>Yorumlar</a>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', maxWidth: '280px', marginTop: '20px' }}>
-            <Link href="/login" style={{ textDecoration: 'none' }}>
-              <button className="lp-outline-btn" style={{ width: '100%', padding: '16px', borderRadius: '14px', fontSize: '16px' }}>Giriş Yap</button>
-            </Link>
-            <Link href="/chat" style={{ textDecoration: 'none' }}>
-              <button className="lp-glow-btn" style={{ width: '100%', padding: '16px', borderRadius: '14px', fontSize: '16px' }}>
-                <span>✦ Ücretsiz Başla</span>
-              </button>
-            </Link>
+            <UserNav isMobile />
           </div>
         </div>
       )}

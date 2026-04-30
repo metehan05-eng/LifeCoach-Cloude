@@ -41,96 +41,94 @@ export default async function handler(req, res) {
         const countryCode = req.headers['x-vercel-ip-country'] || 'Unknown';
         const detectedLang = userLanguage || req.headers['accept-language']?.split(',')[0] || 'tr-TR';
 
-        // 1. Kullanıcı ve Profil Bilgisi
+        console.log(`[AI-Chat] Request from ${email || 'Anonymous'} at ${countryCode}`);
+
+        // 1. Kullanıcı ve Profil Bilgisi (Resilient)
         let userUuid = null;
         let userName = "Kullanıcı";
-        if (email) {
-            const { data: userData } = await supabase
-                .from('User')
-                .select('id, name')
-                .eq('email', email)
-                .single();
-            if (userData) {
-                userUuid = userData.id;
-                userName = userData.name;
+        
+        if (email && process.env.SUPABASE_URL) {
+            try {
+                const { data: userData, error: userError } = await supabase
+                    .from('User')
+                    .select('id, name')
+                    .eq('email', email)
+                    .single();
+                
+                if (userData) {
+                    userUuid = userData.id;
+                    userName = userData.name;
+                }
+                if (userError) console.warn("[Supabase] User lookup warning:", userError.message);
+            } catch (authError) {
+                console.error("[Supabase] Auth query failed:", authError.message);
             }
         }
 
-        // 2. Gemini Hazırlığı (Ultra Core Yapılandırması)
+        // 2. Gemini Hazırlığı
         if (!process.env.GEMINI_API_KEY) {
-            return res.status(500).json({ error: "GEMINI_API_KEY eksik. Vercel panelinde ortam değişkenlerini kontrol edin." });
+            console.error("[AI-Chat] GEMINI_API_KEY IS MISSING");
+            return res.status(500).json({ error: "Yapay zeka anahtarı (GEMINI_API_KEY) bulunamadı. Vercel ayarlarınızı kontrol edin." });
         }
 
         // Akıllı Yerelleştirme Enjeksiyonu
-        const localizationInjection = `\n\n--- SOSYAL VE COĞRAFİ KONTEKST ---
-Kullanıcı Konumu: ${countryCode} (ISO Ülke Kodu)
-Tespit Edilen Dil: ${detectedLang}
-
-KURALLAR:
-1. DİL AYNASI: Kullanıcı hangi dilde yazıyorsa o dilde (İngilizce, Almanca, Fransızca, Rusça vb. 81+ dil) yanıt ver.
-2. YEREL UYUM: Kullanıcının bulunduğu ülkenin (${countryCode}) kültürüne ve saat dilimine uygun örnekler ver.
-3. AKICILIK: Çok doğal, ana dili o dilde olan bir uzman gibi konuş.`;
+        const localizationInjection = `\n\n--- KONTEKST ---\nKonum: ${countryCode}\nDil: ${detectedLang}\nİsim: ${userName}`;
 
         let modeInjection = "";
         if (mode === 'tough_love') {
-            modeInjection = "\n\n[DURUM: TOUGH LOVE] Bahaneleri kabul etme, sert ve dürüst ol.";
+            modeInjection = "\n\n[MOD: TOUGH LOVE] Gerçekçi ve sert ol.";
         } else if (mode === 'emergency') {
-            modeInjection = "\n\n[DURUM: KRİZ] Sakinleştirici ve odaklayıcı ol.";
+            modeInjection = "\n\n[MOD: ACİL DURUM] Sakinleştirici ol.";
         }
 
-        const fullSystemInstruction = `${BASE_SYSTEM_PROMPT}${localizationInjection}${modeInjection}\n\nKullanıcının adı: ${userName}`;
+        const fullSystemInstruction = `${BASE_SYSTEM_PROMPT}${localizationInjection}${modeInjection}`;
 
         const model = genAI.getGenerativeModel({ 
             model: "gemini-1.5-flash",
             systemInstruction: fullSystemInstruction
         });
 
-        // Sohbet geçmişini Gemini formatına çevir
         const formattedHistory = (history || []).map(msg => ({
             role: msg.role === 'assistant' ? 'model' : 'user',
-            parts: [{ text: msg.content }]
+            parts: [{ text: msg.content || "" }]
         }));
 
+        console.log("[AI-Chat] Sending to Gemini...");
         const chat = model.startChat({ 
             history: formattedHistory,
-            generationConfig: { 
-                maxOutputTokens: 8192, 
-                temperature: 0.75,
-                topP: 0.95,
-                topK: 40
-            }
+            generationConfig: { maxOutputTokens: 2000, temperature: 0.7 }
         });
 
         // 3. AI Yanıtını Üret
         const result = await chat.sendMessage(message);
-        let aiResponse = result.response.text();
+        const response = await result.response;
+        const aiResponse = response.text();
 
-        // 4. Kayıt ve XP İşlemleri
-        if (userUuid) {
-            // Arka planda kaydet (client bekletilmez)
+        console.log("[AI-Chat] Gemini response received.");
+
+        // 4. Kayıt İşlemleri (Async - Non-blocking)
+        if (userUuid && process.env.SUPABASE_URL) {
             supabase.from('chat_history').insert([{
                 user_id: userUuid,
                 title: message.substring(0, 50),
                 messages: [...(history || []), { role: 'user', content: message }, { role: 'assistant', content: aiResponse }],
                 session_id: sessionId || 'default'
-            }]).catch(e => console.error("History log error:", e.message));
-
-            // XP kazandır (Örnek: Her mesaj 5 XP)
-            // awardXP mantığı buraya eklenebilir veya client-side tetiklenebilir
+            }]).then(({ error }) => {
+                if (error) console.error("[Supabase] History save error:", error.message);
+            });
         }
 
-        // 5. Başarılı Yanıt
         return res.status(200).json({ 
             response: aiResponse,
-            status: "success",
-            model: "HAN 4.2 Ultra Core (Gemini 1.5 Flash)"
+            status: "success"
         });
 
     } catch (error) {
-        console.error("Chat API Hatası:", error);
+        console.error("Chat API Detaylı Hata:", error);
         return res.status(500).json({ 
-            error: "HAN AI şu an yoğun veya bir bağlantı sorunu yaşıyor.", 
-            details: error.message 
+            error: "HAN AI şu an bir bağlantı sorunu yaşıyor.", 
+            details: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
     }
 }

@@ -82,6 +82,7 @@ export const authOptions = {
           if (dbUser) {
             session.user.image = dbUser.image;
             session.user.name = dbUser.name;
+            session.user.email = dbUser.email;
           }
         } catch (e) {
           console.error("Session callback error:", e);
