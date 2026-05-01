@@ -505,19 +505,14 @@ export default async function handler(req, res) {
 
     const localizationInjection = `\n\n--- KONTEKST ---\nKullanıcı: ${userName}\nKonum: ${countryCode}\nDil: ${detectedLang}`;
 
-    // 2. GEMINI BAĞLANTISI
+    // 2. GEMINI BAĞLANTISI (v1beta kullanımı önerilir)
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
       model: "gemini-1.5-flash",
-    }, { apiVersion: 'v1' });
+      systemInstruction: `${BASE_SYSTEM_PROMPT}${localizationInjection}`,
+    });
 
-    const finalSystemPrompt = `${BASE_SYSTEM_PROMPT}${localizationInjection}`;
-
-    const contents = [
-      { role: 'user', parts: [{ text: finalSystemPrompt }] },
-      { role: 'model', parts: [{ text: 'Anladım, talimatlara tamamen uyarak yanıt vereceğim.' }] }
-    ];
-
+    const contents = [];
     (history || []).forEach(msg => {
       contents.push({
         role: msg.role === 'assistant' ? 'model' : 'user',
