@@ -507,10 +507,9 @@ export default async function handler(req, res) {
 
     // 2. GEMINI FALLBACK ENGINE (ÇOKLU MODEL DESTEĞİ)
     const modelsToTry = [
-      { name: "gemini-1.5-flash", version: "v1beta" },
-      { name: "gemini-2.0-flash", version: "v1beta" },
-      { name: "gemini-pro", version: "v1beta" }, // Eski ama en sağlamı
-      { name: "gemini-1.5-flash", version: "v1" } // Stabil sürüm
+      { name: "gemini-3.1-pro", version: "v1" },
+      { name: "gemini-3.1-flash-lite", version: "v1" },
+      { name: "gemini-3.1-flash", version: "v1" },
     ];
 
     let aiResponse = "";
@@ -519,17 +518,17 @@ export default async function handler(req, res) {
     for (const modelConfig of modelsToTry) {
       try {
         const genAI = new GoogleGenerativeAI(apiKey);
-        
+
         // v1 sürümünde systemInstruction parametresi hata verebilir, bu yüzden v1beta'da kullanıyoruz
         const modelParams = { model: modelConfig.name };
         if (modelConfig.version === 'v1beta') {
           modelParams.systemInstruction = `${BASE_SYSTEM_PROMPT}${localizationInjection}`;
         }
-        
+
         const model = genAI.getGenerativeModel(modelParams, { apiVersion: modelConfig.version });
 
         const contents = [];
-        
+
         // Eğer v1 kullanıyorsak ve systemInstruction yoksa, promptu en başa "user" olarak ekleyelim
         if (modelConfig.version === 'v1') {
           contents.push({ role: 'user', parts: [{ text: `${BASE_SYSTEM_PROMPT}${localizationInjection}` }] });
@@ -546,7 +545,7 @@ export default async function handler(req, res) {
 
         const result = await model.generateContent({ contents });
         aiResponse = result.response.text();
-        
+
         if (aiResponse) break;
       } catch (err) {
         console.error(`Model hatası (${modelConfig.name} - ${modelConfig.version}):`, err.message);
