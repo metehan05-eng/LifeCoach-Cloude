@@ -3,12 +3,12 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // --- SUPABASE HAZIRLIĞI ---
 const supabase = createClient(
-    process.env.SUPABASE_URL || "",
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || ""
+  process.env.SUPABASE_URL || "",
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || ""
 );
 
 const BASE_SYSTEM_PROMPT =
-    `You are LifeCoach AI (HAN 4.2 Ultra Core).
+  `You are LifeCoach AI (HAN 4.2 Ultra Core).
 
 You are an advanced multi-domain artificial intelligence designed to assist users with life planning, productivity, scientific thinking, research, programming, and intelligent decision-making.
 
@@ -480,68 +480,68 @@ Word için: json-action { "type": "word", "filename": "X.docx", "content": [...]
 `;
 
 export default async function handler(req, res) {
-    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-    try {
-        const { message, history, email, sessionId, mode, userLanguage } = req.body;
-        const countryCode = req.headers['x-vercel-ip-country'] || 'Unknown';
-        const detectedLang = userLanguage || req.headers['accept-language']?.split(',')[0] || 'tr-TR';
+  try {
+    const { message, history, email, sessionId, mode, userLanguage } = req.body;
+    const countryCode = req.headers['x-vercel-ip-country'] || 'Unknown';
+    const detectedLang = userLanguage || req.headers['accept-language']?.split(',')[0] || 'tr-TR';
 
-        const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) return res.status(500).json({ error: "API Anahtarı bulunamadı." });
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) return res.status(500).json({ error: "API Anahtarı bulunamadı." });
 
-        // 1. KULLANICI ID TESPİTİ
-        let userId = null;
-        let userName = "Kullanıcı";
-        if (email && process.env.SUPABASE_URL) {
-            try {
-                const { data: userData } = await supabase.from('User').select('id, name').eq('email', email).single();
-                if (userData) {
-                    userId = userData.id;
-                    userName = userData.name;
-                }
-            } catch (e) { }
+    // 1. KULLANICI ID TESPİTİ
+    let userId = null;
+    let userName = "Kullanıcı";
+    if (email && process.env.SUPABASE_URL) {
+      try {
+        const { data: userData } = await supabase.from('User').select('id, name').eq('email', email).single();
+        if (userData) {
+          userId = userData.id;
+          userName = userData.name;
         }
-
-        const localizationInjection = `\n\n--- KONTEKST ---\nKullanıcı: ${userName}\nKonum: ${countryCode}\nDil: ${detectedLang}`;
-        
-        // 2. GEMINI BAĞLANTISI
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({
-            model: "gemini-1.5-flash",
-        }, { apiVersion: 'v1' });
-
-        const finalSystemPrompt = `${BASE_SYSTEM_PROMPT}${localizationInjection}`;
-
-        const contents = [
-            { role: 'user', parts: [{ text: finalSystemPrompt }] },
-            { role: 'model', parts: [{ text: 'Anladım, talimatlara tamamen uyarak yanıt vereceğim.' }] }
-        ];
-
-        (history || []).forEach(msg => {
-            contents.push({
-                role: msg.role === 'assistant' ? 'model' : 'user',
-                parts: [{ text: msg.content || "" }]
-            });
-        });
-        
-        contents.push({ role: 'user', parts: [{ text: message }] });
-
-        const result = await model.generateContent({ contents });
-        const aiResponse = result.response.text();
-
-        // 3. KAYIT
-        if (userId && process.env.SUPABASE_URL) {
-            supabase.from('chat_history').insert([{
-                user_id: userId,
-                title: message.substring(0, 50),
-                messages: [...(history || []), { role: 'user', content: message }, { role: 'assistant', content: aiResponse }]
-            }]).catch(() => { });
-        }
-
-        return res.status(200).json({ response: aiResponse });
-
-    } catch (error) {
-        return res.status(500).json({ error: "AI Hatası", details: error.message });
+      } catch (e) { }
     }
+
+    const localizationInjection = `\n\n--- KONTEKST ---\nKullanıcı: ${userName}\nKonum: ${countryCode}\nDil: ${detectedLang}`;
+
+    // 2. GEMINI BAĞLANTISI
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-flash",
+    }, { apiVersion: 'v1' });
+
+    const finalSystemPrompt = `${BASE_SYSTEM_PROMPT}${localizationInjection}`;
+
+    const contents = [
+      { role: 'user', parts: [{ text: finalSystemPrompt }] },
+      { role: 'model', parts: [{ text: 'Anladım, talimatlara tamamen uyarak yanıt vereceğim.' }] }
+    ];
+
+    (history || []).forEach(msg => {
+      contents.push({
+        role: msg.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: msg.content || "" }]
+      });
+    });
+
+    contents.push({ role: 'user', parts: [{ text: message }] });
+
+    const result = await model.generateContent({ contents });
+    const aiResponse = result.response.text();
+
+    // 3. KAYIT
+    if (userId && process.env.SUPABASE_URL) {
+      supabase.from('chat_history').insert([{
+        user_id: userId,
+        title: message.substring(0, 50),
+        messages: [...(history || []), { role: 'user', content: message }, { role: 'assistant', content: aiResponse }]
+      }]).catch(() => { });
+    }
+
+    return res.status(200).json({ response: aiResponse });
+
+  } catch (error) {
+    return res.status(500).json({ error: "AI Hatası", details: error.message });
+  }
 }
