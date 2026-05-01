@@ -7,7 +7,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma db push --accept-data-loss && next build",
+    "build": "next build",
     "start:next": "next start",
     "start": "node index.js",
     "postinstall": "prisma generate"
