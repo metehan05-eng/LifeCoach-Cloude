@@ -3,10 +3,28 @@ import React, { useEffect, useRef } from 'react';
 
 /* ── Markdown formatter ── */
 const formatMarkdown = (text) => {
-  // Code blocks (multi-line) first
-  text = text.replace(/```(\w+)?\n?([\s\S]*?)```/g, (_, lang, code) =>
-    `<pre style="background:rgba(0,0,0,0.4);border:1px solid rgba(99,102,241,0.2);border-radius:10px;padding:14px 16px;overflow-x:auto;margin:10px 0;font-family:'JetBrains Mono','Fira Code',monospace;font-size:12.5px;line-height:1.6;color:#c4b5fd"><code>${code.trim()}</code></pre>`
-  );
+  // Code blocks (multi-line) with terminal look
+  text = text.replace(/```(\w+)?\n?([\s\S]*?)```/g, (_, lang, code) => {
+    const filename = (lang && lang.includes(':')) ? lang.split(':')[1] : (lang || 'terminal');
+    const displayLang = lang ? lang.split(':')[0] : '';
+    
+    return `
+      <div style="background:#0d0d17; border:1px solid rgba(99,102,241,0.25); border-radius:12px; margin:14px 0; overflow:hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.3)">
+        <div style="background:rgba(255,255,255,0.03); padding:8px 16px; border-bottom:1px solid rgba(99,102,241,0.15); display:flex; justify-content:space-between; align-items:center">
+          <div style="display:flex; gap:6px">
+            <span style="width:10px; height:10px; border-radius:50%; background:#ff5f56"></span>
+            <span style="width:10px; height:10px; border-radius:50%; background:#ffbd2e"></span>
+            <span style="width:10px; height:10px; border-radius:50%; background:#27c93f"></span>
+          </div>
+          <div style="font-family:'JetBrains Mono','Fira Code',monospace; font-size:11px; color:rgba(160,160,200,0.8); font-weight:600">
+            ${filename} ${displayLang ? `(${displayLang})` : ''}
+          </div>
+        </div>
+        <pre style="padding:16px; overflow-x:auto; margin:0; font-family:'JetBrains Mono','Fira Code',monospace; font-size:13px; line-height:1.6; color:#c4b5fd"><code>${code.trim()}</code></pre>
+      </div>
+    `;
+  });
+
   // Inline code
   text = text.replace(/`([^`]+)`/g, '<code style="background:rgba(99,102,241,0.18);padding:2px 7px;border-radius:5px;font-size:12.5px;font-family:monospace;color:#a5b4fc">$1</code>');
   // Bold
@@ -27,10 +45,49 @@ const formatMarkdown = (text) => {
   text = text.replace(/^\d+\. (.*$)/gm,
     '<div style="display:flex;gap:10px;margin:4px 0;align-items:flex-start"><span style="color:#8b5cf6;font-weight:700;flex-shrink:0;font-size:11px;margin-top:3px">▸</span><span>$1</span></div>'
   );
+  
+  // Custom Advice Block detection — will wrap in a nice UI later but handle basic formatting here
+  text = text.replace(/💡 HAN Tavsiyesi:(.*$)/gm, '<div style="background:rgba(139,92,246,0.1); border-left:4px solid #8b5cf6; padding:12px 16px; border-radius:0 12px 12px 0; margin-top:16px; color:#c4b5fd; font-style:italic"><span style="font-weight:800; color:#fff; display:block; margin-bottom:4px">💡 HAN Tavsiyesi</span>$1</div>');
+
   // Line breaks
   text = text.replace(/\n\n/g, '<div style="height:10px"></div>');
   text = text.replace(/\n/g, '<br/>');
   return text;
+};
+
+/* ── File Tree Component ── */
+const FileTree = ({ items }) => {
+  if (!items || !Array.isArray(items)) return null;
+  return (
+    <div style={{
+      marginTop: '16px',
+      background: 'rgba(15, 15, 25, 0.7)',
+      border: '1px solid rgba(99, 102, 241, 0.3)',
+      borderRadius: '12px',
+      padding: '16px',
+      fontFamily: "'JetBrains Mono', monospace",
+      fontSize: '13px',
+      color: '#c4b5fd'
+    }}>
+      <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <span>🗂️</span> PROJE YAPISI (EXPLORER)
+      </div>
+      {items.map((item, idx) => (
+        <div key={idx} style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '8px', 
+          padding: '4px 0',
+          paddingLeft: `${(item.level || 0) * 16}px`,
+          opacity: 0,
+          animation: `ci-fade-in 0.3s ease forwards ${idx * 0.05}s`
+        }}>
+          <span>{item.type === 'dir' ? '📁' : '📄'}</span>
+          <span style={{ color: item.type === 'dir' ? '#818cf8' : '#e8e8ff' }}>{item.name}</span>
+        </div>
+      ))}
+    </div>
+  );
 };
 
 /* ── Goal Card Component ── */
@@ -245,7 +302,8 @@ function MessageBubble({ message, isStream, onQuickAction }) {
           if (actionMatch) {
             try {
               const data = JSON.parse(actionMatch[1]);
-              return <GoalCard data={data} onQuickAction={onQuickAction} />;
+              if (data.type === 'goal') return <GoalCard data={data} onQuickAction={onQuickAction} />;
+              if (data.type === 'project_structure') return <FileTree items={data.items} />;
             } catch (e) { return null; }
           }
           return null;
@@ -327,6 +385,10 @@ export default function ChatMessages({ messages, isTyping, streamText, error, is
         @keyframes ci-pop-in {
           0% { opacity: 0; transform: scale(0.95) translateY(10px); }
           100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        @keyframes ci-fade-in {
+          from { opacity: 0; transform: translateX(-4px); }
+          to { opacity: 1; transform: translateX(0); }
         }
       `}</style>
     </div>
