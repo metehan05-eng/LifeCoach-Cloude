@@ -531,7 +531,7 @@ export default async function handler(req, res) {
       ];
 
       const completion = await client.chat.completions.create({
-        model: "llama3-70b-8192", // Dünyanın en hızlı ve zeki modellerinden biri
+        model: "llama-3.3-70b-versatile", // Güncel ve en güçlü Groq modeli
         messages: messages,
         temperature: 0.5,
         max_tokens: 2048,
