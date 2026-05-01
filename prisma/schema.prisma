@@ -2,12 +2,14 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
+  previewFeatures = ["multiSchema"]
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  schemas  = ["public", "auth"]
 }
 
 model User {
@@ -38,6 +40,7 @@ model User {
   Integrations            Integration[]
   StressLogs              StressLog[]
   GroupMemberships        GroupMember[]
+  @@schema("public")
 }
 
 model Account {
@@ -57,6 +60,7 @@ model Account {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@schema("public")
 }
 
 model Session {
@@ -65,6 +69,7 @@ model Session {
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@schema("public")
 }
 
 model VerificationToken {
@@ -73,6 +78,7 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+  @@schema("public")
 }
 
 model PromptTemplate {
@@ -85,6 +91,7 @@ model PromptTemplate {
   inputs    Json
   name      String
   Chatbot   Chatbot[]
+  @@schema("public")
 }
 
 model Datasource {
@@ -97,6 +104,7 @@ model Datasource {
   name      String
   type      String
   Chatbot   Chatbot[]
+  @@schema("public")
 }
 
 model Chatbot {
@@ -111,6 +119,7 @@ model Chatbot {
   datasourceId     Int?
   name             String
   ChatbotMessage   ChatbotMessage[]
+  @@schema("public")
 }
 
 model ChatbotMessage {
@@ -121,6 +130,7 @@ model ChatbotMessage {
   chatbotId Int?
   message   String   @db.VarChar()
   agent     String
+  @@schema("public")
 }
 
 // ============= YENİ MODELLER =============
@@ -139,6 +149,7 @@ model ConversationMemory {
   lastUpdated    DateTime @updatedAt
 
   @@index([userId])
+  @@schema("public")
 }
 
 // 2. Coaching Modes - Farklı koçluk modları
@@ -149,6 +160,7 @@ model CoachingMode {
   systemPrompt  String @db.Text
   tone          String // aggresive, friendly, professional, casual
   responseStyle String // detailed, brief, with examples, etc
+  @@schema("public")
 }
 
 // 3. User Preferences - Kullanıcı ayarları
@@ -165,6 +177,7 @@ model UserPreference {
   offlineMode          Boolean  @default(false)
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
+  @@schema("public")
 }
 
 // 4. Achievements - Başarılar ve badges
@@ -181,6 +194,7 @@ model Achievement {
   createdAt   DateTime @default(now())
 
   @@index([userId])
+  @@schema("public")
 }
 
 // 5. Streaks - Alışkanlık streakları
@@ -197,6 +211,7 @@ model Streak {
 
   @@unique([userId, habitId])
   @@index([userId])
+  @@schema("public")
 }
 
 // 6. Motivation Score - Günlük motivasyon puanı
@@ -213,6 +228,7 @@ model MotivationScore {
 
   @@unique([userId, date])
   @@index([userId, date])
+  @@schema("public")
 }
 
 // 7. Daily Quests - AI tarafından üretilen günlük görevler
@@ -230,6 +246,7 @@ model DailyQuest {
   dueAt       DateTime
 
   @@index([userId, createdAt])
+  @@schema("public")
 }
 
 // 8. Study Groups - Çalışma grupları
@@ -248,6 +265,7 @@ model StudyGroup {
   User         User[]
 
   @@index([ownerId])
+  @@schema("public")
 }
 
 model GroupMember {
@@ -260,6 +278,7 @@ model GroupMember {
   role     String     @default("member") // member, moderator
 
   @@unique([groupId, userId])
+  @@schema("public")
 }
 
 // 9. Accountability Partners - Hesap verme partnerleri
@@ -274,6 +293,7 @@ model AccountabilityPartner {
 
   @@unique([userId, partnerId])
   @@index([userId])
+  @@schema("public")
 }
 
 // 10. Challenges - Genel ve grup challengeleri
@@ -294,6 +314,7 @@ model Challenge {
   difficulty   String   @default("medium")
 
   @@index([creatorId])
+  @@schema("public")
 }
 
 // 11. Analytics Logs - Kullanıcı aktivite logu
@@ -306,6 +327,7 @@ model AnalyticsLog {
   timestamp DateTime @default(now())
 
   @@index([userId, timestamp])
+  @@schema("public")
 }
 
 // 12. Notification Preferences - Notifikasyon ayarları
@@ -322,6 +344,7 @@ model NotificationPreference {
   optimalReminderTime String   @default("09:00") // HH:mm format
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
+  @@schema("public")
 }
 
 // 13. Integrations - Third-party API entegrasyonları
@@ -337,6 +360,7 @@ model Integration {
   connectedAt  DateTime  @default(now())
 
   @@unique([userId, type])
+  @@schema("public")
 }
 
 // 14. Stress Log - Stres seviyesi takibi
@@ -352,4 +376,5 @@ model StressLog {
   timestamp       DateTime @default(now())
 
   @@index([userId, timestamp])
+  @@schema("public")
 }
