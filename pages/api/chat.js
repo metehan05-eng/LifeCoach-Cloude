@@ -505,25 +505,48 @@ export default async function handler(req, res) {
 
     const localizationInjection = `\n\n--- KONTEKST ---\nKullanıcı: ${userName}\nKonum: ${countryCode}\nDil: ${detectedLang}`;
 
-    // 2. GEMINI BAĞLANTISI (v1beta kullanımı önerilir)
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
-      systemInstruction: `${BASE_SYSTEM_PROMPT}${localizationInjection}`,
-    });
+    // 2. GEMINI FALLBACK ENGINE (ÇOKLU MODEL DESTEĞİ)
+    const modelsToTry = [
+      { name: "gemini-1.5-flash", version: "v1beta" },
+      { name: "gemini-2.0-flash", version: "v1beta" },
+      { name: "gemini-1.5-pro", version: "v1beta" },
+      { name: "gemini-1.5-flash", version: "v1" }
+    ];
 
-    const contents = [];
-    (history || []).forEach(msg => {
-      contents.push({
-        role: msg.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: msg.content || "" }]
-      });
-    });
+    let aiResponse = "";
+    let lastError = null;
 
-    contents.push({ role: 'user', parts: [{ text: message }] });
+    for (const modelConfig of modelsToTry) {
+      try {
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({
+          model: modelConfig.name,
+          systemInstruction: `${BASE_SYSTEM_PROMPT}${localizationInjection}`,
+        }, { apiVersion: modelConfig.version });
 
-    const result = await model.generateContent({ contents });
-    const aiResponse = result.response.text();
+        const contents = [];
+        (history || []).forEach(msg => {
+          contents.push({
+            role: msg.role === 'assistant' ? 'model' : 'user',
+            parts: [{ text: msg.content || "" }]
+          });
+        });
+        contents.push({ role: 'user', parts: [{ text: message }] });
+
+        const result = await model.generateContent({ contents });
+        aiResponse = result.response.text();
+        
+        if (aiResponse) break; // Başarılıysa döngüden çık
+      } catch (err) {
+        console.error(`Model hatası (${modelConfig.name}):`, err.message);
+        lastError = err.message;
+        continue; // Diğer modeli dene
+      }
+    }
+
+    if (!aiResponse) {
+      throw new Error(`Tüm modeller denendi ancak yanıt alınamadı. Son hata: ${lastError}`);
+    }
 
     // 3. KAYIT
     if (userId && process.env.SUPABASE_URL) {
