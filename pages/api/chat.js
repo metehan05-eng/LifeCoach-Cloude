@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import OpenAI from 'openai';
 
 // --- SUPABASE HAZIRLIĞI ---
 const supabase = createClient(
@@ -505,60 +506,93 @@ export default async function handler(req, res) {
 
     const localizationInjection = `\n\n--- KONTEKST ---\nKullanıcı: ${userName}\nKonum: ${countryCode}\nDil: ${detectedLang}`;
 
-    // 2. GEMINI FALLBACK ENGINE (ÇOKLU MODEL DESTEĞİ)
-    const modelsToTry = [
-      { name: "gemini-3.1-pro", version: "v1" },
-      { name: "gemini-3.1-flash-lite", version: "v1" },
-      { name: "gemini-3.1-flash", version: "v1" },
-    ];
+    // ==========================================
+    // AI ENGINE: MOONSHOT (KIMI) OR GEMINI FALLBACK
+    // ==========================================
+    const moonshotKey = process.env.MOONSHOT_API_KEY;
+    const geminiKey = process.env.GEMINI_API_KEY;
 
     let aiResponse = "";
     let lastError = null;
 
-    for (const modelConfig of modelsToTry) {
+    // 1. ÖNCE MOONSHOT (KIMI) DENE (Eğer Key Varsa)
+    if (moonshotKey) {
       try {
-        const genAI = new GoogleGenerativeAI(apiKey);
-
-        // v1 sürümünde systemInstruction parametresi hata verebilir, bu yüzden v1beta'da kullanıyoruz
-        const modelParams = { model: modelConfig.name };
-        if (modelConfig.version === 'v1beta') {
-          modelParams.systemInstruction = `${BASE_SYSTEM_PROMPT}${localizationInjection}`;
-        }
-
-        const model = genAI.getGenerativeModel(modelParams, { apiVersion: modelConfig.version });
-
-        const contents = [];
-
-        // Eğer v1 kullanıyorsak ve systemInstruction yoksa, promptu en başa "user" olarak ekleyelim
-        if (modelConfig.version === 'v1') {
-          contents.push({ role: 'user', parts: [{ text: `${BASE_SYSTEM_PROMPT}${localizationInjection}` }] });
-          contents.push({ role: 'model', parts: [{ text: 'Anladım, talimatlara göre yanıt vereceğim.' }] });
-        }
-
-        (history || []).forEach(msg => {
-          contents.push({
-            role: msg.role === 'assistant' ? 'model' : 'user',
-            parts: [{ text: msg.content || "" }]
-          });
+        const client = new OpenAI({
+          apiKey: moonshotKey,
+          baseURL: "https://api.moonshot.cn/v1",
         });
-        contents.push({ role: 'user', parts: [{ text: message }] });
 
-        const result = await model.generateContent({ contents });
-        aiResponse = result.response.text();
+        const messages = [
+          { role: "system", content: `${BASE_SYSTEM_PROMPT}${localizationInjection}` },
+          ...(history || []).map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content })),
+          { role: "user", content: message }
+        ];
 
-        if (aiResponse) break;
+        const completion = await client.chat.completions.create({
+          model: "kimi-k2.6", // Veya moonshot-v1-8k
+          messages: messages,
+          temperature: 0.3,
+        });
+
+        aiResponse = completion.choices[0].message.content;
       } catch (err) {
-        console.error(`Model hatası (${modelConfig.name} - ${modelConfig.version}):`, err.message);
-        lastError = err.message;
-        continue;
+        console.error("Moonshot Hatası:", err.message);
+        lastError = `Moonshot: ${err.message}`;
+      }
+    }
+
+    // 2. MOONSHOT BAŞARISIZSA VEYA KEY YOKSA GEMINI FALLBACK DENE
+    if (!aiResponse && geminiKey) {
+      const modelsToTry = [
+        { name: "gemini-1.5-flash", version: "v1beta" },
+        { name: "gemini-2.0-flash", version: "v1beta" },
+        { name: "gemini-pro", version: "v1beta" },
+        { name: "gemini-1.5-flash", version: "v1" }
+      ];
+
+      for (const modelConfig of modelsToTry) {
+        try {
+          const genAI = new GoogleGenerativeAI(geminiKey);
+          const modelParams = { model: modelConfig.name };
+          
+          if (modelConfig.version === 'v1beta') {
+            modelParams.systemInstruction = `${BASE_SYSTEM_PROMPT}${localizationInjection}`;
+          }
+          
+          const model = genAI.getGenerativeModel(modelParams, { apiVersion: modelConfig.version });
+          const contents = [];
+          
+          if (modelConfig.version === 'v1') {
+            contents.push({ role: 'user', parts: [{ text: `${BASE_SYSTEM_PROMPT}${localizationInjection}` }] });
+            contents.push({ role: 'model', parts: [{ text: 'Anladım, talimatlara göre yanıt vereceğim.' }] });
+          }
+
+          (history || []).forEach(msg => {
+            contents.push({
+              role: msg.role === 'assistant' ? 'model' : 'user',
+              parts: [{ text: msg.content || "" }]
+            });
+          });
+          contents.push({ role: 'user', parts: [{ text: message }] });
+
+          const result = await model.generateContent({ contents });
+          aiResponse = result.response.text();
+          
+          if (aiResponse) break;
+        } catch (err) {
+          console.error(`Gemini Hatası (${modelConfig.name}):`, err.message);
+          lastError = `Gemini (${modelConfig.name}): ${err.message}`;
+          continue;
+        }
       }
     }
 
     if (!aiResponse) {
-      throw new Error(`Kapasite veya bağlantı sorunu. Lütfen biraz sonra tekrar deneyin. (Hata: ${lastError})`);
+      throw new Error(`Tüm yapay zeka servisleri başarısız oldu. Son hata: ${lastError}`);
     }
 
-    // 3. KAYIT
+    // 3. KAYIT (SUPABASE)
     if (userId && process.env.SUPABASE_URL) {
       supabase.from('chat_history').insert([{
         user_id: userId,
@@ -570,6 +604,6 @@ export default async function handler(req, res) {
     return res.status(200).json({ response: aiResponse });
 
   } catch (error) {
-    return res.status(500).json({ error: "AI Hatası", details: error.message });
+    return res.status(500).json({ error: "AI Engine Hatası", details: error.message });
   }
 }
