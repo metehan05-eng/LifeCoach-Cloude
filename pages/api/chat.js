@@ -504,21 +504,21 @@ export default async function handler(req, res) {
     const localizationInjection = `\n\n--- KONTEKST ---\nKullanıcı: ${userName}\nKonum: ${countryCode}\nDil: ${detectedLang}`;
 
     // ==========================================
-    // AI ENGINE: MOONSHOT (KIMI) ONLY
+    // AI ENGINE: GROQ (LLAMA 3) - EN HIZLI VE STABİL ÇÖZÜM
     // ==========================================
-    const moonshotKey = process.env.MOONSHOT_API_KEY;
+    const groqKey = process.env.GROQ_API_KEY;
 
-    if (!moonshotKey) {
+    if (!groqKey) {
       return res.status(500).json({ 
         error: "Yapay Zeka Anahtarı Bulunamadı", 
-        details: "Lütfen Vercel veya .env dosyanıza MOONSHOT_API_KEY ekleyin." 
+        details: "Lütfen Vercel veya .env dosyanıza GROQ_API_KEY ekleyin. (https://console.groq.com/keys)" 
       });
     }
 
     try {
       const client = new OpenAI({
-        apiKey: moonshotKey,
-        baseURL: "https://api.moonshot.cn/v1",
+        apiKey: groqKey,
+        baseURL: "https://api.groq.com/openai/v1",
       });
 
       const messages = [
@@ -531,9 +531,12 @@ export default async function handler(req, res) {
       ];
 
       const completion = await client.chat.completions.create({
-        model: "kimi-k2.6", 
+        model: "llama3-70b-8192", // Dünyanın en hızlı ve zeki modellerinden biri
         messages: messages,
-        temperature: 0.3,
+        temperature: 0.5,
+        max_tokens: 2048,
+        top_p: 1,
+        stream: false
       });
 
       const aiResponse = completion.choices[0].message.content;
@@ -550,9 +553,9 @@ export default async function handler(req, res) {
       return res.status(200).json({ response: aiResponse });
 
     } catch (err) {
-      console.error("Kimi Hatası:", err.message);
+      console.error("Groq Hatası:", err.message);
       return res.status(500).json({ 
-        error: "Yapay Zeka Hatası (Kimi)", 
+        error: "Yapay Zeka Hatası (Groq)", 
         details: err.message 
       });
     }
