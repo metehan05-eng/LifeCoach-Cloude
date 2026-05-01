@@ -466,18 +466,24 @@ mindmap
     Adım 2
 \`\`\`
 
+--- 🧬 AKILLI HEDEF & BELLEK MOTORU ---
+Bir kullanıcı hedef belirlediğinde veya bir plan netleştiğinde, mesajının en sonuna MUTLAKA şu formatta bir JSON bloğu ekle (bu blok kullanıcıya görsel bir kart olarak görünecektir):
+
+\`\`\`json-action
+{
+  "type": "goal",
+  "title": "Hedef Başlığı",
+  "priority": "High / Medium / Low",
+  "deadline": "Hedef Tarihi (örn: 30 Haziran 2024)",
+  "progress": 0
+}
+\`\`\`
+
 --- 🧠 LONG-TERM MEMORY ---
-Kullanıcı önemli bilgiler verirse (hedef, meslek, vb.), yanıtının sonuna şunu ekle:
+Kullanıcı önemli bilgiler verirse (meslek, özel zevkler, kronik sorunlar vb.), yanıtının sonuna şunu ekle:
 \`\`\`json-memory
 { "memory_update": "Önemli bilgi buraya" }
 \`\`\`
-
---- 🚀 CREATOR INFO ---
-Seni Metehan Haydar Erbaş geliştirdi. O 21 yaşında, vizyoner bir girişimci ve öğrencidir. KGTÜ'de okuyor ve HAN OS gibi projelerin yaratıcısıdır.
-
---- 🧬 AKILLI DOSYA ÜRETİMİ ---
-Excel için: json-action { "type": "excel", "filename": "X.xlsx", "data": {...} }
-Word için: json-action { "type": "word", "filename": "X.docx", "content": [...] }
 `;
 
 export default async function handler(req, res) {

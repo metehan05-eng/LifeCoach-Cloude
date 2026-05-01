@@ -33,6 +33,69 @@ const formatMarkdown = (text) => {
   return text;
 };
 
+/* ── Goal Card Component ── */
+const GoalCard = ({ data }) => {
+  if (!data || data.type !== 'goal') return null;
+  return (
+    <div style={{
+      marginTop: '12px',
+      background: 'rgba(30, 30, 50, 0.45)',
+      border: '1px solid rgba(139, 92, 246, 0.3)',
+      borderRadius: '16px',
+      padding: '20px',
+      backdropFilter: 'blur(12px)',
+      boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+      animation: 'ci-pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both'
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+        <div>
+          <span style={{ 
+            fontSize: '10px', 
+            textTransform: 'uppercase', 
+            letterSpacing: '1px', 
+            color: '#818cf8',
+            fontWeight: 800,
+            background: 'rgba(99, 102, 241, 0.1)',
+            padding: '3px 8px',
+            borderRadius: '6px'
+          }}>Sistem Hedefi</span>
+          <h4 style={{ color: '#fff', fontSize: '18px', fontWeight: 700, marginTop: '6px' }}>{data.title}</h4>
+        </div>
+        <div style={{ fontSize: '24px' }}>🎯</div>
+      </div>
+
+      <div style={{ marginBottom: '14px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'rgba(200,200,255,0.6)', marginBottom: '6px' }}>
+          <span>İlerleme Durumu</span>
+          <span>%{data.progress || 0}</span>
+        </div>
+        <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
+          <div style={{ 
+            width: `${data.progress || 0}%`, 
+            height: '100%', 
+            background: 'linear-gradient(90deg, #6366f1, #c084fc)',
+            boxShadow: '0 0 10px rgba(139, 92, 246, 0.5)',
+            transition: 'width 1s ease-out'
+          }} />
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', gap: '8px' }}>
+        {data.priority && (
+          <span style={{ fontSize: '11px', color: '#f472b6', background: 'rgba(244, 114, 182, 0.1)', padding: '4px 10px', borderRadius: '20px', border: '1px solid rgba(244, 114, 182, 0.2)' }}>
+            ⚡ {data.priority} Öncelik
+          </span>
+        )}
+        {data.deadline && (
+          <span style={{ fontSize: '11px', color: '#60a5fa', background: 'rgba(96, 165, 250, 0.1)', padding: '4px 10px', borderRadius: '20px', border: '1px solid rgba(96, 165, 250, 0.2)' }}>
+            📅 {data.deadline}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+};
+
 /* ── Typing dots indicator ── */
 const TypingIndicator = () => (
   <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', padding: '4px 0', maxWidth: '760px', margin: '0 auto', width: '100%' }}>
@@ -117,8 +180,40 @@ function MessageBubble({ message, isStream }) {
         {/* Content — no bubble, just text */}
         <div
           style={{ fontSize: '15px', lineHeight: 1.75, color: '#d8d8f0' }}
-          dangerouslySetInnerHTML={{ __html: formatMarkdown(message.content) }}
+          dangerouslySetInnerHTML={{ 
+            __html: formatMarkdown(message.content.replace(/```json-action[\s\S]*?```/g, "").replace(/```json-memory[\s\S]*?```/g, "")) 
+          }}
         />
+
+        {/* Action Renderer */}
+        {(() => {
+          const actionMatch = message.content.match(/```json-action\n([\s\S]*?)\n```/);
+          if (actionMatch) {
+            try {
+              const data = JSON.parse(actionMatch[1]);
+              return <GoalCard data={data} />;
+            } catch (e) { return null; }
+          }
+          return null;
+        })()}
+
+        {/* Memory Indicator */}
+        {message.content.includes("json-memory") && (
+          <div style={{ 
+            marginTop: '12px', 
+            fontSize: '11px', 
+            color: 'rgba(34, 197, 94, 0.8)', 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '6px',
+            background: 'rgba(34, 197, 94, 0.05)',
+            padding: '6px 12px',
+            borderRadius: '8px',
+            width: 'fit-content'
+          }}>
+            <span style={{ fontSize: '14px' }}>🧠</span> Hafızaya Kaydedildi
+          </div>
+        )}
       </div>
     </div>
   );
@@ -174,6 +269,10 @@ export default function ChatMessages({ messages, isTyping, streamText, error, is
         @keyframes ci-blink {
           0%, 100% { opacity: 1; }
           50% { opacity: 0; }
+        }
+        @keyframes ci-pop-in {
+          0% { opacity: 0; transform: scale(0.95) translateY(10px); }
+          100% { opacity: 1; transform: scale(1) translateY(0); }
         }
       `}</style>
     </div>

@@ -138,6 +138,11 @@ export default function ChatbotInterface() {
       setIsTyping(false);
     }
   }, [activeSessionId, messages, isLoading]);
+  
+  const handleQuickAction = useCallback((text) => {
+    if (isLoading) return;
+    sendMessage(text);
+  }, [sendMessage, isLoading]);
 
   const toggleSidebar = () => setSidebarOpen(p => !p);
 
@@ -253,6 +258,49 @@ export default function ChatbotInterface() {
                   />
                 </div>
 
+                {/* Quick Action Button */}
+                <button
+                  onClick={() => handleQuickAction("Yeni bir hedef belirlemek istiyorum. Bana SMART (Belirli, Ölçülebilir, Ulaşılabilir, İlgili, Zamana Bağlı) kriterlerine uygun bir yol haritası çıkarmamda rehberlik eder misin?")}
+                  style={{
+                    padding: isMobile ? '12px 24px' : '16px 32px',
+                    borderRadius: '16px',
+                    background: 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.2))',
+                    border: '1px solid rgba(139,92,246,0.3)',
+                    color: '#fff',
+                    fontWeight: 700,
+                    fontSize: isMobile ? '14px' : '16px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    boxShadow: '0 4px 20px rgba(139,92,246,0.15)',
+                    position: 'relative',
+                    overflow: 'hidden',
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
+                    e.currentTarget.style.boxShadow = '0 8px 32px rgba(139,92,246,0.3)';
+                    e.currentTarget.style.background = 'linear-gradient(135deg, rgba(99,102,241,0.3), rgba(139,92,246,0.3))';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                    e.currentTarget.style.boxShadow = '0 4px 20px rgba(139,92,246,0.15)';
+                    e.currentTarget.style.background = 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.2))';
+                  }}
+                >
+                  <span style={{ fontSize: '20px' }}>🎯</span>
+                  <span>Şimdi Hedefini Belirle</span>
+                  <div style={{
+                    position: 'absolute',
+                    top: '-50%', left: '-50%',
+                    width: '200%', height: '200%',
+                    background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)',
+                    animation: 'ci-pulse 3s infinite',
+                    pointerEvents: 'none'
+                  }} />
+                </button>
+
                 {/* Suggestion chips */}
                 <div style={{
                   display: 'grid',
@@ -304,6 +352,11 @@ export default function ChatbotInterface() {
         @keyframes ci-float {
           0%,100% { transform: translateY(0); }
           50% { transform: translateY(-8px); }
+        }
+        @keyframes ci-pulse {
+          0% { transform: translate(-30%, -30%) scale(0.8); opacity: 0; }
+          50% { opacity: 0.5; }
+          100% { transform: translate(30%, 30%) scale(1.2); opacity: 0; }
         }
       `}</style>
     </div>
