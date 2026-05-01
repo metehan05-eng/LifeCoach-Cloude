@@ -509,8 +509,8 @@ export default async function handler(req, res) {
     const modelsToTry = [
       { name: "gemini-1.5-flash", version: "v1beta" },
       { name: "gemini-2.0-flash", version: "v1beta" },
-      { name: "gemini-1.5-pro", version: "v1beta" },
-      { name: "gemini-1.5-flash", version: "v1" }
+      { name: "gemini-pro", version: "v1beta" }, // Eski ama en sağlamı
+      { name: "gemini-1.5-flash", version: "v1" } // Stabil sürüm
     ];
 
     let aiResponse = "";
@@ -519,12 +519,23 @@ export default async function handler(req, res) {
     for (const modelConfig of modelsToTry) {
       try {
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({
-          model: modelConfig.name,
-          systemInstruction: `${BASE_SYSTEM_PROMPT}${localizationInjection}`,
-        }, { apiVersion: modelConfig.version });
+        
+        // v1 sürümünde systemInstruction parametresi hata verebilir, bu yüzden v1beta'da kullanıyoruz
+        const modelParams = { model: modelConfig.name };
+        if (modelConfig.version === 'v1beta') {
+          modelParams.systemInstruction = `${BASE_SYSTEM_PROMPT}${localizationInjection}`;
+        }
+        
+        const model = genAI.getGenerativeModel(modelParams, { apiVersion: modelConfig.version });
 
         const contents = [];
+        
+        // Eğer v1 kullanıyorsak ve systemInstruction yoksa, promptu en başa "user" olarak ekleyelim
+        if (modelConfig.version === 'v1') {
+          contents.push({ role: 'user', parts: [{ text: `${BASE_SYSTEM_PROMPT}${localizationInjection}` }] });
+          contents.push({ role: 'model', parts: [{ text: 'Anladım, talimatlara göre yanıt vereceğim.' }] });
+        }
+
         (history || []).forEach(msg => {
           contents.push({
             role: msg.role === 'assistant' ? 'model' : 'user',
@@ -536,16 +547,16 @@ export default async function handler(req, res) {
         const result = await model.generateContent({ contents });
         aiResponse = result.response.text();
         
-        if (aiResponse) break; // Başarılıysa döngüden çık
+        if (aiResponse) break;
       } catch (err) {
-        console.error(`Model hatası (${modelConfig.name}):`, err.message);
+        console.error(`Model hatası (${modelConfig.name} - ${modelConfig.version}):`, err.message);
         lastError = err.message;
-        continue; // Diğer modeli dene
+        continue;
       }
     }
 
     if (!aiResponse) {
-      throw new Error(`Tüm modeller denendi ancak yanıt alınamadı. Son hata: ${lastError}`);
+      throw new Error(`Kapasite veya bağlantı sorunu. Lütfen biraz sonra tekrar deneyin. (Hata: ${lastError})`);
     }
 
     // 3. KAYIT
