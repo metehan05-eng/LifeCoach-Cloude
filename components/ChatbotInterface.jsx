@@ -4,6 +4,7 @@ import ChatSidebar from './chat/ChatSidebar';
 import ChatMessages from './chat/ChatMessages';
 import ChatInput from './chat/ChatInput';
 import ChatHeader from './chat/ChatHeader';
+import WaffleStudio from './chat/WaffleStudio';
 import styles from './ChatbotInterface.module.css';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -188,12 +189,14 @@ export default function ChatbotInterface() {
           <ChatHeader
             onToggleSidebar={toggleSidebar}
             sidebarOpen={sidebarOpen}
-            sessionTitle={activeSession?.title}
+            sessionTitle={activeSessionId === 'waffle' ? 'Waffle AI Studio' : activeSession?.title}
             isMobile={isMobile}
           />
 
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
-            {hasMessages ? (
+            {activeSessionId === 'waffle' ? (
+              <WaffleStudio isMobile={isMobile} />
+            ) : hasMessages ? (
               <>
                 <ChatMessages
                   messages={messages}

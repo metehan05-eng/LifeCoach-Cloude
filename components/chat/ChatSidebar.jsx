@@ -80,6 +80,41 @@ export default function ChatSidebar({
             </div>
           </div>
 
+          {/* Waffle AI Button */}
+          <button
+            onClick={() => onSelectSession('waffle')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '8px',
+              padding: '12px 14px', borderRadius: '12px',
+              background: activeSessionId === 'waffle' 
+                ? 'linear-gradient(135deg, #f59e0b, #d97706)' 
+                : 'rgba(245, 158, 11, 0.08)',
+              border: activeSessionId === 'waffle'
+                ? '1px solid #fbbf24'
+                : '1px solid rgba(245, 158, 11, 0.2)',
+              color: activeSessionId === 'waffle' ? '#fff' : '#fbbf24', 
+              fontWeight: 700, fontSize: '13.5px',
+              cursor: 'pointer', width: '100%',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              boxShadow: activeSessionId === 'waffle' ? '0 4px 15px rgba(245, 158, 11, 0.4)' : 'none'
+            }}
+            onMouseEnter={e => {
+              if (activeSessionId !== 'waffle') {
+                e.currentTarget.style.background = 'rgba(245, 158, 11, 0.15)';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+              }
+            }}
+            onMouseLeave={e => {
+              if (activeSessionId !== 'waffle') {
+                e.currentTarget.style.background = 'rgba(245, 158, 11, 0.08)';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }
+            }}
+          >
+            <span style={{ fontSize: '18px' }}>🧇</span>
+            Waffle AI Studio
+          </button>
+
           {/* New Chat Button */}
           <button
             onClick={onNewSession}
