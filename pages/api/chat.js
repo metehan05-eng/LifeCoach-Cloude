@@ -488,9 +488,6 @@ export default async function handler(req, res) {
     const countryCode = req.headers['x-vercel-ip-country'] || 'Unknown';
     const detectedLang = userLanguage || req.headers['accept-language']?.split(',')[0] || 'tr-TR';
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) return res.status(500).json({ error: "API Anahtarı bulunamadı." });
-
     // 1. KULLANICI ID TESPİTİ
     let userId = null;
     let userName = "Kullanıcı";
@@ -507,103 +504,59 @@ export default async function handler(req, res) {
     const localizationInjection = `\n\n--- KONTEKST ---\nKullanıcı: ${userName}\nKonum: ${countryCode}\nDil: ${detectedLang}`;
 
     // ==========================================
-    // AI ENGINE: MOONSHOT (KIMI) OR GEMINI FALLBACK
+    // AI ENGINE: MOONSHOT (KIMI) ONLY
     // ==========================================
     const moonshotKey = process.env.MOONSHOT_API_KEY;
-    const geminiKey = process.env.GEMINI_API_KEY;
 
-    let aiResponse = "";
-    let lastError = null;
-
-    // 1. ÖNCE MOONSHOT (KIMI) DENE (Eğer Key Varsa)
-    if (moonshotKey) {
-      try {
-        const client = new OpenAI({
-          apiKey: moonshotKey,
-          baseURL: "https://api.moonshot.cn/v1",
-        });
-
-        const messages = [
-          { role: "system", content: `${BASE_SYSTEM_PROMPT}${localizationInjection}` },
-          ...(history || []).map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content })),
-          { role: "user", content: message }
-        ];
-
-        const completion = await client.chat.completions.create({
-          model: "kimi-k2.6", // Veya moonshot-v1-8k
-          messages: messages,
-          temperature: 0.3,
-        });
-
-        aiResponse = completion.choices[0].message.content;
-      } catch (err) {
-        console.error("Moonshot Hatası:", err.message);
-        lastError = `Moonshot: ${err.message}`;
-      }
+    if (!moonshotKey) {
+      return res.status(500).json({ 
+        error: "Yapay Zeka Anahtarı Bulunamadı", 
+        details: "Lütfen Vercel veya .env dosyanıza MOONSHOT_API_KEY ekleyin." 
+      });
     }
 
-    // 2. MOONSHOT BAŞARISIZSA VEYA KEY YOKSA GEMINI FALLBACK DENE
-    if (!aiResponse && geminiKey) {
-      const modelsToTry = [
-        { name: "gemini-1.5-flash", version: "v1beta" },
-        { name: "gemini-2.0-flash", version: "v1beta" },
-        { name: "gemini-pro", version: "v1beta" },
-        { name: "gemini-1.5-flash", version: "v1" }
+    try {
+      const client = new OpenAI({
+        apiKey: moonshotKey,
+        baseURL: "https://api.moonshot.cn/v1",
+      });
+
+      const messages = [
+        { role: "system", content: `${BASE_SYSTEM_PROMPT}${localizationInjection}` },
+        ...(history || []).map(m => ({ 
+          role: m.role === 'assistant' ? 'assistant' : 'user', 
+          content: m.content || "" 
+        })),
+        { role: "user", content: message }
       ];
 
-      for (const modelConfig of modelsToTry) {
-        try {
-          const genAI = new GoogleGenerativeAI(geminiKey);
-          const modelParams = { model: modelConfig.name };
-          
-          if (modelConfig.version === 'v1beta') {
-            modelParams.systemInstruction = `${BASE_SYSTEM_PROMPT}${localizationInjection}`;
-          }
-          
-          const model = genAI.getGenerativeModel(modelParams, { apiVersion: modelConfig.version });
-          const contents = [];
-          
-          if (modelConfig.version === 'v1') {
-            contents.push({ role: 'user', parts: [{ text: `${BASE_SYSTEM_PROMPT}${localizationInjection}` }] });
-            contents.push({ role: 'model', parts: [{ text: 'Anladım, talimatlara göre yanıt vereceğim.' }] });
-          }
+      const completion = await client.chat.completions.create({
+        model: "kimi-k2.6", 
+        messages: messages,
+        temperature: 0.3,
+      });
 
-          (history || []).forEach(msg => {
-            contents.push({
-              role: msg.role === 'assistant' ? 'model' : 'user',
-              parts: [{ text: msg.content || "" }]
-            });
-          });
-          contents.push({ role: 'user', parts: [{ text: message }] });
+      const aiResponse = completion.choices[0].message.content;
 
-          const result = await model.generateContent({ contents });
-          aiResponse = result.response.text();
-          
-          if (aiResponse) break;
-        } catch (err) {
-          console.error(`Gemini Hatası (${modelConfig.name}):`, err.message);
-          lastError = `Gemini (${modelConfig.name}): ${err.message}`;
-          continue;
-        }
+      // 3. KAYIT (SUPABASE)
+      if (userId && process.env.SUPABASE_URL) {
+        supabase.from('chat_history').insert([{
+          user_id: userId,
+          title: message.substring(0, 50),
+          messages: [...(history || []), { role: 'user', content: message }, { role: 'assistant', content: aiResponse }]
+        }]).catch(() => { });
       }
+
+      return res.status(200).json({ response: aiResponse });
+
+    } catch (err) {
+      console.error("Kimi Hatası:", err.message);
+      return res.status(500).json({ 
+        error: "Yapay Zeka Hatası (Kimi)", 
+        details: err.message 
+      });
     }
-
-    if (!aiResponse) {
-      throw new Error(`Tüm yapay zeka servisleri başarısız oldu. Son hata: ${lastError}`);
-    }
-
-    // 3. KAYIT (SUPABASE)
-    if (userId && process.env.SUPABASE_URL) {
-      supabase.from('chat_history').insert([{
-        user_id: userId,
-        title: message.substring(0, 50),
-        messages: [...(history || []), { role: 'user', content: message }, { role: 'assistant', content: aiResponse }]
-      }]).catch(() => { });
-    }
-
-    return res.status(200).json({ response: aiResponse });
-
   } catch (error) {
-    return res.status(500).json({ error: "AI Engine Hatası", details: error.message });
+    return res.status(500).json({ error: "Sistem Hatası", details: error.message });
   }
 }
