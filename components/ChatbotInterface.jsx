@@ -201,6 +201,7 @@ export default function ChatbotInterface() {
                   streamText={streamText}
                   error={error}
                   isMobile={isMobile}
+                  onQuickAction={handleQuickAction}
                 />
                 <ChatInput
                   value={inputValue}

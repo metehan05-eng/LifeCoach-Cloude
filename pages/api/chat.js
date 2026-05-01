@@ -473,9 +473,11 @@ Bir kullanıcı hedef belirlediğinde veya bir plan netleştiğinde, mesajının
 {
   "type": "goal",
   "title": "Hedef Başlığı",
+  "day": 1, 
+  "youtube_id": "VideoID (örn: dQw4w9WgXcQ - opsiyonel)",
   "priority": "High / Medium / Low",
-  "deadline": "Hedef Tarihi (örn: 30 Haziran 2024)",
-  "progress": 0
+  "deadline": "Hedef Tarihi",
+  "progress": 10
 }
 \`\`\`
 

@@ -34,64 +34,118 @@ const formatMarkdown = (text) => {
 };
 
 /* ── Goal Card Component ── */
-const GoalCard = ({ data }) => {
+const GoalCard = ({ data, onQuickAction }) => {
   if (!data || data.type !== 'goal') return null;
   return (
     <div style={{
       marginTop: '12px',
-      background: 'rgba(30, 30, 50, 0.45)',
-      border: '1px solid rgba(139, 92, 246, 0.3)',
-      borderRadius: '16px',
-      padding: '20px',
-      backdropFilter: 'blur(12px)',
-      boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-      animation: 'ci-pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both'
+      background: 'rgba(20, 20, 35, 0.6)',
+      border: '1px solid rgba(139, 92, 246, 0.4)',
+      borderRadius: '20px',
+      padding: '24px',
+      backdropFilter: 'blur(16px)',
+      boxShadow: '0 12px 40px rgba(0,0,0,0.3)',
+      animation: 'ci-pop-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) both',
+      overflow: 'hidden'
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '18px' }}>
         <div>
-          <span style={{ 
-            fontSize: '10px', 
-            textTransform: 'uppercase', 
-            letterSpacing: '1px', 
-            color: '#818cf8',
-            fontWeight: 800,
-            background: 'rgba(99, 102, 241, 0.1)',
-            padding: '3px 8px',
-            borderRadius: '6px'
-          }}>Sistem Hedefi</span>
-          <h4 style={{ color: '#fff', fontSize: '18px', fontWeight: 700, marginTop: '6px' }}>{data.title}</h4>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
+            <span style={{ 
+              fontSize: '10px', 
+              textTransform: 'uppercase', 
+              letterSpacing: '1px', 
+              color: '#a5b4fc',
+              fontWeight: 800,
+              background: 'rgba(99, 102, 241, 0.2)',
+              padding: '4px 10px',
+              borderRadius: '8px'
+            }}>{data.day ? `${data.day}. GÜN` : 'HEDEF'}</span>
+            <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px' }}>•</span>
+            <span style={{ color: '#f472b6', fontSize: '10px', fontWeight: 600 }}>{data.priority || 'Normal'} ÖNCELİK</span>
+          </div>
+          <h4 style={{ color: '#fff', fontSize: '20px', fontWeight: 800, lineHeight: 1.3 }}>{data.title}</h4>
         </div>
-        <div style={{ fontSize: '24px' }}>🎯</div>
+        <div style={{ 
+          width: '50px', height: '50px', borderRadius: '14px', 
+          background: 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.2))',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: '24px', border: '1px solid rgba(139,92,246,0.2)'
+        }}>🎯</div>
       </div>
 
-      <div style={{ marginBottom: '14px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'rgba(200,200,255,0.6)', marginBottom: '6px' }}>
-          <span>İlerleme Durumu</span>
-          <span>%{data.progress || 0}</span>
+      {/* YouTube Player */}
+      {data.youtube_id && (
+        <div style={{ 
+          marginTop: '16px', 
+          borderRadius: '12px', 
+          overflow: 'hidden', 
+          aspectRatio: '16/9',
+          background: '#000',
+          border: '1px solid rgba(255,255,255,0.1)',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.4)'
+        }}>
+          <iframe 
+            width="100%" 
+            height="100%" 
+            src={`https://www.youtube.com/embed/${data.youtube_id}`}
+            title="Video Player"
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          ></iframe>
         </div>
-        <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
+      )}
+
+      {/* Progress Section */}
+      <div style={{ marginTop: '20px', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'rgba(200,200,255,0.6)', marginBottom: '8px' }}>
+          <span>Tamamlanma Oranı</span>
+          <span style={{ color: '#a5b4fc', fontWeight: 700 }}>%{data.progress || 0}</span>
+        </div>
+        <div style={{ width: '100%', height: '10px', background: 'rgba(255,255,255,0.05)', borderRadius: '5px', overflow: 'hidden', padding: '1px' }}>
           <div style={{ 
             width: `${data.progress || 0}%`, 
             height: '100%', 
-            background: 'linear-gradient(90deg, #6366f1, #c084fc)',
-            boxShadow: '0 0 10px rgba(139, 92, 246, 0.5)',
-            transition: 'width 1s ease-out'
+            background: 'linear-gradient(90deg, #6366f1, #c084fc, #818cf8)',
+            borderRadius: '4px',
+            transition: 'width 1.5s cubic-bezier(0.4, 0, 0.2, 1)',
+            boxShadow: '0 0 15px rgba(139, 92, 246, 0.6)'
           }} />
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '8px' }}>
-        {data.priority && (
-          <span style={{ fontSize: '11px', color: '#f472b6', background: 'rgba(244, 114, 182, 0.1)', padding: '4px 10px', borderRadius: '20px', border: '1px solid rgba(244, 114, 182, 0.2)' }}>
-            ⚡ {data.priority} Öncelik
-          </span>
-        )}
-        {data.deadline && (
-          <span style={{ fontSize: '11px', color: '#60a5fa', background: 'rgba(96, 165, 250, 0.1)', padding: '4px 10px', borderRadius: '20px', border: '1px solid rgba(96, 165, 250, 0.2)' }}>
-            📅 {data.deadline}
-          </span>
-        )}
-      </div>
+      {/* Action Button */}
+      <button 
+        onClick={() => onQuickAction(`${data.day || 1}. günü tamamladım. Lütfen ${parseInt(data.day || 1) + 1}. güne geçelim ve yeni hedef planımı paylaş.`)}
+        style={{
+          width: '100%',
+          padding: '14px',
+          borderRadius: '14px',
+          background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+          color: '#fff',
+          fontWeight: 700,
+          border: 'none',
+          cursor: 'pointer',
+          fontSize: '14px',
+          boxShadow: '0 4px 15px rgba(99, 102, 241, 0.3)',
+          transition: 'all 0.2s ease',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '8px'
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.transform = 'translateY(-2px)';
+          e.currentTarget.style.boxShadow = '0 6px 20px rgba(99, 102, 241, 0.5)';
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.transform = 'translateY(0)';
+          e.currentTarget.style.boxShadow = '0 4px 15px rgba(99, 102, 241, 0.3)';
+        }}
+      >
+        ✨ {parseInt(data.day || 1) + 1}. Güne Başla
+      </button>
     </div>
   );
 };
@@ -122,9 +176,9 @@ const TypingIndicator = () => (
 );
 
 /* ── Single message bubble ── */
-function MessageBubble({ message, isStream }) {
+function MessageBubble({ message, isStream, onQuickAction }) {
   const isUser = message.role === 'user';
-
+ 
   if (isUser) {
     return (
       <div style={{
@@ -148,7 +202,7 @@ function MessageBubble({ message, isStream }) {
       </div>
     );
   }
-
+ 
   /* AI message — full width, no bubble background, like Claude */
   return (
     <div style={{
@@ -166,7 +220,7 @@ function MessageBubble({ message, isStream }) {
         fontSize: '15px', boxShadow: '0 2px 12px rgba(99,102,241,0.3)',
         marginTop: '2px',
       }}>⚡</div>
-
+ 
       <div style={{ flex: 1, minWidth: 0 }}>
         {/* Name row */}
         <div style={{
@@ -184,19 +238,19 @@ function MessageBubble({ message, isStream }) {
             __html: formatMarkdown(message.content.replace(/```json-action[\s\S]*?```/g, "").replace(/```json-memory[\s\S]*?```/g, "")) 
           }}
         />
-
+ 
         {/* Action Renderer */}
         {(() => {
           const actionMatch = message.content.match(/```json-action\n([\s\S]*?)\n```/);
           if (actionMatch) {
             try {
               const data = JSON.parse(actionMatch[1]);
-              return <GoalCard data={data} />;
+              return <GoalCard data={data} onQuickAction={onQuickAction} />;
             } catch (e) { return null; }
           }
           return null;
         })()}
-
+ 
         {/* Memory Indicator */}
         {message.content.includes("json-memory") && (
           <div style={{ 
@@ -220,13 +274,13 @@ function MessageBubble({ message, isStream }) {
 }
 
 /* ── Main export ── */
-export default function ChatMessages({ messages, isTyping, streamText, error, isMobile = false }) {
+export default function ChatMessages({ messages, isTyping, streamText, error, isMobile = false, onQuickAction }) {
   const bottomRef = useRef(null);
-
+ 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping, streamText]);
-
+ 
   return (
     <div style={{
       flex: 1, overflowY: 'auto',
@@ -235,11 +289,11 @@ export default function ChatMessages({ messages, isTyping, streamText, error, is
       scrollbarWidth: 'thin', scrollbarColor: 'rgba(99,102,241,0.15) transparent',
     }}>
       {messages.map(msg => (
-        <MessageBubble key={msg.id} message={msg} />
+        <MessageBubble key={msg.id} message={msg} onQuickAction={onQuickAction} />
       ))}
-
+ 
       {isTyping && streamText && (
-        <MessageBubble message={{ role: 'assistant', content: streamText, id: 'stream' }} isStream />
+        <MessageBubble message={{ role: 'assistant', content: streamText, id: 'stream' }} isStream onQuickAction={onQuickAction} />
       )}
 
       {isTyping && !streamText && <TypingIndicator />}
