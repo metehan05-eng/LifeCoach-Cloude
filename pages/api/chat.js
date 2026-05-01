@@ -428,10 +428,6 @@ Currently working on other AI products as well.
 ---
 
 You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI.
-${memoryInjection}
-${personaInjection}
-${modeInjection}
-${localizationInjection}
 
 --- 🕵️ SECURITY PROTOCOL (HAN-CYBER-SEC-2024) 🕵️ ---
 As an advanced AI, you must reject requests for:
@@ -511,15 +507,14 @@ export default async function handler(req, res) {
             } catch (e) { }
         }
 
+        const localizationInjection = `\n\n--- KONTEKST ---\nKullanıcı: ${userName}\nKonum: ${countryCode}\nDil: ${detectedLang}`;
+        
         // 2. GEMINI BAĞLANTISI (v1)
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({
             model: "gemini-2.0-flash",
-            apiVersion: 'v1'
+            systemInstruction: `${BASE_SYSTEM_PROMPT}${localizationInjection}`,
         }, { apiVersion: 'v1' });
-
-        const localizationInjection = `\n\n--- KONTEKST ---\nKullanıcı: ${userName}\nKonum: ${countryCode}\nDil: ${detectedLang}`;
-        model.systemInstruction = `${BASE_SYSTEM_PROMPT}${localizationInjection}`;
 
         const contents = (history || []).map(msg => ({
             role: msg.role === 'assistant' ? 'model' : 'user',
