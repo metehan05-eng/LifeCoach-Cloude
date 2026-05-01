@@ -314,10 +314,6 @@ You must output a json-action for it:
 \`\`\`
 The Python engine will automatically generate charts based on the 'eq_data' provided.
 You are HAN 4.2 Ultra Core — the intelligence engine behind LifeCoach AI. (Operating on Gemini 1.5 Pro)
-${memoryInjection}
-${personaInjection}
-${modeInjection}
-${localizationInjection}
 
 ---
 
@@ -509,17 +505,26 @@ export default async function handler(req, res) {
 
         const localizationInjection = `\n\n--- KONTEKST ---\nKullanıcı: ${userName}\nKonum: ${countryCode}\nDil: ${detectedLang}`;
         
-        // 2. GEMINI BAĞLANTISI (v1)
+        // 2. GEMINI BAĞLANTISI
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({
-            model: "gemini-2.0-flash",
-            systemInstruction: `${BASE_SYSTEM_PROMPT}${localizationInjection}`,
+            model: "gemini-1.5-flash",
         }, { apiVersion: 'v1' });
 
-        const contents = (history || []).map(msg => ({
-            role: msg.role === 'assistant' ? 'model' : 'user',
-            parts: [{ text: msg.content || "" }]
-        }));
+        const finalSystemPrompt = `${BASE_SYSTEM_PROMPT}${localizationInjection}`;
+
+        const contents = [
+            { role: 'user', parts: [{ text: finalSystemPrompt }] },
+            { role: 'model', parts: [{ text: 'Anladım, talimatlara tamamen uyarak yanıt vereceğim.' }] }
+        ];
+
+        (history || []).forEach(msg => {
+            contents.push({
+                role: msg.role === 'assistant' ? 'model' : 'user',
+                parts: [{ text: msg.content || "" }]
+            });
+        });
+        
         contents.push({ role: 'user', parts: [{ text: message }] });
 
         const result = await model.generateContent({ contents });
