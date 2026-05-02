@@ -2,8 +2,22 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-const COUNTRIES = ['🇹🇷 TR', '🇺🇸 US', '🇩🇪 DE', '🇯🇵 JP', '🇬🇧 UK', '🇫🇷 FR', '🇰🇷 KR', '🇧🇷 BR', '🇨🇦 CA', '🇮🇹 IT'];
-const NAMES = ['AlphaUser', 'DarkFocus', 'GoalMaster', 'ZenWarrior', 'LogicNode', 'HyperPlan', 'DeepWork', 'FocusEntity', 'MindArchitect', 'Visonary_X'];
+const COUNTRIES = [
+  '🇹🇷 TR', '🇺🇸 US', '🇩🇪 DE', '🇯🇵 JP', '🇬🇧 UK', '🇫🇷 FR', '🇰🇷 KR', '🇧🇷 BR', '🇨🇦 CA', '🇮🇹 IT',
+  '🇪🇸 ES', '🇷🇺 RU', '🇦🇺 AU', '🇮🇳 IN', '🇨🇳 CN', '🇲🇽 MX', '🇦🇷 AR', '🇿🇦 ZA', '🇳🇱 NL', '🇸🇪 SE',
+  '🇳🇴 NO', '🇩🇰 DK', '🇫🇮 FI', '🇨🇭 CH', '🇦🇹 AT', '🇧🇪 BE', '🇵🇹 PT', '🇬🇷 GR', '🇮🇪 IE', '🇳🇿 NZ',
+  '🇸🇬 SG', '🇲🇾 MY', '🇹Ｈ TH', '🇮🇩 ID', '🇵🇭 PH', '🇻🇳 VN', '🇵🇱 PL', '🇨🇿 CZ', '🇭🇺 HU', '🇷🇴 RO',
+  '🇺🇦 UA', '🇮🇱 IL', '🇸🇦 SA', '🇦🇪 AE', '🇶🇦 QA', '🇰🇼 KW', '🇪🇬 EG', '🇲🇦 MA', '🇩🇿 DZ', '🇰🇿 KZ',
+  '🇺🇿 UZ', '🇵🇰 PK', '🇧🇩 BD', '🇳🇬 NG', '🇰🇪 KE', '🇪🇹 ET', '🇬Ｈ GH', '🇨🇱 CL', '🇨🇴 CO', '🇵🇪 PE',
+  '🇻🇪 VE', '🇪🇨 EC', '🇵🇾 PY', '🇺🇾 UY', '🇧🇴 BO', '🇨🇷 CR', '🇵🇦 PA', '🇮🇸 IS', '🇪🇪 EE', '🇱🇻 LV',
+  '🇱🇹 LT', '🇸🇰 SK', '🇸🇮 SI', 'ＨＲ HR', '🇧🇦 BA', '🇷🇸 RS', '🇧🇬 BG', '🇦🇿 AZ', '🇬🇪 GE', '🇦🇲 AM', '🇲🇳 MN'
+];
+
+const NAMES = [
+  'AlphaUser', 'DarkFocus', 'GoalMaster', 'ZenWarrior', 'LogicNode', 'HyperPlan', 'DeepWork', 'FocusEntity', 
+  'MindArchitect', 'Visonary_X', 'CyberMonk', 'DataGhost', 'GoalDigger', 'StriveKing', 'EliteMinder', 'FocusPhantom',
+  'TaskTitan', 'HabitHero', 'PeakPerfomer', 'FlowState_88', 'SilentGrinder', 'ZenithMind', 'OmegaFocus', 'NeoLife'
+];
 
 export default async function handler(req, res) {
   const { email } = req.query;
