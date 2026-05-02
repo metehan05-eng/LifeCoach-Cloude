@@ -254,6 +254,34 @@ function MessageBubble({ message, isStream, onQuickAction }) {
           fontSize: '15px', lineHeight: 1.65, color: '#e8e8ff',
           backdropFilter: 'blur(10px)',
         }}>
+          {/* User Attachments in Bubble */}
+          {message.attachments && message.attachments.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
+              {message.attachments.map((at, idx) => (
+                <div key={idx} style={{ 
+                  borderRadius: '10px', overflow: 'hidden', 
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  background: 'rgba(0,0,0,0.2)',
+                  minWidth: at.preview ? 'auto' : '140px'
+                }}>
+                  {at.preview ? (
+                     <img src={at.preview} style={{ maxWidth: '200px', maxHeight: '150px', display: 'block' }} />
+                  ) : (
+                    <div style={{ padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                       <span style={{ fontSize: '18px' }}>
+                         {at.extension === 'PPTX' ? '📊' : 
+                          at.extension === 'XLSX' ? '📈' : 
+                          at.extension === 'DOCX' ? '📝' : '📁'}
+                       </span>
+                       <span style={{ fontSize: '11px', color: '#a5b4fc', maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                         {at.name}
+                       </span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
           {message.content}
         </div>
       </div>

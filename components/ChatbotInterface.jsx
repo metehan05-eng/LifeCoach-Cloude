@@ -81,14 +81,29 @@ export default function ChatbotInterface() {
     });
   }, [activeSessionId]);
 
-  const sendMessage = useCallback(async (text) => {
-    if (!text.trim() || isLoading) return;
+  const sendMessage = useCallback(async (text, attachments = []) => {
+    if ((!text.trim() && attachments.length === 0) || isLoading) return;
     setError(null);
 
-    const userMsg = { role: 'user', content: text, id: Date.now() };
+    // Hazır ekleri içeren bir kullanıcı mesajı oluştur
+    const attachmentPreviews = attachments.map(a => ({
+      id: a.id,
+      name: a.name,
+      extension: a.extension,
+      type: a.type,
+      preview: a.preview // Görüntüler için base64, diğerleri için null
+    }));
+
+    const userMsg = { 
+      role: 'user', 
+      content: text, 
+      id: Date.now(),
+      attachments: attachmentPreviews
+    };
+
     setSessions(prev => prev.map(s =>
       s.id === activeSessionId
-        ? { ...s, title: s.messages.length === 0 ? text.slice(0, 42) : s.title, messages: [...s.messages, userMsg] }
+        ? { ...s, title: s.messages.length === 0 ? (text ? text.slice(0, 42) : attachments[0].name) : s.title, messages: [...s.messages, userMsg] }
         : s
     ));
 
@@ -99,12 +114,27 @@ export default function ChatbotInterface() {
     const history = messages.map(m => ({ role: m.role, content: m.content }));
 
     try {
+      // Dosya içeriklerini hazırla (Base64'ler dahil)
+      const preparedAttachments = await Promise.all(attachments.map(async (a) => {
+        if (a.type.startsWith('image/')) {
+          return { name: a.name, type: 'image', data: a.preview.split(',')[1] };
+        } else {
+          // Diğer dosyalar için Base64 oku (backend'de parse edilecekler)
+          return new Promise((resolve) => {
+            const r = new FileReader();
+            r.onload = () => resolve({ name: a.name, type: 'file', data: r.result.split(',')[1], ext: a.extension });
+            r.readAsDataURL(a.file);
+          });
+        }
+      }));
+
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           message: text, 
           history, 
+          attachments: preparedAttachments,
           sessionId: activeSessionId, 
           email: session?.user?.email 
         }),
