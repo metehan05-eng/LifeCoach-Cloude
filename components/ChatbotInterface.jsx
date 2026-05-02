@@ -193,21 +193,22 @@ export default function ChatbotInterface() {
 
   if (!isMounted) return null;
 
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+
   return (
     <div className={styles.root}>
-      <div className={styles.orb1} />
-      <div className={styles.orb2} />
-
-      {/* Mobile overlay: tap to close sidebar */}
-      {isMobile && sidebarOpen && (
-        <div
-          className={styles.sidebarOverlay}
-          onClick={() => setSidebarOpen(false)}
+      {/* ... orbs ... */}
+      
+      {showLeaderboard && (
+        <Leaderboard 
+          userEmail={session?.user?.email} 
+          isMobile={isMobile} 
+          onClose={() => setShowLeaderboard(false)} 
         />
       )}
 
       <div className={styles.layout}>
-        {/* Sidebar — on mobile it overlays via absolute positioning */}
+        {/* Sidebar */}
         <div style={isMobile ? {
           position: 'fixed', top: 0, left: 0, height: '100vh', zIndex: 50,
           transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
@@ -217,7 +218,11 @@ export default function ChatbotInterface() {
             sessions={sessions}
             activeSessionId={activeSessionId}
             onSelectSession={(id) => {
-              setActiveSessionId(id);
+              if (id === 'leaderboard') {
+                 setShowLeaderboard(true);
+              } else {
+                 setActiveSessionId(id);
+              }
               if (isMobile) setSidebarOpen(false);
             }}
             onNewSession={createNewSession}
@@ -228,20 +233,18 @@ export default function ChatbotInterface() {
           />
         </div>
 
-        {/* Main content — always full width on mobile */}
+        {/* Main content */}
         <div className={styles.main}>
           <ChatHeader
             onToggleSidebar={toggleSidebar}
             sidebarOpen={sidebarOpen}
-            sessionTitle={activeSessionId === 'waffle' ? 'Waffle AI Studio' : activeSessionId === 'leaderboard' ? 'Küresel Sıralama' : activeSession?.title}
+            sessionTitle={activeSessionId === 'waffle' ? 'Waffle AI Studio' : activeSession?.title}
             isMobile={isMobile}
           />
 
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
             {activeSessionId === 'waffle' ? (
               <WaffleStudio isMobile={isMobile} />
-            ) : activeSessionId === 'leaderboard' ? (
-              <Leaderboard userEmail={session?.user?.email} isMobile={isMobile} />
             ) : hasMessages ? (
               <>
                 <ChatMessages
