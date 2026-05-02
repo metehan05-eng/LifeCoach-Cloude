@@ -52,10 +52,11 @@ export default function WaffleStudio({ isMobile }) {
 
     setGenStatus('drawing');
     
-    // 2. Pollinations FLUX ile Çiz
+    // 2. Pollinations FLUX ile Çiz (En güncel URL yapısı)
     const cleanPrompt = encodeURIComponent(finalPrompt);
     const seed = Math.floor(Math.random() * 1000000);
-    const imageUrl = `https://pollinations.ai/p/${cleanPrompt}?width=1024&height=1024&seed=${seed}&model=flux&nologo=true`;
+    // Yeni ve daha kararlı URL
+    const imageUrl = `https://image.pollinations.ai/prompt/${cleanPrompt}?width=1024&height=1024&seed=${seed}&nologo=true&enhance=true`;
 
     // 3. Görselin gerçekten yüklendiğinden emin ol
     const imgLoad = new Image();
@@ -80,7 +81,7 @@ export default function WaffleStudio({ isMobile }) {
       // FALLBACK: Eğer optimize edilmiş prompt hata verirse orijinal ile tekrar dene
       if (finalPrompt !== text.trim()) {
         console.log("Optimization failed, retrying with original prompt...");
-        const originalUrl = `https://pollinations.ai/p/${encodeURIComponent(text.trim())}?width=1024&height=1024&seed=${seed}&nologo=true`;
+        const originalUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(text.trim())}?width=1024&height=1024&seed=${seed}&nologo=true`;
         
         const fallbackLoad = new Image();
         fallbackLoad.src = originalUrl;
