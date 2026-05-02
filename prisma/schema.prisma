@@ -17,6 +17,15 @@ model User {
   emailVerified           DateTime?
   password                String?
   image                   String?
+  
+  // Gamification System
+  xp                      Int                     @default(0)
+  level                   Int                     @default(1)
+  totalXp                 Int                     @default(0)
+  currentStreak           Int                     @default(0)
+  maxStreak               Int                     @default(0)
+  lastActiveAt            DateTime?
+
   accounts                Account[]
   sessions                Session[]
   PromptTemplate          PromptTemplate[]

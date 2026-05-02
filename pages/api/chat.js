@@ -4,9 +4,9 @@ import OpenAI from 'openai';
 import pdf from 'pdf-parse';
 import mammoth from 'mammoth';
 import * as xlsx from 'xlsx';
+import { PrismaClient } from '@prisma/client';
 
-// PPTX okumak için bazen zip tabanlı manuel okuma gerekebilir ama mammoth'un kardeşi veya benzeri bir mantık kullanacağız.
-// Şimdilik PDF, DOCX ve XLSX için tam destek sağlıyoruz.
+const prisma = new PrismaClient();
 
 // --- SUPABASE HAZIRLIĞI ---
 const supabase = createClient(
@@ -505,14 +505,38 @@ export default async function handler(req, res) {
     const countryCode = req.headers['x-vercel-ip-country'] || 'Unknown';
     const detectedLang = userLanguage || req.headers['accept-language']?.split(',')[0] || 'tr-TR';
 
-    // 1. DOSYA İŞLEME (PDF, DOCX, XLSX)
+    // 1. KULLANICI VERILERINI CEK (XP, LEVEL, STREAK)
+    let userId = null;
+    let userName = "Kullanıcı";
+    let userStats = { xp: 0, level: 1, streak: 0, nextLevelXp: 100 };
+
+    if (email) {
+      try {
+        const userData = await prisma.user.findUnique({
+          where: { email },
+          select: { id: true, name: true, xp: true, level: true, currentStreak: true, totalXp: true }
+        });
+        if (userData) {
+          userId = userData.id;
+          userName = userData.name || "Gezgin";
+          userStats = {
+            xp: userData.xp,
+            level: userData.level,
+            streak: userData.currentStreak,
+            nextLevelXp: 100
+          };
+        }
+      } catch (e) { console.error("User fetch error:", e); }
+    }
+
+    // 2. DOSYA İŞLEME (PDF, DOCX, XLSX)
     let extractedText = "";
     let imagesForVision = [];
 
     if (attachments && attachments.length > 0) {
       for (const at of attachments) {
         if (at.type === 'image') {
-          imagesForVision.push(at.data); // Base64 (nodedata)
+          imagesForVision.push(at.data);
         } else if (at.type === 'file') {
           const buffer = Buffer.from(at.data, 'base64');
           try {
@@ -535,9 +559,8 @@ export default async function handler(req, res) {
       }
     }
 
-    const userId = null; // ... (mevcut userId mantığı) 
-    const userName = "Kullanıcı";
-    // ... (Localization injection)
+    const gamificationInjection = `\n--- OYUNLAŞTIRMA DURUMU ---\nSeviye: ${userStats.level}\nXP: ${userStats.xp}/100\nStreak: ${userStats.streak} Gün\nAI NOTU: Kullanıcıya gelişiminden bahset ve seviye atlaması için onu motive et. Örn: "Bu görevi yaparsan Level ${userStats.level + 1} olacaksın!"`;
+    const localizationInjection = `\n\n--- KONTEKST ---\nKullanıcı: ${userName}\nKonum: ${countryCode}\nDil: ${detectedLang}${gamificationInjection}`;
 
     // ==========================================
     // AI ENGINE: GROQ (LLAMA 3) - EN HIZLI VE STABİL ÇÖZÜM
