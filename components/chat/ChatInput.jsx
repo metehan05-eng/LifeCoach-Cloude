@@ -26,38 +26,42 @@ export default function ChatInput({ value, onChange, onSend, isLoading, centered
     const files = Array.from(e.target.files);
     if (!files.length) return;
 
-    for (const file of files) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
+    // Her dosyayı async olarak işle
+    const newAttachments = await Promise.all(files.map(file => {
+      return new Promise((resolve) => {
         const type = file.type;
         const name = file.name;
         const extension = name.split('.').pop().toUpperCase();
-        
-        setAttachments(prev => [...prev, {
-          id: Math.random().toString(36).substr(2, 9),
-          file,
-          name,
-          extension,
-          preview: type.startsWith('image/') ? event.target.result : null,
-          type
-        }]);
-      };
-      
-      if (file.type.startsWith('image/')) {
-        reader.readAsDataURL(file);
-      } else {
-        reader.readAsArrayBuffer(file);
-        // Biz sadece UI'da ekli gösteriyoruz, gönderme anında metin ayıklaması yapacağız.
-        setAttachments(prev => [...prev, {
-          id: Math.random().toString(36).substr(2, 9),
-          file,
-          name,
-          extension: file.name.split('.').pop().toUpperCase(),
-          preview: null,
-          type: file.type
-        }]);
-      }
-    }
+        const reader = new FileReader();
+
+        reader.onload = (event) => {
+          resolve({
+            id: Math.random().toString(36).substr(2, 9),
+            file,
+            name,
+            extension,
+            preview: type.startsWith('image/') ? event.target.result : null,
+            type
+          });
+        };
+
+        if (type.startsWith('image/')) {
+          reader.readAsDataURL(file);
+        } else {
+          // Resim olmayan dosyalar için hemen resolve et, preview gereksiz
+          resolve({
+            id: Math.random().toString(36).substr(2, 9),
+            file,
+            name,
+            extension,
+            preview: null,
+            type
+          });
+        }
+      });
+    }));
+
+    setAttachments(prev => [...prev, ...newAttachments]);
     e.target.value = ''; // Reset input
   };
 
