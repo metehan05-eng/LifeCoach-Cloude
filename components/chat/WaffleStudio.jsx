@@ -6,6 +6,7 @@ export default function WaffleStudio({ isMobile }) {
   const [prompt, setPrompt] = useState('');
   const [images, setImages] = useState([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [genStatus, setGenStatus] = useState(''); // 'optimizing' | 'drawing'
 
   const examples = [
     { icon: '🌇', text: 'Cyberpunk İstanbul kış manzarası, sinematik ışıklandırma' },
@@ -17,6 +18,7 @@ export default function WaffleStudio({ isMobile }) {
   const generateImage = async (text) => {
     if (!text?.trim() || isGenerating) return;
     setIsGenerating(true);
+    setGenStatus('optimizing');
     
     let finalPrompt = text.trim();
 
@@ -29,12 +31,15 @@ export default function WaffleStudio({ isMobile }) {
       });
       const data = await response.json();
       if (data.optimizedPrompt) {
-        finalPrompt = data.optimizedPrompt;
+        // Promptu çok uzunsa kırp (URL limiti için)
+        finalPrompt = data.optimizedPrompt.slice(0, 800);
       }
     } catch (e) {
       console.error("Magic Tool failed, using original prompt");
     }
 
+    setGenStatus('drawing');
+    
     // Temizleme ve URL oluşturma
     const cleanPrompt = encodeURIComponent(finalPrompt);
     const seed = Math.floor(Math.random() * 1000000);
@@ -43,21 +48,38 @@ export default function WaffleStudio({ isMobile }) {
     // Yeni görseli başa ekle
     const newImage = {
       id: Date.now(),
-      prompt: text.trim(), // Kullanıcının orijinal isteğini sakla
-      optimizedPrompt: finalPrompt, // Groq'un ürettiği detayı sakla
+      prompt: text.trim(),
+      optimizedPrompt: finalPrompt,
       url: imageUrl,
-      timestamp: new Date()
+      timestamp: new Date(),
+      status: 'loading'
     };
 
-    // Simülasyon: Sayfada anında placeholder göster
     setImages(prev => [newImage, ...prev]);
+    setPrompt('');
+
+    // Görselin gerçekten yüklenmesini bekle
+    const imgLoad = new Image();
+    imgLoad.src = imageUrl;
     
-    // Görselin gerçekten yüklenmesini bekle (opsiyonel ama şık durur)
-    const img = new Image();
-    img.src = imageUrl;
-    img.onload = () => {
+    // Timeout ekleyelim (Eğer servis yavaşsa sonsuza kadar beklemeyelim)
+    const timeout = setTimeout(() => {
+        setIsGenerating(false);
+        setGenStatus('');
+    }, 20000); // 20 saniye
+
+    imgLoad.onload = () => {
+      clearTimeout(timeout);
       setIsGenerating(false);
-      setPrompt('');
+      setGenStatus('');
+      setImages(prev => prev.map(img => img.id === newImage.id ? {...img, status: 'ready'} : img));
+    };
+
+    imgLoad.onerror = () => {
+      clearTimeout(timeout);
+      setIsGenerating(false);
+      setGenStatus('');
+      setImages(prev => prev.map(img => img.id === newImage.id ? {...img, status: 'error'} : img));
     };
   };
 
@@ -144,26 +166,41 @@ export default function WaffleStudio({ isMobile }) {
                    {isGenerating && images[0].id === img.id ? (
                      <div style={{
                        position: 'absolute', inset: 0, 
-                       background: 'rgba(0,0,0,0.7)', display: 'flex', flexDirection: 'column',
-                       alignItems: 'center', justifyContent: 'center', gap: '12px', zIndex: 10
+                       background: 'rgba(0,0,0,0.85)', display: 'flex', flexDirection: 'column',
+                       alignItems: 'center', justifyContent: 'center', gap: '12px', zIndex: 10,
+                       backdropFilter: 'blur(10px)'
                      }}>
                        <div style={{
                          width: '40px', height: '40px', border: '3px solid rgba(245, 158, 11, 0.3)',
                          borderTopColor: '#f59e0b', borderRadius: '50%',
                          animation: 'waffle-spin 1s linear infinite'
                        }} />
-                       <span style={{ color: '#f59e0b', fontSize: '13px', fontWeight: 700 }}>Groq Optimize Ediyor...</span>
+                       <div style={{ textAlign: 'center' }}>
+                         <div style={{ color: '#f59e0b', fontSize: '14px', fontWeight: 800 }}>
+                           {genStatus === 'optimizing' ? '🚀 Groq Tasarlıyor...' : '🎨 Waffle Çiziyor...'}
+                         </div>
+                         <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', mt: '4px' }}>
+                           Bu işlem biraz sürebilir
+                         </div>
+                       </div>
                      </div>
                    ) : null}
                    <img 
                     src={img.url} 
                     alt={img.prompt} 
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    style={{ 
+                        width: '100%', height: '100%', objectFit: 'cover',
+                        opacity: img.status === 'ready' ? 1 : 0.3,
+                        transition: 'opacity 0.5s ease'
+                    }}
                     loading="lazy"
                    />
                 </div>
                 <div style={{ padding: '16px' }}>
-                  <div style={{ fontSize: '10px', color: '#f59e0b', marginBottom: '4px', fontWeight: 800 }}>⚡ GROQ OPTIMIZED</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <div style={{ fontSize: '10px', color: '#f59e0b', fontWeight: 800 }}>⚡ GROQ OPTIMIZED</div>
+                    <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)' }}>FLUX-1 Model</div>
+                  </div>
                   <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px', lineHeight: 1.5, marginBottom: '16px', height: '36px', overflow: 'hidden' }}>
                     {img.prompt}
                   </p>
