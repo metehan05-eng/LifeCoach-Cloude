@@ -74,11 +74,33 @@ export default function WaffleStudio({ isMobile }) {
       setGenStatus('');
     };
 
-    imgLoad.onerror = () => {
+    imgLoad.onerror = async () => {
       clearTimeout(timeout);
-      setImages(prev => prev.map(img => img.id === tempId ? {...img, status: 'error'} : img));
-      setIsGenerating(false);
-      setGenStatus('');
+      
+      // FALLBACK: Eğer optimize edilmiş prompt hata verirse orijinal ile tekrar dene
+      if (finalPrompt !== text.trim()) {
+        console.log("Optimization failed, retrying with original prompt...");
+        const originalUrl = `https://pollinations.ai/p/${encodeURIComponent(text.trim())}?width=1024&height=1024&seed=${seed}&nologo=true`;
+        
+        const fallbackLoad = new Image();
+        fallbackLoad.src = originalUrl;
+        
+        fallbackLoad.onload = () => {
+          setImages(prev => prev.map(img => img.id === tempId ? {...img, status: 'ready', url: originalUrl} : img));
+          setIsGenerating(false);
+          setGenStatus('');
+        };
+
+        fallbackLoad.onerror = () => {
+          setImages(prev => prev.map(img => img.id === tempId ? {...img, status: 'error'} : img));
+          setIsGenerating(false);
+          setGenStatus('');
+        };
+      } else {
+        setImages(prev => prev.map(img => img.id === tempId ? {...img, status: 'error'} : img));
+        setIsGenerating(false);
+        setGenStatus('');
+      }
     };
   };
 

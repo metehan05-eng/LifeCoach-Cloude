@@ -25,7 +25,11 @@ export default async function handler(req, res) {
       model: "llama-3.3-70b-versatile",
     });
 
-    const optimizedPrompt = completion.choices[0].message.content;
+    let optimizedPrompt = completion.choices[0].message.content;
+
+    // Temizlik: Tırnakları ve gereksiz "Here is the prompt:" yazılarını temizle
+    optimizedPrompt = optimizedPrompt.replace(/["']/g, "").replace(/Prompt:|Recipe:|Görsel Tarifi:/gi, "").trim();
+
     res.status(200).json({ optimizedPrompt });
 
   } catch (error) {
