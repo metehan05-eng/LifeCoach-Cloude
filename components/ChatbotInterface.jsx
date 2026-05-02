@@ -30,19 +30,40 @@ export default function ChatbotInterface() {
   const [sessions, setSessions] = useState([]);
   const [activeSessionId, setActiveSessionId] = useState(null);
 
-  useEffect(() => {
-    setIsMounted(true);
-    const initialId = Date.now();
-    setSessions([{ id: initialId, title: 'Yeni Sohbet', messages: [], createdAt: new Date() }]);
-    setActiveSessionId(initialId);
-  }, []);
-
   const [isTyping, setIsTyping] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [streamText, setStreamText] = useState('');
+  const [userStats, setUserStats] = useState({ xp: 0, level: 1, currentStreak: 0 });
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+
+  // 1. Mount Kontrolü ve Veri Yükleme
+  useEffect(() => {
+    setIsMounted(true);
+    
+    // Sessions Yükle
+    const saved = localStorage.getItem('lifeCoachSessions');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      setSessions(parsed);
+      if (parsed.length > 0) setActiveSessionId(parsed[0].id);
+    } else {
+      const initialId = Date.now();
+      setSessions([{ id: initialId, title: 'Yeni Sohbet', messages: [], createdAt: new Date() }]);
+      setActiveSessionId(initialId);
+    }
+
+    // Stats Çek
+    if (session?.user?.email) {
+      fetch(`/api/chat?email=${session.user.email}&just_stats=true`)
+        .then(res => res.json())
+        .then(data => {
+           if (data.stats) setUserStats(data.stats);
+        }).catch(e => console.log("Stats fetch error"));
+    }
+  }, [session]);
 
   // UI state adjustment after mount/isMobile change
   useEffect(() => {
@@ -61,18 +82,6 @@ export default function ChatbotInterface() {
   const messages = activeSession?.messages || [];
   const hasMessages = messages.length > 0 || isTyping;
 
-  const [userStats, setUserStats] = useState({ xp: 0, level: 1, currentStreak: 0 });
-
-  // 1. Kullanıcı Verilerini Çek (XP/Level İçin)
-  useEffect(() => {
-    if (session?.user?.email) {
-      fetch(`/api/chat?email=${session.user.email}&just_stats=true`)
-        .then(res => res.json())
-        .then(data => {
-           if (data.stats) setUserStats(data.stats);
-        }).catch(e => console.log("Stats fetch error"));
-    }
-  }, [session]);
 
   const createNewSession = useCallback(() => {
     const newId = Date.now();
@@ -192,8 +201,6 @@ export default function ChatbotInterface() {
   const toggleSidebar = () => setSidebarOpen(p => !p);
 
   if (!isMounted) return null;
-
-  const [showLeaderboard, setShowLeaderboard] = useState(false);
 
   return (
     <div className={styles.root}>
