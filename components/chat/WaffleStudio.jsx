@@ -18,15 +18,33 @@ export default function WaffleStudio({ isMobile }) {
     if (!text?.trim() || isGenerating) return;
     setIsGenerating(true);
     
+    let finalPrompt = text.trim();
+
+    // Groq Sihrini Devreye Sok (Prompt Optimizasyonu)
+    try {
+      const response = await fetch('/api/waffle-magic', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: text.trim() })
+      });
+      const data = await response.json();
+      if (data.optimizedPrompt) {
+        finalPrompt = data.optimizedPrompt;
+      }
+    } catch (e) {
+      console.error("Magic Tool failed, using original prompt");
+    }
+
     // Temizleme ve URL oluşturma
-    const cleanPrompt = encodeURIComponent(text.trim());
+    const cleanPrompt = encodeURIComponent(finalPrompt);
     const seed = Math.floor(Math.random() * 1000000);
     const imageUrl = `https://pollinations.ai/p/${cleanPrompt}?width=1024&height=1024&seed=${seed}&model=flux`;
 
     // Yeni görseli başa ekle
     const newImage = {
       id: Date.now(),
-      prompt: text.trim(),
+      prompt: text.trim(), // Kullanıcının orijinal isteğini sakla
+      optimizedPrompt: finalPrompt, // Groq'un ürettiği detayı sakla
       url: imageUrl,
       timestamp: new Date()
     };
@@ -123,6 +141,20 @@ export default function WaffleStudio({ isMobile }) {
                 animation: 'waffle-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both'
               }}>
                 <div style={{ position: 'relative', aspectRatio: '1/1', background: '#000' }}>
+                   {isGenerating && images[0].id === img.id ? (
+                     <div style={{
+                       position: 'absolute', inset: 0, 
+                       background: 'rgba(0,0,0,0.7)', display: 'flex', flexDirection: 'column',
+                       alignItems: 'center', justifyContent: 'center', gap: '12px', zIndex: 10
+                     }}>
+                       <div style={{
+                         width: '40px', height: '40px', border: '3px solid rgba(245, 158, 11, 0.3)',
+                         borderTopColor: '#f59e0b', borderRadius: '50%',
+                         animation: 'waffle-spin 1s linear infinite'
+                       }} />
+                       <span style={{ color: '#f59e0b', fontSize: '13px', fontWeight: 700 }}>Groq Optimize Ediyor...</span>
+                     </div>
+                   ) : null}
                    <img 
                     src={img.url} 
                     alt={img.prompt} 
@@ -131,6 +163,7 @@ export default function WaffleStudio({ isMobile }) {
                    />
                 </div>
                 <div style={{ padding: '16px' }}>
+                  <div style={{ fontSize: '10px', color: '#f59e0b', marginBottom: '4px', fontWeight: 800 }}>⚡ GROQ OPTIMIZED</div>
                   <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px', lineHeight: 1.5, marginBottom: '16px', height: '36px', overflow: 'hidden' }}>
                     {img.prompt}
                   </p>
@@ -180,6 +213,9 @@ export default function WaffleStudio({ isMobile }) {
         @keyframes waffle-pop {
           from { opacity: 0; transform: scale(0.9) translateY(20px); }
           to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        @keyframes waffle-spin {
+          to { transform: rotate(360deg); }
         }
       `}</style>
     </div>
