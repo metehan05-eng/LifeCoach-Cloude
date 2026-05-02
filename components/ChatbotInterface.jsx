@@ -5,6 +5,7 @@ import ChatMessages from './chat/ChatMessages';
 import ChatInput from './chat/ChatInput';
 import ChatHeader from './chat/ChatHeader';
 import WaffleStudio from './chat/WaffleStudio';
+import Leaderboard from './chat/Leaderboard';
 import styles from './ChatbotInterface.module.css';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -59,6 +60,19 @@ export default function ChatbotInterface() {
   const activeSession = sessions.find(s => s.id === activeSessionId) || sessions[0];
   const messages = activeSession?.messages || [];
   const hasMessages = messages.length > 0 || isTyping;
+
+  const [userStats, setUserStats] = useState({ xp: 0, level: 1, currentStreak: 0 });
+
+  // 1. Kullanıcı Verilerini Çek (XP/Level İçin)
+  useEffect(() => {
+    if (session?.user?.email) {
+      fetch(`/api/chat?email=${session.user.email}&just_stats=true`)
+        .then(res => res.json())
+        .then(data => {
+           if (data.stats) setUserStats(data.stats);
+        }).catch(e => console.log("Stats fetch error"));
+    }
+  }, [session]);
 
   const createNewSession = useCallback(() => {
     const newId = Date.now();
@@ -209,7 +223,7 @@ export default function ChatbotInterface() {
             onNewSession={createNewSession}
             onDeleteSession={deleteSession}
             isOpen={isMobile ? true : sidebarOpen}
-            user={session?.user}
+            user={{...session?.user, ...userStats}}
             onToggle={toggleSidebar}
           />
         </div>
@@ -219,13 +233,15 @@ export default function ChatbotInterface() {
           <ChatHeader
             onToggleSidebar={toggleSidebar}
             sidebarOpen={sidebarOpen}
-            sessionTitle={activeSessionId === 'waffle' ? 'Waffle AI Studio' : activeSession?.title}
+            sessionTitle={activeSessionId === 'waffle' ? 'Waffle AI Studio' : activeSessionId === 'leaderboard' ? 'Küresel Sıralama' : activeSession?.title}
             isMobile={isMobile}
           />
 
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
             {activeSessionId === 'waffle' ? (
               <WaffleStudio isMobile={isMobile} />
+            ) : activeSessionId === 'leaderboard' ? (
+              <Leaderboard userEmail={session?.user?.email} isMobile={isMobile} />
             ) : hasMessages ? (
               <>
                 <ChatMessages

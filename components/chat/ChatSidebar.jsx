@@ -213,6 +213,53 @@ export default function ChatSidebar({
           )}
         </div>
 
+        {/* XP & Gamification Area */}
+        <div style={{
+          padding: '16px',
+          margin: '0 12px 12px',
+          borderRadius: '16px',
+          background: 'rgba(99,102,241,0.05)',
+          border: '1px solid rgba(99,102,241,0.1)',
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <span style={{ fontSize: '11px', fontWeight: 800, color: '#a5b4fc', letterSpacing: '0.5px' }}>
+              SEVİYE {user?.level || 1}
+            </span>
+            <span style={{ fontSize: '10px', color: 'rgba(165,180,252,0.5)', fontWeight: 600 }}>
+              {user?.xp || 0}/100 XP
+            </span>
+          </div>
+          
+          {/* Progress Bar */}
+          <div style={{
+            width: '100%', height: '6px', background: 'rgba(255,255,255,0.05)',
+            borderRadius: '10px', overflow: 'hidden', position: 'relative'
+          }}>
+            <div style={{
+              width: `${user?.xp || 0}%`, height: '100%',
+              background: 'linear-gradient(90deg, #6366f1, #8b5cf6)',
+              boxShadow: '0 0 10px rgba(99,102,241,0.5)',
+              transition: 'width 1s cubic-bezier(0.4, 0, 0.2, 1)',
+            }} />
+          </div>
+
+          <button 
+            onClick={() => onSelectSession('leaderboard')}
+            style={{
+              marginTop: '12px', width: '100%', padding: '8px',
+              borderRadius: '8px', background: 'rgba(99,102,241,0.1)',
+              border: '1px solid rgba(99,102,241,0.2)', color: '#fff',
+              fontSize: '11px', fontWeight: 700, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(99,102,241,0.2)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'rgba(99,102,241,0.1)'}
+          >
+            🌍 Küresel Sıralama
+          </button>
+        </div>
+
         {/* Bottom */}
         <div style={{
           padding: '12px 16px',

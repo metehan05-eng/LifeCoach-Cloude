@@ -529,6 +529,11 @@ export default async function handler(req, res) {
       } catch (e) { console.error("User fetch error:", e); }
     }
 
+    // EĞER SADECE STATS İSTENDİYSE BURADA DUR
+    if (req.query.just_stats === 'true') {
+        return res.status(200).json({ stats: userStats });
+    }
+
     // 2. DOSYA İŞLEME (PDF, DOCX, XLSX)
     let extractedText = "";
     let imagesForVision = [];
