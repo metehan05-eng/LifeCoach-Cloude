@@ -9,6 +9,7 @@ import Leaderboard from './chat/Leaderboard';
 import AutomationWorkbench from './chat/AutomationWorkbench';
 import SettingsModal from './chat/SettingsModal';
 import ProjectHub from './chat/ProjectHub';
+import PremiumHub from './chat/PremiumHub';
 import styles from './ChatbotInterface.module.css';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -44,6 +45,7 @@ export default function ChatbotInterface() {
   const [showAutomation, setShowAutomation] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showProjects, setShowProjects] = useState(false);
+  const [showPremium, setShowPremium] = useState(false);
 
   // 1. Mount Kontrolü ve Veri Yükleme
   useEffect(() => {
@@ -209,6 +211,13 @@ export default function ChatbotInterface() {
       const data = await res.json();
 
       if (!res.ok) {
+        if (data.error === "LIMIT_REACHED") {
+            setShowPremium(true);
+            setStreamText('');
+            // Pre-mature exit, remove the message from local state
+            setSessions(prev => prev.map(s => s.id === targetSessionId ? { ...s, messages: s.messages.filter(m => m.id !== Date.now()) } : s));
+            throw new Error(data.message);
+        }
         throw new Error(data.details || data.error || 'Sunucu hatası');
       }
 
@@ -276,6 +285,11 @@ export default function ChatbotInterface() {
           onClose={() => setShowSettings(false)} 
         />
       )}
+
+      {showPremium && (
+        <PremiumHub onClose={() => setShowPremium(false)} />
+      )}
+      
       <div className={styles.layout}>
         {/* Sidebar */}
         <div style={isMobile ? {

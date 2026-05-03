@@ -514,7 +514,7 @@ export default async function handler(req, res) {
       try {
         const userData = await prisma.user.findUnique({
           where: { email },
-          select: { id: true, name: true, xp: true, level: true, currentStreak: true, totalXp: true }
+          select: { id: true, name: true, xp: true, level: true, currentStreak: true, totalXp: true, plan: true, usageLimit: true, usageCount: true }
         });
         if (userData) {
           userId = userData.id;
@@ -523,10 +523,21 @@ export default async function handler(req, res) {
             xp: userData.xp,
             level: userData.level,
             streak: userData.currentStreak,
-            nextLevelXp: 100
+            nextLevelXp: 100,
+            plan: userData.plan,
+            usageLimit: userData.usageLimit,
+            usageCount: userData.usageCount
           };
         }
       } catch (e) { console.error("User fetch error:", e); }
+    }
+
+    // --- SUBSCRIPTION LIMIT CHECK ---
+    if (userId && userStats.plan === 'FREE' && userStats.usageCount >= userStats.usageLimit) {
+      return res.status(403).json({ 
+        error: "LIMIT_REACHED", 
+        message: "Günlük mesaj limitine ulaştın. Sınırsız erişim ve daha güçlü modeller için Premium'a geç!" 
+      });
     }
 
     // EĞER SADECE STATS İSTENDİYSE BURADA DUR
@@ -664,6 +675,16 @@ export default async function handler(req, res) {
         cleanReply = `Harika! "${automation_data.title}" otomasyonunu senin için hazırladım. Ayarlardan kontrol edebilir veya hemen başlatabilirsin. ⚡`;
     } else if (!cleanReply) {
         cleanReply = "Üzgünüm, şu an yanıt veremiyorum. Lütfen tekrar dener misin?";
+    }
+
+    // Increment Usage Count internally
+    if (userId) {
+      try {
+        await prisma.user.update({
+          where: { id: userId },
+          data: { usageCount: { increment: 1 } }
+        });
+      } catch (e) { console.error("Usage count update error", e); }
     }
 
     return res.status(200).json({ 
