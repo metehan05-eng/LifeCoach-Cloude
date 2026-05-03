@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">LifeCoachAI</string>
+    <string name="title_activity_main">LifeCoachAI</string>
+    <string name="package_name">com.lifecoach.ai</string>
+    <string name="custom_url_scheme">com.lifecoach.ai</string>
+</resources>

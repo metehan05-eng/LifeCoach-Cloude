@@ -1,5 +1,5 @@
 {
-  "appId": "com.lifecoach.app",
-  "appName": "LifeCoach AI",
-  "webDir": "public"
+  "appId": "com.lifecoach.ai",
+  "appName": "LifeCoachAI",
+  "webDir": "out"
 }
