@@ -6,6 +6,7 @@ import ChatInput from './chat/ChatInput';
 import ChatHeader from './chat/ChatHeader';
 import WaffleStudio from './chat/WaffleStudio';
 import Leaderboard from './chat/Leaderboard';
+import AutomationWorkbench from './chat/AutomationWorkbench';
 import styles from './ChatbotInterface.module.css';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -38,6 +39,7 @@ export default function ChatbotInterface() {
   const [streamText, setStreamText] = useState('');
   const [userStats, setUserStats] = useState({ xp: 0, level: 1, currentStreak: 0 });
   const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [showAutomation, setShowAutomation] = useState(false);
 
   // 1. Mount Kontrolü ve Veri Yükleme
   useEffect(() => {
@@ -214,6 +216,14 @@ export default function ChatbotInterface() {
         />
       )}
 
+      {showAutomation && (
+        <AutomationWorkbench 
+          userEmail={session?.user?.email} 
+          isMobile={isMobile} 
+          onClose={() => setShowAutomation(false)} 
+        />
+      )}
+
       <div className={styles.layout}>
         {/* Sidebar */}
         <div style={isMobile ? {
@@ -227,6 +237,8 @@ export default function ChatbotInterface() {
             onSelectSession={(id) => {
               if (id === 'leaderboard') {
                  setShowLeaderboard(true);
+              } else if (id === 'automation') {
+                 setShowAutomation(true);
               } else {
                  setActiveSessionId(id);
               }

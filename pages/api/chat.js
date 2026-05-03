@@ -564,6 +564,27 @@ export default async function handler(req, res) {
       }
     }
 
+    // 4. SISTEM PROMPT HAZIRLA
+    let systemInstruction = `Sen HAN AI Yaşam Koçusun. Disiplin, verimlilik ve gelişim odaklı bir modelsin.
+    Kullanıcı Adı: ${userName}
+    Kullanıcı Seviyesi: ${userStats.level}
+    Mevcut XP: ${userStats.xp}/100
+    Mevcut Seri (Streak): ${userStats.streak} gün
+    
+    KURALLAR:
+    1. Kullanıcıyı her zaman gelişime teşvik et.
+    2. Eğer kullanıcı bir hedefe ulaştığını söylerse ona XP kazandığını hissettir.
+    3. Tonun: Mentor, bazen sert (Drill Sergeant) ama her zaman destekleyici ol.
+    4. Türkçe konuş.`;
+
+    // OTOMASYON MODU ÖZEL TALİMATI
+    if (req.body.automation_mode) {
+      systemInstruction += `
+      Şu an "YAŞAM OTOMASYONU" modundasın. 
+      Görevin: Kullanıcının rutin isteğini analiz et ve son mesajında ŞU FORMATTA bir JSON objesi döndür:
+      [[AUTOMATION_DATA: {"title": "Görev Adı", "time": "HH:MM", "repeat": "daily", "duration": 30} ]]
+      Kullanıcıyla normal konuşmaya devam et ama bu JSON'ı mutlaka gizli bir not gibi cevabına ekle.`;
+    }
     const gamificationInjection = `\n--- OYUNLAŞTIRMA DURUMU ---\nSeviye: ${userStats.level}\nXP: ${userStats.xp}/100\nStreak: ${userStats.streak} Gün\nAI NOTU: Kullanıcıya gelişiminden bahset ve seviye atlaması için onu motive et. Örn: "Bu görevi yaparsan Level ${userStats.level + 1} olacaksın!"`;
     const localizationInjection = `\n\n--- KONTEKST ---\nKullanıcı: ${userName}\nKonum: ${countryCode}\nDil: ${detectedLang}${gamificationInjection}`;
 
@@ -581,7 +602,8 @@ export default async function handler(req, res) {
     const hasImages = imagesForVision.length > 0;
     const model = hasImages ? "llama-3.2-11b-vision-preview" : "llama-3.3-70b-versatile";
 
-    const systemPrompt = `${BASE_SYSTEM_PROMPT}\n\nMOD: DOSYA OKUMA AKTIF. Eğer kullanıcı dosya içeriği gönderdiyse, o içeriği en ince detayına kadar analiz et.`;
+    // 4. SISTEM PROMPT HAZIRLA
+    const systemPrompt = `${systemInstruction}\n\nMOD: DOSYA OKUMA AKTIF. Eğer kullanıcı dosya içeriği gönderdiyse, o içeriği en ince detayına kadar analiz et.`;
 
     const messages = [
       { role: "system", content: systemPrompt },
@@ -622,7 +644,25 @@ export default async function handler(req, res) {
       });
 
       const aiResponse = completion.choices[0].message.content;
-      return res.status(200).json({ response: aiResponse });
+      const reply = aiResponse;
+    
+    // Otomasyon verisini ayıkla
+    let automation_data = null;
+    const automationRegex = /\[\[AUTOMATION_DATA: (\{.*?\}) \]\]/;
+    const match = reply.match(automationRegex);
+    let cleanReply = reply;
+    
+    if (match) {
+      try {
+        automation_data = JSON.parse(match[1]);
+        cleanReply = reply.replace(automationRegex, "").trim();
+      } catch (e) { console.error("Automation parse error"); }
+    }
+
+    return res.status(200).json({ 
+      reply: cleanReply,
+      automation_data 
+    });
     } catch (err) {
       console.error("Groq Hatası:", err.message);
       return res.status(500).json({ error: "AI Hatası", details: err.message });

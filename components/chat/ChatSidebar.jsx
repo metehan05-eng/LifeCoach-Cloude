@@ -233,7 +233,7 @@ export default function ChatSidebar({
           {/* Progress Bar */}
           <div style={{
             width: '100%', height: '6px', background: 'rgba(255,255,255,0.05)',
-            borderRadius: '10px', overflow: 'hidden', position: 'relative'
+            borderRadius: '10px', overflow: 'hidden', position: 'relative', marginBottom: '16px'
           }}>
             <div style={{
               width: `${user?.xp || 0}%`, height: '100%',
@@ -243,21 +243,45 @@ export default function ChatSidebar({
             }} />
           </div>
 
-          <button 
-            onClick={() => onSelectSession('leaderboard')}
-            style={{
-              marginTop: '12px', width: '100%', padding: '8px',
-              borderRadius: '8px', background: 'rgba(99,102,241,0.1)',
-              border: '1px solid rgba(99,102,241,0.2)', color: '#fff',
-              fontSize: '11px', fontWeight: 700, cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(99,102,241,0.2)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'rgba(99,102,241,0.1)'}
-          >
-            🌍 Küresel Sıralama
-          </button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <button 
+              onClick={() => onSelectSession('leaderboard')}
+              style={{
+                width: '100%', padding: '8px',
+                borderRadius: '10px', background: 'rgba(99,102,241,0.1)',
+                border: '1px solid rgba(99,102,241,0.2)', color: '#fff',
+                fontSize: '11px', fontWeight: 700, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(99,102,241,0.2)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'rgba(99,102,241,0.1)'}
+            >
+              🌍 Küresel Sıralama
+            </button>
+
+            <button 
+              onClick={() => onSelectSession('automation')}
+              style={{
+                width: '100%', padding: '8px',
+                borderRadius: '10px', background: 'linear-gradient(135deg, rgba(234, 179, 8, 0.1), rgba(245, 158, 11, 0.05))',
+                border: '1px solid rgba(234, 179, 8, 0.25)', color: '#fbbf24',
+                fontSize: '11px', fontWeight: 800, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(234, 179, 8, 0.2), rgba(245, 158, 11, 0.1))';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(234, 179, 8, 0.1), rgba(245, 158, 11, 0.05))';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
+              ⚡ Life Automation
+            </button>
+          </div>
         </div>
 
         {/* Bottom */}

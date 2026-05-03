@@ -45,6 +45,7 @@ model User {
   AnalyticsLogs           AnalyticsLog[]
   NotificationPreferences NotificationPreference?
   Integrations            Integration[]
+  Automations             Automation[]
   StressLogs              StressLog[]
   GroupMemberships        GroupMember[]
 }
@@ -318,6 +319,22 @@ model Integration {
   connected    Boolean   @default(true)
   connectedAt  DateTime  @default(now())
   @@unique([userId, type])
+}
+
+model Automation {
+  id          String   @id @default(cuid())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  title       String
+  time        String   // "20:00" format
+  duration    Int      @default(30) // dakika
+  repeat      String   @default("daily") // daily, weekly, etc
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  lastRunAt   DateTime?
+
+  @@index([userId, time])
 }
 
 model StressLog {
