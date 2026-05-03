@@ -8,6 +8,7 @@ import WaffleStudio from './chat/WaffleStudio';
 import Leaderboard from './chat/Leaderboard';
 import AutomationWorkbench from './chat/AutomationWorkbench';
 import SettingsModal from './chat/SettingsModal';
+import ProjectHub from './chat/ProjectHub';
 import styles from './ChatbotInterface.module.css';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -42,6 +43,7 @@ export default function ChatbotInterface() {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showAutomation, setShowAutomation] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showProjects, setShowProjects] = useState(false);
 
   // 1. Mount Kontrolü ve Veri Yükleme
   useEffect(() => {
@@ -288,8 +290,11 @@ export default function ChatbotInterface() {
                  setShowLeaderboard(true);
               } else if (id === 'automation') {
                  setShowAutomation(true);
+              } else if (id === 'projects') {
+                 setShowProjects(true);
               } else {
                  setActiveSessionId(id);
+                 setShowProjects(false);
               }
               if (isMobile) setSidebarOpen(false);
             }}
@@ -313,7 +318,11 @@ export default function ChatbotInterface() {
           />
 
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
-            {activeSessionId === 'waffle' ? (
+            {showProjects ? (
+               <ProjectHub user={session?.user} onClose={() => setShowProjects(false)} />
+            ) : (
+              <>
+                {activeSessionId === 'waffle' ? (
               <WaffleStudio isMobile={isMobile} />
             ) : hasMessages ? (
               <>
@@ -502,9 +511,11 @@ export default function ChatbotInterface() {
                 </div>
               </div>
             )}
-          </div>
-        </div>
+          </>
+        )}
       </div>
+    </div>
+  </div>
 
       <style>{`
         @keyframes ci-float {
