@@ -16,117 +16,54 @@ export default function ProjectHub({ user, onClose }) {
 
   if (!isMounted) return null;
 
-  const renderListView = () => (
-    <div className={styles.container}>
-      <header className={styles.header}>
-        <h1>Projects</h1>
-        <button className={styles.newBtn} onClick={() => setView('create')}>+ New project</button>
-      </header>
-      
-      <div className={styles.searchBar}>
-        <div className={styles.searchIcon}>🔍</div>
-        <input type="text" placeholder="Search projects..." />
-      </div>
-
-      <div className={styles.sorting}>
-        <span>Sort by</span>
-        <select>
-          <option>Activity</option>
-          <option>Name</option>
-        </select>
-      </div>
-
-      <div className={styles.grid}>
-        {projects.length > 0 ? (
-          projects.map(p => (
-            <div key={p.id} className={styles.projectCard} onClick={() => { setActiveProject(p); setView('detail'); }}>
-              <h3>{p.name}</h3>
-              <p>{p.description}</p>
-              <div className={styles.cardFooter}>Updated {p.updatedAt}</div>
-            </div>
-          ))
-        ) : (
-          <div className={styles.emptyState}>
-             <div className={styles.emptyIcon}>📂</div>
-             <h3>Looking to start a project?</h3>
-             <p>Upload materials, set custom instructions, and organize conversations in one space.</p>
-             <button className={styles.newBtn} onClick={() => setView('create')}>+ New project</button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
-  const renderCreateView = () => (
-    <div className={styles.formContainer}>
-      <h2>Create a personal project</h2>
-      <div className={styles.infoBox}>
-        <strong>How to use projects</strong>
-        <p>Projects help organize your work and leverage knowledge across multiple conversations. Upload docs, code, and files to create themed collections that AI can reference again and again.</p>
-      </div>
-      <div className={styles.field}>
-        <label>What are you working on?</label>
-        <input type="text" placeholder="Name your project" />
-      </div>
-      <div className={styles.field}>
-        <label>What are you trying to achieve?</label>
-        <textarea placeholder="Describe your project, goals, subject, etc..." rows="4" />
-      </div>
-      <div className={styles.actions}>
-        <button className={styles.cancelBtn} onClick={() => setView('list')}>Cancel</button>
-        <button className={styles.createBtn}>Create project</button>
-      </div>
-    </div>
-  );
-
-  const renderDetailView = () => (
-    <div className={styles.detailContainer}>
-       <div className={styles.detailSidebar}>
-          <button className={styles.backBtn} onClick={() => setView('list')}>← All projects</button>
-          <div className={styles.sidebarSection}>
-             <div className={styles.sectionTitle}>
-                Instructions <span>+</span>
-             </div>
-             <p className={styles.hint}>Add instructions to tailor AI reactions</p>
-          </div>
-          <div className={styles.sidebarSection}>
-            <div className={styles.sectionTitle}>
-                Files <span>+</span>
-             </div>
-             <div className={styles.fileBox}>
-                <div className={styles.fileIcon}>📄</div>
-                <p>Add PDFs, documents, or other text to reference in this project.</p>
-             </div>
-          </div>
-       </div>
-       <div className={styles.detailMain}>
-          <div className={styles.projectHead}>
-             <h1>{activeProject?.name}</h1>
-             <p>{activeProject?.description}</p>
-          </div>
-          <div className={styles.promptArea}>
-             <div className={styles.promptInput}>
-                How can I help you today?
-                <div className={styles.promptActions}>
-                   <span>+</span>
-                   <span>Sonnet 4.2</span>
-                </div>
-             </div>
-          </div>
-          <div className={styles.chatPlaceholder}>
-             Start a chat to keep conversations organized and re-use project knowledge.
-          </div>
-       </div>
-    </div>
-  );
-
   return (
     <div className={styles.overlay}>
-       <div className={styles.modal}>
-          <button className={styles.closeOverlay} onClick={onClose}>✕</button>
-          {view === 'list' && renderListView()}
-          {view === 'create' && renderCreateView()}
-          {view === 'detail' && renderDetailView()}
+       <div className={styles.modal} style={{ maxWidth: '600px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 40px', textAlign: 'center' }}>
+          <button className={styles.closeOverlay} onClick={onClose} style={{ position: 'absolute', top: '16px', right: '16px' }}>✕</button>
+          
+          <div style={{
+              width: '80px', height: '80px', margin: '0 auto 24px', borderRadius: '24px',
+              background: 'linear-gradient(135deg, rgba(99,102,241,0.1), rgba(139,92,246,0.1))',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '40px', border: '1px solid rgba(139,92,246,0.3)',
+              boxShadow: '0 0 60px rgba(139,92,246,0.2)'
+          }}>
+             🚀
+          </div>
+          
+          <h1 style={{ fontSize: '32px', color: '#fff', marginBottom: '12px', background: 'linear-gradient(135deg, #818cf8, #c4b5fd)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+             Proje Merkezi Yakında!
+          </h1>
+          
+          <p style={{ color: 'rgba(200,200,220,0.7)', fontSize: '16px', lineHeight: 1.6, marginBottom: '32px', maxWidth: '480px' }}>
+             Tüm stratejik hedeflerini, dökümanlarını ve dosyalarını tek bir merkezden yapay zeka ile yönetebileceğin devrim niteliğinde bir çalışma alanı inşa ediyoruz. 
+          </p>
+
+          <div style={{
+             background: 'rgba(0,0,0,0.3)', border: '1px dashed rgba(139,92,246,0.4)',
+             borderRadius: '16px', padding: '24px', width: '100%'
+          }}>
+             <h3 style={{ color: '#a5b4fc', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '16px' }}>Neler Gelecek?</h3>
+             <ul style={{ color: '#fff', fontSize: '14px', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '12px', margin: 0, padding: '0 20px' }}>
+                <li>📄 <b>Sınırsız Dosya Analizi:</b> PDF'ler, kod blokları ve dökümanlardan oluşan bilgi havuzları.</li>
+                <li>🧠 <b>Bağlamsal Zeka:</b> Projelerine özel AI talimatları ve karakter yapılandırması.</li>
+                <li>⚔️ <b>HAN Code Entegrasyonu:</b> Proje bazlı kod onarımı ve GitHub yönetimi.</li>
+             </ul>
+          </div>
+          
+          <button 
+             onClick={onClose}
+             style={{
+                marginTop: '32px', padding: '16px 40px', borderRadius: '12px',
+                background: '#fff', color: '#030308', fontWeight: 'bold', border: 'none',
+                cursor: 'pointer', fontSize: '16px', transition: 'all 0.2s',
+                boxShadow: '0 0 20px rgba(255,255,255,0.2)'
+             }}
+             onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
+             onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+          >
+             Sohbete Geri Dön
+          </button>
        </div>
     </div>
   );
