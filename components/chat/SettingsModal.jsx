@@ -133,6 +133,62 @@ export default function SettingsModal({ onClose, user, dna }) {
              </div>
           </div>
         );
+      case 'account':
+        return (
+          <div className={styles.section}>
+            <h3>Hesap Bilgileri</h3>
+            <div className={styles.field}>
+              <label>Email Adresi</label>
+              <input type="text" disabled defaultValue={user?.email || 'Mevcut Değil'} />
+            </div>
+            
+            <div style={{ marginTop: '32px' }} className={styles.upgradeCard}>
+               <div className={styles.cardHeader}>
+                 <span className={styles.badge} style={{ background: '#10b981', color: '#fff' }}>Viral Büyüme</span>
+                 <h4>Arkadaşını Davet Et, 500 XP Kazan! 🚀</h4>
+               </div>
+               <p style={{ color: 'rgba(200,200,220,0.8)', fontSize: '14px', marginBottom: '16px' }}>
+                 LifeCoach AI'nın sınırlarını arkadaşlarınla paylaş. Senin davet linkinle kayıt olan her kullanıcı için 500 XP kazanıp seviye atla!
+               </p>
+               <div style={{ display: 'flex', gap: '8px' }}>
+                 <input 
+                    type="text" 
+                    readOnly 
+                    value={`https://han-ai.dev/invite/${user?.name?.toLowerCase() || 'link'}`} 
+                    style={{ flex: 1, padding: '10px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }} 
+                 />
+                 <button 
+                    onClick={(e) => { navigator.clipboard.writeText(`https://han-ai.dev/invite/${user?.name?.toLowerCase() || 'link'}`); e.target.innerText = 'Kopyalandı!'; setTimeout(()=>e.target.innerText='Kopyala', 2000); }}
+                    style={{ background: '#8b5cf6', color: '#fff', border: 'none', padding: '0 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+                 >
+                    Kopyala
+                 </button>
+               </div>
+            </div>
+          </div>
+        );
+      case 'billing':
+        return (
+          <div className={styles.section}>
+             <h3>Üyelik & Plan (Faturalandırma)</h3>
+             <div className={styles.upgradeCard} style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.1), rgba(217,119,6,0.1))', borderColor: 'rgba(245,158,11,0.2)' }}>
+                <div className={styles.cardHeader}>
+                  <span className={styles.badge} style={{ background: '#f59e0b', color: '#fff' }}>Pro</span>
+                  <h4 style={{ color: '#fff' }}>LifeCoach PRO'ya Geçiş Yap 👑</h4>
+                </div>
+                <ul style={{ color: 'rgba(200,200,220,0.8)', fontSize: '14px', lineHeight: 1.6, paddingLeft: '20px', marginBottom: '16px', marginTop: '12px' }}>
+                   <li>Günlük kullanım limitini kaldır (Sınırsız)</li>
+                   <li>Proje ve Otomasyon merkezine tam erişim</li>
+                   <li>HAN 4.2 Ultra Core (Groq LPU) önceliği</li>
+                </ul>
+                <button 
+                  onClick={() => window.open('https://lemonsqueezy.com', '_blank')}
+                  className={styles.upgradeBtn} style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#fff', width: '100%' }}>
+                  Aboneliği Başlat ($9.90/ay)
+                </button>
+             </div>
+          </div>
+        );
       default:
         return <div className={styles.empty}>Bu özellik yakında aktif olacak.</div>;
     }

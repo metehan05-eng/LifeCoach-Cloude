@@ -14,8 +14,10 @@ export default function PremiumHub({ onClose }) {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '32px', boxShadow: '0 0 40px rgba(245,158,11,0.3)'
            }}>👑</div>
-           <h1 style={{ fontSize: '28px', color: '#fff', marginBottom: '8px' }}>HAN AI Özel Erişim</h1>
-           <p style={{ color: 'rgba(200,200,220,0.7)' }}>Günlük mesaj limitine ulaştın. Limitsiz sohbet, gelişmiş LPU motorları ve Proje Merkezi için Premium'a geç.</p>
+           <h1 style={{ fontSize: '28px', color: '#fff', marginBottom: '8px' }}>Daha yeni başladık!</h1>
+           <p style={{ color: 'rgba(200,200,220,0.7)', fontSize: '15px' }}>
+             Hedeflerine ulaşmak ve HAN AI ile <b>sınırsız konuşmak</b> için PRO'ya geç. Potansiyelinin önündeki engelleri kaldır.
+           </p>
         </div>
 
         <div style={{ display: 'grid', gap: '16px', gridTemplateColumns: '1fr' }}>
