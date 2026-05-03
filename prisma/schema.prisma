@@ -47,8 +47,22 @@ model User {
   Integrations            Integration[]
   Automations             Automation[]
   PushSubscriptions       PushSubscription[]
+  Projects                Project[]
+  GrowthDNA               GrowthDNA?
   StressLogs              StressLog[]
   GroupMemberships        GroupMember[]
+}
+
+model GrowthDNA {
+  id          String   @id @default(cuid())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String   @unique
+  discipline  Int      @default(50) // 1-100
+  focus       Int      @default(50)
+  resilience  Int      @default(50)
+  vision      Int      @default(50)
+  traits      String[] // ["mükemmeliyetçi", "hızlı öğrenen", etc]
+  updatedAt   DateTime @updatedAt
 }
 
 model Account {
@@ -348,6 +362,23 @@ model Automation {
   lastRunAt   DateTime?
 
   @@index([userId, time])
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  name        String
+  description String?  @db.Text
+  status      String   @default("active") // active, completed, on_hold
+  progress    Int      @default(0)
+  category    String   @default("general")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deadline    DateTime?
+  tags        String[]
+
+  @@index([userId, status])
 }
 
 model StressLog {

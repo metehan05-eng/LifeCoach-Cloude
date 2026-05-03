@@ -73,6 +73,24 @@ export default function ChatHeader({ onToggleSidebar, sidebarOpen, sessionTitle,
         </div>
       )}
 
+      {/* Convert to Project */}
+      <button
+        onClick={() => onConvertToProject && onConvertToProject()}
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          width: '34px', height: '34px', borderRadius: '10px',
+          background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)',
+          color: '#818cf8', cursor: 'pointer',
+          transition: 'all 0.2s ease',
+          fontSize: '15px', flexShrink: 0,
+        }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(99,102,241,0.2)'; e.currentTarget.style.color = '#fff'; }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(99,102,241,0.1)'; e.currentTarget.style.color = '#818cf8'; }}
+        title="Bu Sohbeti Projeye Dönüştür"
+      >
+        📁
+      </button>
+
       {/* Settings */}
       <button
         style={{

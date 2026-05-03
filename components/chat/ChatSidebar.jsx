@@ -144,6 +144,26 @@ export default function ChatSidebar({
           </button>
         </div>
 
+        {/* Tabs for Sessions and Projects */}
+        <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.05)', marginBottom: '8px' }}>
+          <button 
+            style={{ 
+              flex: 1, padding: '12px', fontSize: '12px', fontWeight: 600, 
+              color: '#fff', borderBottom: '2px solid #6366f1', background: 'transparent', cursor: 'pointer' 
+            }}
+          >
+            Sohbetler
+          </button>
+          <button 
+            style={{ 
+              flex: 1, padding: '12px', fontSize: '12px', fontWeight: 600, 
+              color: 'rgba(255,255,255,0.4)', borderBottom: '2px solid transparent', background: 'transparent', cursor: 'pointer' 
+            }}
+          >
+            Projelerim (Yakında)
+          </button>
+        </div>
+
         {/* Sessions List */}
         <div style={{
           flex: 1, overflowY: 'auto', padding: '8px',
@@ -196,16 +216,6 @@ export default function ChatSidebar({
                         {session.messages.length} mesaj
                       </div>
                     </div>
-                    {hoveredId === session.id && sessions.length > 1 && (
-                      <button
-                        onClick={e => { e.stopPropagation(); onDeleteSession(session.id); }}
-                        style={{
-                          padding: '3px 6px', borderRadius: '6px', border: 'none',
-                          background: 'rgba(239,68,68,0.15)', color: '#f87171',
-                          cursor: 'pointer', fontSize: '11px', flexShrink: 0,
-                        }}
-                      >✕</button>
-                    )}
                   </div>
                 ))}
               </div>

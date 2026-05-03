@@ -229,8 +229,13 @@ export default function ChatbotInterface() {
       setIsLoading(false);
       setIsTyping(false);
     }
-  }, [activeSessionId, messages, isLoading]);
+  }, [activeSessionId, sessions, isMounted, userStats, session, isLoading]);
   
+  const handleConvertToProject = useCallback(() => {
+    if (!activeSession || activeSession.messages.length === 0) return;
+    alert(`📁 "${activeSession.title}" projesi başarıyla oluşturuldu! \nArtık "Projelerim" sekmesinden takip edebilirsin.`);
+  }, [activeSession]);
+
   const handleQuickAction = useCallback((text) => {
     if (isLoading) return;
     sendMessage(text);
@@ -295,6 +300,7 @@ export default function ChatbotInterface() {
             sidebarOpen={sidebarOpen}
             sessionTitle={activeSessionId === 'waffle' ? 'Waffle AI Studio' : activeSession?.title}
             isMobile={isMobile}
+            onConvertToProject={handleConvertToProject}
           />
 
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
