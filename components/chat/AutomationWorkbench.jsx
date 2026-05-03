@@ -45,6 +45,26 @@ export default function AutomationWorkbench({ userEmail, isMobile, onClose }) {
     if (!detectedTask) return;
     setLoading(true);
     try {
+      // 1. Subscribe to Push Notification First
+      if ('serviceWorker' in navigator) {
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          // Note: In real production, you need a VAPID public key from env
+          applicationServerKey: 'BEOE_G22pB70w-B_kZf-wB_kZf-wB_kZf-wB_kZf-wB_kZf-wB_kZf-wB_kZf-wB_kZf-w' 
+        });
+        
+        await fetch('/api/push/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: userEmail,
+            subscription: sub.toJSON()
+          })
+        });
+      }
+
+      // 2. Save Task
       await fetch('/api/gamify/automation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

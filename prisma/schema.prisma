@@ -46,6 +46,7 @@ model User {
   NotificationPreferences NotificationPreference?
   Integrations            Integration[]
   Automations             Automation[]
+  PushSubscriptions       PushSubscription[]
   StressLogs              StressLog[]
   GroupMemberships        GroupMember[]
 }
@@ -319,6 +320,18 @@ model Integration {
   connected    Boolean   @default(true)
   connectedAt  DateTime  @default(now())
   @@unique([userId, type])
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  endpoint  String   @db.Text
+  p256dh    String   @db.Text
+  auth      String   @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 model Automation {

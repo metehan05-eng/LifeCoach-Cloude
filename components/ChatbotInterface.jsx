@@ -45,6 +45,15 @@ export default function ChatbotInterface() {
   useEffect(() => {
     setIsMounted(true);
     
+    // Service Worker & Push Notification Kaydı
+    if ('serviceWorker' in navigator && 'PushManager' in window) {
+      navigator.serviceWorker.register('/sw.js').then(reg => {
+        console.log("Service Worker Kayıtlı:", reg);
+        // Otomasyon aktifse izin iste
+        Notification.requestPermission();
+      });
+    }
+
     // Sessions Yükle
     const saved = localStorage.getItem('lifeCoachSessions');
     if (saved) {
