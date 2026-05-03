@@ -514,11 +514,21 @@ export default async function handler(req, res) {
       try {
         const userData = await prisma.user.findUnique({
           where: { email },
-          select: { id: true, name: true, xp: true, level: true, currentStreak: true, totalXp: true, plan: true, usageLimit: true, usageCount: true }
+          select: { id: true, name: true, xp: true, level: true, currentStreak: true, totalXp: true, plan: true, usageLimit: true, usageCount: true, lastActiveAt: true }
         });
         if (userData) {
           userId = userData.id;
           userName = userData.name || "Gezgin";
+          
+          let updatedUsageCount = userData.usageCount;
+          // 5-Saatlik Sıfırlama Mantığı
+          if (userData.plan === 'FREE' && userData.lastActiveAt) {
+             const hoursSinceLastActive = (new Date() - new Date(userData.lastActiveAt)) / (1000 * 60 * 60);
+             if (hoursSinceLastActive >= 5) {
+                updatedUsageCount = 0;
+             }
+          }
+
           userStats = {
             xp: userData.xp,
             level: userData.level,
@@ -526,7 +536,7 @@ export default async function handler(req, res) {
             nextLevelXp: 100,
             plan: userData.plan,
             usageLimit: userData.usageLimit,
-            usageCount: userData.usageCount
+            usageCount: updatedUsageCount
           };
         }
       } catch (e) { console.error("User fetch error:", e); }
@@ -680,9 +690,13 @@ export default async function handler(req, res) {
     // Increment Usage Count internally
     if (userId) {
       try {
+        const resetData = userStats.usageCount === 0 ? { usageCount: 1 } : { usageCount: { increment: 1 } };
         await prisma.user.update({
           where: { id: userId },
-          data: { usageCount: { increment: 1 } }
+          data: { 
+            ...resetData,
+            lastActiveAt: new Date()
+          }
         });
       } catch (e) { console.error("Usage count update error", e); }
     }

@@ -67,12 +67,7 @@ export default function ChatbotInterface() {
       // Sadece mesajı olanları gerçek liste olarak al
       const validSessions = parsed.filter(s => s.messages && s.messages.length > 0);
       setSessions(validSessions);
-      
-      if (validSessions.length > 0) {
-        setActiveSessionId(validSessions[0].id);
-      } else {
-        createNewSession();
-      }
+      createNewSession();
     } else {
       createNewSession();
     }

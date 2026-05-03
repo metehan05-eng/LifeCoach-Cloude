@@ -60,6 +60,20 @@ export default function PremiumHub({ onClose }) {
               >
                  <span style={{ color: '#f59e0b' }}>₿</span> Kripto ile Öde (USDT/BTC)
               </button>
+
+              <button 
+                 onClick={onClose}
+                 style={{
+                    width: '100%', padding: '12px', borderRadius: '12px',
+                    background: 'transparent', color: 'rgba(200,200,220,0.6)', 
+                    fontWeight: 'bold', border: 'none', cursor: 'pointer',
+                    fontSize: '14px', transition: 'all 0.2s', marginTop: '4px'
+                 }}
+                 onMouseEnter={e => e.currentTarget.style.color = '#fff'}
+                 onMouseLeave={e => e.currentTarget.style.color = 'rgba(200,200,220,0.6)'}
+              >
+                 Belki Daha Sonra
+              </button>
            </div>
         </div>
       </div>

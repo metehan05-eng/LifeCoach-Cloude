@@ -228,7 +228,9 @@ export default function ChatSidebar({
           <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px' }}>{user?.name?.[0] || '👤'}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: '13px', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.name || 'Kullanıcı'}</div>
-            <div style={{ fontSize: '11px', color: 'rgba(99,102,241,0.7)' }}>{user?.email ? 'Premium Plan' : 'Ücretsiz Plan'}</div>
+            <div style={{ fontSize: '11px', color: user?.plan === 'FREE' ? 'rgba(160,160,192,0.7)' : '#fbbf24' }}>
+               {user?.plan === 'FREE' ? 'Free User' : 'Premium Plan'}
+            </div>
           </div>
           <button onClick={() => signOut({ callbackUrl: '/' })} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'rgba(239,68,68,0.6)', fontSize: '18px' }}>↪</button>
         </div>

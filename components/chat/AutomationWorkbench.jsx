@@ -81,65 +81,41 @@ export default function AutomationWorkbench({ userEmail, isMobile, onClose }) {
 
   return (
     <div className={styles.overlay}>
-      <div className={styles.container}>
-        <div className={styles.header}>
-          <div className={styles.titleArea}>
-             <h3>⚡ Life Automation Workbench</h3>
-             <span>n8n Powered Routine Engine</span>
+       <div className={styles.container} style={{ maxWidth: '600px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 40px', textAlign: 'center', height: 'auto', minHeight: '500px' }}>
+          <button className={styles.closeBtn} onClick={onClose} style={{ position: 'absolute', top: '16px', right: '16px' }}>✕</button>
+          
+          <div style={{
+              width: '80px', height: '80px', margin: '0 auto 24px', borderRadius: '24px',
+              background: 'linear-gradient(135deg, rgba(245,158,11,0.1), rgba(217,119,6,0.1))',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '40px', border: '1px solid rgba(245,158,11,0.3)',
+              boxShadow: '0 0 60px rgba(245,158,11,0.2)'
+          }}>
+             ⚙️
           </div>
-          <button onClick={onClose} className={styles.closeBtn}>✕</button>
-        </div>
+          
+          <h1 style={{ fontSize: '32px', color: '#fff', marginBottom: '12px', background: 'linear-gradient(135deg, #fcd34d, #f59e0b)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+             Life Automation Yakında!
+          </h1>
+          
+          <p style={{ color: 'rgba(200,200,220,0.7)', fontSize: '16px', lineHeight: 1.6, marginBottom: '32px', maxWidth: '480px' }}>
+             Otonom rutinler ve <b>n8n</b> entegrasyonumuz ile sen uyurken bile senin için çalışacak yapay zeka ajanları yolda. WhatsApp, Takvim, ve Mail otomasyonları tek tık uzağında olacak.
+          </p>
 
-        <div className={styles.content}>
-          {/* Left: Chat Area */}
-          <div className={styles.chatArea}>
-            <div className={styles.messages}>
-              {messages.map((m, i) => (
-                <div key={i} className={m.role === 'assistant' ? styles.aiMsg : styles.userMsg}>
-                  {m.content}
-                </div>
-              ))}
-              {loading && <div className={styles.aiMsg}>...</div>}
-            </div>
-            <div className={styles.inputArea}>
-              <input 
-                value={inputValue} 
-                onChange={e => setInputValue(e.target.value)}
-                onKeyPress={e => e.key === 'Enter' && handleSend()}
-                placeholder="Otomasyon isteğini yaz..."
-              />
-              <button onClick={handleSend}>Gönder</button>
-            </div>
-          </div>
-
-          {/* Right: Visualization (n8n style) */}
-          <div className={styles.vizArea}>
-             <div className={styles.vizTitle}>AKIM ŞEMASI</div>
-             {detectedTask ? (
-               <div className={styles.nodesContainer}>
-                  <div className={styles.node}>
-                    <div className={styles.nodeIcon}>⏰</div>
-                    <div className={styles.nodeName}>Tetikleyici</div>
-                    <div className={styles.nodeVal}>{detectedTask.time} ({detectedTask.repeat})</div>
-                  </div>
-                  <div className={styles.connector}></div>
-                  <div className={styles.node}>
-                    <div className={styles.nodeIcon}>🎯</div>
-                    <div className={styles.nodeName}>Eylem</div>
-                    <div className={styles.nodeVal}>{detectedTask.title}</div>
-                  </div>
-                  <button className={styles.confirmBtn} onClick={saveAutomation}>
-                    Otomasyonu Başlat
-                  </button>
-               </div>
-             ) : (
-               <div className={styles.emptyViz}>
-                 Henüz bir otomasyon algılanmadı. AI'ya ne yapmak istediğini anlat.
-               </div>
-             )}
-          </div>
-        </div>
-      </div>
+          <button 
+             onClick={onClose}
+             style={{
+                marginTop: '16px', padding: '16px 40px', borderRadius: '12px',
+                background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#fff', fontWeight: 'bold', border: 'none',
+                cursor: 'pointer', fontSize: '16px', transition: 'all 0.2s',
+                boxShadow: '0 0 20px rgba(245,158,11,0.4)'
+             }}
+             onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
+             onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+          >
+             Sohbete Geri Dön
+          </button>
+       </div>
     </div>
   );
 }
