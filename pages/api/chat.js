@@ -603,7 +603,7 @@ export default async function handler(req, res) {
     const model = hasImages ? "llama-3.2-11b-vision-preview" : "llama-3.3-70b-versatile";
 
     // 4. SISTEM PROMPT HAZIRLA
-    const systemPrompt = `${systemInstruction}\n\nMOD: DOSYA OKUMA AKTIF. Eğer kullanıcı dosya içeriği gönderdiyse, o içeriği en ince detayına kadar analiz et.`;
+    const systemPrompt = `${systemInstruction}\n${localizationInjection}\n\nMOD: DOSYA OKUMA AKTIF. Eğer kullanıcı dosya içeriği gönderdiyse, o içeriği en ince detayına kadar analiz et.`;
 
     const messages = [
       { role: "system", content: systemPrompt },
@@ -643,7 +643,7 @@ export default async function handler(req, res) {
         stream: false
       });
 
-      const aiResponse = completion.choices[0].message.content;
+      const aiResponse = completion.choices[0].message.content || "";
       const reply = aiResponse;
     
     // Otomasyon verisini ayıkla
@@ -657,6 +657,13 @@ export default async function handler(req, res) {
         automation_data = JSON.parse(match[1]);
         cleanReply = reply.replace(automationRegex, "").trim();
       } catch (e) { console.error("Automation parse error"); }
+    }
+
+    // Eğer temiz yanıt boşsa, sistem mesajı ekle
+    if (!cleanReply && automation_data) {
+        cleanReply = `Harika! "${automation_data.title}" otomasyonunu senin için hazırladım. Ayarlardan kontrol edebilir veya hemen başlatabilirsin. ⚡`;
+    } else if (!cleanReply) {
+        cleanReply = "Üzgünüm, şu an yanıt veremiyorum. Lütfen tekrar dener misin?";
     }
 
     return res.status(200).json({ 

@@ -212,7 +212,7 @@ export default function ChatbotInterface() {
         throw new Error(data.details || data.error || 'Sunucu hatası');
       }
 
-      const aiText = data.response || '(Boş yanıt)';
+      const aiText = data.reply || data.response || '(Boş yanıt)';
 
       let displayed = '';
       const words = aiText.split(' ');
