@@ -7,6 +7,7 @@ import ChatHeader from './chat/ChatHeader';
 import WaffleStudio from './chat/WaffleStudio';
 import Leaderboard from './chat/Leaderboard';
 import AutomationWorkbench from './chat/AutomationWorkbench';
+import SettingsModal from './chat/SettingsModal';
 import styles from './ChatbotInterface.module.css';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -40,6 +41,7 @@ export default function ChatbotInterface() {
   const [userStats, setUserStats] = useState({ xp: 0, level: 1, currentStreak: 0 });
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showAutomation, setShowAutomation] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   // 1. Mount Kontrolü ve Veri Yükleme
   useEffect(() => {
@@ -265,6 +267,12 @@ export default function ChatbotInterface() {
         />
       )}
 
+      {showSettings && (
+        <SettingsModal 
+          user={{...session?.user, ...userStats}} 
+          onClose={() => setShowSettings(false)} 
+        />
+      )}
       <div className={styles.layout}>
         {/* Sidebar */}
         <div style={isMobile ? {
@@ -301,6 +309,7 @@ export default function ChatbotInterface() {
             sessionTitle={activeSessionId === 'waffle' ? 'Waffle AI Studio' : activeSession?.title}
             isMobile={isMobile}
             onConvertToProject={handleConvertToProject}
+            onOpenSettings={() => setShowSettings(true)}
           />
 
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>

@@ -1,7 +1,7 @@
 "use client";
 import React from 'react';
 
-export default function ChatHeader({ onToggleSidebar, sidebarOpen, sessionTitle, isMobile }) {
+export default function ChatHeader({ onToggleSidebar, sidebarOpen, sessionTitle, isMobile, onConvertToProject, onOpenSettings }) {
   return (
     <header style={{
       height: '56px',
@@ -93,6 +93,7 @@ export default function ChatHeader({ onToggleSidebar, sidebarOpen, sessionTitle,
 
       {/* Settings */}
       <button
+        onClick={() => onOpenSettings && onOpenSettings()}
         style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           width: '34px', height: '34px', borderRadius: '10px',
