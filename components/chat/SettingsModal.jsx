@@ -9,6 +9,9 @@ export default function SettingsModal({ onClose, user, dna }) {
     { id: 'general', label: 'Genel', icon: '⚙️' },
     { id: 'account', label: 'Hesap', icon: '👤' },
     { id: 'dna', label: 'Life DNA', icon: '🧬' },
+    { id: 'capabilities', label: 'Capabilities', icon: '⚡' },
+    { id: 'connectors', label: 'Connectors', icon: '🔗' },
+    { id: 'hancode', label: 'HAN Code', icon: '⚔️' },
     { id: 'notifications', label: 'Bildirimler', icon: '🔔' },
     { id: 'billing', label: 'Üyelik & Plan', icon: '💳' },
   ];
@@ -56,6 +59,78 @@ export default function SettingsModal({ onClose, user, dna }) {
                 <div className={styles.bar}><div style={{width: `${dna?.vision || 90}%`}}></div></div>
               </div>
             </div>
+          </div>
+        );
+      case 'capabilities':
+        return (
+          <div className={styles.section}>
+            <h3>Gelişmiş Yetenekler</h3>
+            <div className={styles.toggleRow}>
+              <div>
+                <strong>AI Hafızası (Memory)</strong>
+                <span>Konuşmalardan bağlam devşirir.</span>
+              </div>
+              <input type="checkbox" defaultChecked />
+            </div>
+            <div className={styles.toggleRow}>
+              <div>
+                <strong>Artifacts (Görselleştirme)</strong>
+                <span>Kod ve tasarımları yan pencerede gösterir.</span>
+              </div>
+              <input type="checkbox" defaultChecked />
+            </div>
+            <div className={styles.toggleRow}>
+              <div>
+                <strong>Kod Yürütme</strong>
+                <span>Python ve JS kodlarını sunucuda çalıştırır.</span>
+              </div>
+              <input type="checkbox" defaultChecked />
+            </div>
+          </div>
+        );
+      case 'connectors':
+        return (
+          <div className={styles.section}>
+            <h3>Bağlantılar (Connectors)</h3>
+            <div className={styles.connectorList}>
+              <div className={styles.connectorItem}>
+                <div className={styles.connectorInfo}>
+                  <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" width="24" />
+                  <span>GitHub Integration</span>
+                </div>
+                <button className={styles.connBtn}>Bağla</button>
+              </div>
+              <div className={styles.connectorItem}>
+                <div className={styles.connectorInfo}>
+                   <div className={styles.gmailIcon}>M</div>
+                  <span>Gmail & Google Workspace</span>
+                </div>
+                <button className={styles.connBtn}>Bağla</button>
+              </div>
+            </div>
+          </div>
+        );
+      case 'hancode':
+        return (
+          <div className={styles.section}>
+             <div className={styles.upgradeCard}>
+                <div className={styles.cardHeader}>
+                  <span className={styles.badge}>Preview</span>
+                  <h4>HAN Code ⚔️</h4>
+                </div>
+                <p>HAN AI codebase'ini anlar, bug'ları çözer ve pull request'leri otomatik yönetir.</p>
+                <button className={styles.upgradeBtn}>Yükselt: Max veya Pro</button>
+             </div>
+             <div className={styles.hancodeOptions}>
+                <div className={styles.toggleRow}>
+                  <span>Pull request'leri otomatik oluştur</span>
+                  <input type="checkbox" />
+                </div>
+                <div className={styles.toggleRow}>
+                  <span>Hataları otomatik onar (Autofix)</span>
+                  <input type="checkbox" />
+                </div>
+             </div>
           </div>
         );
       default:

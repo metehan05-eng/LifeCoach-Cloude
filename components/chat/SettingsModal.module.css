@@ -143,7 +143,99 @@
     cursor: pointer;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: scale(0.98); }
-    to { opacity: 1; transform: scale(1); }
+.toggleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+
+.toggleRow strong {
+  display: block;
+  font-size: 14px;
+  color: #fff;
+}
+
+.toggleRow span {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.upgradeCard {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(0, 0, 0, 0.4));
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.badge {
+  background: #6366f1;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+}
+
+.upgradeBtn {
+  margin-top: 16px;
+  padding: 10px 20px;
+  background: #fff;
+  color: #000;
+  border: none;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.connectorItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  margin-bottom: 8px;
+}
+
+.connectorInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.connBtn {
+  padding: 6px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.gmailIcon {
+  width: 24px;
+  height: 24px;
+  background: #ea4335;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 14px;
 }
