@@ -339,48 +339,83 @@ export default function ChatbotInterface() {
                   />
                 </div>
 
-                {/* Quick Action Button */}
-                <button
-                  onClick={() => handleQuickAction("Yeni bir hedef belirlemek istiyorum. Bana SMART (Belirli, Ölçülebilir, Ulaşılabilir, İlgili, Zamana Bağlı) kriterlerine uygun bir yol haritası çıkarmamda rehberlik eder misin?")}
-                  style={{
-                    padding: isMobile ? '12px 24px' : '16px 32px',
-                    borderRadius: '16px',
-                    background: 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.2))',
-                    border: '1px solid rgba(139,92,246,0.3)',
-                    color: '#fff',
-                    fontWeight: 700,
-                    fontSize: isMobile ? '14px' : '16px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    boxShadow: '0 4px 20px rgba(139,92,246,0.15)',
-                    position: 'relative',
-                    overflow: 'hidden',
-                  }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
-                    e.currentTarget.style.boxShadow = '0 8px 32px rgba(139,92,246,0.3)';
-                    e.currentTarget.style.background = 'linear-gradient(135deg, rgba(99,102,241,0.3), rgba(139,92,246,0.3))';
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                    e.currentTarget.style.boxShadow = '0 4px 20px rgba(139,92,246,0.15)';
-                    e.currentTarget.style.background = 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.2))';
-                  }}
-                >
-                  <span style={{ fontSize: '20px' }}>🎯</span>
-                  <span>Şimdi Hedefini Belirle</span>
-                  <div style={{
-                    position: 'absolute',
-                    top: '-50%', left: '-50%',
-                    width: '200%', height: '200%',
-                    background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)',
-                    animation: 'ci-pulse 3s infinite',
-                    pointerEvents: 'none'
-                  }} />
-                </button>
+                {/* Quick Action Buttons Container */}
+                <div style={{ 
+                  display: 'flex', 
+                  flexDirection: isMobile ? 'column' : 'row', 
+                  gap: '16px', 
+                  width: '100%', 
+                  justifyContent: 'center',
+                  alignItems: 'stretch',
+                  maxWidth: '700px',
+                  marginBottom: '16px'
+                }}>
+                  {/* Goal Button */}
+                  <button
+                    onClick={() => handleQuickAction("Yeni bir hedef belirlemek istiyorum. Bana SMART (Belirli, Ölçülebilir, Ulaşılabilir, İlgili, Zamana Bağlı) kriterlerine uygun bir yol haritası çıkarmamda rehberlik eder misin?")}
+                    style={{
+                      flex: isMobile ? 'none' : '1',
+                      padding: isMobile ? '14px 24px' : '16px 32px',
+                      borderRadius: '16px',
+                      background: 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.2))',
+                      border: '1px solid rgba(139,92,246,0.3)',
+                      color: '#fff',
+                      fontWeight: 700,
+                      fontSize: isMobile ? '14px' : '15px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '12px',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      boxShadow: '0 4px 20px rgba(139,92,246,0.15)',
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
+                      e.currentTarget.style.boxShadow = '0 8px 32px rgba(139,92,246,0.3)';
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                      e.currentTarget.style.boxShadow = '0 4px 20px rgba(139,92,246,0.15)';
+                    }}
+                  >
+                    <span style={{ fontSize: '20px' }}>🎯</span>
+                    <span>Şimdi Hedefini Belirle</span>
+                  </button>
+
+                  {/* Automation Button */}
+                  <button
+                    onClick={() => setShowAutomation(true)}
+                    style={{
+                      flex: isMobile ? 'none' : '1',
+                      padding: isMobile ? '14px 24px' : '16px 32px',
+                      borderRadius: '16px',
+                      background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(234, 179, 8, 0.1))',
+                      border: '1px solid rgba(234, 179, 8, 0.25)',
+                      color: '#fbbf24',
+                      fontWeight: 800,
+                      fontSize: isMobile ? '14px' : '15px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '12px',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      boxShadow: '0 4px 20px rgba(234, 179, 8, 0.1)',
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
+                      e.currentTarget.style.boxShadow = '0 8px 32px rgba(234, 179, 8, 0.25)';
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                      e.currentTarget.style.boxShadow = '0 4px 20px rgba(234, 179, 8, 0.1)';
+                    }}
+                  >
+                    <span style={{ fontSize: '20px' }}>⚡</span>
+                    <span>Life Automation Kur</span>
+                  </button>
+                </div>
 
                 {/* Suggestion chips */}
                 <div style={{
