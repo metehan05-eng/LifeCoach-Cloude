@@ -58,12 +58,17 @@ export default function ChatbotInterface() {
     const saved = localStorage.getItem('lifeCoachSessions');
     if (saved) {
       const parsed = JSON.parse(saved);
-      setSessions(parsed);
-      if (parsed.length > 0) setActiveSessionId(parsed[0].id);
+      // Sadece mesajı olanları gerçek liste olarak al
+      const validSessions = parsed.filter(s => s.messages && s.messages.length > 0);
+      setSessions(validSessions);
+      
+      if (validSessions.length > 0) {
+        setActiveSessionId(validSessions[0].id);
+      } else {
+        createNewSession();
+      }
     } else {
-      const initialId = Date.now();
-      setSessions([{ id: initialId, title: 'Yeni Sohbet', messages: [], createdAt: new Date() }]);
-      setActiveSessionId(initialId);
+      createNewSession();
     }
 
     // Stats Çek
@@ -75,6 +80,14 @@ export default function ChatbotInterface() {
         }).catch(e => console.log("Stats fetch error"));
     }
   }, [session]);
+
+  // Sohbetleri her değişimde kaydet (Sadece mesajı olanları)
+  useEffect(() => {
+    if (isMounted && sessions.length > 0) {
+      const toSave = sessions.filter(s => s.messages && s.messages.length > 0);
+      localStorage.setItem('lifeCoachSessions', JSON.stringify(toSave));
+    }
+  }, [sessions, isMounted]);
 
   // UI state adjustment after mount/isMobile change
   useEffect(() => {
@@ -89,17 +102,16 @@ export default function ChatbotInterface() {
     if (status === 'unauthenticated') router.push('/login');
   }, [status, router]);
 
-  const activeSession = sessions.find(s => s.id === activeSessionId) || sessions[0];
+  const activeSession = sessions.find(s => s.id === activeSessionId);
   const messages = activeSession?.messages || [];
-  const hasMessages = messages.length > 0 || isTyping;
+  const hasMessages = isMounted && (messages.length > 0 || isTyping);
 
 
   const createNewSession = useCallback(() => {
-    const newId = Date.now();
-    setSessions(prev => [{ id: newId, title: 'Yeni Sohbet', messages: [], createdAt: new Date() }, ...prev]);
-    setActiveSessionId(newId);
+    const tempId = `temp-${Date.now()}`;
+    setActiveSessionId(tempId);
     setError(null);
-    if (isMobile) setSidebarOpen(false); // close sidebar after selecting on mobile
+    if (isMobile) setSidebarOpen(false); 
   }, [isMobile]);
 
   const deleteSession = useCallback((id) => {
@@ -135,11 +147,26 @@ export default function ChatbotInterface() {
       attachments: attachmentPreviews
     };
 
-    setSessions(prev => prev.map(s =>
-      s.id === activeSessionId
-        ? { ...s, title: s.messages.length === 0 ? (text ? text.slice(0, 42) : attachments[0].name) : s.title, messages: [...s.messages, userMsg] }
-        : s
-    ));
+    // Eğer aktif session bir "geçici/boş" session ise (listede yoksa), yeni session olarak ekle
+    const currentSessionExists = sessions.some(s => s.id === activeSessionId);
+    
+    if (!currentSessionExists) {
+      const realId = Date.now();
+      const newSession = { 
+        id: realId, 
+        title: text ? text.slice(0, 42) : (attachments[0]?.name || 'Yeni Sohbet'), 
+        messages: [userMsg], 
+        createdAt: new Date() 
+      };
+      setSessions(prev => [newSession, ...prev]);
+      setActiveSessionId(realId);
+    } else {
+      setSessions(prev => prev.map(s =>
+        s.id === activeSessionId
+          ? { ...s, messages: [...s.messages, userMsg] }
+          : s
+      ));
+    }
 
     setIsLoading(true);
     setIsTyping(true);
