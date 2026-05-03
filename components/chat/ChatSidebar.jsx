@@ -24,7 +24,17 @@ export default function ChatSidebar({
 }) {
   const [hoveredId, setHoveredId] = useState(null);
   const [sidebarTab, setSidebarTab] = useState('chats');
-  const groups = groupByDate(sessions);
+  const [mounted, setMounted] = useState(false);
+  const [groups, setGroups] = useState({ Bugün: [], Dün: [], 'Bu Hafta': [], 'Daha Eski': [] });
+
+  React.useEffect(() => {
+    setMounted(true);
+    setGroups(groupByDate(sessions));
+  }, [sessions]);
+
+  if (!mounted) return (
+     <aside style={{ width: isOpen ? '280px' : '0', height: '100vh', background: '#0c0c18' }} />
+  );
 
   return (
     <>

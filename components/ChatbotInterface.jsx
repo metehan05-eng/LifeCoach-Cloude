@@ -153,9 +153,11 @@ export default function ChatbotInterface() {
 
     // Eğer aktif session bir "geçici/boş" session ise (listede yoksa), yeni session olarak ekle
     const currentSessionExists = sessions.some(s => s.id === activeSessionId);
+    let targetSessionId = activeSessionId;
     
     if (!currentSessionExists) {
       const realId = Date.now();
+      targetSessionId = realId;
       const newSession = { 
         id: realId, 
         title: text ? text.slice(0, 42) : (attachments[0]?.name || 'Yeni Sohbet'), 
@@ -179,12 +181,11 @@ export default function ChatbotInterface() {
     const history = messages.map(m => ({ role: m.role, content: m.content }));
 
     try {
-      // Dosya içeriklerini hazırla (Base64'ler dahil)
+      // Dosya içeriklerini hazırla
       const preparedAttachments = await Promise.all(attachments.map(async (a) => {
         if (a.type.startsWith('image/')) {
           return { name: a.name, type: 'image', data: a.preview.split(',')[1] };
         } else {
-          // Diğer dosyalar için Base64 oku (backend'de parse edilecekler)
           return new Promise((resolve) => {
             const r = new FileReader();
             r.onload = () => resolve({ name: a.name, type: 'file', data: r.result.split(',')[1], ext: a.extension });
@@ -200,7 +201,7 @@ export default function ChatbotInterface() {
           message: text, 
           history, 
           attachments: preparedAttachments,
-          sessionId: activeSessionId, 
+          sessionId: targetSessionId, 
           email: session?.user?.email 
         }),
       });
@@ -222,7 +223,7 @@ export default function ChatbotInterface() {
       }
 
       setSessions(prev => prev.map(s =>
-        s.id === activeSessionId
+        s.id === targetSessionId
           ? { ...s, messages: [...s.messages, { role: 'assistant', content: aiText, id: Date.now() }] }
           : s
       ));

@@ -4,10 +4,17 @@ import styles from './ProjectHub.module.css';
 
 export default function ProjectHub({ user, onClose }) {
   const [view, setView] = useState('list'); // list, create, detail
+  const [isMounted, setIsMounted] = useState(false);
   const [projects, setProjects] = useState([
     { id: '1', name: 'Software engine', description: 'bir yazılım projesi üzerinde bir işletim sistemi olacak', updatedAt: '8 saniye önce' }
   ]);
   const [activeProject, setActiveProject] = useState(null);
+
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) return null;
 
   const renderListView = () => (
     <div className={styles.container}>
