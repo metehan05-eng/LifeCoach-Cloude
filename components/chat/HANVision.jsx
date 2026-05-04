@@ -45,8 +45,31 @@ export default function HANVision({ onSnapshot, onClose }) {
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       
       const base64Data = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
-      onSnapshot(base64Data);
-      setAnalyzing(false);
+      
+      // Python HAN Engine'e İstek At
+      fetch('http://localhost:8000/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image_base64: base64Data })
+      })
+      .then(res => {
+         if (!res.ok) throw new Error("Python Backend Not Ready");
+         return res.json();
+      })
+      .then(data => {
+        if (data.status === 'success') {
+          onSnapshot(base64Data, data);
+        } else {
+          onSnapshot(base64Data, null);
+        }
+      })
+      .catch(err => {
+        console.log("Python Backend kullanılamıyor, LLM Vision'a düşülecek...", err.message);
+        onSnapshot(base64Data, null); // Fallback to raw vision
+      })
+      .finally(() => {
+        setAnalyzing(false);
+      });
     }, 800); // Tarama efekti için kısa bir bekleme
   };
 
