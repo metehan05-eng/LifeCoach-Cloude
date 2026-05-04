@@ -519,14 +519,14 @@ export default async function handler(req, res) {
         if (userData) {
           userId = userData.id;
           userName = userData.name || "Gezgin";
-          
+
           let updatedUsageCount = userData.usageCount;
           // 5-Saatlik Sıfırlama Mantığı
           if (userData.plan === 'FREE' && userData.lastActiveAt) {
-             const hoursSinceLastActive = (new Date() - new Date(userData.lastActiveAt)) / (1000 * 60 * 60);
-             if (hoursSinceLastActive >= 5) {
-                updatedUsageCount = 0;
-             }
+            const hoursSinceLastActive = (new Date() - new Date(userData.lastActiveAt)) / (1000 * 60 * 60);
+            if (hoursSinceLastActive >= 5) {
+              updatedUsageCount = 0;
+            }
           }
 
           userStats = {
@@ -544,15 +544,15 @@ export default async function handler(req, res) {
 
     // --- SUBSCRIPTION LIMIT CHECK ---
     if (userId && userStats.plan === 'FREE' && userStats.usageCount >= userStats.usageLimit) {
-      return res.status(403).json({ 
-        error: "LIMIT_REACHED", 
-        message: "Günlük mesaj limitine ulaştın. Sınırsız erişim ve daha güçlü modeller için Premium'a geç!" 
+      return res.status(403).json({
+        error: "LIMIT_REACHED",
+        message: "Günlük mesaj limitine ulaştın. Sınırsız erişim ve daha güçlü modeller için Premium'a geç!"
       });
     }
 
     // EĞER SADECE STATS İSTENDİYSE BURADA DUR
     if (req.query.just_stats === 'true') {
-        return res.status(200).json({ stats: userStats });
+      return res.status(200).json({ stats: userStats });
     }
 
     // 2. DOSYA İŞLEME (PDF, DOCX, XLSX)
@@ -628,9 +628,9 @@ export default async function handler(req, res) {
 
     const messages = [
       { role: "system", content: systemPrompt },
-      ...(history || []).map(m => ({ 
-        role: m.role === 'assistant' ? 'assistant' : 'user', 
-        content: m.content || "" 
+      ...(history || []).map(m => ({
+        role: m.role === 'assistant' ? 'assistant' : 'user',
+        content: m.content || ""
       }))
     ];
 
@@ -641,18 +641,18 @@ export default async function handler(req, res) {
     }
 
     if (hasImages) {
-        messages.push({
-            role: "user",
-            content: [
-                { type: "text", text: finalUserContent },
-                ...imagesForVision.map(img => ({
-                    type: "image_url",
-                    image_url: { url: `data:image/jpeg;base64,${img}` }
-                }))
-            ]
-        });
+      messages.push({
+        role: "user",
+        content: [
+          { type: "text", text: finalUserContent },
+          ...imagesForVision.map(img => ({
+            type: "image_url",
+            image_url: { url: `data:image/jpeg;base64,${img}` }
+          }))
+        ]
+      });
     } else {
-        messages.push({ role: "user", content: finalUserContent });
+      messages.push({ role: "user", content: finalUserContent });
     }
 
     try {
@@ -666,45 +666,45 @@ export default async function handler(req, res) {
 
       const aiResponse = completion.choices[0].message.content || "";
       const reply = aiResponse;
-    
-    // Otomasyon verisini ayıkla
-    let automation_data = null;
-    const automationRegex = /\[\[AUTOMATION_DATA: (\{.*?\}) \]\]/;
-    const match = reply.match(automationRegex);
-    let cleanReply = reply;
-    
-    if (match) {
-      try {
-        automation_data = JSON.parse(match[1]);
-        cleanReply = reply.replace(automationRegex, "").trim();
-      } catch (e) { console.error("Automation parse error"); }
-    }
 
-    // Eğer temiz yanıt boşsa, sistem mesajı ekle
-    if (!cleanReply && automation_data) {
+      // Otomasyon verisini ayıkla
+      let automation_data = null;
+      const automationRegex = /\[\[AUTOMATION_DATA: (\{.*?\}) \]\]/;
+      const match = reply.match(automationRegex);
+      let cleanReply = reply;
+
+      if (match) {
+        try {
+          automation_data = JSON.parse(match[1]);
+          cleanReply = reply.replace(automationRegex, "").trim();
+        } catch (e) { console.error("Automation parse error"); }
+      }
+
+      // Eğer temiz yanıt boşsa, sistem mesajı ekle
+      if (!cleanReply && automation_data) {
         cleanReply = `Harika! "${automation_data.title}" otomasyonunu senin için hazırladım. Ayarlardan kontrol edebilir veya hemen başlatabilirsin. ⚡`;
-    } else if (!cleanReply) {
+      } else if (!cleanReply) {
         cleanReply = "Üzgünüm, şu an yanıt veremiyorum. Lütfen tekrar dener misin?";
-    }
+      }
 
-    // Increment Usage Count internally
-    if (userId) {
-      try {
-        const resetData = userStats.usageCount === 0 ? { usageCount: 1 } : { usageCount: { increment: 1 } };
-        await prisma.user.update({
-          where: { id: userId },
-          data: { 
-            ...resetData,
-            lastActiveAt: new Date()
-          }
-        });
-      } catch (e) { console.error("Usage count update error", e); }
-    }
+      // Increment Usage Count internally
+      if (userId) {
+        try {
+          const resetData = userStats.usageCount === 0 ? { usageCount: 1 } : { usageCount: { increment: 1 } };
+          await prisma.user.update({
+            where: { id: userId },
+            data: {
+              ...resetData,
+              lastActiveAt: new Date()
+            }
+          });
+        } catch (e) { console.error("Usage count update error", e); }
+      }
 
-    return res.status(200).json({ 
-      reply: cleanReply,
-      automation_data 
-    });
+      return res.status(200).json({
+        reply: cleanReply,
+        automation_data
+      });
     } catch (err) {
       console.error("Groq Hatası:", err.message);
       return res.status(500).json({ error: "AI Hatası", details: err.message });

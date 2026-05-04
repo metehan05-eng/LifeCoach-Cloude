@@ -9,7 +9,7 @@ const QUICK_PROMPTS = [
   { emoji: '🔥', label: 'Motive et' },
 ];
 
-export default function ChatInput({ value, onChange, onSend, isLoading, centered = false, isMobile = false }) {
+export default function ChatInput({ value, onChange, onSend, isLoading, centered = false, isMobile = false, onToggleVision }) {
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
   const [focused, setFocused] = useState(false);
@@ -225,6 +225,26 @@ export default function ChatInput({ value, onChange, onSend, isLoading, centered
             <line x1="12" y1="5" x2="12" y2="19" />
             <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
+        </button>
+
+        {/* HAN Vision Toggle Button */}
+        <button
+          onClick={onToggleVision}
+          style={{
+            width: isMobile ? '36px' : '40px',
+            height: isMobile ? '36px' : '40px',
+            borderRadius: '12px', flexShrink: 0,
+            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.15))',
+            border: '1px solid rgba(16, 185, 129, 0.3)',
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'all 0.2s ease', 
+            color: '#10b981', fontSize: '18px'
+          }}
+          title="HAN Vision (Biyometrik Analiz)"
+          onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.background = 'rgba(16, 185, 129, 0.2)'; }}
+          onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = 'linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.15))'; }}
+        >
+          👁️
         </button>
 
         <input 

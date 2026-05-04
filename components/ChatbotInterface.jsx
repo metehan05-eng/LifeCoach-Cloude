@@ -10,6 +10,7 @@ import AutomationWorkbench from './chat/AutomationWorkbench';
 import SettingsModal from './chat/SettingsModal';
 import ProjectHub from './chat/ProjectHub';
 import PremiumHub from './chat/PremiumHub';
+import HANVision from './chat/HANVision';
 import styles from './ChatbotInterface.module.css';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -46,6 +47,7 @@ export default function ChatbotInterface() {
   const [showSettings, setShowSettings] = useState(false);
   const [showProjects, setShowProjects] = useState(false);
   const [showPremium, setShowPremium] = useState(false);
+  const [showVision, setShowVision] = useState(false);
 
   // 1. Mount Kontrolü ve Veri Yükleme
   useEffect(() => {
@@ -284,6 +286,15 @@ export default function ChatbotInterface() {
       {showPremium && (
         <PremiumHub onClose={() => setShowPremium(false)} />
       )}
+
+      {showVision && (
+        <HANVision 
+          onClose={() => setShowVision(false)} 
+          onSnapshot={(base64) => {
+             sendMessage("[BİYOMETRİK VERİ: Yüz ifademi ve duygusal durumumu analiz et. Sence motivasyonum nasıl, yalan mı söylüyorum gergin miyim? Doğrudan bana koçluk ver.]", [{ type: 'image', data: base64, extension: 'jpg', name: 'vision_snapshot.jpg' }]);
+          }} 
+        />
+      )}
       
       <div className={styles.layout}>
         {/* Sidebar */}
@@ -351,6 +362,7 @@ export default function ChatbotInterface() {
                   isLoading={isLoading}
                   centered={false}
                   isMobile={isMobile}
+                  onToggleVision={() => setShowVision(p => !p)}
                 />
               </>
             ) : (
@@ -397,6 +409,7 @@ export default function ChatbotInterface() {
                     isLoading={isLoading}
                     centered={true}
                     isMobile={isMobile}
+                    onToggleVision={() => setShowVision(p => !p)}
                   />
                 </div>
 
