@@ -621,7 +621,7 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const { message, history, email, sessionId, mode, userLanguage, attachments } = req.body;
+    const { message, history, email, sessionId, mode, userLanguage, attachments, deepSearch } = req.body;
     const countryCode = req.headers['x-vercel-ip-country'] || 'Unknown';
     const detectedLang = userLanguage || req.headers['accept-language']?.split(',')[0] || 'tr-TR';
 
@@ -730,21 +730,114 @@ export default async function handler(req, res) {
     const localizationInjection = `\n\n--- KONTEKST ---\nKullanıcı: ${userName}\nKonum: ${countryCode}\nDil: ${detectedLang}${gamificationInjection}`;
 
     // ==========================================
-    // AI ENGINE: GROQ (LLAMA 3) - EN HIZLI VE STABİL ÇÖZÜM
+    // AKILLI WEB ARAMA MOTORU (Tavily)
+    // Sadece gerçek zamanlı bilgi gerektiren sorgularda çalışır
     // ==========================================
-    const groqKey = process.env.GROQ_API_KEY;
-    if (!groqKey) {
-      return res.status(500).json({ error: "Yapay Zeka Anahtarı Bulunamadı" });
+    const tavilyKey = process.env.TAVILY_API_KEY;
+    let searchSources = [];  // Kullanıcıya gösterilecek kaynak linkler
+    let searchContextInjection = "";
+
+    if (message) {
+      const msgLower = message.toLowerCase().trim();
+
+      // Kısa veya selamlama mesajları → arama yapma
+      const isGreeting = /^(merhaba|selam|hi|hello|hey|günaydın|tünaydın|iyi akşam|iyi gece|nasılsın|naber|ne var|how are)/i.test(msgLower);
+      const isShortQuery = message.trim().split(/\s+/).length < 4;
+      const isPersonalQuestion = /(benim|bana|hedefim|planım|yardım et|ne yapmalıyım|tavsiye|öneri|düşünce|fikir)/i.test(msgLower);
+
+      // Gerçek zamanlı bilgi tetikleyicileri
+      const needsSearch = deepSearch || (!isGreeting && !isShortQuery && !isPersonalQuestion && (
+        /(haber|güncel|bugün|dün|yarın|son dakika|son durum|şu an|şimdi|2024|2025|2026|puan durumu|hava durumu|borsa|kripto|bitcoin|ethereum|dolar|euro|altın|gümüş|fiyatı nedir|fiyatları|kimdir|nedir|vizyondaki film|sinema|maç sonucu|maç skoru|transfer|seçim|cumhurbaşkan|başbakan|bakan|deprem|sel|yangın|kaza|olay|teknoloji haberi|yapay zeka haberi|yeni model|çıktı mı|piyasaya çıktı)/i.test(msgLower)
+      ));
+
+      if (needsSearch && tavilyKey) {
+        try {
+          // Arama sorgusu oluştur (ilk 100 karakter, soru işaretleri temizlendi)
+          const searchQuery = message
+            .replace(/[?!.]\s*$/g, '')
+            .substring(0, 100)
+            .trim();
+
+          console.log(`[SmartSearch] 🔍 Tavily araması başlatıldı: "${searchQuery}" (deepSearch: ${deepSearch})`);
+
+          const tavilyRes = await fetch('https://api.tavily.com/search', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${tavilyKey}`
+            },
+            body: JSON.stringify({
+              query: searchQuery,
+              search_depth: deepSearch ? 'advanced' : 'basic',
+              max_results: deepSearch ? 8 : 5,
+              include_answer: true,
+              include_images: false,
+              include_raw_content: false
+            }),
+            signal: AbortSignal.timeout(6000)
+          });
+
+          if (tavilyRes.ok) {
+            const tavilyData = await tavilyRes.json();
+
+            // Kaynakları kaydet (frontend'e gönderilecek)
+            if (tavilyData.results && tavilyData.results.length > 0) {
+              searchSources = tavilyData.results.slice(0, 5).map(r => ({
+                title: r.title,
+                url: r.url,
+                snippet: (r.content || r.snippet || '').substring(0, 200)
+              }));
+            }
+
+            // AI prompt'una bağlam olarak ekle
+            let searchContext = `\n\n--- GÜNCEL WEB ARAŞTIRMA SONUÇLARI ("${searchQuery}") ---\n`;
+            if (tavilyData.answer) {
+              searchContext += `ÖZET YANIT: ${tavilyData.answer}\n\n`;
+            }
+            if (tavilyData.results && tavilyData.results.length > 0) {
+              tavilyData.results.slice(0, 5).forEach((r, i) => {
+                searchContext += `[${i + 1}] ${r.title}\nKaynak: ${r.url}\nİçerik: ${(r.content || '').substring(0, 300)}\n\n`;
+              });
+            }
+            searchContext += `--- ARAMA SONU ---\nNOT: Yukarıdaki güncel verileri kullanarak yanıt ver. Kesinlikle boş tahmin yapma.`;
+            searchContextInjection = searchContext;
+
+            console.log(`[SmartSearch] ✅ ${searchSources.length} kaynak bulundu.`);
+          } else {
+            console.warn(`[SmartSearch] ❌ Tavily HTTP ${tavilyRes.status}`);
+          }
+        } catch (searchErr) {
+          console.warn(`[SmartSearch] ⚠️ Arama hatası: ${searchErr.message}`);
+        }
+      } else if (needsSearch && !tavilyKey) {
+        console.warn('[SmartSearch] TAVILY_API_KEY tanımlı değil, arama atlandı.');
+      }
     }
 
-    const client = new OpenAI({ apiKey: groqKey, baseURL: "https://api.groq.com/openai/v1" });
+    // ==========================================
+    // AI ENGINE: ÇOK KATMANLI YEDEKLEME SİSTEMİ
+    // Katman 1: Groq (Ana Model)
+    // Katman 2: Groq (Yedek Model)
+    // Katman 3: Gemini API (Son Çare)
+    // ==========================================
+    const groqKey = process.env.GROQ_API_KEY;
+    const geminiKey = process.env.GEMINI_API_KEY;
 
-    // MODEL SEÇİMİ: Eğer resim varsa Vision modelini kullan
+    if (!groqKey && !geminiKey) {
+      return res.status(500).json({ error: "Hiçbir Yapay Zeka Anahtarı Bulunamadı. Lütfen GROQ_API_KEY veya GEMINI_API_KEY ayarlayın." });
+    }
+
+    // MODEL SIRASI TANIMLAMA
+    // Resim varsa Vision destekli modeller önce gelir
     const hasImages = imagesForVision.length > 0;
-    const model = hasImages ? "llama-3.2-11b-vision-preview" : "llama-3.3-70b-versatile";
 
-    // 4. SISTEM PROMPT HAZIRLA
-    const systemPrompt = `${BASE_SYSTEM_PROMPT}\n\n${systemInstruction}\n${localizationInjection}\n\nMOD: DOSYA OKUMA AKTIF. Eğer kullanıcı dosya içeriği gönderdiyse, o içeriği en ince detayına kadar analiz et.`;
+    // Groq model sıralaması: [birincil, yedek]
+    const GROQ_MODEL_CHAIN = hasImages
+      ? ["openai/gpt-oss-120b", "openai/gpt-oss-20b"]  // Vision → Yedek Vision
+      : ["openai/gpt-oss-20b", "openai/gpt-oss-120b"]; // Hızlı → Güçlü yedek
+
+    // SISTEM PROMPT (Arama bağlamı varsa ekle)
+    const systemPrompt = `${BASE_SYSTEM_PROMPT}\n\n${systemInstruction}\n${localizationInjection}${searchContextInjection}\n\nMOD: DOSYA OKUMA AKTIF. Eğer kullanıcı dosya içeriği gönderdiyse, o içeriği en ince detayına kadar analiz et.`;
 
     const messages = [
       { role: "system", content: systemPrompt },
@@ -775,60 +868,173 @@ export default async function handler(req, res) {
       messages.push({ role: "user", content: finalUserContent });
     }
 
-    try {
-      const completion = await client.chat.completions.create({
-        model: model,
-        messages: messages,
-        temperature: 0.5,
-        max_tokens: 4096,
-        stream: false
-      });
+    // ── Groq API Çağrısı (Belirli Model) ──
+    async function tryGroqModel(modelName) {
+      const client = new OpenAI({ apiKey: groqKey, baseURL: "https://api.groq.com/openai/v1" });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 25000); // 25s timeout
 
-      const aiResponse = completion.choices[0].message.content || "";
-      const reply = aiResponse;
+      try {
+        const completion = await client.chat.completions.create({
+          model: modelName,
+          messages: messages,
+          temperature: 0.5,
+          max_tokens: 4096,
+          stream: false
+        }, { signal: controller.signal });
 
-      // Otomasyon verisini ayıkla
-      let automation_data = null;
-      const automationRegex = /\[\[AUTOMATION_DATA: (\{.*?\}) \]\]/;
-      const match = reply.match(automationRegex);
-      let cleanReply = reply;
+        clearTimeout(timeoutId);
 
-      if (match) {
-        try {
-          automation_data = JSON.parse(match[1]);
-          cleanReply = reply.replace(automationRegex, "").trim();
-        } catch (e) { console.error("Automation parse error"); }
+        const content = completion.choices?.[0]?.message?.content;
+        if (!content) throw new Error("Model boş yanıt döndürdü.");
+        return content;
+      } catch (err) {
+        clearTimeout(timeoutId);
+        throw err;
       }
-
-      // Eğer temiz yanıt boşsa, sistem mesajı ekle
-      if (!cleanReply && automation_data) {
-        cleanReply = `Harika! "${automation_data.title}" otomasyonunu senin için hazırladım. Ayarlardan kontrol edebilir veya hemen başlatabilirsin. ⚡`;
-      } else if (!cleanReply) {
-        cleanReply = "Üzgünüm, şu an yanıt veremiyorum. Lütfen tekrar dener misin?";
-      }
-
-      // Increment Usage Count internally
-      if (userId) {
-        try {
-          const resetData = userStats.usageCount === 0 ? { usageCount: 1 } : { usageCount: { increment: 1 } };
-          await prisma.user.update({
-            where: { id: userId },
-            data: {
-              ...resetData,
-              lastActiveAt: new Date()
-            }
-          });
-        } catch (e) { console.error("Usage count update error", e); }
-      }
-
-      return res.status(200).json({
-        reply: cleanReply,
-        automation_data
-      });
-    } catch (err) {
-      console.error("Groq Hatası:", err.message);
-      return res.status(500).json({ error: "AI Hatası", details: err.message });
     }
+
+    // ── Gemini API Son Çare Yedek ──
+    async function tryGeminiFallback() {
+      if (!geminiKey) throw new Error("GEMINI_API_KEY ayarlı değil.");
+
+      const { GoogleGenerativeAI } = await import('@google/generative-ai');
+      const genAI = new GoogleGenerativeAI(geminiKey.trim());
+
+      // Gemini için history'yi düzelt (system mesajını ayır)
+      const geminiHistory = (history || []).map(m => ({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: m.content || "" }]
+      }));
+
+      const geminiModel = genAI.getGenerativeModel({
+        model: "gemini-1.5-flash",
+        generationConfig: { maxOutputTokens: 4096, temperature: 0.5 },
+        systemInstruction: { parts: [{ text: systemPrompt }] }
+      }, { apiVersion: 'v1' });
+
+      const contents = [
+        ...geminiHistory,
+        { role: 'user', parts: [{ text: finalUserContent }] }
+      ];
+
+      const result = await geminiModel.generateContent({ contents });
+      const text = result.response.text();
+      if (!text) throw new Error("Gemini boş yanıt döndürdü.");
+      return text;
+    }
+
+    // ── ANA YEDEKLEME MANTIĞI ──
+    let aiResponse = null;
+    let usedModel = null;
+    let lastError = null;
+
+    // KATMAN 1 & 2: Groq Modelleri Sırayla Dene
+    if (groqKey) {
+      for (const modelName of GROQ_MODEL_CHAIN) {
+        try {
+          console.log(`[AI-Fallback] Deneniyor (Groq): ${modelName}`);
+          aiResponse = await tryGroqModel(modelName);
+          usedModel = `groq/${modelName}`;
+          console.log(`[AI-Fallback] ✅ Başarılı: ${modelName}`);
+          break; // Başarılı, döngüden çık
+        } catch (err) {
+          console.warn(`[AI-Fallback] ❌ ${modelName} başarısız: ${err.message}`);
+          lastError = err;
+
+          // Token limiti veya içerik filtresi hatası → yedekle devam et
+          const isRecoverable = 
+            err.message?.includes('rate_limit') ||
+            err.message?.includes('quota') ||
+            err.message?.includes('context_length') ||
+            err.message?.includes('model_not_found') ||
+            err.message?.includes('boş yanıt') ||
+            err.name === 'AbortError' ||
+            err.status === 429 ||
+            err.status === 503 ||
+            err.status === 404;
+
+          // Kurtarılamaz hata (auth, banned) → Gemini'ye atla
+          const isFatal = err.status === 401 || err.status === 403;
+          if (isFatal) {
+            console.warn(`[AI-Fallback] ⚠️ Kimlik doğrulama hatası, Groq atlanıyor...`);
+            break;
+          }
+
+          if (!isRecoverable) {
+            console.warn(`[AI-Fallback] ⚠️ Beklenmedik hata, yine de bir sonraki modeli deniyorum...`);
+          }
+          // Bir sonraki modeli dene
+        }
+      }
+    }
+
+    // KATMAN 3: Gemini Son Çare
+    if (!aiResponse && geminiKey) {
+      try {
+        console.log(`[AI-Fallback] 🔄 Gemini yedeklemesi başlatılıyor... (Groq hata: ${lastError?.message})`);
+        aiResponse = await tryGeminiFallback();
+        usedModel = "gemini-1.5-flash";
+        console.log(`[AI-Fallback] ✅ Gemini başarılı.`);
+      } catch (geminiErr) {
+        console.error(`[AI-Fallback] ❌ Gemini de başarısız: ${geminiErr.message}`);
+        lastError = geminiErr;
+      }
+    }
+
+    // Tüm modeller başarısız
+    if (!aiResponse) {
+      console.error("[AI-Fallback] 💥 Tüm modeller başarısız oldu.");
+      return res.status(503).json({
+        error: "AI_UNAVAILABLE",
+        message: "Yapay zeka servislerine şu an ulaşılamıyor. Lütfen birkaç saniye sonra tekrar deneyin.",
+        details: lastError?.message
+      });
+    }
+
+    console.log(`[AI-Fallback] 🎯 Yanıt veren model: ${usedModel}`);
+
+    // Otomasyon verisini ayıkla
+    let automation_data = null;
+    const automationRegex = /\[\[AUTOMATION_DATA: (\{.*?\}) \]\]/;
+    const match = aiResponse.match(automationRegex);
+    let cleanReply = aiResponse;
+
+    if (match) {
+      try {
+        automation_data = JSON.parse(match[1]);
+        cleanReply = aiResponse.replace(automationRegex, "").trim();
+      } catch (e) { console.error("Automation parse error"); }
+    }
+
+    // Eğer temiz yanıt boşsa, sistem mesajı ekle
+    if (!cleanReply && automation_data) {
+      cleanReply = `Harika! "${automation_data.title}" otomasyonunu senin için hazırladım. Ayarlardan kontrol edebilir veya hemen başlatabilirsin. ⚡`;
+    } else if (!cleanReply) {
+      cleanReply = "Üzgünüm, şu an yanıt veremiyorum. Lütfen tekrar dener misin?";
+    }
+
+    // Increment Usage Count internally
+    if (userId) {
+      try {
+        const resetData = userStats.usageCount === 0 ? { usageCount: 1 } : { usageCount: { increment: 1 } };
+        await prisma.user.update({
+          where: { id: userId },
+          data: {
+            ...resetData,
+            lastActiveAt: new Date()
+          }
+        });
+      } catch (e) { console.error("Usage count update error", e); }
+    }
+
+    return res.status(200).json({
+      reply: cleanReply,
+      automation_data,
+      sources: searchSources,           // Tıklanabilir web kaynakları
+      searched: searchSources.length > 0, // Arama yapıldı mı?
+      _model: usedModel                  // Debug: hangi model kullandı
+    });
   } catch (error) {
     console.error("Sistem Hatası:", error);
     return res.status(500).json({ error: "Sistem Hatası", details: error.message });

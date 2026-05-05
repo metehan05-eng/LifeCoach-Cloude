@@ -232,6 +232,80 @@ const TypingIndicator = () => (
   </div>
 );
 
+/* ── Source Cards Component (Tavily Web Arama Kaynakları) ── */
+const SourceCards = ({ sources }) => {
+  if (!sources || sources.length === 0) return null;
+  return (
+    <div style={{ marginTop: '14px' }}>
+      <div style={{
+        fontSize: '11px', fontWeight: 700, color: 'rgba(6,182,212,0.7)',
+        letterSpacing: '0.8px', textTransform: 'uppercase',
+        display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px'
+      }}>
+        <span style={{ fontSize: '13px' }}>🌐</span> Web Kaynakları
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        {sources.map((src, i) => (
+          <a
+            key={i}
+            href={src.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'block',
+              textDecoration: 'none',
+              background: 'rgba(6,182,212,0.05)',
+              border: '1px solid rgba(6,182,212,0.2)',
+              borderRadius: '10px',
+              padding: '9px 13px',
+              transition: 'all 0.2s ease',
+              cursor: 'pointer',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = 'rgba(6,182,212,0.12)';
+              e.currentTarget.style.borderColor = 'rgba(6,182,212,0.45)';
+              e.currentTarget.style.transform = 'translateX(3px)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = 'rgba(6,182,212,0.05)';
+              e.currentTarget.style.borderColor = 'rgba(6,182,212,0.2)';
+              e.currentTarget.style.transform = 'translateX(0)';
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+              <span style={{ fontSize: '12px', marginTop: '1px', flexShrink: 0 }}>
+                {['1️⃣','2️⃣','3️⃣','4️⃣','5️⃣'][i] || '🔗'}
+              </span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{
+                  fontSize: '12px', fontWeight: 600, color: '#67e8f9',
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  marginBottom: '2px'
+                }}>
+                  {src.title}
+                </div>
+                {src.snippet && (
+                  <div style={{
+                    fontSize: '11px', color: 'rgba(160,160,200,0.55)', lineHeight: 1.4,
+                    display: '-webkit-box', WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                  }}>
+                    {src.snippet}
+                  </div>
+                )}
+                <div style={{ fontSize: '10px', color: 'rgba(6,182,212,0.45)', marginTop: '3px' }}>
+                  {src.url.replace(/^https?:\/\/(www\.)?/, '').split('/')[0]}
+                </div>
+              </div>
+              <span style={{ fontSize: '10px', color: 'rgba(6,182,212,0.5)', flexShrink: 0 }}>↗</span>
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 /* ── Single message bubble ── */
 function MessageBubble({ message, isStream, onQuickAction }) {
   const isUser = message.role === 'user';
@@ -354,6 +428,11 @@ function MessageBubble({ message, isStream, onQuickAction }) {
             <span style={{ fontSize: '14px' }}>🧠</span> Hafızaya Kaydedildi
           </div>
         )}
+        {/* Source Cards */}
+        {message.sources && message.sources.length > 0 && (
+          <SourceCards sources={message.sources} />
+        )}
+
       </div>
     </div>
   );

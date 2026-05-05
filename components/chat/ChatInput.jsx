@@ -9,7 +9,7 @@ const QUICK_PROMPTS = [
   { emoji: '🔥', label: 'Motive et' },
 ];
 
-export default function ChatInput({ value, onChange, onSend, isLoading, centered = false, isMobile = false, onToggleVision }) {
+export default function ChatInput({ value, onChange, onSend, isLoading, centered = false, isMobile = false, onToggleVision, deepSearch = false, onToggleDeepSearch }) {
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
   const [focused, setFocused] = useState(false);
@@ -245,6 +245,32 @@ export default function ChatInput({ value, onChange, onSend, isLoading, centered
           onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = 'linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.15))'; }}
         >
           👁️
+        </button>
+
+        {/* Deep Search Toggle Button */}
+        <button
+          onClick={onToggleDeepSearch}
+          style={{
+            width: isMobile ? '36px' : '40px',
+            height: isMobile ? '36px' : '40px',
+            borderRadius: '12px', flexShrink: 0,
+            background: deepSearch
+              ? 'linear-gradient(135deg, rgba(6,182,212,0.25), rgba(99,102,241,0.25))'
+              : 'rgba(255,255,255,0.05)',
+            border: deepSearch
+              ? '1px solid rgba(6,182,212,0.6)'
+              : '1px solid rgba(255,255,255,0.05)',
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'all 0.25s cubic-bezier(0.34,1.56,0.64,1)',
+            fontSize: '16px',
+            boxShadow: deepSearch ? '0 0 12px rgba(6,182,212,0.35)' : 'none',
+            transform: deepSearch ? 'scale(1.08)' : 'scale(1)',
+          }}
+          title={deepSearch ? 'Web Arama Aktif — Tıkla iptali için' : 'Deep Web Search (G\u00fcncel bilgi için)'}
+          onMouseEnter={e => { e.currentTarget.style.background = deepSearch ? 'linear-gradient(135deg, rgba(6,182,212,0.4), rgba(99,102,241,0.4))' : 'rgba(255,255,255,0.1)'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = deepSearch ? 'linear-gradient(135deg, rgba(6,182,212,0.25), rgba(99,102,241,0.25))' : 'rgba(255,255,255,0.05)'; }}
+        >
+          {deepSearch ? '🌐' : '🔍'}
         </button>
 
         <input 

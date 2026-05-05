@@ -41,6 +41,7 @@ export default function ChatbotInterface() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [streamText, setStreamText] = useState('');
+  const [deepSearch, setDeepSearch] = useState(false);
   const [userStats, setUserStats] = useState({ xp: 0, level: 1, currentStreak: 0 });
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showAutomation, setShowAutomation] = useState(false);
@@ -201,7 +202,8 @@ export default function ChatbotInterface() {
           history, 
           attachments: preparedAttachments,
           sessionId: targetSessionId, 
-          email: session?.user?.email 
+          email: session?.user?.email,
+          deepSearch: deepSearch  // 🔍 Kullanıcının seçtiği arama modu
         }),
       });
 
@@ -219,6 +221,7 @@ export default function ChatbotInterface() {
       }
 
       const aiText = data.reply || data.response || '(Boş yanıt)';
+      const aiSources = data.sources || [];  // Tavily'den gelen kaynaklar
 
       let displayed = '';
       const words = aiText.split(' ');
@@ -230,10 +233,17 @@ export default function ChatbotInterface() {
 
       setSessions(prev => prev.map(s =>
         s.id === targetSessionId
-          ? { ...s, messages: [...s.messages, { role: 'assistant', content: aiText, id: Date.now() }] }
+          ? { ...s, messages: [...s.messages, { 
+              role: 'assistant', 
+              content: aiText, 
+              id: Date.now(),
+              sources: aiSources  // 🔗 Tıklanabilir kaynaklar
+            }] }
           : s
       ));
       setStreamText('');
+      // Deep search'i otomatik sıfırla (tek seferlik arama)
+      if (deepSearch) setDeepSearch(false);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -369,6 +379,8 @@ export default function ChatbotInterface() {
                   centered={false}
                   isMobile={isMobile}
                   onToggleVision={() => setShowVision(p => !p)}
+                  deepSearch={deepSearch}
+                  onToggleDeepSearch={() => setDeepSearch(p => !p)}
                 />
               </>
             ) : (
@@ -416,6 +428,8 @@ export default function ChatbotInterface() {
                     centered={true}
                     isMobile={isMobile}
                     onToggleVision={() => setShowVision(p => !p)}
+                    deepSearch={deepSearch}
+                    onToggleDeepSearch={() => setDeepSearch(p => !p)}
                   />
                 </div>
 
