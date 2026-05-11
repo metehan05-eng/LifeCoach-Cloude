@@ -814,42 +814,15 @@ export default async function handler(req, res) {
       }
     }
 
-    const vertexProjectId = process.env.GOOGLE_PROJECT_ID;
-    const vertexLocation = process.env.GOOGLE_LOCATION || 'europe-west4';
-    const vertexEndpointId = process.env.GOOGLE_ENDPOINT_ID;
-    const geminiKey = process.env.GEMINI_API_KEY;
-
-    // Vertex AI REST Call
-    async function tryVertexAI(message, systemPrompt) {
-      if (!vertexProjectId || !vertexEndpointId) {
-        throw new Error("Vertex AI Yapılandırması Eksik. Lütfen .env.local dosyasını kontrol edin.");
-      }
-
-      const endpoint = `https://${vertexLocation}-aiplatform.googleapis.com/v1/projects/${vertexProjectId}/locations/${vertexLocation}/endpoints/${vertexEndpointId}:predict`;
-      
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${geminiKey}` // Using Gemini key as fallback auth or user token
-        },
-        body: JSON.stringify({
-          instances: [{ content: `${systemPrompt}\n\nUser: ${message}` }]
-        })
-      });
-
-      if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(`Vertex AI Hatası: ${response.status} - ${errText}`);
-      }
-
-      const data = await response.json();
-      return data.predictions[0]?.content || data.predictions[0] || "Yanıt alınamadı";
-    }
-
-    // 10. MODEL FALLBACK CHAIN HAZIRLIĞI
-    const GROQ_MODEL_CHAIN = ["vertex-custom-model"]; 
+    // 10. MODEL FALLBACK CHAIN - Sadece Groq modelleri
+    const GROQ_MODEL_CHAIN = [
+      "llama-3.3-70b-versatile",  // En güçlü model
+      "llama-3.1-8b-instant",     // Hızlı, düşük gecikme
+      "mixtral-8x7b-32768"        // Alternatif
+    ];
+    // API key sadece environment variable'dan alınır - hardcoded yok
     const groqKey = process.env.GROQ_API_KEY;
+    const geminiKey = process.env.GEMINI_API_KEY;  // Son çare yedek için
 
     // SISTEM PROMPT (Arama bağlamı varsa ekle)
     const systemPrompt = `${BASE_SYSTEM_PROMPT}\n\n${systemInstruction}\n${localizationInjection}${searchContextInjection}\n\nMOD: DOSYA OKUMA AKTIF. Eğer kullanıcı dosya içeriği gönderdiyse, o içeriği en ince detayına kadar analiz et.`;
@@ -947,15 +920,9 @@ export default async function handler(req, res) {
 
     for (const modelName of GROQ_MODEL_CHAIN) {
       try {
-        if (modelName === "vertex-custom-model") {
-          console.log(`[AI-Fallback] Deneniyor (Vertex AI): ${vertexEndpointId}`);
-          aiResponse = await tryVertexAI(finalUserContent, systemPrompt);
-          usedModel = `vertex/${vertexEndpointId}`;
-        } else {
-          console.log(`[AI-Fallback] Deneniyor (Groq): ${modelName}`);
-          aiResponse = await tryGroqModel(modelName);
-          usedModel = `groq/${modelName}`;
-        }
+        console.log(`[AI-Fallback] Deneniyor (Groq): ${modelName}`);
+        aiResponse = await tryGroqModel(modelName);
+        usedModel = `groq/${modelName}`;
         
         console.log(`[AI-Fallback] ✅ Başarılı: ${modelName}`);
         break; 
