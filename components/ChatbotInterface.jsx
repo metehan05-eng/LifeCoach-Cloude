@@ -88,10 +88,8 @@ export default function ChatbotInterface() {
         const parsed = JSON.parse(saved);
         const validSessions = parsed.filter(s => s.messages && s.messages.length > 0);
         setSessions(validSessions);
-        // İlk session'ı aktif yap
-        if (validSessions.length > 0 && !activeSessionId) {
-          setActiveSessionId(validSessions[0].id);
-        }
+        // NOT: Otomatik ilk session'ı seçmiyoruz - kullanıcı "Yeni Sohbet" ile başlamalı
+        // veya sidebar'dan eski bir konuşma seçmeli
       }
     } catch (e) {
       console.error("Session yükleme hatası:", e);
