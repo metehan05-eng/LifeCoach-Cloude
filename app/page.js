@@ -430,7 +430,7 @@ function LiveDemo() {
 /* ── Features Data ── */
 const FEATURES = [
   { icon: '🧠', color: '#6366f1', title: 'Derin Hafıza', desc: 'Her konuşmanı hatırlar, alışkanlıklarını öğrenir. Seni tanıyan tek AI.', tag: 'Akıllı' },
-  { icon: '⚡', color: '#8b5cf6', title: 'Anlık Yanıt', desc: 'Gemini 2.0 Flash ile milisaniyeler içinde derin analiz ve rehberlik.', tag: 'Hızlı' },
+  { icon: '⚡', color: '#8b5cf6', title: 'Anlık Yanıt', desc: 'HAN 4.2 Ultra Core ile milisaniyeler içinde derin analiz ve rehberlik.', tag: 'Hızlı' },
   { icon: '🎯', color: '#06b6d4', title: 'Hedef Takibi', desc: 'Hedeflerini planlar, ilerlemeyi izler ve seni doğru yolda tutar.', tag: 'Planlayıcı' },
   { icon: '🔐', color: '#10b981', title: 'Tam Güvenlik', desc: 'Verilerinin şifreli ve güvende olduğunu garanti ediyoruz.', tag: 'Güvenli' },
   { icon: '🌍', color: '#f59e0b', title: 'Çok Dilli', desc: '81 dil desteğiyle dünyanın her yerinden erişilebilir.', tag: 'Global' },
@@ -494,7 +494,7 @@ export default function Home() {
           }}>
             <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981', animation: 'lp-blink 2s ease-in-out infinite' }} />
             <span style={{ fontSize: '12px', fontWeight: 600, color: '#a5b4fc', letterSpacing: '0.5px' }}>
-              Gemini 2.0 Flash · Aktif
+              HAN 4.2 Ultra Core · Aktif
             </span>
           </div>
 

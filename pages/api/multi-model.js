@@ -9,7 +9,7 @@ console.log('[Multi-Model] Multi-API Key sistemi aktif');
 
 // Model listesi
 const MODELS = [
-    { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', provider: 'google', performance: 'excellent', speed: 'fast' },
+    { id: 'gemini-2.0-flash', name: 'HAN 4.2 Ultra Core', provider: 'google', performance: 'excellent', speed: 'fast' },
     { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', provider: 'google', performance: 'good', speed: 'fast' }
 ];
 

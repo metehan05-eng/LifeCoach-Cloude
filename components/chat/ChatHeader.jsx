@@ -69,7 +69,7 @@ export default function ChatHeader({ onToggleSidebar, sidebarOpen, sessionTitle,
           border: '1px solid rgba(99,102,241,0.22)',
           color: '#a5b4fc', whiteSpace: 'nowrap',
         }}>
-          Gemini 2.0 Flash
+          HAN 4.2 Ultra Core
         </div>
       )}
 

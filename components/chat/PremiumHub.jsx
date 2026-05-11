@@ -32,7 +32,7 @@ export default function PremiumHub({ onClose }) {
                  <li>Sınırsız günlük mesaj gönderimi</li>
                  <li>Büyük bağlam pencereli (Context Window) dosya analizi</li>
                  <li>HAN OS & Cyber Security özel modülleri</li>
-                 <li>Erken erişim (Gemini 2.0 / Llama 4 Scout)</li>
+                 <li>Erken erişim (HAN 4.2 / Llama 4 Scout)</li>
               </ul>
               
               <button 

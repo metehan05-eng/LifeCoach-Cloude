@@ -220,7 +220,8 @@ export default function ChatbotInterface() {
         throw new Error(data.details || data.error || 'Sunucu hatası');
       }
 
-      const aiText = data.reply || data.response || '(Boş yanıt)';
+      const aiText = data.reply || data.response;
+      if (!aiText) throw new Error("Empty response");
       const aiSources = data.sources || [];  // Tavily'den gelen kaynaklar
 
       let displayed = '';
@@ -245,7 +246,7 @@ export default function ChatbotInterface() {
       // Deep search'i otomatik sıfırla (tek seferlik arama)
       if (deepSearch) setDeepSearch(false);
     } catch (err) {
-      setError(err.message);
+      setError("Hata oldu daha sonra tekrar deneyin");
     } finally {
       setIsLoading(false);
       setIsTyping(false);

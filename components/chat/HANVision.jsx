@@ -126,6 +126,22 @@ export default function HANVision({ onSnapshot, onClose }) {
         )}
 
         <canvas ref={canvasRef} style={{ display: 'none' }} />
+
+        {/* Beta Notice Overlay */}
+        <div style={{
+          position: 'absolute', bottom: '12px', left: '12px', right: '12px',
+          background: 'rgba(99,102,241,0.9)', backdropFilter: 'blur(8px)',
+          padding: '10px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.2)',
+          zIndex: 20, textAlign: 'center', boxShadow: '0 8px 16px rgba(0,0,0,0.4)',
+          animation: 'lp-msg-in 0.5s ease both'
+        }}>
+          <div style={{ fontSize: '10px', fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '2px' }}>
+            🚀 Beta Aşamasında
+          </div>
+          <div style={{ fontSize: '11px', color: '#e0e0ff', fontWeight: 500, lineHeight: 1.3 }}>
+            HAN Vision Beta aşamasındadır Çok yakında.
+          </div>
+        </div>
       </div>
 
       {/* Alt Kontrol */}
