@@ -63,8 +63,10 @@ export default function ChatbotInterface() {
       });
     }
 
-    // Sessions Yükle
-    const saved = localStorage.getItem('lifeCoachSessions');
+    // Sessions Yükle (Kullanıcıya özel key)
+    const userEmail = session?.user?.email;
+    const storageKey = userEmail ? `lifeCoachSessions_${userEmail}` : 'lifeCoachSessions_guest';
+    const saved = localStorage.getItem(storageKey);
     if (saved) {
       const parsed = JSON.parse(saved);
       // Sadece mesajı olanları gerçek liste olarak al
@@ -87,11 +89,13 @@ export default function ChatbotInterface() {
 
   // Sohbetleri her değişimde kaydet (Sadece mesajı olanları)
   useEffect(() => {
-    if (isMounted && sessions.length > 0) {
+    const currentUserEmail = session?.user?.email;
+    if (isMounted && sessions.length > 0 && currentUserEmail) {
       const toSave = sessions.filter(s => s.messages && s.messages.length > 0);
-      localStorage.setItem('lifeCoachSessions', JSON.stringify(toSave));
+      const storageKey = `lifeCoachSessions_${currentUserEmail}`;
+      localStorage.setItem(storageKey, JSON.stringify(toSave));
     }
-  }, [sessions, isMounted]);
+  }, [sessions, isMounted, session]);
 
   // UI state adjustment after mount/isMobile change
   useEffect(() => {

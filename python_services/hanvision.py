@@ -19,7 +19,7 @@ app.add_middleware(
 )
 
 # Yüz veritabanı dizini
-DB_PATH = "api/dataset"
+DB_PATH = "python_services/dataset"
 if not os.path.exists(DB_PATH):
     os.makedirs(DB_PATH)
 
@@ -67,7 +67,7 @@ async def analyze(request: AnalyzeRequest):
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         
         # Geçici dosya olarak kaydet (DeepFace dosya yolu bekler)
-        temp_path = f"api/temp_{uuid.uuid4()}.jpg"
+        temp_path = f"python_services/temp_{uuid.uuid4()}.jpg"
         cv2.imwrite(temp_path, img)
         
         try:

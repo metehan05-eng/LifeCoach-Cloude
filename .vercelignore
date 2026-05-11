@@ -10,3 +10,5 @@ android/
 ios/
 venv.zip
 scripts.zip
+python_services/
+requirements.txt
