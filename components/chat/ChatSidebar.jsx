@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { signOut } from 'next-auth/react';
 
 const groupByDate = (sessions) => {
@@ -27,10 +27,15 @@ export default function ChatSidebar({
   const [mounted, setMounted] = useState(false);
   const [groups, setGroups] = useState({ Bugün: [], Dün: [], 'Bu Hafta': [], 'Daha Eski': [] });
 
-  React.useEffect(() => {
+  useEffect(() => {
     setMounted(true);
-    setGroups(groupByDate(sessions));
-  }, [sessions]);
+  }, []);
+
+  useEffect(() => {
+    if (mounted && sessions.length > 0) {
+      setGroups(groupByDate(sessions));
+    }
+  }, [mounted, sessions]);
 
   if (!mounted) return (
      <aside style={{ width: isOpen ? '280px' : '0', height: '100vh', background: '#0c0c18' }} />

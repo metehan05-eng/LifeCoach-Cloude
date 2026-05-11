@@ -17,13 +17,18 @@ import { useRouter } from 'next/navigation';
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+  
   useEffect(() => {
+    setIsClient(true);
     const check = () => setIsMobile(window.innerWidth <= 768);
     check();
     window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);
   }, []);
-  return isMobile;
+  
+  // SSR sırasında her zaman false döndür (hydration uyuşmazlığını önle)
+  return isClient ? isMobile : false;
 }
 
 export default function ChatbotInterface() {
@@ -36,7 +41,7 @@ export default function ChatbotInterface() {
   const [activeSessionId, setActiveSessionId] = useState(null);
 
   const [isTyping, setIsTyping] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(true); // SSR için varsayılan
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -50,42 +55,58 @@ export default function ChatbotInterface() {
   const [showPremium, setShowPremium] = useState(false);
   const [showVision, setShowVision] = useState(false);
 
-  // 1. Mount Kontrolü ve Veri Yükleme
+  // 1. Mount Kontrolü
   useEffect(() => {
     setIsMounted(true);
-    
-    // Service Worker & Push Notification Kaydı
+  }, []);
+
+  // 2. Service Worker Kaydı (sadece client)
+  useEffect(() => {
+    if (!isMounted) return;
     if ('serviceWorker' in navigator && 'PushManager' in window) {
       navigator.serviceWorker.register('/sw.js').then(reg => {
         console.log("Service Worker Kayıtlı:", reg);
-        // Otomasyon aktifse izin iste
         Notification.requestPermission();
       });
     }
+  }, [isMounted]);
 
-    // Sessions Yükle (Kullanıcıya özel key)
-    const userEmail = session?.user?.email;
-    const storageKey = userEmail ? `lifeCoachSessions_${userEmail}` : 'lifeCoachSessions_guest';
-    const saved = localStorage.getItem(storageKey);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      // Sadece mesajı olanları gerçek liste olarak al
-      const validSessions = parsed.filter(s => s.messages && s.messages.length > 0);
-      setSessions(validSessions);
+  // 3. Sessions Yükle (Kullanıcıya özel key) - sadece client'te
+  useEffect(() => {
+    if (!isMounted || !session?.user?.email) return;
+    
+    const userEmail = session.user.email;
+    const storageKey = `lifeCoachSessions_${userEmail}`;
+    
+    // Sadece bir kez yükle (sessions boşsa)
+    if (sessions.length > 0 || activeSessionId) return;
+    
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        const validSessions = parsed.filter(s => s.messages && s.messages.length > 0);
+        setSessions(validSessions);
+      }
+      // Her durumda yeni session oluştur
       createNewSession();
-    } else {
+    } catch (e) {
+      console.error("Session yükleme hatası:", e);
       createNewSession();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMounted, session]);
 
-    // Stats Çek
-    if (session?.user?.email) {
-      fetch(`/api/chat?email=${session.user.email}&just_stats=true`)
-        .then(res => res.json())
-        .then(data => {
-           if (data.stats) setUserStats(data.stats);
-        }).catch(e => console.log("Stats fetch error"));
-    }
-  }, [session]);
+  // 4. Stats Çek
+  useEffect(() => {
+    if (!isMounted || !session?.user?.email) return;
+    
+    fetch(`/api/chat?email=${session.user.email}&just_stats=true`)
+      .then(res => res.json())
+      .then(data => {
+         if (data.stats) setUserStats(data.stats);
+      }).catch(e => console.log("Stats fetch error"));
+  }, [isMounted, session]);
 
   // Sohbetleri her değişimde kaydet (Sadece mesajı olanları)
   useEffect(() => {
@@ -97,11 +118,11 @@ export default function ChatbotInterface() {
     }
   }, [sessions, isMounted, session]);
 
-  // UI state adjustment after mount/isMobile change
+  // UI state adjustment - only after client mount
   useEffect(() => {
     if (isMounted) {
-      if (isMobile) setSidebarOpen(false);
-      else setSidebarOpen(true);
+      // Sadece client tarafında sidebar durumunu güncelle
+      setSidebarOpen(!isMobile);
     }
   }, [isMounted, isMobile]);
 
