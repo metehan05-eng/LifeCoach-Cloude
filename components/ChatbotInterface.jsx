@@ -302,11 +302,20 @@ export default function ChatbotInterface() {
         <HANVision 
           onClose={() => setShowVision(false)} 
           onSnapshot={(base64, pyData) => {
-             let prompt = "[BİYOMETRİK VERİ: Yüz ifademi ve duygusal durumumu analiz et.";
+             let prompt = "[BİYOMETRİK VERİ: Yüz ifademi ve duygusal durumumu analiz et. ";
              if (pyData) {
-               prompt += `Ayrıca Python HAN Engine'den gelen analiz sonuçları -> Hakim Duygu: ${pyData.dominant_emotion}, Stres Seviyesi: %${pyData.stress_level_percentage}, Doğruluk/Yalan İhtimali: %${pyData.truth_probability}. `;
+               prompt += `\n\n[HAN VISION ANALİZİ]:
+               - Kimlik/Tanıma: ${pyData.identity}
+               - Yaş/Cinsiyet: ${pyData.age} yaş, ${pyData.gender}
+               - Hakim Duygu: ${pyData.dominant_emotion}
+               - Stres Seviyesi: %${pyData.stress_level_percentage}
+               - Doğruluk/Yalan İhtimali: %${pyData.truth_probability}
+               - Psikolojik İçgörü: ${pyData.psychological_insight}
+               
+               Lütfen bu verileri bir medyum gibi yorumla. Eğer beni tanıdıysan (identity "Unknown" değilse) buna göre hitap et. Doğruları yüzüme vur, gerekirse motive et ve bana sıkı bir Yaşam Koçluğu yap.]`;
+             } else {
+               prompt += " Bunu normal bir sohbet gibi düşün ve bana rehberlik et.]";
              }
-             prompt += " Bunu normal bir sohbet gibi düşün ve bana doğruları yüzüme vurarak, gerekirse motive ederek sıkı bir Yaşam Koçluğu yap.]";
              
              sendMessage(prompt, [{ type: 'image', data: base64, extension: 'jpg', name: 'vision_snapshot.jpg' }]);
           }} 

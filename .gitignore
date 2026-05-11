@@ -1,8 +1,33 @@
+# Dependencies
 node_modules/
+venv/
+env/
 .env
 .env.local
 .env.*.local
+
+# Next.js
+.next/
+out/
+build/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.venv/
+api/dataset/
+api/temp_*.jpg
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project Specific
 users.json
 user_limits.json
-.DS_Store
 data/
+*.backup
+cyber_secret.txt
+*.sql

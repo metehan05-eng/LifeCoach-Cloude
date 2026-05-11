@@ -815,26 +815,43 @@ export default async function handler(req, res) {
     }
 
     // ==========================================
-    // AI ENGINE: ÇOK KATMANLI YEDEKLEME SİSTEMİ
-    // Katman 1: Groq (Ana Model)
-    // Katman 2: Groq (Yedek Model)
-    // Katman 3: Gemini API (Son Çare)
+    // AI ENGINE: GOOGLE CLOUD VERTEX AI (CUSTOM ENDPOINT)
     // ==========================================
-    const groqKey = process.env.GROQ_API_KEY;
+    const vertexProjectId = process.env.GOOGLE_CLOUD_PROJECT;
+    const vertexLocation = process.env.GOOGLE_CLOUD_LOCATION || 'us-central1';
+    const vertexEndpointId = process.env.VERTEX_AI_ENDPOINT_ID;
     const geminiKey = process.env.GEMINI_API_KEY;
 
-    if (!groqKey && !geminiKey) {
-      return res.status(500).json({ error: "Hiçbir Yapay Zeka Anahtarı Bulunamadı. Lütfen GROQ_API_KEY veya GEMINI_API_KEY ayarlayın." });
+    // Vertex AI REST Call
+    async function tryVertexAI(message, systemPrompt) {
+      if (!vertexProjectId || !vertexEndpointId) {
+        throw new Error("Vertex AI Yapılandırması Eksik. Lütfen .env.local dosyasını kontrol edin.");
+      }
+
+      const endpoint = `https://${vertexLocation}-aiplatform.googleapis.com/v1/projects/${vertexProjectId}/locations/${vertexLocation}/endpoints/${vertexEndpointId}:predict`;
+      
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${geminiKey}` // Using Gemini key as fallback auth or user token
+        },
+        body: JSON.stringify({
+          instances: [{ content: `${systemPrompt}\n\nUser: ${message}` }]
+        })
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Vertex AI Hatası: ${response.status} - ${errText}`);
+      }
+
+      const data = await response.json();
+      return data.predictions[0]?.content || data.predictions[0] || "Yanıt alınamadı";
     }
 
-    // MODEL SIRASI TANIMLAMA
-    // Resim varsa Vision destekli modeller önce gelir
-    const hasImages = imagesForVision.length > 0;
-
-    // Groq model sıralaması: [birincil, yedek]
-    const GROQ_MODEL_CHAIN = hasImages
-      ? ["openai/gpt-oss-120b", "openai/gpt-oss-20b"]  // Vision → Yedek Vision
-      : ["openai/gpt-oss-20b", "openai/gpt-oss-120b"]; // Hızlı → Güçlü yedek
+    // Kullanıcı SADECE bu modelin çalışmasını istediği için ana zinciri güncelliyoruz
+    const GROQ_MODEL_CHAIN = ["vertex-custom-model"]; 
 
     // SISTEM PROMPT (Arama bağlamı varsa ekle)
     const systemPrompt = `${BASE_SYSTEM_PROMPT}\n\n${systemInstruction}\n${localizationInjection}${searchContextInjection}\n\nMOD: DOSYA OKUMA AKTIF. Eğer kullanıcı dosya içeriği gönderdiyse, o içeriği en ince detayına kadar analiz et.`;
@@ -929,16 +946,21 @@ export default async function handler(req, res) {
     let usedModel = null;
     let lastError = null;
 
-    // KATMAN 1 & 2: Groq Modelleri Sırayla Dene
-    if (groqKey) {
-      for (const modelName of GROQ_MODEL_CHAIN) {
-        try {
+    for (const modelName of GROQ_MODEL_CHAIN) {
+      try {
+        if (modelName === "vertex-custom-model") {
+          console.log(`[AI-Fallback] Deneniyor (Vertex AI): ${vertexEndpointId}`);
+          aiResponse = await tryVertexAI(finalUserContent, systemPrompt);
+          usedModel = `vertex/${vertexEndpointId}`;
+        } else {
           console.log(`[AI-Fallback] Deneniyor (Groq): ${modelName}`);
           aiResponse = await tryGroqModel(modelName);
           usedModel = `groq/${modelName}`;
-          console.log(`[AI-Fallback] ✅ Başarılı: ${modelName}`);
-          break; // Başarılı, döngüden çık
-        } catch (err) {
+        }
+        
+        console.log(`[AI-Fallback] ✅ Başarılı: ${modelName}`);
+        break; 
+      } catch (err) {
           console.warn(`[AI-Fallback] ❌ ${modelName} başarısız: ${err.message}`);
           lastError = err;
 
