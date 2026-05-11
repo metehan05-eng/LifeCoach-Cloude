@@ -72,14 +72,15 @@ export default function ChatbotInterface() {
   }, [isMounted]);
 
   // 3. Sessions Yükle (Kullanıcıya özel key) - sadece client'te
+  // NOT: createNewSession'ı burada çağırmıyoruz, mount sonrası UI içinde kontrol edilecek
   useEffect(() => {
     if (!isMounted || !session?.user?.email) return;
     
     const userEmail = session.user.email;
     const storageKey = `lifeCoachSessions_${userEmail}`;
     
-    // Sadece bir kez yükle (sessions boşsa)
-    if (sessions.length > 0 || activeSessionId) return;
+    // Zaten yüklendiyse tekrar yükleme
+    if (sessions.length > 0) return;
     
     try {
       const saved = localStorage.getItem(storageKey);
@@ -87,12 +88,13 @@ export default function ChatbotInterface() {
         const parsed = JSON.parse(saved);
         const validSessions = parsed.filter(s => s.messages && s.messages.length > 0);
         setSessions(validSessions);
+        // İlk session'ı aktif yap
+        if (validSessions.length > 0 && !activeSessionId) {
+          setActiveSessionId(validSessions[0].id);
+        }
       }
-      // Her durumda yeni session oluştur
-      createNewSession();
     } catch (e) {
       console.error("Session yükleme hatası:", e);
-      createNewSession();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMounted, session]);
@@ -137,17 +139,20 @@ export default function ChatbotInterface() {
 
 
   const createNewSession = useCallback(() => {
-    const tempId = `temp-${Date.now()}`;
+    const timestamp = Date.now();
+    const tempId = `temp-${timestamp}`;
     setActiveSessionId(tempId);
     setError(null);
-    if (isMobile) setSidebarOpen(false); 
+    if (isMobile) setSidebarOpen(false);
+    return { id: tempId, timestamp };
   }, [isMobile]);
 
   const deleteSession = useCallback((id) => {
     setSessions(prev => {
       const remaining = prev.filter(s => s.id !== id);
       if (remaining.length === 0) {
-        const fresh = { id: Date.now(), title: 'Yeni Sohbet', messages: [], createdAt: new Date() };
+        const timestamp = Date.now();
+        const fresh = { id: timestamp, title: 'Yeni Sohbet', messages: [], createdAt: timestamp };
         setActiveSessionId(fresh.id);
         return [fresh];
       }
@@ -290,7 +295,21 @@ export default function ChatbotInterface() {
 
   const toggleSidebar = () => setSidebarOpen(p => !p);
 
-  if (!isMounted) return null;
+  // SSR/Client hydration uyuşmazlığını önlemek için mount öncesi boş placeholder göster
+  if (!isMounted) {
+    return (
+      <div style={{ 
+        width: '100vw', 
+        height: '100vh', 
+        background: '#0c0c18',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <div style={{ color: 'rgba(99,102,241,0.5)', fontSize: '14px' }}>Yükleniyor...</div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.root}>

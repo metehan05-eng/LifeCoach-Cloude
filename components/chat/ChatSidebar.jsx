@@ -25,20 +25,32 @@ export default function ChatSidebar({
   const [hoveredId, setHoveredId] = useState(null);
   const [sidebarTab, setSidebarTab] = useState('chats');
   const [mounted, setMounted] = useState(false);
-  const [groups, setGroups] = useState({ Bugün: [], Dün: [], 'Bu Hafta': [], 'Daha Eski': [] });
+  const [groups, setGroups] = useState(null); // Mount öncesi null, sonra hesaplanacak
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   useEffect(() => {
-    if (mounted && sessions.length > 0) {
+    if (mounted) {
       setGroups(groupByDate(sessions));
     }
   }, [mounted, sessions]);
 
-  if (!mounted) return (
-     <aside style={{ width: isOpen ? '280px' : '0', height: '100vh', background: '#0c0c18' }} />
+  // Mount öncesi sessions listesini render et (tarih gruplaması olmadan)
+  if (!mounted) {
+    return (
+      <aside style={{ width: isOpen ? '280px' : '0', height: '100vh', background: '#0c0c18', overflow: 'hidden' }}>
+        <div style={{ padding: '20px', color: 'rgba(255,255,255,0.3)', fontSize: '13px' }}>
+          Yükleniyor...
+        </div>
+      </aside>
+    );
+  }
+  
+  // Groups henüz hesaplanmadıysa
+  if (!groups) return (
+    <aside style={{ width: isOpen ? '280px' : '0', height: '100vh', background: '#0c0c18' }} />
   );
 
   return (
