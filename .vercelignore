@@ -1,0 +1,12 @@
+venv/
+scripts/
+.next/
+node_modules/
+.git/
+*.backup
+*.sql
+cyber_secret.txt
+android/
+ios/
+venv.zip
+scripts.zip
