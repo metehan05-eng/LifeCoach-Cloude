@@ -814,12 +814,9 @@ export default async function handler(req, res) {
       }
     }
 
-    // ==========================================
-    // AI ENGINE: GOOGLE CLOUD VERTEX AI (CUSTOM ENDPOINT)
-    // ==========================================
-    const vertexProjectId = process.env.GOOGLE_CLOUD_PROJECT;
-    const vertexLocation = process.env.GOOGLE_CLOUD_LOCATION || 'us-central1';
-    const vertexEndpointId = process.env.VERTEX_AI_ENDPOINT_ID;
+    const vertexProjectId = process.env.GOOGLE_PROJECT_ID;
+    const vertexLocation = process.env.GOOGLE_LOCATION || 'europe-west4';
+    const vertexEndpointId = process.env.GOOGLE_ENDPOINT_ID;
     const geminiKey = process.env.GEMINI_API_KEY;
 
     // Vertex AI REST Call
@@ -850,8 +847,9 @@ export default async function handler(req, res) {
       return data.predictions[0]?.content || data.predictions[0] || "Yanıt alınamadı";
     }
 
-    // Kullanıcı SADECE bu modelin çalışmasını istediği için ana zinciri güncelliyoruz
+    // 10. MODEL FALLBACK CHAIN HAZIRLIĞI
     const GROQ_MODEL_CHAIN = ["vertex-custom-model"]; 
+    const groqKey = process.env.GROQ_API_KEY;
 
     // SISTEM PROMPT (Arama bağlamı varsa ekle)
     const systemPrompt = `${BASE_SYSTEM_PROMPT}\n\n${systemInstruction}\n${localizationInjection}${searchContextInjection}\n\nMOD: DOSYA OKUMA AKTIF. Eğer kullanıcı dosya içeriği gönderdiyse, o içeriği en ince detayına kadar analiz et.`;
@@ -870,6 +868,7 @@ export default async function handler(req, res) {
       finalUserContent += `\n\nEkli Dosya İçerikleri:\n${extractedText}`;
     }
 
+    const hasImages = imagesForVision && imagesForVision.length > 0;
     if (hasImages) {
       messages.push({
         role: "user",
@@ -961,32 +960,28 @@ export default async function handler(req, res) {
         console.log(`[AI-Fallback] ✅ Başarılı: ${modelName}`);
         break; 
       } catch (err) {
-          console.warn(`[AI-Fallback] ❌ ${modelName} başarısız: ${err.message}`);
-          lastError = err;
+        console.warn(`[AI-Fallback] ❌ ${modelName} başarısız: ${err.message}`);
+        lastError = err;
 
-          // Token limiti veya içerik filtresi hatası → yedekle devam et
-          const isRecoverable = 
-            err.message?.includes('rate_limit') ||
-            err.message?.includes('quota') ||
-            err.message?.includes('context_length') ||
-            err.message?.includes('model_not_found') ||
-            err.message?.includes('boş yanıt') ||
-            err.name === 'AbortError' ||
-            err.status === 429 ||
-            err.status === 503 ||
-            err.status === 404;
+        const isRecoverable = 
+          err.message?.includes('rate_limit') ||
+          err.message?.includes('quota') ||
+          err.message?.includes('context_length') ||
+          err.message?.includes('model_not_found') ||
+          err.message?.includes('boş yanıt') ||
+          err.name === 'AbortError' ||
+          err.status === 429 ||
+          err.status === 503 ||
+          err.status === 404;
 
-          // Kurtarılamaz hata (auth, banned) → Gemini'ye atla
-          const isFatal = err.status === 401 || err.status === 403;
-          if (isFatal) {
-            console.warn(`[AI-Fallback] ⚠️ Kimlik doğrulama hatası, Groq atlanıyor...`);
-            break;
-          }
+        const isFatal = err.status === 401 || err.status === 403;
+        if (isFatal) {
+          console.warn(`[AI-Fallback] ⚠️ Kimlik doğrulama hatası, Groq atlanıyor...`);
+          break;
+        }
 
-          if (!isRecoverable) {
-            console.warn(`[AI-Fallback] ⚠️ Beklenmedik hata, yine de bir sonraki modeli deniyorum...`);
-          }
-          // Bir sonraki modeli dene
+        if (!isRecoverable) {
+          console.warn(`[AI-Fallback] ⚠️ Beklenmedik hata, yine de bir sonraki modeli deniyorum...`);
         }
       }
     }
@@ -1029,7 +1024,6 @@ export default async function handler(req, res) {
       } catch (e) { console.error("Automation parse error"); }
     }
 
-    // Eğer temiz yanıt boşsa, sistem mesajı ekle
     if (!cleanReply && automation_data) {
       cleanReply = `Harika! "${automation_data.title}" otomasyonunu senin için hazırladım. Ayarlardan kontrol edebilir veya hemen başlatabilirsin. ⚡`;
     } else if (!cleanReply) {
@@ -1053,9 +1047,9 @@ export default async function handler(req, res) {
     return res.status(200).json({
       reply: cleanReply,
       automation_data,
-      sources: searchSources,           // Tıklanabilir web kaynakları
-      searched: searchSources.length > 0, // Arama yapıldı mı?
-      _model: usedModel                  // Debug: hangi model kullandı
+      sources: searchSources,
+      searched: searchSources.length > 0,
+      _model: usedModel
     });
   } catch (error) {
     console.error("Sistem Hatası:", error);
