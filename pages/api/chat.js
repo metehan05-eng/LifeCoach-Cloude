@@ -905,15 +905,17 @@ export default async function handler(req, res) {
     const deepseekKey = process.env.DEEPSEEK_API_KEY;
     const openrouterKey = process.env.OPENROUTER_API_KEY;
 
-    // OpenRouter Model Zinciri (Sırayla Dene)
-    const OPENROUTER_MODEL_CHAIN = (process.env.OPENROUTER_MODELS || 'openai/gpt-4o-mini|mistral/mistral-large|anthropic/claude-3-opus').split('|');
+    // OpenRouter Model Zinciri - En İyi Free Modeller (Sırayla Dene)
+    const OPENROUTER_MODEL_CHAIN = (process.env.OPENROUTER_MODELS || 
+      'google/gemma-3-27b-it:free|google/gemma-4-31b-it:free|meta-llama/openrouter/free|' +
+      'openai/gpt-oss-120b:free|openai/gpt-oss-20b:free|meta-llama/llama-3.3-70b-instruct:free|' +
+      'liquid/lfm-2.5-1.2b-thinking:free|liquid/lfm-2.5-1.2b-instruct:free'
+    ).split('|');
 
-    // Deepseek Model Zinciri (Sırayla Dene)
+    // Deepseek Model Zinciri (Sırayla Dene) - Free Tier
     const DEEPSEEK_MODEL_CHAIN = [
-      'deepseek-v4-flash',
-      'deepseek-v4-pro',
       'deepseek-chat',
-      'deepseek-reasoner'
+      'deepseek-coder'
     ];
 
     // SISTEM PROMPT (Arama bağlamı varsa ekle)
