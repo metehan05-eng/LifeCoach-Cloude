@@ -8,6 +8,31 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+// --- Qwen DashScope Service ---
+async function callQwenDashScope(systemPrompt, userMessages, model = 'qwen-flash', maxTokens = 4096) {
+  const apiKey = process.env.DASHSCOPE_API_KEY;
+  if (!apiKey) throw new Error('DASHSCOPE_API_KEY ayarlı değil.');
+  
+  const dashMessages = [{ role: 'system', content: systemPrompt }];
+  for (const msg of userMessages) {
+    if (msg.role === 'user') dashMessages.push({ role: 'user', content: msg.content });
+    else if (msg.role === 'assistant') dashMessages.push({ role: 'assistant', content: msg.content });
+  }
+
+  const response = await fetch('https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/text-generation/generation', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+    body: JSON.stringify({ model, input: { messages: dashMessages }, parameters: { result_format: 'message', temperature: 0.7, top_p: 0.8, max_tokens: maxTokens } }),
+    signal: AbortSignal.timeout(30000)
+  });
+
+  if (!response.ok) throw new Error(`Qwen API Error: ${response.status}`);
+  const data = await response.json();
+  const content = data?.output?.choices?.[0]?.message?.content?.trim();
+  if (!content) throw new Error('Qwen boş yanıt döndürdü.');
+  return content;
+}
+
 // --- SUPABASE HAZIRLIĞI ---
 const supabase = createClient(
   process.env.SUPABASE_URL || "",
@@ -921,6 +946,9 @@ export default async function handler(req, res) {
     // SISTEM PROMPT (Arama bağlamı varsa ekle)
     const systemPrompt = `${BASE_SYSTEM_PROMPT}\n\n${systemInstruction}\n${localizationInjection}${searchContextInjection}\n\nMOD: DOSYA OKUMA AKTIF. Eğer kullanıcı dosya içeriği gönderdiyse, o içeriği en ince detayına kadar analiz et.`;
 
+    // Qwen DashScope Model Zinciri (Chat - Singapore Region)
+    const QWEN_MODEL_CHAIN = (process.env.QWEN_MODELS || 'qwen-flash|qwen3.6-flash').split('|');
+
     const messages = [
       { role: "system", content: systemPrompt },
       ...(history || []).map(m => ({
@@ -1078,8 +1106,24 @@ export default async function handler(req, res) {
     let usedModel = null;
     let lastError = null;
 
-    // KATMAN 1: OpenRouter (ASIL MODEL - Tüm Modeller Sırayla)
-    if (openrouterKey) {
+    // KATMAN 1: Qwen DashScope (Singapore Region - Öncelik)
+    if (dashscopeKey) {
+      for (const modelName of QWEN_MODEL_CHAIN) {
+        try {
+          console.log(`[AI-Fallback] 🚀 Qwen DashScope deneniyor: ${modelName}`);
+          aiResponse = await callQwenDashScope(systemPrompt, (history || []).filter(m => m.role !== 'system'), modelName, 4096);
+          usedModel = `qwen/${modelName}`;
+          console.log(`[AI-Fallback] ✅ Qwen ${modelName} başarılı`);
+          break;
+        } catch (err) {
+          console.warn(`[AI-Fallback] ❌ Qwen ${modelName} başarısız: ${err.message}`);
+          lastError = err;
+        }
+      }
+    }
+
+    // KATMAN 2: OpenRouter (ASIL MODEL - Tüm Modeller Sırayla)
+    if (!aiResponse) {
       for (const modelName of OPENROUTER_MODEL_CHAIN) {
         try {
           console.log(`[AI-Fallback] 🚀 OpenRouter deneniyor: ${modelName}`);
