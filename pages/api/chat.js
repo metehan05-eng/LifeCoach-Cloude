@@ -902,6 +902,15 @@ export default async function handler(req, res) {
     // API key sadece environment variable'dan alınır - hardcoded yok
     const groqKey = process.env.GROQ_API_KEY;
     const geminiKey = process.env.GEMINI_API_KEY;  // Son çare yedek için
+    const deepseekKey = process.env.DEEPSEEK_API_KEY;
+
+    // Deepseek Model Zinciri (Sırayla Dene)
+    const DEEPSEEK_MODEL_CHAIN = [
+      'deepseek-v4-flash',
+      'deepseek-v4-pro',
+      'deepseek-chat',
+      'deepseek-reasoner'
+    ];
 
     // SISTEM PROMPT (Arama bağlamı varsa ekle)
     const systemPrompt = `${BASE_SYSTEM_PROMPT}\n\n${systemInstruction}\n${localizationInjection}${searchContextInjection}\n\nMOD: DOSYA OKUMA AKTIF. Eğer kullanıcı dosya içeriği gönderdiyse, o içeriği en ince detayına kadar analiz et.`;
@@ -934,6 +943,35 @@ export default async function handler(req, res) {
       });
     } else {
       messages.push({ role: "user", content: finalUserContent });
+    }
+
+    // ── Deepseek API Çağrısı (Model Zinciri) ──
+    async function tryDeepseekModel(modelName) {
+      const client = new OpenAI({ 
+        apiKey: deepseekKey.trim(), 
+        baseURL: "https://api.deepseek.com/v1" 
+      });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
+      try {
+        const completion = await client.chat.completions.create({
+          model: modelName,
+          messages: messages,
+          temperature: 0.5,
+          max_tokens: 4096,
+          stream: false
+        }, { signal: controller.signal });
+
+        clearTimeout(timeoutId);
+
+        const content = completion.choices?.[0]?.message?.content;
+        if (!content) throw new Error("Deepseek boş yanıt döndürdü.");
+        return content;
+      } catch (err) {
+        clearTimeout(timeoutId);
+        throw err;
+      }
     }
 
     // ── Groq API Çağrısı (Belirli Model) ──
@@ -997,39 +1035,82 @@ export default async function handler(req, res) {
     let usedModel = null;
     let lastError = null;
 
-    for (const modelName of GROQ_MODEL_CHAIN) {
-      try {
-        console.log(`[AI-Fallback] Deneniyor (Groq): ${modelName}`);
-        aiResponse = await tryGroqModel(modelName);
-        usedModel = `groq/${modelName}`;
-        
-        console.log(`[AI-Fallback] ✅ Başarılı: ${modelName}`);
-        break; 
-      } catch (err) {
-        console.warn(`[AI-Fallback] ❌ ${modelName} başarısız: ${err.message}`);
-        lastError = err;
+    // KATMAN 1: Deepseek (ASIL MODEL - Tüm Modeller Sırayla)
+    if (deepseekKey) {
+      for (const modelName of DEEPSEEK_MODEL_CHAIN) {
+        try {
+          console.log(`[AI-Fallback] 🚀 Deepseek deneniyor: ${modelName}`);
+          aiResponse = await tryDeepseekModel(modelName);
+          usedModel = `deepseek/${modelName}`;
+          
+          console.log(`[AI-Fallback] ✅ Deepseek ${modelName} başarılı`);
+          break; 
+        } catch (err) {
+          console.warn(`[AI-Fallback] ❌ Deepseek ${modelName} başarısız: ${err.message}`);
+          lastError = err;
 
-        const isRecoverable = 
-          err.message?.includes('rate_limit') ||
-          err.message?.includes('quota') ||
-          err.message?.includes('context_length') ||
-          err.message?.includes('model_not_found') ||
-          err.message?.includes('boş yanıt') ||
-          err.name === 'AbortError' ||
-          err.status === 429 ||
-          err.status === 503 ||
-          err.status === 404;
+          const isRecoverable = 
+            err.message?.includes('rate_limit') ||
+            err.message?.includes('quota') ||
+            err.message?.includes('context_length') ||
+            err.message?.includes('model_not_found') ||
+            err.message?.includes('boş yanıt') ||
+            err.message?.includes('deprecated') ||
+            err.name === 'AbortError' ||
+            err.status === 429 ||
+            err.status === 503 ||
+            err.status === 404;
 
-        const isFatal = err.status === 401 || err.status === 403;
-        if (isFatal) {
-          console.warn(`[AI-Fallback] ⚠️ Kimlik doğrulama hatası, Groq atlanıyor...`);
-          break;
-        }
+          const isFatal = err.status === 401 || err.status === 403;
+          if (isFatal) {
+            console.warn(`[AI-Fallback] ⚠️ Deepseek kimlik doğrulama hatası, Groq'a geçiliyor...`);
+            break;
+          }
 
-        if (!isRecoverable) {
-          console.warn(`[AI-Fallback] ⚠️ Beklenmedik hata, yine de bir sonraki modeli deniyorum...`);
+          if (!isRecoverable) {
+            console.warn(`[AI-Fallback] ⚠️ ${modelName} beklenmedik hata, sonraki modeli deniyorum...`);
+          }
         }
       }
+    } else {
+      console.warn(`[AI-Fallback] ⚠️ DEEPSEEK_API_KEY tanımlı değil, Groq'a geçiliyor...`);
+    }
+
+    // KATMAN 2: Groq (Yedek)
+    if (!aiResponse) {
+      for (const modelName of GROQ_MODEL_CHAIN) {
+        try {
+          console.log(`[AI-Fallback] Deneniyor (Groq): ${modelName}`);
+          aiResponse = await tryGroqModel(modelName);
+          usedModel = `groq/${modelName}`;
+          
+          console.log(`[AI-Fallback] ✅ Başarılı: ${modelName}`);
+          break; 
+        } catch (err) {
+          console.warn(`[AI-Fallback] ❌ ${modelName} başarısız: ${err.message}`);
+          lastError = err;
+
+          const isRecoverable = 
+            err.message?.includes('rate_limit') ||
+            err.message?.includes('quota') ||
+            err.message?.includes('context_length') ||
+            err.message?.includes('model_not_found') ||
+            err.message?.includes('boş yanıt') ||
+            err.name === 'AbortError' ||
+            err.status === 429 ||
+            err.status === 503 ||
+            err.status === 404;
+
+          const isFatal = err.status === 401 || err.status === 403;
+          if (isFatal) {
+            console.warn(`[AI-Fallback] ⚠️ Kimlik doğrulama hatası, Groq atlanıyor...`);
+            break;
+          }
+
+          if (!isRecoverable) {
+            console.warn(`[AI-Fallback] ⚠️ Beklenmedik hata, yine de bir sonraki modeli deniyorum...`);
+          }
+        }
     }
 
     // KATMAN 3: Gemini Son Çare
