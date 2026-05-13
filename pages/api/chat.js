@@ -929,6 +929,7 @@ export default async function handler(req, res) {
     const geminiKey = process.env.GEMINI_API_KEY;  // Son çare yedek için
     const deepseekKey = process.env.DEEPSEEK_API_KEY;
     const openrouterKey = process.env.OPENROUTER_API_KEY;
+    const dashscopeKey = process.env.DASHSCOPE_API_KEY;
 
     // OpenRouter Model Zinciri - En İyi Free Modeller (Sırayla Dene)
     const OPENROUTER_MODEL_CHAIN = (process.env.OPENROUTER_MODELS || 
