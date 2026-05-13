@@ -903,6 +903,10 @@ export default async function handler(req, res) {
     const groqKey = process.env.GROQ_API_KEY;
     const geminiKey = process.env.GEMINI_API_KEY;  // Son çare yedek için
     const deepseekKey = process.env.DEEPSEEK_API_KEY;
+    const openrouterKey = process.env.OPENROUTER_API_KEY;
+
+    // OpenRouter Model Zinciri (Sırayla Dene)
+    const OPENROUTER_MODEL_CHAIN = (process.env.OPENROUTER_MODELS || 'openai/gpt-4o-mini|mistral/mistral-large|anthropic/claude-3-opus').split('|');
 
     // Deepseek Model Zinciri (Sırayla Dene)
     const DEEPSEEK_MODEL_CHAIN = [
@@ -945,8 +949,45 @@ export default async function handler(req, res) {
       messages.push({ role: "user", content: finalUserContent });
     }
 
+    // ── OpenRouter API Çağrısı (Model Zinciri) ──
+    async function tryOpenRouterModel(modelName) {
+      if (!openrouterKey) throw new Error("OPENROUTER_API_KEY ayarlı değil.");
+      
+      const client = new OpenAI({ 
+        apiKey: openrouterKey.trim(), 
+        baseURL: "https://openrouter.ai/api/v1",
+        defaultHeaders: {
+          "HTTP-Referer": "https://lifecoach.ai",
+          "X-Title": "LifeCoach AI"
+        }
+      });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
+      try {
+        const completion = await client.chat.completions.create({
+          model: modelName,
+          messages: messages,
+          temperature: 0.5,
+          max_tokens: 4096,
+          stream: false
+        }, { signal: controller.signal });
+
+        clearTimeout(timeoutId);
+
+        const content = completion.choices?.[0]?.message?.content?.trim();
+        if (!content) throw new Error("OpenRouter boş yanıt döndürdü.");
+        return content;
+      } catch (err) {
+        clearTimeout(timeoutId);
+        throw err;
+      }
+    }
+
     // ── Deepseek API Çağrısı (Model Zinciri) ──
     async function tryDeepseekModel(modelName) {
+      if (!deepseekKey) throw new Error("DEEPSEEK_API_KEY ayarlı değil.");
+
       const client = new OpenAI({ 
         apiKey: deepseekKey.trim(), 
         baseURL: "https://api.deepseek.com/v1" 
@@ -965,7 +1006,7 @@ export default async function handler(req, res) {
 
         clearTimeout(timeoutId);
 
-        const content = completion.choices?.[0]?.message?.content;
+        const content = completion.choices?.[0]?.message?.content?.trim();
         if (!content) throw new Error("Deepseek boş yanıt döndürdü.");
         return content;
       } catch (err) {
@@ -1035,18 +1076,18 @@ export default async function handler(req, res) {
     let usedModel = null;
     let lastError = null;
 
-    // KATMAN 1: Deepseek (ASIL MODEL - Tüm Modeller Sırayla)
-    if (deepseekKey) {
-      for (const modelName of DEEPSEEK_MODEL_CHAIN) {
+    // KATMAN 1: OpenRouter (ASIL MODEL - Tüm Modeller Sırayla)
+    if (openrouterKey) {
+      for (const modelName of OPENROUTER_MODEL_CHAIN) {
         try {
-          console.log(`[AI-Fallback] 🚀 Deepseek deneniyor: ${modelName}`);
-          aiResponse = await tryDeepseekModel(modelName);
-          usedModel = `deepseek/${modelName}`;
-          
-          console.log(`[AI-Fallback] ✅ Deepseek ${modelName} başarılı`);
-          break; 
+          console.log(`[AI-Fallback] 🚀 OpenRouter deneniyor: ${modelName}`);
+          aiResponse = await tryOpenRouterModel(modelName);
+          usedModel = `openrouter/${modelName}`;
+
+          console.log(`[AI-Fallback] ✅ OpenRouter ${modelName} başarılı`);
+          break;
         } catch (err) {
-          console.warn(`[AI-Fallback] ❌ Deepseek ${modelName} başarısız: ${err.message}`);
+          console.warn(`[AI-Fallback] ❌ OpenRouter ${modelName} başarısız: ${err.message}`);
           lastError = err;
 
           const isRecoverable = 
@@ -1055,7 +1096,6 @@ export default async function handler(req, res) {
             err.message?.includes('context_length') ||
             err.message?.includes('model_not_found') ||
             err.message?.includes('boş yanıt') ||
-            err.message?.includes('deprecated') ||
             err.name === 'AbortError' ||
             err.status === 429 ||
             err.status === 503 ||
@@ -1063,7 +1103,7 @@ export default async function handler(req, res) {
 
           const isFatal = err.status === 401 || err.status === 403;
           if (isFatal) {
-            console.warn(`[AI-Fallback] ⚠️ Deepseek kimlik doğrulama hatası, Groq'a geçiliyor...`);
+            console.warn(`[AI-Fallback] ⚠️ OpenRouter kimlik doğrulama hatası, Deepseek'e geçiliyor...`);
             break;
           }
 
@@ -1073,19 +1113,62 @@ export default async function handler(req, res) {
         }
       }
     } else {
-      console.warn(`[AI-Fallback] ⚠️ DEEPSEEK_API_KEY tanımlı değil, Groq'a geçiliyor...`);
+      console.warn(`[AI-Fallback] ⚠️ OPENROUTER_API_KEY tanımlı değil, Deepseek'e geçiliyor...`);
     }
 
-    // KATMAN 2: Groq (Yedek)
+    // KATMAN 2: Deepseek (Yedek - Tüm Modeller Sırayla)
+    if (!aiResponse) {
+      if (deepseekKey) {
+        for (const modelName of DEEPSEEK_MODEL_CHAIN) {
+          try {
+            console.log(`[AI-Fallback] 🚀 Deepseek deneniyor: ${modelName}`);
+            aiResponse = await tryDeepseekModel(modelName);
+            usedModel = `deepseek/${modelName}`;
+
+            console.log(`[AI-Fallback] ✅ Deepseek ${modelName} başarılı`);
+            break;
+          } catch (err) {
+            console.warn(`[AI-Fallback] ❌ Deepseek ${modelName} başarısız: ${err.message}`);
+            lastError = err;
+
+            const isRecoverable = 
+              err.message?.includes('rate_limit') ||
+              err.message?.includes('quota') ||
+              err.message?.includes('context_length') ||
+              err.message?.includes('model_not_found') ||
+              err.message?.includes('boş yanıt') ||
+              err.message?.includes('deprecated') ||
+              err.name === 'AbortError' ||
+              err.status === 429 ||
+              err.status === 503 ||
+              err.status === 404;
+
+            const isFatal = err.status === 401 || err.status === 403;
+            if (isFatal) {
+              console.warn(`[AI-Fallback] ⚠️ Deepseek kimlik doğrulama hatası, Groq'a geçiliyor...`);
+              break;
+            }
+
+            if (!isRecoverable) {
+              console.warn(`[AI-Fallback] ⚠️ ${modelName} beklenmedik hata, sonraki modeli deniyorum...`);
+            }
+          }
+        }
+      } else {
+        console.warn(`[AI-Fallback] ⚠️ DEEPSEEK_API_KEY tanımlı değil, Groq'a geçiliyor...`);
+      }
+    }
+
+    // KATMAN 3: Groq (İkinci Yedek)
     if (!aiResponse) {
       for (const modelName of GROQ_MODEL_CHAIN) {
         try {
           console.log(`[AI-Fallback] Deneniyor (Groq): ${modelName}`);
           aiResponse = await tryGroqModel(modelName);
           usedModel = `groq/${modelName}`;
-          
+
           console.log(`[AI-Fallback] ✅ Başarılı: ${modelName}`);
-          break; 
+          break;
         } catch (err) {
           console.warn(`[AI-Fallback] ❌ ${modelName} başarısız: ${err.message}`);
           lastError = err;
@@ -1111,9 +1194,10 @@ export default async function handler(req, res) {
             console.warn(`[AI-Fallback] ⚠️ Beklenmedik hata, yine de bir sonraki modeli deniyorum...`);
           }
         }
+      }
     }
 
-    // KATMAN 3: Gemini Son Çare
+    // KATMAN 4: Gemini Son Çare
     if (!aiResponse && geminiKey) {
       try {
         console.log(`[AI-Fallback] 🔄 Gemini yedeklemesi başlatılıyor... (Groq hata: ${lastError?.message})`);
