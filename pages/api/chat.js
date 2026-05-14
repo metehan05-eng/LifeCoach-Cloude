@@ -635,11 +635,11 @@ export default async function handler(req, res) {
   try {
     const { message, history, email, sessionId, mode, userLanguage, attachments, deepSearch } = req.body;
     const countryCode = req.headers['x-vercel-ip-country'] || 'Unknown';
-    const detectedLang = userLanguage || req.headers['accept-language']?.split(',')[0] || 'tr-TR';
+    const detectedLang = 'en'; // Force English only
 
     // 1. KULLANICI VERILERINI CEK (XP, LEVEL, STREAK)
     let userId = null;
-    let userName = "Kullanıcı";
+    let userName = "User";
     let userStats = { xp: 0, level: 1, streak: 0, nextLevelXp: 100 };
 
     if (email) {
