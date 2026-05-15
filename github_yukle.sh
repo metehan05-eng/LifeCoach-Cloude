@@ -79,14 +79,26 @@ echo -e "${CYAN}🚀 GitHub'a push ediliyor...${NC}"
 # Token ile authenticated URL oluştur (HTTPS için)
 PUSH_URL="https://${GITHUB_TOKEN}@github.com/${REPO_OWNER}/${REPO_NAME}.git"
 
-if git push "$PUSH_URL" main 2>/dev/null; then
+if git push "$PUSH_URL" main; then
   echo ""
   echo -e "${GREEN}═══════════════════════════════════════════════════${NC}"
   echo -e "${GREEN}  ✅  Başarıyla gönderildi! → ${REPO_OWNER}/${REPO_NAME}${NC}"
   echo -e "${GREEN}═══════════════════════════════════════════════════${NC}"
 else
+  PUSH_EXIT=$?
   echo ""
-  echo -e "${RED}❌ Push başarısız oldu.${NC}"
-  echo -e "${RED}Token'ın geçerli olduğundan ve repo yazma iznine sahip olduğundan emin ol.${NC}"
+  echo -e "${RED}❌ Push başarısız oldu (Exit code: $PUSH_EXIT)${NC}"
+  echo -e "${YELLOW}Hata Diagnostics:${NC}"
+  echo "  • Repo: ${REPO_OWNER}/${REPO_NAME}"
+  echo "  • URL: https://github.com/${REPO_OWNER}/${REPO_NAME}.git"
+  echo "  • Token length: ${#GITHUB_TOKEN} chars"
+  echo ""
+  echo -e "${YELLOW}Kontrol Listesi:${NC}"
+  echo "  1. Token'ın geçerli olduğundan emin ol: https://github.com/settings/tokens"
+  echo "  2. Token'ında 'repo' izni var mı?"
+  echo "  3. Token'ın süresi dolmuş mu?"
+  echo "  4. Commit mesajı doğru mu verdin?"
+  echo ""
+  echo -e "${CYAN}Alternatif: SSH key ile dene (SSH setup varsa)${NC}"
   exit 1
 fi
