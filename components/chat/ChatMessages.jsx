@@ -9,34 +9,34 @@ const formatMarkdown = (text) => {
     const displayLang = lang ? lang.split(':')[0] : '';
     
     return `
-      <div style="background:#0d0d17; border:1px solid rgba(99,102,241,0.25); border-radius:12px; margin:14px 0; overflow:hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.3)">
-        <div style="background:rgba(255,255,255,0.03); padding:8px 16px; border-bottom:1px solid rgba(99,102,241,0.15); display:flex; justify-content:space-between; align-items:center">
+      <div style="background:rgba(13,13,20,0.9); border:1px solid rgba(99,102,241,0.25); border-radius:14px; margin:14px 0; overflow:hidden; box-shadow: 0 4px 24px rgba(99,102,241,0.08); backdrop-filter:blur(8px)">
+        <div style="background:linear-gradient(90deg,rgba(99,102,241,0.08),rgba(139,92,246,0.05)); padding:10px 16px; border-bottom:1px solid rgba(99,102,241,0.15); display:flex; justify-content:space-between; align-items:center">
           <div style="display:flex; gap:6px">
             <span style="width:10px; height:10px; border-radius:50%; background:#ff5f56"></span>
             <span style="width:10px; height:10px; border-radius:50%; background:#ffbd2e"></span>
             <span style="width:10px; height:10px; border-radius:50%; background:#27c93f"></span>
           </div>
-          <div style="font-family:'JetBrains Mono','Fira Code',monospace; font-size:11px; color:rgba(160,160,200,0.8); font-weight:600">
+          <div style="font-family:'JetBrains Mono','Fira Code',monospace; font-size:10px; color:rgba(160,160,200,0.7); font-weight:700; letter-spacing:0.05em; text-transform:uppercase">
             ${filename} ${displayLang ? `(${displayLang})` : ''}
           </div>
         </div>
-        <pre style="padding:16px; overflow-x:auto; margin:0; font-family:'JetBrains Mono','Fira Code',monospace; font-size:13px; line-height:1.6; color:#c4b5fd"><code>${code.trim()}</code></pre>
+        <pre style="padding:16px; overflow-x:auto; margin:0; font-family:'JetBrains Mono','Fira Code',monospace; font-size:12.5px; line-height:1.7; color:#d8d8f0; scrollbar-width:thin; scrollbar-color:rgba(99,102,241,0.3) rgba(0,0,0,0.1)"><code>${code.trim()}</code></pre>
       </div>
     `;
   });
 
   // Inline code
-  text = text.replace(/`([^`]+)`/g, '<code style="background:rgba(99,102,241,0.18);padding:2px 7px;border-radius:5px;font-size:12.5px;font-family:monospace;color:#a5b4fc">$1</code>');
+  text = text.replace(/`([^`]+)`/g, '<code style="background:rgba(99,102,241,0.15);padding:3px 8px;border-radius:6px;font-size:12px;font-family:\'JetBrains Mono\',monospace;color:#a5b4fc;font-weight:500">$1</code>');
   // Bold
-  text = text.replace(/\*\*(.*?)\*\*/g, '<strong style="font-weight:700;color:#e8e8ff">$1</strong>');
+  text = text.replace(/\*\*(.*?)\*\*/g, '<strong style="font-weight:700;color:#e8e8ff;letter-spacing:-0.01em">$1</strong>');
   // Italic
   text = text.replace(/\*(.*?)\*/g, '<em style="font-style:italic;color:#c4b5fd">$1</em>');
   // H3
-  text = text.replace(/^### (.*$)/gm, '<h3 style="font-size:14px;font-weight:700;margin:14px 0 6px;color:#c4b5fd;letter-spacing:-0.3px">$1</h3>');
+  text = text.replace(/^### (.*$)/gm, '<h3 style="font-size:14px;font-weight:800;margin:14px 0 6px;color:#c4b5fd;letter-spacing:-0.02em">$1</h3>');
   // H2
-  text = text.replace(/^## (.*$)/gm, '<h2 style="font-size:16px;font-weight:700;margin:16px 0 8px;color:#a5b4fc;letter-spacing:-0.4px">$1</h2>');
+  text = text.replace(/^## (.*$)/gm, '<h2 style="font-size:15px;font-weight:800;margin:16px 0 8px;color:#a5b4fc;letter-spacing:-0.02em">$1</h2>');
   // H1
-  text = text.replace(/^# (.*$)/gm, '<h1 style="font-size:18px;font-weight:800;margin:18px 0 10px;color:#818cf8;letter-spacing:-0.5px">$1</h1>');
+  text = text.replace(/^# (.*$)/gm, '<h1 style="font-size:17px;font-weight:900;margin:18px 0 10px;color:#818cf8;letter-spacing:-0.03em">$1</h1>');
   // Unordered list
   text = text.replace(/^[\*\-] (.*$)/gm,
     '<div style="display:flex;gap:10px;margin:4px 0;align-items:flex-start"><span style="color:#6366f1;font-size:10px;margin-top:5px;flex-shrink:0">●</span><span>$1</span></div>'
@@ -47,7 +47,7 @@ const formatMarkdown = (text) => {
   );
   
   // Custom Advice Block detection — will wrap in a nice UI later but handle basic formatting here
-  text = text.replace(/💡 HAN Tavsiyesi:(.*$)/gm, '<div style="background:rgba(139,92,246,0.1); border-left:4px solid #8b5cf6; padding:12px 16px; border-radius:0 12px 12px 0; margin-top:16px; color:#c4b5fd; font-style:italic"><span style="font-weight:800; color:#fff; display:block; margin-bottom:4px">💡 HAN Tavsiyesi</span>$1</div>');
+  text = text.replace(/💡 HAN Tavsiyesi:(.*$)/gm, '<div style="background:rgba(139,92,246,0.08); border-left:3px solid #8b5cf6; padding:12px 16px; border-radius:0 12px 12px 0; margin-top:16px; color:#c4b5fd"><span style="font-weight:800; color:#fff; display:block; margin-bottom:4px">💡 HAN Tavsiyesi</span>$1</div>');
 
   // Line breaks
   text = text.replace(/\n\n/g, '<div style="height:10px"></div>');
@@ -316,17 +316,22 @@ function MessageBubble({ message, isStream, onQuickAction }) {
         display: 'flex',
         justifyContent: 'flex-end',
         padding: '2px 0',
-        animation: 'ci-slide-up 0.3s ease both',
+        animation: 'fadeInUp 0.3s ease-out both',
         maxWidth: '760px', margin: '0 auto', width: '100%',
       }}>
         <div style={{
           maxWidth: 'min(70%, 520px)',
-          background: 'rgba(99,102,241,0.15)',
-          border: '1px solid rgba(99,102,241,0.22)',
+          background: 'linear-gradient(135deg, rgba(99,102,241,0.18), rgba(139,92,246,0.12))',
+          border: '1px solid rgba(139,92,246,0.3)',
           borderRadius: '18px 4px 18px 18px',
           padding: '11px 16px',
-          fontSize: '15px', lineHeight: 1.65, color: '#e8e8ff',
-          backdropFilter: 'blur(10px)',
+          fontSize: '14px', 
+          lineHeight: 1.65, 
+          color: '#e0e0ff',
+          backdropFilter: 'blur(12px)',
+          boxShadow: '0 4px 12px rgba(99,102,241,0.1)',
+          fontWeight: 500,
+          letterSpacing: '-0.01em',
         }}>
           {/* User Attachments in Bubble */}
           {message.attachments && message.attachments.length > 0 && (
@@ -369,30 +374,43 @@ function MessageBubble({ message, isStream, onQuickAction }) {
       alignItems: 'flex-start',
       gap: '14px',
       padding: '2px 0',
-      animation: 'ci-slide-up 0.3s ease both',
+      animation: 'fadeInUp 0.4s ease-out both',
       maxWidth: '760px', margin: '0 auto', width: '100%',
     }}>
       <div style={{
-        width: '34px', height: '34px', borderRadius: '50%', flexShrink: 0,
+        width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0,
         background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: '15px', boxShadow: '0 2px 12px rgba(99,102,241,0.3)',
+        fontSize: '16px', 
+        boxShadow: '0 4px 16px rgba(99,102,241,0.25)',
         marginTop: '2px',
       }}>⚡</div>
  
       <div style={{ flex: 1, minWidth: 0 }}>
         {/* Name row */}
         <div style={{
-          fontSize: '12px', fontWeight: 700, color: 'rgba(99,102,241,0.7)',
-          marginBottom: '6px', letterSpacing: '0.3px',
-          display: 'flex', alignItems: 'center', gap: '6px',
+          fontSize: '11px', 
+          fontWeight: '800',
+          color: 'rgba(139,102,241,0.8)',
+          marginBottom: '6px', 
+          letterSpacing: '0.05em',
+          textTransform: 'uppercase',
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '6px',
         }}>
           HAN AI
-          {isStream && <span style={{ animation: 'ci-blink 0.7s ease-in-out infinite', color: '#6366f1', fontSize: '14px' }}>▊</span>}
+          {isStream && <span style={{ animation: 'blink 0.7s ease-in-out infinite', color: '#6366f1', fontSize: '13px' }}>▊</span>}
         </div>
         {/* Content — no bubble, just text */}
         <div
-          style={{ fontSize: '15px', lineHeight: 1.75, color: '#d8d8f0' }}
+          style={{ 
+            fontSize: '14px', 
+            lineHeight: 1.75, 
+            color: '#d8d8f0',
+            letterSpacing: '-0.01em',
+            fontWeight: 500,
+          }}
           dangerouslySetInnerHTML={{ 
             __html: formatMarkdown(message.content.replace(/```json-action[\s\S]*?```/g, "").replace(/```json-memory[\s\S]*?```/g, "")) 
           }}

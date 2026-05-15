@@ -96,15 +96,15 @@ export default function ChatInput({ value, onChange, onSend, isLoading, centered
     }
   };
 
-  const wrapperPadding = isMobile ? '8px 12px 10px' : '12px 20px 14px';
+  const wrapperPadding = isMobile ? '8px 12px 10px' : '16px 20px 20px';
 
   const wrapperStyle = centered
     ? { width: '100%' }
     : {
-        borderTop: '1px solid rgba(99,102,241,0.08)',
-        background: 'rgba(3,3,8,0.97)',
-        backdropFilter: 'blur(32px)',
-        WebkitBackdropFilter: 'blur(32px)',
+        borderTop: 'none',
+        background: 'transparent',
+        backdropFilter: 'none',
+        WebkitBackdropFilter: 'none',
         padding: wrapperPadding,
         flexShrink: 0,
       };
@@ -194,16 +194,19 @@ export default function ChatInput({ value, onChange, onSend, isLoading, centered
       {/* Input box */}
       <div style={{
         display: 'flex', alignItems: 'flex-end', gap: '8px',
-        background: focused ? 'rgba(22,22,40,0.98)' : 'rgba(12,12,26,0.9)',
+        background: 'rgba(13, 13, 27, 0.8)',
+        backdropFilter: 'blur(24px)',
+        WebkitBackdropFilter: 'blur(24px)',
         border: focused
-          ? '1.5px solid rgba(99,102,241,0.55)'
+          ? '1.5px solid rgba(139,92,246,0.4)'
           : '1.5px solid rgba(99,102,241,0.14)',
         borderRadius: isMobile ? '14px' : '16px',
         padding: isMobile ? '5px' : '8px',
-        transition: 'all 0.25s ease',
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         boxShadow: focused
-          ? '0 0 0 3px rgba(99,102,241,0.1), 0 8px 32px rgba(99,102,241,0.12)'
-          : '0 2px 16px rgba(0,0,0,0.3)',
+          ? '0 0 0 2px rgba(139,92,246,0.1), 0 0 32px rgba(139,92,246,0.25), inset 0 1px 2px rgba(255,255,255,0.08)'
+          : '0 2px 16px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.05)',
+        animation: 'inputFadeIn 0.5s ease-out 0.1s both',
       }}>
         {/* Attachment Toggle Button */}
         <button
@@ -295,12 +298,12 @@ export default function ChatInput({ value, onChange, onSend, isLoading, centered
           style={{
             flex: 1, background: 'transparent', border: 'none', outline: 'none',
             color: '#e8e8ff', fontSize: isMobile ? '14px' : '15px', lineHeight: '22px',
-            resize: 'none', fontFamily: 'Inter, sans-serif',
+            resize: 'none', fontFamily: 'Geist, Inter, sans-serif', fontWeight: '500', letterSpacing: '-0.02em',
             minHeight: '22px', padding: '10px 4px',
             maxHeight: '160px',
             overflowY: 'auto',
             scrollbarWidth: 'thin', scrollbarColor: 'rgba(99,102,241,0.2) transparent',
-            caretColor: '#6366f1',
+            caretColor: '#a78bfa',
           }}
         />
 
@@ -314,17 +317,17 @@ export default function ChatInput({ value, onChange, onSend, isLoading, centered
               height: isMobile ? '36px' : '38px',
               borderRadius: '11px', flexShrink: 0,
               background: isReady
-                ? 'linear-gradient(135deg, #6366f1, #8b5cf6)'
-                : 'rgba(99,102,241,0.1)',
-              border: 'none',
+                ? 'linear-gradient(135deg, #8b5cf6, #6366f1)'
+                : 'rgba(99,102,241,0.08)',
+              border: isReady ? '1px solid rgba(139,92,246,0.4)' : 'none',
               cursor: isReady ? 'pointer' : 'not-allowed',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: isReady ? '0 4px 16px rgba(99,102,241,0.45)' : 'none',
-              transition: 'all 0.22s cubic-bezier(0.34,1.56,0.64,1)',
+              boxShadow: isReady ? '0 0 20px rgba(139,92,246,0.5), inset 0 1px 0 rgba(255,255,255,0.2)' : 'none',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
               transform: isReady ? 'scale(1)' : 'scale(0.88)',
             }}
-            onMouseEnter={e => { if (isReady) e.currentTarget.style.transform = 'scale(1.08)'; }}
-            onMouseLeave={e => { e.currentTarget.style.transform = isReady ? 'scale(1)' : 'scale(0.88)'; }}
+            onMouseEnter={e => { if (isReady) { e.currentTarget.style.transform = 'scale(1.06)'; e.currentTarget.style.boxShadow = '0 0 28px rgba(139,92,246,0.6), inset 0 1px 0 rgba(255,255,255,0.3)'; } }}
+            onMouseLeave={e => { e.currentTarget.style.transform = isReady ? 'scale(1)' : 'scale(0.88)'; e.currentTarget.style.boxShadow = isReady ? '0 0 20px rgba(139,92,246,0.5), inset 0 1px 0 rgba(255,255,255,0.2)' : 'none'; }}
           >
             {isLoading ? (
               <div style={{

@@ -77,12 +77,13 @@ export default function ChatSidebar({
         height: '100vh',
         display: 'flex',
         flexDirection: 'column',
-        background: 'rgba(12, 12, 24, 0.95)',
+        background: 'linear-gradient(180deg, rgba(12, 12, 24, 0.98) 0%, rgba(15, 15, 30, 0.95) 100%)',
         backdropFilter: 'blur(40px)',
-        borderRight: '1px solid rgba(99,102,241,0.12)',
+        borderRight: '1px solid rgba(99,102,241,0.1)',
         flexShrink: 0,
         position: 'relative',
         zIndex: 50,
+        animation: isOpen ? 'slideInLeft 0.4s ease-out' : 'slideOutLeft 0.3s ease-in',
       }}>
         <div style={{
           padding: '20px 16px 12px',
@@ -198,18 +199,26 @@ export default function ChatSidebar({
                         position: 'relative',
                       }}
                     >
+                      <div
+                        style={{
+                          position: 'absolute', left: 0, top: 0, bottom: 0,
+                          width: '2px', background: activeSessionId === session.id ? '#8b5cf6' : 'transparent',
+                          borderRadius: '2px',
+                          transition: 'all 0.2s ease',
+                        }}
+                      />
                       <span style={{ fontSize: '14px', flexShrink: 0, opacity: 0.7 }}>
                         {session.messages.length === 0 ? '💬' : '🗨️'}
                       </span>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{
-                          fontSize: '13px', fontWeight: 500,
+                          fontSize: '13px', fontWeight: 600, letterSpacing: '-0.02em',
                           color: activeSessionId === session.id ? '#e0e0ff' : '#a0a0c0',
                           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                         }}>
                           {session.title}
                         </div>
-                        <div style={{ fontSize: '11px', color: 'rgba(160,160,192,0.4)', marginTop: '1px' }}>
+                        <div style={{ fontSize: '10px', color: 'rgba(160,160,192,0.5)', marginTop: '2px' }}>
                           {session.messages.length} mesaj
                         </div>
                       </div>
@@ -240,13 +249,43 @@ export default function ChatSidebar({
             </div>
         </div>
 
-        {/* Bottom */}
-        <div style={{ padding: '12px 16px', borderTop: '1px solid rgba(99,102,241,0.08)', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px' }}>{user?.name?.[0] || '👤'}</div>
+        {/* Bottom - Profile Card */}
+        <div style={{ 
+          padding: '12px 16px', 
+          borderTop: '1px solid rgba(99,102,241,0.08)', 
+          display: 'flex', alignItems: 'center', gap: '10px',
+          background: 'rgba(139, 92, 246, 0.05)',
+          margin: '0',
+          animation: 'fadeInUp 0.6s ease-out 0.3s both',
+        }}>
+          <div style={{ 
+            width: '36px', height: '36px', borderRadius: '12px', 
+            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', 
+            display: 'flex', alignItems: 'center', justifyContent: 'center', 
+            fontSize: '14px', flexShrink: 0,
+            boxShadow: '0 4px 12px rgba(99,102,241,0.3)',
+          }}>
+            {user?.name?.[0] || '👤'}
+          </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: '13px', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.name || 'Kullanıcı'}</div>
-            <div style={{ fontSize: '11px', color: user?.plan === 'FREE' ? 'rgba(160,160,192,0.7)' : '#fbbf24' }}>
-               {user?.plan === 'FREE' ? 'Free User' : 'Premium Plan'}
+            <div style={{ 
+              fontSize: '13px', fontWeight: 700, letterSpacing: '-0.02em',
+              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              color: '#fff'
+            }}>
+              {user?.name || 'Kullanıcı'}
+            </div>
+            <div style={{ 
+              fontSize: '10px', 
+              color: '#fff',
+              background: user?.plan === 'FREE' ? 'rgba(99,102,241,0.4)' : 'linear-gradient(135deg, #f59e0b, #d97706)',
+              padding: '2px 6px', 
+              borderRadius: '4px',
+              width: 'fit-content',
+              fontWeight: '700',
+              marginTop: '2px',
+            }}>
+               {user?.plan === 'FREE' ? '✦ Free' : '👑 Premium'}
             </div>
           </div>
           <button onClick={() => signOut({ callbackUrl: '/' })} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'rgba(239,68,68,0.6)', fontSize: '18px' }}>↪</button>

@@ -1,8 +1,10 @@
 "use client";
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import styles from './SettingsModal.module.css';
 
 export default function SettingsModal({ onClose, user, dna }) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('general');
 
   const tabs = [
@@ -115,20 +117,50 @@ export default function SettingsModal({ onClose, user, dna }) {
           <div className={styles.section}>
              <div className={styles.upgradeCard}>
                 <div className={styles.cardHeader}>
-                  <span className={styles.badge}>Preview</span>
+                  <span className={styles.badge}>Elite</span>
                   <h4>HAN Code ⚔️</h4>
                 </div>
-                <p>HAN AI codebase'ini anlar, bug'ları çözer ve pull request'leri otomatik yönetir.</p>
-                <button className={styles.upgradeBtn}>Yükselt: Max veya Pro</button>
+                <p>Elite AI Software Engineer. Mobil, web, desktop, backend - her şeyi yapabilir. Emergent Labs tarzında görsel IDE ile yazılım oluştur ve göster.</p>
+                <button 
+                  className={styles.upgradeBtn}
+                  onClick={() => {
+                    onClose();
+                    router.push('/hancode');
+                  }}
+                  style={{
+                    background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)',
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  🚀 HAN Code IDE'ye Git
+                </button>
              </div>
              <div className={styles.hancodeOptions}>
                 <div className={styles.toggleRow}>
-                  <span>Pull request'leri otomatik oluştur</span>
-                  <input type="checkbox" />
+                  <span>✨ AI Powered Code Generation</span>
+                  <input type="checkbox" defaultChecked disabled />
                 </div>
                 <div className={styles.toggleRow}>
-                  <span>Hataları otomatik onar (Autofix)</span>
-                  <input type="checkbox" />
+                  <span>📱 Mobile Preview</span>
+                  <input type="checkbox" defaultChecked disabled />
+                </div>
+                <div className={styles.toggleRow}>
+                  <span>🌐 Web Preview</span>
+                  <input type="checkbox" defaultChecked disabled />
+                </div>
+                <div className={styles.toggleRow}>
+                  <span>🖥️ Desktop Support</span>
+                  <input type="checkbox" defaultChecked disabled />
+                </div>
+                <div className={styles.toggleRow}>
+                  <span>🎮 Game Development</span>
+                  <input type="checkbox" defaultChecked disabled />
+                </div>
+                <div className={styles.toggleRow}>
+                  <span>⚙️ Backend API</span>
+                  <input type="checkbox" defaultChecked disabled />
                 </div>
              </div>
           </div>

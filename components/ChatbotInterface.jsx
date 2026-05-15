@@ -485,81 +485,94 @@ export default function ChatbotInterface() {
                   />
                 </div>
 
-                {/* Quick Action Buttons Container */}
+{/* Quick Action Buttons - Modern Grid */}
                 <div style={{ 
-                  display: 'flex', 
-                  flexDirection: isMobile ? 'column' : 'row', 
-                  gap: '16px', 
+                  display: 'grid',
+                  gridTemplateColumns: isMobile ? '1fr 1fr' : '1fr 1fr',
+                  gap: isMobile ? '12px' : '16px',
                   width: '100%', 
-                  justifyContent: 'center',
-                  alignItems: 'stretch',
                   maxWidth: '700px',
-                  marginBottom: '16px'
+                  marginBottom: '24px',
+                  animation: 'fadeInUp 0.6s ease-out 0.4s both',
                 }}>
-                  {/* Goal Button */}
+                  {/* Goal Button - Modern Card */}
                   <button
                     onClick={() => handleQuickAction("Yeni bir hedef belirlemek istiyorum. Bana SMART (Belirli, Ölçülebilir, Ulaşılabilir, İlgili, Zamana Bağlı) kriterlerine uygun bir yol haritası çıkarmamda rehberlik eder misin?")}
                     style={{
-                      flex: isMobile ? 'none' : '1',
-                      padding: isMobile ? '14px 24px' : '16px 32px',
+                      padding: isMobile ? '16px 12px' : '20px 16px',
                       borderRadius: '16px',
-                      background: 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.2))',
-                      border: '1px solid rgba(139,92,246,0.3)',
-                      color: '#fff',
-                      fontWeight: 700,
-                      fontSize: isMobile ? '14px' : '15px',
+                      background: 'rgba(99, 102, 241, 0.1)',
+                      border: '1.5px solid rgba(99, 102, 241, 0.25)',
+                      color: '#a5b4fc',
+                      fontWeight: '700',
+                      fontSize: isMobile ? '13px' : '14px',
                       cursor: 'pointer',
                       display: 'flex',
+                      flexDirection: 'column',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: '12px',
+                      gap: '8px',
                       transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                      boxShadow: '0 4px 20px rgba(139,92,246,0.15)',
+                      boxShadow: '0 4px 16px rgba(99,102,241,0.1)',
+                      letterSpacing: '-0.02em',
                     }}
                     onMouseEnter={e => {
-                      e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
-                      e.currentTarget.style.boxShadow = '0 8px 32px rgba(139,92,246,0.3)';
+                      e.currentTarget.style.transform = 'scale(1.02)';
+                      e.currentTarget.style.background = 'rgba(99, 102, 241, 0.15)';
+                      e.currentTarget.style.boxShadow = '0 8px 24px rgba(99,102,241,0.2)';
+                      e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.5)';
+                      e.currentTarget.style.color = '#c4b5fd';
                     }}
                     onMouseLeave={e => {
-                      e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                      e.currentTarget.style.boxShadow = '0 4px 20px rgba(139,92,246,0.15)';
+                      e.currentTarget.style.transform = 'scale(1)';
+                      e.currentTarget.style.background = 'rgba(99, 102, 241, 0.1)';
+                      e.currentTarget.style.boxShadow = '0 4px 16px rgba(99,102,241,0.1)';
+                      e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.25)';
+                      e.currentTarget.style.color = '#a5b4fc';
                     }}
                   >
-                    <span style={{ fontSize: '20px' }}>🎯</span>
-                    <span>Şimdi Hedefini Belirle</span>
+                    <span style={{ fontSize: '28px' }}>🎯</span>
+                    <span>Şimdi Hedefini<br />Belirle</span>
                   </button>
 
-                  {/* Automation Button */}
+                  {/* Automation Button - Modern Card */}
                   <button
                     onClick={() => setShowAutomation(true)}
                     style={{
-                      flex: isMobile ? 'none' : '1',
-                      padding: isMobile ? '14px 24px' : '16px 32px',
+                      padding: isMobile ? '16px 12px' : '20px 16px',
                       borderRadius: '16px',
-                      background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(234, 179, 8, 0.1))',
-                      border: '1px solid rgba(234, 179, 8, 0.25)',
-                      color: '#fbbf24',
-                      fontWeight: 800,
-                      fontSize: isMobile ? '14px' : '15px',
+                      background: 'rgba(245, 158, 11, 0.1)',
+                      border: '1.5px solid rgba(245, 158, 11, 0.25)',
+                      color: '#fcd34d',
+                      fontWeight: '800',
+                      fontSize: isMobile ? '13px' : '14px',
                       cursor: 'pointer',
                       display: 'flex',
+                      flexDirection: 'column',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: '12px',
+                      gap: '8px',
                       transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                      boxShadow: '0 4px 20px rgba(234, 179, 8, 0.1)',
+                      boxShadow: '0 4px 16px rgba(245,158,11,0.1)',
+                      letterSpacing: '-0.02em',
                     }}
                     onMouseEnter={e => {
-                      e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
-                      e.currentTarget.style.boxShadow = '0 8px 32px rgba(234, 179, 8, 0.25)';
+                      e.currentTarget.style.transform = 'scale(1.02)';
+                      e.currentTarget.style.background = 'rgba(245, 158, 11, 0.15)';
+                      e.currentTarget.style.boxShadow = '0 8px 24px rgba(245,158,11,0.2)';
+                      e.currentTarget.style.borderColor = 'rgba(245, 158, 11, 0.5)';
+                      e.currentTarget.style.color = '#fef3c7';
                     }}
                     onMouseLeave={e => {
-                      e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                      e.currentTarget.style.boxShadow = '0 4px 20px rgba(234, 179, 8, 0.1)';
+                      e.currentTarget.style.transform = 'scale(1)';
+                      e.currentTarget.style.background = 'rgba(245, 158, 11, 0.1)';
+                      e.currentTarget.style.boxShadow = '0 4px 16px rgba(245,158,11,0.1)';
+                      e.currentTarget.style.borderColor = 'rgba(245, 158, 11, 0.25)';
+                      e.currentTarget.style.color = '#fcd34d';
                     }}
                   >
-                    <span style={{ fontSize: '20px' }}>⚡</span>
-                    <span>Life Automation Kur</span>
+                    <span style={{ fontSize: '28px' }}>⚡</span>
+                    <span>Life Automation<br />Kur</span>
                   </button>
                 </div>
 

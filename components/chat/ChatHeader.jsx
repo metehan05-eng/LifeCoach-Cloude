@@ -1,7 +1,9 @@
 "use client";
 import React from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function ChatHeader({ onToggleSidebar, sidebarOpen, sessionTitle, isMobile, onConvertToProject, onOpenSettings }) {
+  const router = useRouter();
   return (
     <header style={{
       height: '56px',
@@ -89,6 +91,24 @@ export default function ChatHeader({ onToggleSidebar, sidebarOpen, sessionTitle,
         title="Bu Sohbeti Projeye Dönüştür"
       >
         📁
+      </button>
+
+      {/* HAN Code */}
+      <button
+        onClick={() => router.push('/hancode')}
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          width: '34px', height: '34px', borderRadius: '10px',
+          background: 'rgba(139,92,246,0.15)', border: '1px solid rgba(139,92,246,0.3)',
+          color: '#c4b5fd', cursor: 'pointer',
+          transition: 'all 0.2s ease',
+          fontSize: '15px', flexShrink: 0,
+        }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(139,92,246,0.25)'; e.currentTarget.style.color = '#fff'; }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(139,92,246,0.15)'; e.currentTarget.style.color = '#c4b5fd'; }}
+        title="HAN Code IDE"
+      >
+        ⚔️
       </button>
 
       {/* Settings */}
