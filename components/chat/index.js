@@ -23,6 +23,7 @@ export default function Chat({ id, onSelectChatbot, selectedChatbot, chatbots, .
   const [ephemeralLevel, setEphemeralLevel] = useState(1);
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [newMessage, setNewMessage] = useState();
+  const [showLottie, setShowLottie] = useState(false);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [models, setModels] = useState([]);
   const [selectedModel, setSelectedModel] = useState("");
@@ -191,6 +192,36 @@ export default function Chat({ id, onSelectChatbot, selectedChatbot, chatbots, .
     [id, messages, selectedModel, router]
   );
 
+  // Bank XP to server (persist ephemeral session XP)
+  const bankXp = async () => {
+    const email = localStorage.getItem('userEmail');
+    if (!email) return alert('Lütfen giriş yapın.');
+    if (!ephemeralXp || ephemeralXp <= 0) return;
+    const ok = confirm(`Bu oturumdaki +${ephemeralXp} XP'yi hesabına kaydetmek istiyor musun?`);
+    if (!ok) return;
+
+    try {
+      const res = await fetch(`${API_URL}/api/bank-xp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, amount: ephemeralXp }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Bank failed');
+
+      // reset ephemeral xp and show lottie celebration
+      setEphemeralXp(0);
+      localStorage.setItem('ephemeralXp', '0');
+      setShowLottie(true);
+      setTimeout(() => setShowLottie(false), 5000);
+      // also show a system message
+      setMessages((prev) => [...prev, { agent: 'system', data: { response: `+${data.banked} XP hesabına kaydedildi` } }]);
+    } catch (e) {
+      console.error(e);
+      alert('XP kaydedilemedi.');
+    }
+  };
+
   return (
     <Stack
       {...properties}
@@ -249,6 +280,10 @@ export default function Chat({ id, onSelectChatbot, selectedChatbot, chatbots, .
                 <option key={model.name} value={model.name}>{model.name}</option>
               ))}
             </Select>
+            {/* Bank XP button */}
+            {ephemeralXp > 0 && (
+              <button onClick={bankXp} style={{ marginLeft: 8, padding: '6px 10px', borderRadius: 8, background: 'linear-gradient(90deg,#10b981,#06b6d4)', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '12px' }}>XP'yi Kaydet</button>
+            )}
           </HStack>
         </HStack>
       </Box>
@@ -259,6 +294,13 @@ export default function Chat({ id, onSelectChatbot, selectedChatbot, chatbots, .
         overflowY="auto"
         flex={1}
       />
+      {/* Lottie celebration overlay (uses web component from unpkg) */}
+      {showLottie && (
+        <div style={{ position: 'fixed', left: '50%', top: '20%', transform: 'translateX(-50%)', zIndex: 70, pointerEvents: 'none' }}>
+          <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+          <lottie-player src="https://assets3.lottiefiles.com/packages/lf20_touohxv0.json" background="transparent" speed="1" style={{ width: '280px', height: '280px' }} autoplay></lottie-player>
+        </div>
+      )}
       <ChatInput
         position="relative"
         bottom="0"
