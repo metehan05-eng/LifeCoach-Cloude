@@ -18,7 +18,7 @@ NC='\033[0m'
 if [ -z "${GITHUB_TOKEN:-}" ]; then
   echo -e "${RED}HATA: GITHUB_TOKEN environment variable tanımlı değil!${NC}"
   echo "Kullanım:"
-  echo "  export GITHUB_TOKEN='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'"
+  echo "  export GITHUB_TOKEN='ghp_XXXXXXX'"
   echo "  ./github_yukle.sh [\"Commit mesajı\"]"
   exit 1
 fi
