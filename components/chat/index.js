@@ -19,6 +19,9 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 export default function Chat({ id, onSelectChatbot, selectedChatbot, chatbots, ...properties }) {
   const [messages, setMessages] = useState([]);
+  const [ephemeralXp, setEphemeralXp] = useState(0);
+  const [ephemeralLevel, setEphemeralLevel] = useState(1);
+  const [showLevelUp, setShowLevelUp] = useState(false);
   const [newMessage, setNewMessage] = useState();
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [models, setModels] = useState([]);
@@ -42,6 +45,15 @@ export default function Chat({ id, onSelectChatbot, selectedChatbot, chatbots, .
       }
     }
     fetchModels();
+  }, []);
+
+  // initialize ephemeral xp/level from localStorage (client-side only)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const lx = Number(localStorage.getItem("ephemeralXp") || 0);
+    const ll = Number(localStorage.getItem("ephemeralLevel") || 1);
+    setEphemeralXp(lx);
+    setEphemeralLevel(ll);
   }, []);
 
   useEffect(() => {
@@ -135,6 +147,34 @@ export default function Chat({ id, onSelectChatbot, selectedChatbot, chatbots, .
             setNewMessage(undefined);
             setIsSendingMessage(false);
 
+            // Show ephemeral chat XP if provided by the API
+            if (data.chat_xp && Number(data.chat_xp) > 0) {
+              const gained = Number(data.chat_xp);
+              setMessages((previousMessages) => [
+                ...previousMessages,
+                { agent: "system", data: { response: `+${gained} XP (chat)` } },
+              ]);
+
+              // Update ephemeral XP/level locally only (do NOT persist to server)
+              setEphemeralXp((prevXp) => {
+                const total = prevXp + gained;
+                const levelUps = Math.floor(total / 100);
+                const newXp = total % 100;
+                if (levelUps > 0) {
+                  setEphemeralLevel((prevLevel) => {
+                    const newLevel = prevLevel + levelUps;
+                    localStorage.setItem("ephemeralLevel", String(newLevel));
+                    return newLevel;
+                  });
+                  // show celebration for 5 seconds
+                  setShowLevelUp(true);
+                  setTimeout(() => setShowLevelUp(false), 5000);
+                }
+                localStorage.setItem("ephemeralXp", String(newXp));
+                return newXp;
+              });
+            }
+
             if (data.sessionId && data.sessionId !== id) {
               router.replace(`/app/chatbots/${data.sessionId}`);
             }
@@ -167,6 +207,13 @@ export default function Chat({ id, onSelectChatbot, selectedChatbot, chatbots, .
         borderBottomWidth={1}
         borderColor={borderColor}
       >
+        {/* Level-up celebration overlay */}
+        {showLevelUp && (
+          <Box position="absolute" right="24px" top="24px" zIndex={60} p={4} bgGradient="linear(to-r, purple.400, pink.400)" borderRadius="12px" boxShadow="lg" color="white">
+            <Text fontWeight={800} fontSize="md">Seviye Atladın! 🎉</Text>
+            <Text fontSize="sm">Seviye {ephemeralLevel}</Text>
+          </Box>
+        )}
         <HStack justifyContent="space-between">
           <HStack spacing={3}>
             <Box

@@ -355,7 +355,12 @@ RULES:
       [[AUTOMATION_DATA: {"title": "Görev Adı", "time": "HH:MM", "repeat": "daily", "duration": 30} ]]
       Kullanıcıyla normal konuşmaya devam et ama bu JSON'ı mutlaka gizli bir not gibi cevabına ekle.`;
     }
-    const gamificationInjection = `\n--- GAMIFICATION STATUS ---\nLevel: ${userStats.level}\nXP: ${userStats.xp}/100\nStreak: ${userStats.streak} Days\nAI NOTE: Inform user about their progress and motivate them to level up. E.g.: "Completing this task will get you to Level ${userStats.level + 1}!"`;
+    // By default do NOT inject full gamification status into system prompt to avoid showing levels on first message.
+    // If client explicitly requests gamification context include it via `show_gamification` flag in request body.
+    let gamificationInjection = '';
+    if (req.body && req.body.show_gamification) {
+      gamificationInjection = `\n--- GAMIFICATION STATUS ---\nLevel: ${userStats.level}\nXP: ${userStats.xp}/100\nStreak: ${userStats.streak} Days\nAI NOTE: Inform user about their progress and motivate them to level up. E.g.: "Completing this task will get you to Level ${userStats.level + 1}!"`;
+    }
     const localizationInjection = `\n\n--- CONTEXT ---\nUser: ${userName}\nLocation: ${countryCode}\nLanguage: ${detectedLang}${gamificationInjection}`;
 
     // ==========================================
@@ -827,12 +832,18 @@ RULES:
       } catch (e) { console.error("Usage count update error", e); }
     }
 
+    // Ephemeral chat XP: small incremental XP for interactive chat messages.
+    // NOTE: This is ephemeral and does NOT update persistent user XP/level unless a goal/completion action occurs.
+    const chatXp = Math.floor(Math.random() * 2) + 1; // 1-2 XP per message
+
     return res.status(200).json({
       reply: cleanReply,
       automation_data,
       sources: searchSources,
       searched: searchSources.length > 0,
-      _model: usedModel
+      _model: usedModel,
+      chat_xp: chatXp,
+      chat_xp_persisted: false
     });
   } catch (error) {
     console.error("Sistem Hatası:", error);

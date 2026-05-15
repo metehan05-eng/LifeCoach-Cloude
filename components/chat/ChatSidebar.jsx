@@ -26,9 +26,19 @@ export default function ChatSidebar({
   const [sidebarTab, setSidebarTab] = useState('chats');
   const [mounted, setMounted] = useState(false);
   const [groups, setGroups] = useState(null); // Mount öncesi null, sonra hesaplanacak
+  const [ephLevel, setEphLevel] = useState(null);
+  const [ephXp, setEphXp] = useState(null);
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const lx = Number(localStorage.getItem('ephemeralXp'));
+    const ll = Number(localStorage.getItem('ephemeralLevel'));
+    setEphXp(Number.isFinite(lx) ? lx : null);
+    setEphLevel(Number.isFinite(ll) ? ll : null);
   }, []);
 
   useEffect(() => {
@@ -237,11 +247,11 @@ export default function ChatSidebar({
         {/* XP Area */}
         <div style={{ padding: '16px', margin: '0 12px 12px', borderRadius: '16px', background: 'rgba(99,102,241,0.05)', border: '1px solid rgba(99,102,241,0.1)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <span style={{ fontSize: '11px', fontWeight: 800, color: '#a5b4fc' }}>SEVİYE {user?.level || 1}</span>
-                <span style={{ fontSize: '10px', color: 'rgba(165,180,252,0.5)' }}>{user?.xp || 0}/100 XP</span>
+              <span style={{ fontSize: '11px', fontWeight: 800, color: '#a5b4fc' }}>SEVİYE {ephLevel ?? (user?.level || 1)}</span>
+              <span style={{ fontSize: '10px', color: 'rgba(165,180,252,0.5)' }}>{(ephXp ?? user?.xp ?? 0)}/100 XP</span>
             </div>
             <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', overflow: 'hidden', marginBottom: '16px' }}>
-                <div style={{ width: `${user?.xp || 0}%`, height: '100%', background: 'linear-gradient(90deg, #6366f1, #8b5cf6)' }} />
+              <div style={{ width: `${(ephXp ?? user?.xp ?? 0)}%`, height: '100%', background: 'linear-gradient(90deg, #6366f1, #8b5cf6)' }} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <button onClick={() => onSelectSession('leaderboard')} style={{ width: '100%', padding: '8px', borderRadius: '10px', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', color: '#fff', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>🌍 Sıralama</button>
