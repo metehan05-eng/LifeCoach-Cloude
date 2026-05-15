@@ -25,7 +25,7 @@
         conversationHistory: [],
         attachedFiles: [],
         generatedFiles: [],
-        currentPersona: 'empathetic',
+        currentPersona: 'mirror',
         userMemory: {},
         currentMessageId: null,
         isRecording: false,
@@ -34,6 +34,7 @@
     };
 
     const PERSONAS = {
+        mirror: { name: 'Ayna', icon: '🔁', style: 'mirror' },
         empathetic: { name: 'Empatik Rehber', icon: '💚', style: 'warm' },
         disciplined: { name: 'Sert Disipliner', icon: '⚡', style: 'strict' },
         socratic: { name: 'Sokratik Bilge', icon: '🧠', style: 'philosophical' }
@@ -199,6 +200,14 @@
         const persona = PERSONAS[state.currentPersona];
         const name = state.userMemory.name || '';
         const greeting = name ? name + ', ' : '';
+        // Mirror persona: reply by echoing the user's input (minimal transformation)
+        if (state.currentPersona === 'mirror') {
+            const mirror = (userText || '').trim();
+            const responseText = mirror ? mirror : (greeting ? greeting + 'Merhaba.' : 'Merhaba.');
+            addMessage(responseText, 'assistant');
+            return;
+        }
+
         let response = '';
         
         const lowerText = (userText || '').toLowerCase();
