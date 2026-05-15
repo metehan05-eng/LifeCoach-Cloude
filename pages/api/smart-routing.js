@@ -107,11 +107,12 @@ async function dynamicModeSelection(userMessage, userPreferencedMode = null, con
       };
     }
     
-    if (needsMotivation && userPreferencedMode !== 'drill_sergeant') {
+    // Do NOT auto-switch to drill_sergeant mode. Only honor it if user explicitly selected it.
+    if (needsMotivation && userPreferencedMode === 'drill_sergeant') {
       return {
         selectedMode: 'drill_sergeant',
-        reason: 'Boost with motivation, then back to preferred mode',
-        returnToPreferred: userPreferencedMode
+        reason: 'User preferred drill sergeant mode explicitly',
+        returnToPreferred: null
       };
     }
     
