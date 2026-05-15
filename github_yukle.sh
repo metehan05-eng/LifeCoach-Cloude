@@ -18,7 +18,7 @@ NC='\033[0m'
 if [ -z "${GITHUB_TOKEN:-}" ]; then
   echo -e "${RED}HATA: GITHUB_TOKEN environment variable tanımlı değil!${NC}"
   echo "Kullanım:"
-  echo "  export GITHUB_TOKEN='TOKEN_REMOVED_BY_FILTER'"
+  echo "  export GITHUB_TOKEN='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'"
   echo "  ./github_yukle.sh [\"Commit mesajı\"]"
   exit 1
 fi
@@ -31,9 +31,12 @@ if [ -z "$REMOTE_URL" ]; then
 fi
 
 # HTTPS URL'den owner/name çıkar
-REPO_PATH=$(echo "$REMOTE_URL" | sed -E 's/^(https?:\/\/[^/]+\/|git@[^:]+:)(.+?)(\.git)?$/\2/')
-REPO_OWNER=$(echo "$REPO_PATH" | cut -d'/' -f1)
-REPO_NAME=$(echo "$REPO_PATH" | cut -d'/' -f2)
+REPO_PATH="$REMOTE_URL"
+REPO_PATH="${REPO_PATH#git@github.com:}"
+REPO_PATH="${REPO_PATH#https://github.com/}"
+REPO_PATH="${REPO_PATH%.git}"
+REPO_OWNER="$(echo "$REPO_PATH" | cut -d'/' -f1)"
+REPO_NAME="$(echo "$REPO_PATH" | cut -d'/' -f2)"
 
 if [ -z "$REPO_OWNER" ] || [ -z "$REPO_NAME" ]; then
   echo -e "${RED}HATA: Repo adı algılanamadı: $REMOTE_URL${NC}"
