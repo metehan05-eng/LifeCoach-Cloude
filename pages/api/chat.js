@@ -4,9 +4,208 @@ import OpenAI from 'openai';
 import pdf from 'pdf-parse';
 import mammoth from 'mammoth'; 
 import * as xlsx from 'xlsx';
+import { JWT } from 'google-auth-library';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
+const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
+const GOOGLE_SERVICE_ACCOUNT = process.env.GOOGLE_SERVICE_ACCOUNT; // JSON string of service account
+const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
+const GOOGLE_DELEGATED_USER = process.env.GOOGLE_DELEGATED_USER;
+const GOOGLE_GMAIL_USER = process.env.GOOGLE_GMAIL_USER || GOOGLE_DELEGATED_USER;
+const GOOGLE_CALENDAR_USER = process.env.GOOGLE_CALENDAR_USER || GOOGLE_DELEGATED_USER;
+const GOOGLE_DRIVE_USER = process.env.GOOGLE_DRIVE_USER || GOOGLE_DELEGATED_USER;
+const GOOGLE_SLIDES_SCOPES = ['https://www.googleapis.com/auth/presentations'];
+const GOOGLE_DRIVE_SCOPES = ['https://www.googleapis.com/auth/drive.file'];
+const GOOGLE_GMAIL_SCOPES = ['https://www.googleapis.com/auth/gmail.send'];
+const GOOGLE_CALENDAR_SCOPES = ['https://www.googleapis.com/auth/calendar'];
+const GOOGLE_VISION_SCOPES = ['https://www.googleapis.com/auth/cloud-platform'];
+
+function parseGoogleServiceAccount() {
+  if (!GOOGLE_SERVICE_ACCOUNT) return null;
+  try {
+    return JSON.parse(GOOGLE_SERVICE_ACCOUNT);
+  } catch (err) {
+    console.error('[Google] Service account JSON parse error', err);
+    return null;
+  }
+}
+
+async function getGoogleAccessToken(scopes, subject) {
+  const key = parseGoogleServiceAccount();
+  if (!key) throw new Error('GOOGLE_SERVICE_ACCOUNT env not set or invalid');
+  const client = new JWT({
+    email: key.client_email,
+    key: key.private_key,
+    scopes,
+    subject: subject || key.client_email
+  });
+  await client.authorize();
+  let token = client.credentials?.access_token;
+  if (!token) {
+    const accessResponse = await client.getAccessToken();
+    token = (accessResponse && (accessResponse.token || accessResponse)) || null;
+  }
+  if (!token) throw new Error('Could not obtain Google access token');
+  return token;
+}
+
+async function extractTextFromImage(base64Image) {
+  try {
+    const token = await getGoogleAccessToken(GOOGLE_VISION_SCOPES);
+    const resp = await fetch('https://vision.googleapis.com/v1/images:annotate', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        requests: [
+          {
+            image: { content: base64Image },
+            features: [{ type: 'TEXT_DETECTION', maxResults: 10 }]
+          }
+        ]
+      })
+    });
+    if (!resp.ok) {
+      const text = await resp.text();
+      throw new Error(`Vision API error: ${text}`);
+    }
+    const data = await resp.json();
+    return data.responses?.[0]?.fullTextAnnotation?.text || data.responses?.[0]?.textAnnotations?.[0]?.description || '';
+  } catch (err) {
+    console.error('[Vision] error', err);
+    return '';
+  }
+}
+
+function normalizeSpreadsheetRows(text) {
+  const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean).slice(0, 200);
+  if (lines.length === 0) return [['Extracted Text']];
+  const rows = [];
+  lines.forEach(line => {
+    let cells = line.split(/\t| {2,}|,|;|\|/).map(c => c.trim()).filter(Boolean);
+    if (cells.length <= 1) {
+      const tokens = line.split(/\s+/).filter(Boolean);
+      if (tokens.length <= 1) {
+        cells = [line];
+      } else {
+        const mid = Math.ceil(tokens.length / 2);
+        cells = [tokens.slice(0, mid).join(' '), tokens.slice(mid).join(' ')];
+      }
+    }
+    rows.push(cells);
+  });
+  if (rows.length > 0 && rows[0].length === 1) {
+    rows.unshift(['Item']);
+  }
+  return rows;
+}
+
+async function uploadFileToDrive(name, mimeType, base64Data) {
+  const token = await getGoogleAccessToken([...GOOGLE_DRIVE_SCOPES], GOOGLE_DRIVE_USER);
+  const boundary = `-------LifeCoachDrive${Date.now()}`;
+  const body = [
+    `--${boundary}`,
+    'Content-Type: application/json; charset=UTF-8',
+    '',
+    JSON.stringify({ name, mimeType }),
+    `--${boundary}`,
+    `Content-Type: ${mimeType}`,
+    'Content-Transfer-Encoding: base64',
+    '',
+    base64Data,
+    `--${boundary}--`
+  ].join('\r\n');
+  const resp = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': `multipart/related; boundary=${boundary}`
+    },
+    body
+  });
+  if (!resp.ok) {
+    const text = await resp.text();
+    throw new Error(`Drive upload failed: ${text}`);
+  }
+  const data = await resp.json();
+  return {
+    id: data.id,
+    url: data.webViewLink || `https://drive.google.com/file/d/${data.id}/view`
+  };
+}
+
+async function sendGmailMessage(to, subject, content) {
+  if (!GOOGLE_GMAIL_USER) throw new Error('GOOGLE_GMAIL_USER env not set');
+  const token = await getGoogleAccessToken(GOOGLE_GMAIL_SCOPES, GOOGLE_GMAIL_USER);
+  const raw = Buffer.from([
+    `To: ${to}`,
+    `Subject: ${subject}`,
+    'Content-Type: text/plain; charset=UTF-8',
+    '',
+    content
+  ].join('\r\n')).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+  const resp = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ raw })
+  });
+  if (!resp.ok) {
+    const text = await resp.text();
+    throw new Error(`Gmail send failed: ${text}`);
+  }
+  return await resp.json();
+}
+
+async function createCalendarEvents(events) {
+  if (!GOOGLE_CALENDAR_USER) throw new Error('GOOGLE_CALENDAR_USER env not set');
+  const token = await getGoogleAccessToken(GOOGLE_CALENDAR_SCOPES, GOOGLE_CALENDAR_USER);
+  const results = [];
+  for (const event of events) {
+    const resp = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(event)
+    });
+    if (!resp.ok) {
+      const text = await resp.text();
+      throw new Error(`Calendar event creation failed: ${text}`);
+    }
+    const data = await resp.json();
+    results.push({ id: data.id, htmlLink: data.htmlLink, summary: data.summary });
+  }
+  return results;
+}
+
+async function searchGoogleMaps(query) {
+  if (!GOOGLE_MAPS_API_KEY) return null;
+  try {
+    const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${GOOGLE_MAPS_API_KEY}`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const place = data.results?.[0];
+    if (!place) return null;
+    return {
+      name: place.name,
+      address: place.formatted_address,
+      location: place.geometry?.location,
+      mapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.name + ' ' + place.formatted_address)}`
+    };
+  } catch (err) {
+    console.error('[GoogleMaps] error', err);
+    return null;
+  }
+}
 
 // --- DuckDuckGo Web Search (Fast & Accurate) ---
 async function searchWithDuckDuckGo(query) {
@@ -48,6 +247,79 @@ async function searchWithDuckDuckGo(query) {
   } catch (error) {
     console.error('[DuckDuckGo Search] Error:', error.message);
     return null;
+  }
+}
+
+// --- YouTube Video Suggestions ---
+async function searchYouTubeVideos(query, maxResults = 1) {
+  if (!YOUTUBE_API_KEY) return null;
+  try {
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=${maxResults}&q=${encodeURIComponent(query)}&relevanceLanguage=tr&key=${YOUTUBE_API_KEY}`;
+    const res = await fetch(url, { headers: { 'Referer': 'https://lifecoach.ai/' } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data.items || data.items.length === 0) return null;
+    return data.items.map(item => ({
+      videoId: item.id.videoId,
+      title: item.snippet.title,
+      channel: item.snippet.channelTitle,
+      thumbnail: item.snippet.thumbnails?.medium?.url || ''
+    }));
+  } catch (err) {
+    console.error('[YouTube] Error:', err);
+    return null;
+  }
+}
+
+// --- Excel (XLSX) generator ---
+function createExcelBufferFromData(dataArray2D = [['No data']]) {
+  try {
+    const wb = xlsx.utils.book_new();
+    const ws = xlsx.utils.aoa_to_sheet(dataArray2D);
+    xlsx.utils.book_append_sheet(wb, ws, 'Sheet1');
+    const buffer = xlsx.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    return buffer.toString('base64');
+  } catch (err) {
+    console.error('[Excel] generation error', err);
+    return null;
+  }
+}
+
+// --- Minimal Google Slides creator (requires service account JSON in env) ---
+async function createGooglePresentation(title = 'New Presentation') {
+  if (!GOOGLE_SERVICE_ACCOUNT) throw new Error('GOOGLE_SERVICE_ACCOUNT env not set');
+  try {
+    const key = JSON.parse(GOOGLE_SERVICE_ACCOUNT);
+    const client = new JWT({
+      email: key.client_email,
+      key: key.private_key,
+      scopes: GOOGLE_SLIDES_SCOPES
+    });
+    await client.authorize();
+    let token = client.credentials?.access_token;
+    if (!token) {
+      const at = await client.getAccessToken();
+      token = (at && (at.token || at)) || null;
+    }
+    if (!token) throw new Error('Could not obtain Google access token');
+
+    const resp = await fetch('https://slides.googleapis.com/v1/presentations', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title })
+    });
+    if (!resp.ok) {
+      const txt = await resp.text();
+      throw new Error('Slides API error: ' + txt);
+    }
+    const data = await resp.json();
+    return {
+      presentationId: data.presentationId,
+      presentationUrl: `https://docs.google.com/presentation/d/${data.presentationId}/edit`
+    };
+  } catch (err) {
+    console.error('[GoogleSlides] error', err);
+    throw err;
   }
 }
 
@@ -200,6 +472,177 @@ export default async function handler(req, res) {
           }
         }
       }
+    }
+
+    // --- Additional tool triggers: YouTube suggestions / generate Excel / create Slides / Drive / Gmail / Calendar / Maps ---
+    let generated_files = [];
+    let youtube_suggestions = null;
+    let tool_notes = [];
+    let calendar_events = [];
+    let maps_result = null;
+    let gmail_result = null;
+
+    try {
+      const msgLower = (message || '').toLowerCase();
+      const wantsYouTube = /youtube|video öneri|video önerileri|youtube öneri|youtube önerileri/.test(msgLower);
+      const wantsExcel = /excel oluştur|excel dosya|xlsx oluştur|excel dosyası|tablo oluştur|tablo|listele/.test(msgLower);
+      const wantsSlides = /slide oluştur|sunum oluştur|sunum hazırla|presentation oluştur|presentation/.test(msgLower);
+      const wantsDrive = /drive|google drive|dosya yükle|drive'a kaydet|google drive/.test(msgLower);
+      const wantsGmail = /mail gönder|e-?posta gönder|gmail gönder|mail at|email gönder/.test(msgLower);
+      const wantsCalendar = /takvim|calendar|plan yap|planlama|haftalık plan|aylık plan|yıllık plan/.test(msgLower);
+      const wantsMaps = /harita|maps|mesafe|uzak|gitmek istiyorum|nereye gitsem|bunu bul|yol tarifi/.test(msgLower);
+      const wantsOCRExcel = attachments && attachments.some(at => at.type === 'image') && /excel|tablo|liste|isim|numara|numaraları/.test(msgLower);
+
+      if (wantsYouTube) {
+        try {
+          youtube_suggestions = await searchYouTubeVideos(message || userName, 1);
+          if (youtube_suggestions && youtube_suggestions.length > 0) {
+            tool_notes.push('YouTube için size tek bir video önerisi buldum.');
+          }
+        } catch (e) {
+          console.error('YouTube suggestion error', e);
+        }
+      }
+
+      if (wantsOCRExcel && GOOGLE_SERVICE_ACCOUNT) {
+        try {
+          const image = attachments.find(at => at.type === 'image');
+          const extracted = image ? await extractTextFromImage(image.data) : '';
+          if (extracted) {
+            const rows = normalizeSpreadsheetRows(extracted);
+            const base64 = createExcelBufferFromData(rows);
+            if (base64) {
+              generated_files.push({ filename: `image-extracted-${Date.now()}.xlsx`, mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', content_base64: base64 });
+              tool_notes.push('Görüntüdeki metni Excel tablosuna dönüştürdüm.');
+            }
+          }
+        } catch (e) {
+          console.error('OCR Excel error', e);
+        }
+      }
+
+      if (wantsExcel && !generated_files.some(f => f.mime.includes('spreadsheet'))) {
+        try {
+          let rows = [];
+          if (extractedText) {
+            rows = normalizeSpreadsheetRows(extractedText);
+          }
+          if (rows.length === 0) {
+            rows = [['Sample', 'Value'], ['Example', '1']];
+          }
+          const base64 = createExcelBufferFromData(rows);
+          if (base64) {
+            generated_files.push({ filename: `lifecoach_${Date.now()}.xlsx`, mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', content_base64: base64 });
+            tool_notes.push('Excel dosyası oluşturuldu.');
+          }
+        } catch (e) {
+          console.error('Excel generate error', e);
+        }
+      }
+
+      if (wantsSlides && GOOGLE_SERVICE_ACCOUNT) {
+        try {
+          const titleMatch = (message || '').match(/(?:sunum|slide|presentation)[:\- ]+(.+)/i);
+          const title = titleMatch ? titleMatch[1].trim() : `LifeCoach Presentation ${new Date().toISOString().slice(0,10)}`;
+          const pres = await createGooglePresentation(title);
+          if (pres) {
+            generated_files.push({ filename: `${title}.gslides`, mime: 'application/vnd.google-apps.presentation', url: pres.presentationUrl, id: pres.presentationId });
+            tool_notes.push('Google Slides sunumu oluşturuldu.');
+          }
+        } catch (e) {
+          console.error('Slides create error', e);
+        }
+      }
+
+      if (wantsDrive && GOOGLE_SERVICE_ACCOUNT) {
+        try {
+          if (generated_files.length > 0 && generated_files[0].content_base64) {
+            const file = generated_files[0];
+            const driveFile = await uploadFileToDrive(file.filename, file.mime, file.content_base64);
+            file.url = driveFile.url;
+            tool_notes.push('Dosyanız Google Drive’a yüklendi.');
+          } else {
+            const textContent = extractedText || message || 'LifeCoach AI notları';
+            const base64 = Buffer.from(textContent.substring(0, 10000), 'utf8').toString('base64');
+            const driveFile = await uploadFileToDrive(`lifecoach-note-${Date.now()}.txt`, 'text/plain', base64);
+            generated_files.push({ filename: `lifecoach-note-${Date.now()}.txt`, mime: 'text/plain', url: driveFile.url });
+            tool_notes.push('Google Drive’da bir not dosyası oluşturdum.');
+          }
+        } catch (e) {
+          console.error('Drive integration error', e);
+        }
+      }
+
+      if (wantsGmail && GOOGLE_SERVICE_ACCOUNT && GOOGLE_GMAIL_USER) {
+        try {
+          const emailMatch = message.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+          const subjectMatch = message.match(/(?:konu|subject)[:\-]\s*([^\n]+)/i);
+          const bodyMatch = message.match(/(?:mesaj|message)[:\-]\s*([\s\S]+)/i);
+          const to = emailMatch?.[0];
+          const subject = subjectMatch?.[1]?.trim() || 'LifeCoach AI Gönderisi';
+          const body = bodyMatch?.[1]?.trim() || message.replace(emailMatch?.[0] || '', '').trim();
+          if (to) {
+            const gmailResponse = await sendGmailMessage(to, subject, body);
+            gmail_result = gmailResponse;
+            tool_notes.push(`E-posta ${to} adresine gönderildi.`);
+          } else {
+            tool_notes.push('E-posta göndermek için geçerli bir alıcı adresi bulunamadı.');
+          }
+        } catch (e) {
+          console.error('Gmail send error', e);
+        }
+      }
+
+      if (wantsCalendar && GOOGLE_SERVICE_ACCOUNT && GOOGLE_CALENDAR_USER) {
+        try {
+          const now = new Date();
+          let events = [];
+          const timezone = 'Europe/Istanbul';
+          if (/yıllık/.test(msgLower)) {
+            const start = new Date(now.getFullYear() + 1, 0, 2, 10, 0, 0);
+            events.push({
+              summary: 'Yıllık planlama oturumu',
+              description: message,
+              start: { dateTime: start.toISOString(), timeZone: timezone },
+              end: { dateTime: new Date(start.getTime() + 60 * 60 * 1000).toISOString(), timeZone: timezone }
+            });
+          } else if (/aylık/.test(msgLower)) {
+            const start = new Date(now.getFullYear(), now.getMonth() + 1, 3, 10, 0, 0);
+            events.push({
+              summary: 'Aylık hedef kontrolü',
+              description: message,
+              start: { dateTime: start.toISOString(), timeZone: timezone },
+              end: { dateTime: new Date(start.getTime() + 60 * 60 * 1000).toISOString(), timeZone: timezone }
+            });
+          } else {
+            const first = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+            first.setHours(18, 0, 0, 0);
+            events = [
+              { summary: 'Haftalık planlama', description: message, start: { dateTime: first.toISOString(), timeZone: timezone }, end: { dateTime: new Date(first.getTime() + 60 * 60 * 1000).toISOString(), timeZone: timezone } },
+              { summary: 'Gelişim hedeflerini gözden geçirme', description: message, start: { dateTime: new Date(first.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString(), timeZone: timezone }, end: { dateTime: new Date(first.getTime() + 2 * 24 * 60 * 60 * 1000 + 60 * 60 * 1000).toISOString(), timeZone: timezone } }
+            ];
+          }
+          calendar_events = await createCalendarEvents(events);
+          if (calendar_events.length > 0) {
+            tool_notes.push('Google Takvim için toplantı/plan oluşturuldu.');
+          }
+        } catch (e) {
+          console.error('Calendar integration error', e);
+        }
+      }
+
+      if (wantsMaps && GOOGLE_MAPS_API_KEY) {
+        try {
+          maps_result = await searchGoogleMaps(message || userName);
+          if (maps_result) {
+            tool_notes.push(`Google Maps üzerinde bir sonuç buldum: ${maps_result.name}`);
+          }
+        } catch (e) {
+          console.error('Maps search error', e);
+        }
+      }
+    } catch (e) {
+      console.error('Tool triggers error', e);
     }
 
     // 4. SISTEM PROMPT HAZIRLA
@@ -683,7 +1126,13 @@ HARD RULES:
       searched: searchSources.length > 0,
       _model: usedModel,
       chat_xp: chatXp,
-      chat_xp_persisted: false
+      chat_xp_persisted: false,
+      generated_files,
+      youtube_suggestions,
+      tool_notes,
+      calendar_events,
+      gmail_result,
+      maps_result
     });
   } catch (error) {
     console.error("Sistem Hatası:", error);

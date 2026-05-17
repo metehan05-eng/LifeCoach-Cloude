@@ -251,6 +251,8 @@ export default function ChatbotInterface() {
       const aiText = data.reply || data.response;
       if (!aiText) throw new Error("Empty response");
       const aiSources = data.sources || [];  // Tavily'den gelen kaynaklar
+      const generatedFiles = data.generated_files || [];
+      const youtubeSuggestions = data.youtube_suggestions || [];
 
       let displayed = '';
       const words = aiText.split(' ');
@@ -266,7 +268,13 @@ export default function ChatbotInterface() {
               role: 'assistant', 
               content: aiText, 
               id: Date.now(),
-              sources: aiSources  // 🔗 Tıklanabilir kaynaklar
+              sources: aiSources,  // 🔗 Tıklanabilir kaynaklar
+              files: generatedFiles,
+              youtube_suggestions: youtubeSuggestions,
+              tool_notes: data.tool_notes || [],
+              calendar_events: data.calendar_events || [],
+              gmail_result: data.gmail_result || null,
+              maps_result: data.maps_result || null
             }] }
           : s
       ));

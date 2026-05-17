@@ -446,6 +446,74 @@ function MessageBubble({ message, isStream, onQuickAction }) {
             <span style={{ fontSize: '14px' }}>🧠</span> Hafızaya Kaydedildi
           </div>
         )}
+        {/* Generated File Cards */}
+        {message.files && message.files.length > 0 && (
+          <div style={{ marginTop: '16px', display: 'grid', gap: '10px' }}>
+            {message.files.map((file, idx) => {
+              const href = file.url || `data:${file.mime};base64,${file.content_base64}`;
+              return (
+                <a
+                  key={idx}
+                  href={href}
+                  target="_blank"
+                  rel="noreferrer"
+                  download={file.filename}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '12px',
+                    padding: '12px 14px',
+                    background: 'rgba(99,102,241,0.08)',
+                    border: '1px solid rgba(99,102,241,0.18)',
+                    borderRadius: '14px',
+                    color: '#e5e7eb',
+                    textDecoration: 'none',
+                    fontSize: '13px',
+                  }}
+                >
+                  <div>
+                    <div style={{ fontWeight: 700 }}>{file.filename}</div>
+                    <div style={{ fontSize: '12px', color: 'rgba(226,232,240,0.85)' }}>
+                      {file.mime}{file.url ? ' • Açmak için tıkla' : ' • İndirilebilir dosya'}
+                    </div>
+                  </div>
+                  <span style={{ color: '#a5b4fc', fontSize: '18px' }}>{file.url ? '↗' : '⬇'}</span>
+                </a>
+              );
+            })}
+          </div>
+        )}
+
+        {/* YouTube Suggestions */}
+        {message.youtube_suggestions && message.youtube_suggestions.length > 0 && (
+          <div style={{ marginTop: '16px', padding: '14px', borderRadius: '16px', background: 'rgba(0,0,0,0.18)', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <div style={{ marginBottom: '10px', fontSize: '13px', color: '#9ca3af', fontWeight: 700 }}>YouTube Videoları</div>
+            {message.youtube_suggestions.slice(0, 1).map((video, idx) => (
+              <a key={idx} href={`https://www.youtube.com/watch?v=${video.videoId}`} target="_blank" rel="noreferrer" style={{ display: 'flex', gap: '12px', alignItems: 'center', textDecoration: 'none', color: '#e5e7eb' }}>
+                {video.thumbnail ? <img src={video.thumbnail} alt={video.title} style={{ width: '110px', height: '62px', objectFit: 'cover', borderRadius: '10px' }} /> : null}
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '14px', fontWeight: 700 }}>{video.title}</div>
+                  <div style={{ fontSize: '12px', color: '#cbd5e1', marginTop: '4px' }}>{video.channel}</div>
+                </div>
+                <span style={{ color: '#3b82f6', fontWeight: 700 }}>▶</span>
+              </a>
+            ))}
+          </div>
+        )}
+
+        {/* Tool Notes */}
+        {message.tool_notes && message.tool_notes.length > 0 && (
+          <div style={{ marginTop: '16px', padding: '14px', borderRadius: '16px', background: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(148,163,184,0.2)' }}>
+            <div style={{ marginBottom: '10px', fontSize: '13px', color: '#93c5fd', fontWeight: 700 }}>Sistem İşlemleri</div>
+            <ul style={{ margin: 0, paddingLeft: '18px', color: '#e5e7eb', fontSize: '13px', lineHeight: 1.7 }}>
+              {message.tool_notes.map((note, idx) => (
+                <li key={idx}>{note}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {/* Source Cards */}
         {message.sources && message.sources.length > 0 && (
           <SourceCards sources={message.sources} />
