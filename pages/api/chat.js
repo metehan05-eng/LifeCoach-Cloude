@@ -208,21 +208,44 @@ async function searchGoogleMaps(query) {
 }
 
 // --- DuckDuckGo Web Search (Fast & Accurate) ---
- async function searchWithDuckDuckGo(query) {
-   try {
-     const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&pretty=1`;
-     const res = await fetch(url);
-     if (!res.ok) return null;
-     const data = await res.json();
-     return {
-       title: data.AbstractText || data.RelatedTopics?.[0]?.Text || '',
-       url: data.AbstractURL || data.RelatedTopics?.[0]?.FirstURL || '',
-       snippet: data.AbstractText || ''
-     };
-   } catch (err) {
-     console.error('[DuckDuckGo] error', err);
-     return null;
-   }
+async function searchWithDuckDuckGo(query) {
+    try {
+      const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&pretty=1`;
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      const data = await res.json();
+      
+      const results = [];
+      
+      // Abstract text (main result)
+      if (data.AbstractText) {
+        results.push({
+          title: 'Abstract',
+          snippet: data.AbstractText.substring(0, 200),
+          url: data.AbstractURL || ''
+        });
+      }
+      
+      // Related topics (up to 3)
+      if (data.RelatedTopics && data.RelatedTopics.length > 0) {
+        data.RelatedTopics.slice(0, 3).forEach(topic => {
+          if (topic.Text) {
+            results.push({
+              title: topic.FirstURL ? 'Search Result' : 'Related Topic',
+              snippet: topic.Text.substring(0, 200),
+              url: topic.FirstURL || ''
+            });
+          }
+        });
+      }
+      
+      return results.length > 0 ? results : null;
+    } catch (error) {
+      console.error('[DuckDuckGo Search] Error:', error.message);
+      return null;
+    }
+  }
+  }
  }
 
 // --- GOOGLE SLIDES ---
