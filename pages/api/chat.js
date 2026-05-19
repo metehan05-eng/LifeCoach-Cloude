@@ -208,27 +208,440 @@ async function searchGoogleMaps(query) {
 }
 
 // --- DuckDuckGo Web Search (Fast & Accurate) ---
-async function searchWithDuckDuckGo(query) {
+ async function searchWithDuckDuckGo(query) {
+   try {
+     const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&pretty=1`;
+     const res = await fetch(url);
+     if (!res.ok) return null;
+     const data = await res.json();
+     return {
+       title: data.AbstractText || data.RelatedTopics?.[0]?.Text || '',
+       url: data.AbstractURL || data.RelatedTopics?.[0]?.FirstURL || '',
+       snippet: data.AbstractText || ''
+     };
+   } catch (err) {
+     console.error('[DuckDuckGo] error', err);
+     return null;
+   }
+ }
+
+// --- GOOGLE SLIDES ---
+async function create_presentation(topic, content_outline) {
   try {
-    const searchUrl = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1`;
-    const response = await fetch(searchUrl, {
-      headers: { 'User-Agent': 'LifeCoach-AI/1.0' },
-      signal: AbortSignal.timeout(5000)
+    if (!GOOGLE_SERVICE_ACCOUNT) throw new Error('GOOGLE_SERVICE_ACCOUNT env not set');
+    const key = JSON.parse(GOOGLE_SERVICE_ACCOUNT);
+    const client = new JWT({
+      email: key.client_email,
+      key: key.private_key,
+      scopes: GOOGLE_SLIDES_SCOPES
+    });
+    await client.authorize();
+    let token = client.credentials?.access_token;
+    if (!token) {
+      const at = await client.getAccessToken();
+      token = (at && (at.token || at)) || null;
+    }
+    if (!token) throw new Error('Could not obtain Google access token');
+
+    // Create presentation
+    const createResp = await fetch('https://slides.googleapis.com/v1/presentations', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: topic })
+    });
+    if (!createResp.ok) {
+      const txt = await createResp.text();
+      throw new Error('Slides API error: ' + txt);
+    }
+    const createData = await createResp.json();
+    const presentationId = createData.presentationId;
+
+    // Add slides based on outline
+    const requests = [];
+    let slideIndex = 0;
+    
+    // Add title slide
+    requests.push({
+      createSlide: {
+        slideLayoutReference: {
+          predefinedLayout: 'TITLE'
+        },
+        placeholderIdMappings: [
+          {
+            layoutPlaceholder: {
+              type: 'TITLE',
+              index: 0
+            },
+            objectId: `title_${slideIndex}`
+          },
+          {
+            layoutPlaceholder: {
+              type: 'BODY',
+              index: 0
+            },
+            objectId: `body_${slideIndex}`
+          }
+        ]
+      }
     });
     
-    if (!response.ok) throw new Error('DuckDuckGo search failed');
-    const data = await response.json();
-    
-    let results = [];
-    
-    // Instant answer/abstract
-    if (data.AbstractText) {
-      results.push({
-        source: 'DuckDuckGo',
-        snippet: data.AbstractText,
-        url: data.AbstractURL || ''
+    // Add content slides
+    for (const [index, content] of content_outline.entries()) {
+      slideIndex++;
+      requests.push({
+        createSlide: {
+          slideLayoutReference: {
+            predefinedLayout: 'TITLE_AND_BODY'
+          },
+          placeholderIdMappings: [
+            {
+              layoutPlaceholder: {
+                type: 'TITLE',
+                index: 0
+              },
+              objectId: `title_${slideIndex}`
+            },
+            {
+              layoutPlaceholder: {
+                type: 'BODY',
+                index: 0
+              },
+              objectId: `body_${slideIndex}`
+            }
+          ]
+        }
+      });
+      
+      // Add text to title placeholder
+      requests.push({
+        insertText: {
+          objectId: `title_${slideIndex}`,
+          text: content
+        }
+      });
+      
+      // Add bullet points to body placeholder (simplified)
+      requests.push({
+        insertText: {
+          objectId: `body_${slideIndex}`,
+          text: content
+        }
       });
     }
+    
+    // Batch update to add slides and content
+    if (requests.length > 0) {
+      await fetch(`https://slides.googleapis.com/v1/presentations/${presentationId}:batchUpdate`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requests })
+      });
+    }
+
+    return {
+      presentationId,
+      presentationUrl: `https://docs.google.com/presentation/d/${presentationId}/edit`
+    };
+  } catch (err) {
+    console.error('[Google Slides] error', err);
+    throw err;
+  }
+}
+
+// --- GOOGLE MAPS ---
+async function search_nearby_places(category, location) {
+  try {
+    if (!GOOGLE_MAPS_API_KEY) throw new Error('GOOGLE_MAPS_API_KEY not set');
+    
+    // First, geocode the location to get coordinates
+    const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(location)}&key=${GOOGLE_MAPS_API_KEY}`;
+    const geocodeRes = await fetch(geocodeUrl);
+    if (!geocodeRes.ok) throw new Error('Geocoding failed');
+    const geocodeData = await geocodeRes.json();
+    
+    if (!geocodeData.results || geocodeData.results.length === 0) {
+      throw new Error('Location not found');
+    }
+    
+    const { lat, lng } = geocodeData.results[0].geometry.location;
+    
+    // Then search for nearby places
+    const placesUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=5000&type=${category}&key=${GOOGLE_MAPS_API_KEY}`;
+    const placesRes = await fetch(placesUrl);
+    if (!placesRes.ok) throw new Error('Places search failed');
+    const placesData = await placesRes.json();
+    
+    if (!placesData.results || placesData.results.length === 0) {
+      return { message: `No ${category} places found near ${location}` };
+    }
+    
+    // Format results
+    const places = placesData.results.slice(0, 5).map(place => ({
+      name: place.name,
+      address: place.vicinity || '',
+      rating: place.rating || null,
+      user_ratings_total: place.user_ratings_total || 0,
+      place_id: place.place_id,
+      location: place.geometry.location,
+      mapsUrl: `https://www.google.com/maps/search/?api=1&query=${place.name.replace(/ /g, '+')},${place.vicinity || ''}`
+    }));
+    
+    return {
+      location: { lat, lng },
+      places,
+      totalResults: placesData.results.length
+    };
+  } catch (err) {
+    console.error('[Google Maps] error', err);
+    throw err;
+  }
+}
+
+// --- GOOGLE CALENDAR ---
+async function add_calendar_event(title, start_time, end_time, recurrence) {
+  try {
+    if (!GOOGLE_SERVICE_ACCOUNT) throw new Error('GOOGLE_SERVICE_ACCOUNT env not set');
+    if (!GOOGLE_CALENDAR_USER) throw new Error('GOOGLE_CALENDAR_USER env not set');
+    
+    const key = JSON.parse(GOOGLE_SERVICE_ACCOUNT);
+    const client = new JWT({
+      email: key.client_email,
+      key: key.private_key,
+      scopes: GOOGLE_CALENDAR_SCOPES
+    });
+    await client.authorize();
+    let token = client.credentials?.access_token;
+    if (!token) {
+      const at = await client.getAccessToken();
+      token = (at && (at.token || at)) || null;
+    }
+    if (!token) throw new Error('Could not obtain Google access token');
+
+    const event = {
+      summary: title,
+      start: {
+        dateTime: start_time,
+        timeZone: 'America/New_York' // Default, should be configurable
+      },
+      end: {
+        dateTime: end_time,
+        timeZone: 'America/New_York'
+      }
+    };
+
+    if (recurrence) {
+      event.recurrence = [recurrence];
+    }
+
+    const resp = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(event)
+    });
+
+    if (!resp.ok) {
+      const text = await resp.text();
+      throw new Error(`Calendar event creation failed: ${text}`);
+    }
+    
+    const data = await resp.json();
+    return {
+      eventId: data.id,
+      htmlLink: data.htmlLink,
+      summary: data.summary
+    };
+  } catch (err) {
+    console.error('[Google Calendar] error', err);
+    throw err;
+  }
+}
+
+// --- GOOGLE DRIVE ---
+async function upload_to_drive(file_content, file_name, mime_type) {
+  try {
+    if (!GOOGLE_SERVICE_ACCOUNT) throw new Error('GOOGLE_SERVICE_ACCOUNT env not set');
+    
+    // Get or create "LifeCoach AI" folder
+    let folderId = await getOrCreateLifeCoachFolder();
+    
+    const token = await getGoogleAccessToken([...GOOGLE_DRIVE_SCOPES], GOOGLE_DRIVE_USER);
+    const boundary = `-------LifeCoachDrive${Date.now()}`;
+    const body = [
+      `--${boundary}`,
+      'Content-Type: application/json; charset=UTF-8',
+      '',
+      JSON.stringify({ name: file_name, mimeType, parents: [folderId] }),
+      `--${boundary}`,
+      `Content-Type: ${mime_type}`,
+      'Content-Transfer-Encoding: base64',
+      '',
+      file_content,
+      `--${boundary}--`
+    ].join('\r\n');
+    
+    const resp = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': `multipart/related; boundary=${boundary}`
+      },
+      body
+    });
+    
+    if (!resp.ok) {
+      const text = await resp.text();
+      throw new Error(`Drive upload failed: ${text}`);
+    }
+    
+    const data = await resp.json();
+    return {
+      fileId: data.id,
+      webViewLink: data.webViewLink || `https://drive.google.com/file/d/${data.id}/view`
+    };
+  } catch (err) {
+    console.error('[Google Drive] error', err);
+    throw err;
+  }
+}
+
+// Helper function to get or create LifeCoach AI folder in Drive
+async function getOrCreateLifeCoachFolder() {
+  try {
+    const token = await getGoogleAccessToken([...GOOGLE_DRIVE_SCOPES], GOOGLE_DRIVE_USER);
+    
+    // Search for existing folder
+    const searchResp = await fetch(`https://www.googleapis.com/drive/v3/files?q=mimeType%3D'application/vnd.google-apps.folder'%20and%20name%3D'LifeCoach%20AI'%20and%20trashed%3Dfalse&fields=files(id%2Cname)&key=${GOOGLE_MAPS_API_KEY}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    
+    if (!searchResp.ok) throw new Error('Failed to search for LifeCoach folder');
+    const searchData = await searchResp.json();
+    
+    if (searchData.files && searchData.files.length > 0) {
+      return searchData.files[0].id;
+    }
+    
+    // Create folder if it doesn't exist
+    const createResp = await fetch('https://www.googleapis.com/drive/v3/files', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        name: 'LifeCoach AI',
+        mimeType: 'application/vnd.google-apps.folder'
+      })
+    });
+    
+    if (!createResp.ok) {
+      const text = await createResp.text();
+      throw new Error(`Failed to create LifeCoach folder: ${text}`);
+    }
+    
+    const createData = await createResp.json();
+    return createData.id;
+  } catch (err) {
+    console.error('[Google Drive folder] error', err);
+    throw err;
+  }
+}
+
+// --- GOOGLE SHEETS & OCR ---
+async function extract_to_spreadsheet(file_id_or_text) {
+  try {
+    // Check if input is base64 image or plain text
+    const isBase64 = /^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}=)?$/.test(file_id_or_text);
+    
+    let extractedText = '';
+    
+    if (isBase64 && file_id_or_text.length > 100) { // Likely an image
+      // Use Google Vision API for OCR
+      extractedText = await extractTextFromImage(file_id_or_text);
+    } else {
+      // Plain text
+      extractedText = file_id_or_text;
+    }
+    
+    if (!extractedText || extractedText.trim() === '') {
+      throw new Error('No text could be extracted from the input');
+    }
+    
+    // Normalize text into rows for spreadsheet
+    const rows = normalizeSpreadsheetRows(extractedText);
+    
+    // Create new Google Sheet
+    if (!GOOGLE_SERVICE_ACCOUNT) throw new Error('GOOGLE_SERVICE_ACCOUNT env not set');
+    const key = JSON.parse(GOOGLE_SERVICE_ACCOUNT);
+    const client = new JWT({
+      email: key.client_email,
+      key: key.private_key,
+      scopes: [...GOOGLE_DRIVE_SCOPES, 'https://www.googleapis.com/auth/spreadsheets']
+    });
+    await client.authorize();
+    let token = client.credentials?.access_token;
+    if (!token) {
+      const at = await client.getAccessToken();
+      token = (at && (at.token || at)) || null;
+    }
+    if (!token) throw new Error('Could not obtain Google access token');
+    
+    // Create spreadsheet
+    const createResp = await fetch('https://sheets.googleapis.com/v4/spreadsheets', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        properties: {
+          title: `LifeCoach Extracted Data ${new Date().toISOString().slice(0,10)}`
+        }
+      })
+    });
+    
+    if (!createResp.ok) {
+      const text = await createResp.text();
+      throw new Error(`Spreadsheet creation failed: ${text}`);
+    }
+    
+    const createData = await createResp.json();
+    const spreadsheetId = createData.spreadsheetId;
+    
+    // Write data to spreadsheet
+    const writeResp = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/A1:valueInputOption?valueInputOption=RAW`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        range: 'Sheet1!A1',
+        majorDimension: 'ROWS',
+        values: rows
+      })
+    });
+    
+    if (!writeResp.ok) {
+      const text = await writeResp.text();
+      throw new Error(`Failed to write to spreadsheet: ${text}`);
+    }
+    
+    return {
+      spreadsheetId,
+      spreadsheetUrl: `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit`
+    };
+  } catch (err) {
+    console.error('[Google Sheets & OCR] error', err);
+    throw err;
+  }
+}
     
     // Related topics (up to 3)
     if (data.RelatedTopics && data.RelatedTopics.length > 0) {
@@ -445,7 +858,71 @@ Examples of good responses:
 
 Identity:
 You are not just an AI chatbot.
-You are a realistic life improvement companion designed to help users grow without pressure.`;
+You are a realistic life improvement companion designed to help users grow without pressure.
+
+AVAILABLE TOOLS:
+You have access to the following tools to help users accomplish tasks:
+
+1. create_presentation(topic, content_outline)
+   - Description: Creates a Google Slides presentation on the given topic with the provided outline.
+   - Parameters:
+     - topic (string): The main topic of the presentation
+     - content_outline (array of strings): Outline of content for each slide
+   - Returns: Object with presentationId and presentationUrl
+
+2. search_nearby_places(category, location)
+   - Description: Searches for nearby places of a given category near the specified location using Google Maps Places API.
+   - Parameters:
+     - category (string): Type of place to search for (e.g., "restaurant", "gym", "cafe")
+     - location (string): Location to search near (e.g., "New York, NY" or "40.7128,-74.0060")
+   - Returns: Object with place details including name, address, location coordinates, and mapsUrl
+
+3. add_calendar_event(title, start_time, end_time, recurrence)
+   - Description: Adds an event to Google Calendar with optional recurrence rules.
+   - Parameters:
+     - title (string): Title of the event
+     - start_time (string): Start time in ISO 8601 format (e.g., "2026-05-20T10:00:00")
+     - end_time (string): End time in ISO 8601 format (e.g., "2026-05-20T11:00:00")
+     - recurrence (string, optional): Recurrence rule in RFC 5545 format (e.g., "RRULE:FREQ=WEEKLY;COUNT=4" for weekly 4 times)
+   - Returns: Object with eventId, htmlLink, and summary
+
+4. upload_to_drive(file_content, file_name, mime_type)
+   - Description: Uploads a file to Google Drive in the dedicated "LifeCoach AI" folder.
+   - Parameters:
+     - file_content (string): Base64 encoded file content
+     - file_name (string): Name of the file to be created
+     - mime_type (string): MIME type of the file (e.g., "text/plain", "application/pdf")
+   - Returns: Object with fileId and webViewLink
+
+5. extract_to_spreadsheet(file_id_or_text)
+   - Description: Extracts text from an image (using OCR) or processes plain text and writes it to a new Google Sheet.
+   - Parameters:
+     - file_id_or_text (string): Either a base64 encoded image file or plain text to process
+   - Returns: Object with spreadsheetId and spreadsheetUrl
+
+HOW TO USE TOOLS:
+When you need to use a tool, output a JSON object in the following format:
+{
+  "tool": "tool_name",
+  "parameters": {
+    "param1": "value1",
+    "param2": "value2"
+  }
+}
+
+After outputting the JSON, continue your response naturally. The system will execute the tool and provide you with the result to incorporate into your response.
+
+Example user request: "Create a presentation about healthy eating habits"
+Example tool usage:
+{
+  "tool": "create_presentation",
+  "parameters": {
+    "topic": "Healthy Eating Habits",
+    "content_outline": ["Introduction", "Macronutrients", "Meal Planning", "Healthy Recipes", "Conclusion"]
+  }
+}
+
+Remember: Always prioritize the user's needs and use tools only when they genuinely help accomplish the user's goal.`;
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
