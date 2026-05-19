@@ -1621,18 +1621,93 @@ HARD RULES:
       });
     }
 
+    // Process tool calls if present in the response
+    let toolResults = [];
+    let processedResponse = aiResponse;
+    
+    try {
+      // Check if the response contains tool calls in JSON format
+      const toolCallMatch = aiResponse.match(/\{[\s\S]*?"tool"\s*:\s*"[^"]+"[\s\S]*?\}/);
+      if (toolCallMatch) {
+        const toolCallStr = toolCallMatch[0];
+        try {
+          const toolCall = JSON.parse(toolCallStr);
+          if (toolCall.tool && toolCall.parameters) {
+            console.log(`[Tool Call] Executing tool: ${toolCall.tool}`);
+            
+            let toolResult;
+            switch (toolCall.tool) {
+              case "create_presentation":
+                toolResult = await create_presentation(toolCall.parameters.topic, toolCall.parameters.content_outline);
+                break;
+              case "search_nearby_places":
+                toolResult = await search_nearby_places(toolCall.parameters.category, toolCall.parameters.location);
+                break;
+              case "add_calendar_event":
+                toolResult = await add_calendar_event(
+                  toolCall.parameters.title, 
+                  toolCall.parameters.start_time, 
+                  toolCall.parameters.end_time,
+                  toolCall.parameters.recurrence
+                );
+                break;
+              case "upload_to_drive":
+                toolResult = await upload_to_drive(
+                  toolCall.parameters.file_content, 
+                  toolCall.parameters.file_name, 
+                  toolCall.parameters.mime_type
+                );
+                break;
+              case "extract_to_spreadsheet":
+                toolResult = await extract_to_spreadsheet(toolCall.parameters.file_id_or_text);
+                break;
+              default:
+                throw new Error(`Unknown tool: ${toolCall.tool}`);
+            }
+            
+            toolResults.push({
+              tool: toolCall.tool,
+              result: toolResult
+            });
+            
+            // Remove the tool call JSON from the response for clean display
+            processedResponse = aiResponse.replace(toolCallStr, '').trim();
+            
+            // Add a note about the tool execution
+            const toolNotesMap = {
+              create_presentation: "Google Slides sunumu oluşturuldu.",
+              search_nearby_places: "Google Maps'te yer araması yapıldı.",
+              add_calendar_event: "Google Takvim'de etkinlik oluşturuldu.",
+              upload_to_drive: "Dosya Google Drive'a yüklendi.",
+              extract_to_spreadsheet: "Metin Google Sheets'e aktarıldı."
+            };
+            
+            if (toolNotesMap[toolCall.tool]) {
+              tool_notes.push(toolNotesMap[toolCall.tool]);
+            }
+          }
+        } catch (parseError) {
+          console.warn('[Tool Call] Failed to parse tool call JSON:', parseError);
+          // If JSON parsing fails, continue with original response
+        }
+      }
+    } catch (toolError) {
+      console.error('[Tool Call] Error executing tool:', toolError);
+      tool_notes.push(`Araç çalıştırılırken hata oluştu: ${toolError.message}`);
+    }
+
     console.log(`[AI-Fallback] 🎯 Yanıt veren model: ${usedModel}`);
 
     // Otomasyon verisini ayıkla
     let automation_data = null;
     const automationRegex = /\[\[AUTOMATION_DATA: (\{.*?\}) \]\]/;
-    const match = aiResponse.match(automationRegex);
-    let cleanReply = aiResponse;
+    const match = processedResponse.match(automationRegex);
+    let cleanReply = processedResponse;
 
     if (match) {
       try {
         automation_data = JSON.parse(match[1]);
-        cleanReply = aiResponse.replace(automationRegex, "").trim();
+        cleanReply = processedResponse.replace(automationRegex, "").trim();
       } catch (e) { console.error("Automation parse error"); }
     }
 
@@ -1673,7 +1748,8 @@ HARD RULES:
       tool_notes,
       calendar_events,
       gmail_result,
-      maps_result
+      maps_result,
+      tool_results: toolResults // Add tool results to response
     });
   } catch (error) {
     console.error("Sistem Hatası:", error);
