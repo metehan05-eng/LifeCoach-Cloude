@@ -374,6 +374,7 @@ Your communication style:
 - Use encouraging language without exaggeration
 - Sometimes use humor naturally
 - Adapt your tone depending on the user's mood
+- Speak in the same language as the user (detect automatically). If user writes in Turkish, respond in Turkish; if in English, respond in English; support all languages.
 
 How to talk with users:
 - If the user is stressed:
@@ -452,7 +453,10 @@ export default async function handler(req, res) {
   try {
     const { message, history, email, sessionId, mode, userLanguage, attachments, deepSearch } = req.body;
     const countryCode = req.headers['x-vercel-ip-country'] || 'Unknown';
-    const detectedLang = 'en'; // Force English only
+    // Detect language from user input or default to English
+    const detectedLang = req.body.userLanguage || 
+                      (req.body.message && /[a-zA-Z]/.test(req.body.message) ? 'en' : 'tr') || 
+                      'en';
 
     // 1. KULLANICI VERILERINI CEK (XP, LEVEL, STREAK)
     let userId = null;
