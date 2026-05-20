@@ -1,9 +1,10 @@
 "use client";
-import React from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function ChatHeader({ onToggleSidebar, sidebarOpen, sessionTitle, isMobile, onConvertToProject, onOpenSettings }) {
   const router = useRouter();
+  const [showComingSoon, setShowComingSoon] = useState(false);
   return (
     <header style={{
       height: '56px',
@@ -95,7 +96,7 @@ export default function ChatHeader({ onToggleSidebar, sidebarOpen, sessionTitle,
 
       {/* HAN Code */}
       <button
-        onClick={() => router.push('/hancode')}
+        onClick={() => setShowComingSoon(true)}
         style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           width: '34px', height: '34px', borderRadius: '10px',
@@ -135,6 +136,86 @@ export default function ChatHeader({ onToggleSidebar, sidebarOpen, sessionTitle,
           50% { opacity: 0.5; transform: scale(0.8); }
         }
       `}</style>
+
+      {/* Coming Soon Modal */}
+      {showComingSoon && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}
+          onClick={() => setShowComingSoon(false)}
+        >
+          <div 
+            style={{
+              background: 'linear-gradient(135deg, rgba(139,92,246,0.15), rgba(59,130,246,0.15))',
+              border: '1px solid rgba(139,92,246,0.3)',
+              borderRadius: '16px',
+              padding: '32px',
+              maxWidth: '400px',
+              width: '90%',
+              textAlign: 'center',
+              backdropFilter: 'blur(20px)',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚔️</div>
+            <h2 style={{ 
+              color: '#fff', 
+              fontSize: '24px', 
+              fontWeight: 700, 
+              marginBottom: '12px',
+              background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}>
+              Coming Soon
+            </h2>
+            <h3 style={{ 
+              color: '#c4b5fd', 
+              fontSize: '20px', 
+              fontWeight: 600, 
+              marginBottom: '16px' 
+            }}>
+              Han Code
+            </h3>
+            <p style={{ 
+              color: 'rgba(200,200,220,0.8)', 
+              fontSize: '14px', 
+              lineHeight: 1.6,
+              marginBottom: '24px' 
+            }}>
+              Elite AI Software Engineer. Mobil, web, desktop, backend - her şeyi yapabilir. Emergent Labs tarzında görsel IDE ile yazılım oluştur ve göster.
+            </p>
+            <button
+              onClick={() => setShowComingSoon(false)}
+              style={{
+                background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)',
+                color: '#fff',
+                border: 'none',
+                padding: '12px 32px',
+                borderRadius: '10px',
+                fontSize: '14px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05)'; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+            >
+              Tamam
+            </button>
+          </div>
+        </div>
+      )}
     </header>
   );
 }
