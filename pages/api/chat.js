@@ -245,8 +245,7 @@ async function searchWithDuckDuckGo(query) {
       return null;
     }
   }
-  }
- }
+
 
 // --- GOOGLE SLIDES ---
 async function create_presentation(topic, content_outline) {
@@ -663,26 +662,6 @@ async function extract_to_spreadsheet(file_id_or_text) {
   } catch (err) {
     console.error('[Google Sheets & OCR] error', err);
     throw err;
-  }
-}
-    
-    // Related topics (up to 3)
-    if (data.RelatedTopics && data.RelatedTopics.length > 0) {
-      data.RelatedTopics.slice(0, 3).forEach(topic => {
-        if (topic.Text) {
-          results.push({
-            title: topic.FirstURL ? 'Search Result' : 'Related Topic',
-            snippet: topic.Text.substring(0, 200),
-            url: topic.FirstURL || ''
-          });
-        }
-      });
-    }
-    
-    return results.length > 0 ? results : null;
-  } catch (error) {
-    console.error('[DuckDuckGo Search] Error:', error.message);
-    return null;
   }
 }
 
