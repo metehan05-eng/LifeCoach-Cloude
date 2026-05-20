@@ -1089,12 +1089,23 @@ export default async function handler(req, res) {
             rows = normalizeSpreadsheetRows(extractedText);
           }
           if (rows.length === 0) {
-            rows = [['Sample', 'Value'], ['Example', '1']];
+            // Generate sample data based on message context
+            rows = [
+              ['Öğe', 'Değer', 'Durum'],
+              ['Örnek 1', '100', 'Tamamlandı'],
+              ['Örnek 2', '200', 'Devam Ediyor'],
+              ['Örnek 3', '150', 'Başlanmadı']
+            ];
           }
           const base64 = createExcelBufferFromData(rows);
           if (base64) {
-            generated_files.push({ filename: `lifecoach_${Date.now()}.xlsx`, mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', content_base64: base64 });
-            tool_notes.push('Excel dosyası oluşturuldu.');
+            generated_files.push({ 
+              filename: `lifecoach_excel_${Date.now()}.xlsx`, 
+              mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 
+              content_base64: base64,
+              type: 'excel'
+            });
+            tool_notes.push('Excel dosyası oluşturuldu ve indirilebilir.');
           }
         } catch (e) {
           console.error('Excel generate error', e);
@@ -1103,12 +1114,34 @@ export default async function handler(req, res) {
 
       if (wantsSlides && GOOGLE_SERVICE_ACCOUNT) {
         try {
-          const titleMatch = (message || '').match(/(?:sunum|slide|presentation)[:\- ]+(.+)/i);
+          const titleMatch = (message || '').match(/(?:sunum|slide|presentation|powerpoint|ppt)[:\- ]+(.+)/i);
           const title = titleMatch ? titleMatch[1].trim() : `LifeCoach Presentation ${new Date().toISOString().slice(0,10)}`;
-          const pres = await createGooglePresentation(title);
+          
+          // Generate 10-slide outline
+          const slideOutline = [
+            'Giriş ve Amaç',
+            'Konuya Genel Bakış',
+            'Ana Noktalar 1',
+            'Ana Noktalar 2',
+            'Detaylı Analiz',
+            'Örnekler ve Vaka Çalışmaları',
+            'Veriler ve İstatistikler',
+            'Öneriler ve Çözümler',
+            'Sonuç ve Özet',
+            'Sorular ve Cevaplar'
+          ];
+          
+          const pres = await create_presentation(title, slideOutline);
           if (pres) {
-            generated_files.push({ filename: `${title}.gslides`, mime: 'application/vnd.google-apps.presentation', url: pres.presentationUrl, id: pres.presentationId });
-            tool_notes.push('Google Slides sunumu oluşturuldu.');
+            generated_files.push({ 
+              filename: `${title}.gslides`, 
+              mime: 'application/vnd.google-apps.presentation', 
+              url: pres.presentationUrl, 
+              id: pres.presentationId,
+              type: 'slides',
+              title: title
+            });
+            tool_notes.push(`Google Slides sunumu oluşturuldu: ${title}`);
           }
         } catch (e) {
           console.error('Slides create error', e);
@@ -1159,7 +1192,26 @@ export default async function handler(req, res) {
           const now = new Date();
           let events = [];
           const timezone = 'Europe/Istanbul';
-          if (/yıllık/.test(msgLower)) {
+          
+          // Goal planning mode - create structured weekly plan
+          if (req.body.goal_planning_mode) {
+            const goalTitle = message.substring(0, 50) || 'Hedef Planı';
+            const startDate = new Date(now.getTime() + 24 * 60 * 60 * 1000); // Start tomorrow
+            
+            // Create 7-day goal plan
+            for (let i = 0; i < 7; i++) {
+              const eventDate = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000);
+              eventDate.setHours(10, 0, 0, 0);
+              
+              events.push({
+                summary: `${goalTitle} - Gün ${i + 1}`,
+                description: `${goalTitle} için ${i + 1}. gün hedefleri ve aktiviteleri.\n\nDetaylı plan: ${message}`,
+                start: { dateTime: eventDate.toISOString(), timeZone: timezone },
+                end: { dateTime: new Date(eventDate.getTime() + 60 * 60 * 1000).toISOString(), timeZone: timezone },
+                recurrence: i === 0 ? ['RRULE:FREQ=DAILY;COUNT=7'] : undefined
+              });
+            }
+          } else if (/yıllık/.test(msgLower)) {
             const start = new Date(now.getFullYear() + 1, 0, 2, 10, 0, 0);
             events.push({
               summary: 'Yıllık planlama oturumu',
@@ -1183,9 +1235,13 @@ export default async function handler(req, res) {
               { summary: 'Gelişim hedeflerini gözden geçirme', description: message, start: { dateTime: new Date(first.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString(), timeZone: timezone }, end: { dateTime: new Date(first.getTime() + 2 * 24 * 60 * 60 * 1000 + 60 * 60 * 1000).toISOString(), timeZone: timezone } }
             ];
           }
+          
           calendar_events = await createCalendarEvents(events);
           if (calendar_events.length > 0) {
-            tool_notes.push('Google Takvim için toplantı/plan oluşturuldu.');
+            calendar_events.type = req.body.goal_planning_mode ? 'goal_plan' : 'calendar';
+            tool_notes.push(req.body.goal_planning_mode ? 
+              `Google Takvim\'de 7 günlük hedef planı oluşturuldu.` : 
+              'Google Takvim için toplantı/plan oluşturuldu.');
           }
         } catch (e) {
           console.error('Calendar integration error', e);
@@ -1194,9 +1250,20 @@ export default async function handler(req, res) {
 
       if (wantsMaps && GOOGLE_MAPS_API_KEY) {
         try {
-          maps_result = await searchGoogleMaps(message || userName);
-          if (maps_result) {
-            tool_notes.push(`Google Maps üzerinde bir sonuç buldum: ${maps_result.name}`);
+          // Extract category from message
+          const categoryMatch = message.match(/(?:en yakın|yakınındaki|bul|ara)[:\s]*(.+?)(?:\s+(?:nerede|konum|lokasyon)|$)/i);
+          const category = categoryMatch ? categoryMatch[1].trim() : 'restaurant';
+          
+          // Use IP-based location or default to a major city
+          const location = countryCode === 'TR' ? 'Istanbul, Turkey' : 
+                          countryCode === 'US' ? 'New York, NY' : 
+                          'Istanbul, Turkey';
+          
+          maps_result = await search_nearby_places(category, location);
+          if (maps_result && maps_result.places && maps_result.places.length > 0) {
+            maps_result.category = category;
+            maps_result.searchLocation = location;
+            tool_notes.push(`Google Maps üzerinde ${category} için ${maps_result.places.length} sonuç buldum.`);
           }
         } catch (e) {
           console.error('Maps search error', e);

@@ -47,6 +47,7 @@ export default function ChatbotInterface() {
   const [error, setError] = useState(null);
   const [streamText, setStreamText] = useState('');
   const [deepSearch, setDeepSearch] = useState(false);
+  const [goalPlanningMode, setGoalPlanningMode] = useState(false);
   const [userStats, setUserStats] = useState({ xp: 0, level: 1, currentStreak: 0 });
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showAutomation, setShowAutomation] = useState(false);
@@ -231,7 +232,8 @@ export default function ChatbotInterface() {
           attachments: preparedAttachments,
           sessionId: targetSessionId, 
           email: session?.user?.email,
-          deepSearch: deepSearch  // 🔍 Kullanıcının seçtiği arama modu
+          deepSearch: deepSearch,
+          goal_planning_mode: goalPlanningMode  // 🎯 Hedef planlama modu
         }),
       });
 
@@ -281,6 +283,8 @@ export default function ChatbotInterface() {
       setStreamText('');
       // Deep search'i otomatik sıfırla (tek seferlik arama)
       if (deepSearch) setDeepSearch(false);
+      // Goal planning mode'u otomatik sıfırla
+      if (goalPlanningMode) setGoalPlanningMode(false);
     } catch (err) {
       setError("Hata oldu daha sonra tekrar deneyin");
     } finally {
@@ -441,6 +445,8 @@ export default function ChatbotInterface() {
                   onToggleVision={() => setShowVision(p => !p)}
                   deepSearch={deepSearch}
                   onToggleDeepSearch={() => setDeepSearch(p => !p)}
+                  goalPlanningMode={goalPlanningMode}
+                  onToggleGoalPlanning={() => setGoalPlanningMode(p => !p)}
                 />
               </>
             ) : (
@@ -490,6 +496,8 @@ export default function ChatbotInterface() {
                     onToggleVision={() => setShowVision(p => !p)}
                     deepSearch={deepSearch}
                     onToggleDeepSearch={() => setDeepSearch(p => !p)}
+                    goalPlanningMode={goalPlanningMode}
+                    onToggleGoalPlanning={() => setGoalPlanningMode(p => !p)}
                   />
                 </div>
 

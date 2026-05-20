@@ -306,6 +306,151 @@ const SourceCards = ({ sources }) => {
   );
 };
 
+/* ── Google Maps Result Card ── */
+const MapsResultCard = ({ mapsResult }) => {
+  if (!mapsResult || !mapsResult.places || mapsResult.places.length === 0) return null;
+  
+  return (
+    <div style={{ marginTop: '16px' }}>
+      <div style={{
+        fontSize: '11px', fontWeight: 700, color: 'rgba(234, 88, 12, 0.8)',
+        letterSpacing: '0.8px', textTransform: 'uppercase',
+        display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px'
+      }}>
+        <span style={{ fontSize: '13px' }}>🗺️</span> Google Maps Sonuçları
+        <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginLeft: 'auto' }}>
+          {mapsResult.searchLocation}
+        </span>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {mapsResult.places.slice(0, 3).map((place, i) => (
+          <a
+            key={i}
+            href={place.mapsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '12px 14px',
+              background: 'rgba(234, 88, 12, 0.06)',
+              border: '1px solid rgba(234, 88, 12, 0.2)',
+              borderRadius: '12px',
+              textDecoration: 'none',
+              color: '#e5e7eb',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = 'rgba(234, 88, 12, 0.12)';
+              e.currentTarget.style.borderColor = 'rgba(234, 88, 12, 0.4)';
+              e.currentTarget.style.transform = 'translateX(3px)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = 'rgba(234, 88, 12, 0.06)';
+              e.currentTarget.style.borderColor = 'rgba(234, 88, 12, 0.2)';
+              e.currentTarget.style.transform = 'translateX(0)';
+            }}
+          >
+            <div style={{
+              width: '40px', height: '40px', borderRadius: '10px',
+              background: 'linear-gradient(135deg, rgba(234, 88, 12, 0.2), rgba(217, 119, 6, 0.15))',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '18px', flexShrink: 0
+            }}>
+              📍
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: '14px', fontWeight: 700, marginBottom: '2px' }}>
+                {place.name}
+              </div>
+              <div style={{ fontSize: '12px', color: 'rgba(226,232,240,0.7)', marginBottom: '4px' }}>
+                {place.address}
+              </div>
+              {place.rating && (
+                <div style={{ fontSize: '11px', color: 'rgba(234, 88, 12, 0.8)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span>⭐</span>
+                  <span>{place.rating}</span>
+                  {place.user_ratings_total && (
+                    <span style={{ color: 'rgba(255,255,255,0.4)' }}>
+                      ({place.user_ratings_total} değerlendirme)
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+            <span style={{ color: '#ea580c', fontSize: '18px', flexShrink: 0 }}>↗</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+/* ── Calendar Events Card ── */
+const CalendarEventsCard = ({ calendarEvents }) => {
+  if (!calendarEvents || calendarEvents.length === 0) return null;
+  
+  const isGoalPlan = calendarEvents.type === 'goal_plan';
+  
+  return (
+    <div style={{ marginTop: '16px' }}>
+      <div style={{
+        fontSize: '11px', fontWeight: 700, color: 'rgba(34, 197, 94, 0.8)',
+        letterSpacing: '0.8px', textTransform: 'uppercase',
+        display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px'
+      }}>
+        <span style={{ fontSize: '13px' }}>📅</span> 
+        {isGoalPlan ? 'Google Takvim - Hedef Planı' : 'Google Takvim Etkinlikleri'}
+      </div>
+      <div style={{ 
+        padding: '14px', 
+        borderRadius: '12px', 
+        background: 'rgba(34, 197, 94, 0.06)', 
+        border: '1px solid rgba(34, 197, 94, 0.2)' 
+      }}>
+        {isGoalPlan ? (
+          <div style={{ marginBottom: '12px', fontSize: '13px', color: '#86efac' }}>
+            ✨ 7 günlük hedef planı Google Takvim'e oluşturuldu!
+          </div>
+        ) : null}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {calendarEvents.slice(0, 3).map((event, i) => (
+            <div key={i} style={{
+              padding: '10px 12px',
+              background: 'rgba(34, 197, 94, 0.08)',
+              borderRadius: '8px',
+              border: '1px solid rgba(34, 197, 94, 0.15)'
+            }}>
+              <div style={{ fontSize: '13px', fontWeight: 700, color: '#86efac', marginBottom: '4px' }}>
+                {event.summary}
+              </div>
+              {event.htmlLink && (
+                <a
+                  href={event.htmlLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    fontSize: '11px', color: 'rgba(134, 239, 172, 0.8)',
+                    textDecoration: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.color = '#86efac'; }}
+                  onMouseLeave={e => { e.currentTarget.style.color = 'rgba(134, 239, 172, 0.8)'; }}
+                >
+                  Takvim'de gör ↗
+                </a>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 /* ── Single message bubble ── */
 function MessageBubble({ message, isStream, onQuickAction }) {
   const isUser = message.role === 'user';
@@ -517,6 +662,16 @@ function MessageBubble({ message, isStream, onQuickAction }) {
         {/* Source Cards */}
         {message.sources && message.sources.length > 0 && (
           <SourceCards sources={message.sources} />
+        )}
+
+        {/* Maps Result Card */}
+        {message.maps_result && (
+          <MapsResultCard mapsResult={message.maps_result} />
+        )}
+
+        {/* Calendar Events Card */}
+        {message.calendar_events && message.calendar_events.length > 0 && (
+          <CalendarEventsCard calendarEvents={message.calendar_events} />
         )}
 
       </div>

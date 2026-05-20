@@ -9,7 +9,7 @@ const QUICK_PROMPTS = [
   { emoji: '🔥', label: 'Motive et' },
 ];
 
-export default function ChatInput({ value, onChange, onSend, isLoading, centered = false, isMobile = false, onToggleVision, deepSearch = false, onToggleDeepSearch }) {
+export default function ChatInput({ value, onChange, onSend, isLoading, centered = false, isMobile = false, onToggleVision, deepSearch = false, onToggleDeepSearch, goalPlanningMode = false, onToggleGoalPlanning }) {
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
   const [focused, setFocused] = useState(false);
@@ -269,12 +269,40 @@ export default function ChatInput({ value, onChange, onSend, isLoading, centered
             boxShadow: deepSearch ? '0 0 12px rgba(6,182,212,0.35)' : 'none',
             transform: deepSearch ? 'scale(1.08)' : 'scale(1)',
           }}
-          title={deepSearch ? 'Web Arama Aktif — Tıkla iptali için' : 'Deep Web Search (G\u00fcncel bilgi için)'}
+          title={deepSearch ? 'Web Arama Aktif — Tıkla iptali için' : 'Deep Web Search (Güncel bilgi için)'}
           onMouseEnter={e => { e.currentTarget.style.background = deepSearch ? 'linear-gradient(135deg, rgba(6,182,212,0.4), rgba(99,102,241,0.4))' : 'rgba(255,255,255,0.1)'; }}
           onMouseLeave={e => { e.currentTarget.style.background = deepSearch ? 'linear-gradient(135deg, rgba(6,182,212,0.25), rgba(99,102,241,0.25))' : 'rgba(255,255,255,0.05)'; }}
         >
           {deepSearch ? '🌐' : '🔍'}
         </button>
+
+        {/* Goal Planning Toggle Button */}
+        {onToggleGoalPlanning && (
+          <button
+            onClick={onToggleGoalPlanning}
+            style={{
+              width: isMobile ? '36px' : '40px',
+              height: isMobile ? '36px' : '40px',
+              borderRadius: '12px', flexShrink: 0,
+              background: goalPlanningMode
+                ? 'linear-gradient(135deg, rgba(245,158,11,0.25), rgba(217,119,6,0.25))'
+                : 'rgba(255,255,255,0.05)',
+              border: goalPlanningMode
+                ? '1px solid rgba(245,158,11,0.6)'
+                : '1px solid rgba(255,255,255,0.05)',
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'all 0.25s cubic-bezier(0.34,1.56,0.64,1)',
+              fontSize: '16px',
+              boxShadow: goalPlanningMode ? '0 0 12px rgba(245,158,11,0.35)' : 'none',
+              transform: goalPlanningMode ? 'scale(1.08)' : 'scale(1)',
+            }}
+            title={goalPlanningMode ? 'Hedef Planlama Modu Aktif — Tıkla iptali için' : 'Hedef Planlama Modu (Google Takvim)'}
+            onMouseEnter={e => { e.currentTarget.style.background = goalPlanningMode ? 'linear-gradient(135deg, rgba(245,158,11,0.4), rgba(217,119,6,0.4))' : 'rgba(255,255,255,0.1)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = goalPlanningMode ? 'linear-gradient(135deg, rgba(245,158,11,0.25), rgba(217,119,6,0.25))' : 'rgba(255,255,255,0.05)'; }}
+          >
+            {goalPlanningMode ? '🎯' : '📅'}
+          </button>
+        )}
 
         <input 
           type="file" 
