@@ -256,6 +256,7 @@ export default function ChatSidebar({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <button onClick={() => onSelectSession('leaderboard')} style={{ width: '100%', padding: '8px', borderRadius: '10px', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', color: '#fff', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>🌍 Sıralama</button>
                 <button onClick={() => onSelectSession('automation')} style={{ width: '100%', padding: '8px', borderRadius: '10px', background: 'linear-gradient(135deg, rgba(234, 179, 8, 0.1), rgba(245, 158, 11, 0.05))', border: '1px solid rgba(234, 179, 8, 0.25)', color: '#fbbf24', fontSize: '11px', fontWeight: 800, cursor: 'pointer' }}>⚡ Life Automation</button>
+                <button onClick={() => onSelectSession('waffle')} style={{ width: '100%', padding: '8px', borderRadius: '10px', background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.1), rgba(244, 114, 182, 0.05))', border: '1px solid rgba(236, 72, 153, 0.25)', color: '#f472b6', fontSize: '11px', fontWeight: 800, cursor: 'pointer' }}>🎨 Waffle Studio</button>
             </div>
         </div>
 
