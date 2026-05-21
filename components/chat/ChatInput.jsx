@@ -92,6 +92,7 @@ export default function ChatInput({ value, onChange, onSend, isLoading, centered
       case 'DOCX': case 'DOC': return { bg: '#2980b9', icon: '📝' };
       case 'XLSX': case 'XLS': return { bg: '#27ae60', icon: '📈' };
       case 'PDF': return { bg: '#e67e22', icon: '📕' };
+      case 'MP4': case 'WEBM': case 'MOV': case 'AVI': return { bg: '#6b21a8', icon: '🎬' };
       default: return { bg: '#7f8c8d', icon: '📁' };
     }
   };
@@ -310,7 +311,7 @@ export default function ChatInput({ value, onChange, onSend, isLoading, centered
           style={{ display: 'none' }} 
           multiple 
           onChange={handleFileChange}
-          accept="image/*,.pdf,.docx,.doc,.xlsx,.xls,.pptx,.ppt"
+          accept="image/*,.pdf,.docx,.doc,.xlsx,.xls,.pptx,.ppt,video/mp4,video/webm,video/quicktime,video/x-msvideo"
         />
 
         <textarea

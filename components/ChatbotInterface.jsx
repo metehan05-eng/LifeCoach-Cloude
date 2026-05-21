@@ -264,6 +264,7 @@ export default function ChatbotInterface() {
       const aiSources = data.sources || [];  // Tavily'den gelen kaynaklar
       const generatedFiles = data.generated_files || [];
       const youtubeSuggestions = data.youtube_suggestions || [];
+      const videoNotes = data.video_notes || [];
 
       let displayed = '';
       const words = aiText.split(' ');
@@ -282,6 +283,7 @@ export default function ChatbotInterface() {
               sources: aiSources,  // 🔗 Tıklanabilir kaynaklar
               files: generatedFiles,
               youtube_suggestions: youtubeSuggestions,
+              video_notes: videoNotes,
               tool_notes: data.tool_notes || [],
               calendar_events: data.calendar_events || [],
               gmail_result: data.gmail_result || null,

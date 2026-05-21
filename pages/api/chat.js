@@ -5,6 +5,8 @@ import pdf from 'pdf-parse';
 import mammoth from 'mammoth'; 
 import * as xlsx from 'xlsx';
 import { JWT } from 'google-auth-library';
+import { fetchTranscript } from 'youtube-transcript';
+import { google } from 'googleapis';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -689,6 +691,139 @@ async function searchYouTubeVideos(query, maxResults = 1) {
   }
 }
 
+// === VIDEO UNDERSTANDING HELPERS ===
+
+// Extract YouTube video ID from any URL format or return video ID directly
+function extractYouTubeVideoId(input) {
+  if (!input || typeof input !== 'string') return null;
+  const idOnly = /^([a-zA-Z0-9_-]{11})$/;
+  if (idOnly.test(input.trim())) return input.trim();
+
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=)([a-zA-Z0-9_-]{11})/,
+    /(?:youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+    /(?:youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+    /(?:youtube\.com\/v\/)([a-zA-Z0-9_-]{11})/,
+  ];
+  for (const pattern of patterns) {
+    const match = input.match(pattern);
+    if (match) return match[1];
+  }
+  return null;
+}
+
+// Check if a string looks like a YouTube URL
+function isYouTubeUrl(input) {
+  return /youtube\.com|youtu\.be/.test(input || '');
+}
+
+// Fetch YouTube video details using YouTube Data API v3
+async function getYouTubeVideoDetails(videoId) {
+  if (!YOUTUBE_API_KEY) return null;
+  try {
+    const youtube = google.youtube({ version: 'v3', auth: YOUTUBE_API_KEY });
+    const res = await youtube.videos.list({
+      part: ['snippet', 'contentDetails', 'statistics'],
+      id: [videoId],
+    });
+    const item = res.data.items?.[0];
+    if (!item) return null;
+    return {
+      title: item.snippet?.title || '',
+      description: (item.snippet?.description || '').substring(0, 3000),
+      channelTitle: item.snippet?.channelTitle || '',
+      thumbnail: item.snippet?.thumbnails?.high?.url || item.snippet?.thumbnails?.medium?.url || '',
+      duration: item.contentDetails?.duration || '',
+      viewCount: item.statistics?.viewCount || '0',
+      publishedAt: item.snippet?.publishedAt || '',
+      tags: item.snippet?.tags?.slice(0, 10) || [],
+    };
+  } catch (err) {
+    console.error('[YouTube Video Details] Error:', err.message);
+    return null;
+  }
+}
+
+// Fetch YouTube video transcript from available captions/subtitles
+async function getYouTubeTranscript(videoId) {
+  try {
+    const transcriptData = await fetchTranscript(videoId, {
+      lang: ['tr', 'en', 'de', 'fr', 'es', 'auto'],
+    });
+    if (!transcriptData || transcriptData.length === 0) return '';
+    return transcriptData
+      .map(s => s.text.trim())
+      .filter(Boolean)
+      .join(' ');
+  } catch (err) {
+    console.error('[YouTube Transcript] Error:', err.message);
+    return '';
+  }
+}
+
+// Analyze MP4 video file using OpenAI Whisper for transcription
+async function transcribeVideoWithWhisper(videoBase64) {
+  const openaiKey = process.env.OPENAI_API_KEY;
+  if (!openaiKey) {
+    console.warn('[Video Transcription] OPENAI_API_KEY not set, skipping Whisper transcription');
+    return '';
+  }
+  try {
+    const openai = new OpenAI({ apiKey: openaiKey });
+    // Convert base64 -> buffer, write to temp file, then create File object for Whisper
+    const buffer = Buffer.from(videoBase64, 'base64');
+
+    const fs = await import('fs');
+    const path = await import('path');
+    const os = await import('os');
+    const tmpFile = path.join(os.tmpdir(), `lifecoach-video-${Date.now()}.mp4`);
+    fs.writeFileSync(tmpFile, buffer);
+
+    const transcription = await openai.audio.transcriptions.create({
+      file: fs.createReadStream(tmpFile),
+      model: 'whisper-1',
+      language: 'tr',
+      response_format: 'text',
+    });
+
+    fs.unlinkSync(tmpFile);
+    return transcription || '';
+  } catch (err) {
+    console.error('[Video Transcription] Error:', err.message);
+    // Cleanup temp file if it exists
+    try { const fs = require('fs'); const tmpFile = `/tmp/lifecoach-video-${Date.now()}.mp4`; if (fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile); } catch (_) {}
+    return '';
+  }
+}
+
+// Build video context text for the AI prompt
+function buildVideoContextForAI(youtubeInfo, transcript, filename) {
+  const parts = [];
+
+  if (youtubeInfo) {
+    parts.push(`\n\n📺 [YOUTUBE VİDEOSU ANALİZİ]`);
+    parts.push(`Başlık: ${youtubeInfo.title}`);
+    parts.push(`Kanal: ${youtubeInfo.channelTitle}`);
+    parts.push(`Açıklama: ${youtubeInfo.description}`);
+    parts.push(`İzlenme: ${Number(youtubeInfo.viewCount).toLocaleString('tr-TR')}`);
+    parts.push(`Yayınlanma: ${new Date(youtubeInfo.publishedAt).toLocaleDateString('tr-TR')}`);
+    if (youtubeInfo.tags.length > 0) parts.push(`Etiketler: ${youtubeInfo.tags.join(', ')}`);
+    parts.push(`Alakılı içerik özeti (transkript):\n${transcript || 'Transkript bulunamadı, sadece başlık ve açıklama ile analiz yap.'}`);
+  } else if (filename && transcript) {
+    parts.push(`\n\n🎬 [MP4 VİDEOSU ANALİZİ]`);
+    parts.push(`Dosya: ${filename}`);
+    parts.push(`Video içeriğinin transkripti:\n${transcript}`);
+  } else if (filename) {
+    parts.push(`\n\n🎬 [MP4 VİDEOSU]`);
+    parts.push(`Dosya: ${filename}`);
+    parts.push(`Video gönderildi ancak transkript çıkarılamadı. Video hakkında mevcut bilgilerle kapsamlı bir analiz ve özet yap.`);
+  }
+
+  return parts.join('\n');
+}
+
+// === END VIDEO UNDERSTANDING HELPERS ===
+
 // --- Excel (XLSX) generator ---
 function createExcelBufferFromData(dataArray2D = [['No data']]) {
   try {
@@ -932,9 +1067,10 @@ export default async function handler(req, res) {
       return res.status(200).json({ stats: userStats });
     }
 
-    // 2. DOSYA İŞLEME (PDF, DOCX, XLSX)
+    // 2. DOSYA İŞLEME (PDF, DOCX, XLSX, MP4Video)
     let extractedText = "";
     let imagesForVision = [];
+    let videoAttachments = [];
 
     if (attachments && attachments.length > 0) {
       for (const at of attachments) {
@@ -954,11 +1090,46 @@ export default async function handler(req, res) {
               const sheetName = workbook.SheetNames[0];
               const csv = xlsx.utils.sheet_to_csv(workbook.Sheets[sheetName]);
               extractedText += `\n--- [DOSYA: ${at.name} (EXCEL)] ---\n${csv}\n`;
+            } else if (at.ext === 'MP4' || at.ext === 'WEBM' || at.ext === 'MOV' || at.ext === 'AVI') {
+              // Transcribe video file with Whisper
+              const transcript = await transcribeVideoWithWhisper(at.data);
+              if (transcript) {
+                extractedText += `\n--- [VİDEO: ${at.name} (${
+                  at.ext === 'MP4' ? 'MP4' : at.ext
+                })] ---\n${transcript}\n`;
+              } else {
+                tool_notes.push(`${at.name} videosu için transkript alınamadı, video hakkında mevcut bilgilerle analiz yapılacak.`);
+              }
+              videoAttachments.push({ name: at.name, ext: at.ext, transcript: transcript || '' });
             }
           } catch (e) {
-            console.error(`File parsing error (${at.name}):`, e);
+            console.error(`File/Video processing error (${at.name}):`, e);
           }
         }
+      }
+    }
+
+    // 2b. YOUTUBE VİDEOSU TESPİTİ (message içinde YouTube linki var mı?)
+    let youtubeVideoContext = '';
+    if (message && isYouTubeUrl(message)) {
+      try {
+        const ytVideoId = extractYouTubeVideoId(message);
+        if (ytVideoId) {
+          const [ytVideoDetailsPromise, ytTranscriptPromise] = await Promise.allSettled([
+            getYouTubeVideoDetails(ytVideoId),
+            getYouTubeTranscript(ytVideoId),
+          ]);
+
+          const ytVideoDetails = ytVideoDetailsPromise.status === 'fulfilled' ? ytVideoDetailsPromise.value : null;
+          const ytTranscript = ytTranscriptPromise.status === 'fulfilled' ? ytTranscriptPromise.value : '';
+
+          if (ytVideoDetails || ytTranscript) {
+            youtubeVideoContext = buildVideoContextForAI(ytVideoDetails, ytTranscript);
+            tool_notes.push(`YouTube videosu (${ytVideoDetails?.title || ytVideoId}) transkripti çıkarıldı.`);
+          }
+        }
+      } catch (ytErr) {
+        console.error('[YouTube Video Processing] Error:', ytErr.message);
       }
     }
 
@@ -1313,7 +1484,7 @@ HARD RULES:
     ];
 
     // SISTEM PROMPT (Arama bağlamı varsa ekle)
-    const systemPrompt = `${BASE_SYSTEM_PROMPT}\n\n${systemInstruction}\n${localizationInjection}${searchContextInjection}\n\nMOD: DOSYA OKUMA AKTIF. Eğer kullanıcı dosya içeriği gönderdiyse, o içeriği en ince detayına kadar analiz et.`;
+    const systemPrompt = `${BASE_SYSTEM_PROMPT}\n\n${systemInstruction}\n${localizationInjection}${searchContextInjection}\n\nMOD: DOSYA OKUMA AKTIF. Eğer kullanıcı dosya içeriği gönderdiyse, o içeriği en ince detayına kadar analiz et.\n\nVIDEO ANLAMA AKTİF: Kullanıcı MP4 dosyası gönderdiğinde veya YouTube videosu linki paylaştığında, video içeriğini, transkriptini ve başlığını enine boyuna analiz et. Özet çıkar, ana fikirleri ortaya koy, momentum noktalarını belirt ve kişisel gelişimle ilgili gerçek dünya dersleri çıkar. Kullanıcıya videonun üzerinden ne öğrenebileceği, ne hissettiği, ne yapabileceği konusunda bir yaşam koçu gibi rehberlik et.`;
 
     // DYNAMIC MODEL ROUTING: Select model based on user intent
     const selectedModel = selectQwenModelByIntent(message || '');
@@ -1343,21 +1514,32 @@ HARD RULES:
     if (extractedText) {
       finalUserContent += `\n\nEkli Dosya İçerikleri:\n${extractedText}`;
     }
+    if (youtubeVideoContext) {
+      finalUserContent += `\n${youtubeVideoContext}`;
+    }
+
+    // Check if the last message in history is the same as current message to avoid duplication
+    const lastHistoryMessage = history && history.length > 0 ? history[history.length - 1] : null;
+    const isDuplicate = lastHistoryMessage && 
+                        lastHistoryMessage.role === 'user' && 
+                        lastHistoryMessage.content === finalUserContent;
 
     const hasImages = imagesForVision && imagesForVision.length > 0;
-    if (hasImages) {
-      messages.push({
-        role: "user",
-        content: [
-          { type: "text", text: finalUserContent },
-          ...imagesForVision.map(img => ({
-            type: "image_url",
-            image_url: { url: `data:image/jpeg;base64,${img}` }
-          }))
-        ]
-      });
-    } else {
-      messages.push({ role: "user", content: finalUserContent });
+    if (!isDuplicate) {
+      if (hasImages) {
+        messages.push({
+          role: "user",
+          content: [
+            { type: "text", text: finalUserContent },
+            ...imagesForVision.map(img => ({
+              type: "image_url",
+              image_url: { url: `data:image/jpeg;base64,${img}` }
+            }))
+          ]
+        });
+      } else {
+        messages.push({ role: "user", content: finalUserContent });
+      }
     }
 
     console.log('[BACKEND DEBUG] Messages array being sent to LLM:', JSON.stringify(messages, null, 2));
@@ -1779,7 +1961,17 @@ HARD RULES:
       calendar_events,
       gmail_result,
       maps_result,
-      tool_results: toolResults // Add tool results to response
+      tool_results: toolResults, // Add tool results to response
+      video_notes: videoAttachments && videoAttachments.length > 0
+        ? videoAttachments.map(v => ({ 
+            name: v.name, 
+            ext: v.ext, 
+            hasTranscript: (v.transcript || '').length > 0 
+          }))
+        : null,
+      youtube_video: youtubeVideoContext ? {
+        context_injected: true,
+      } : null
     });
   } catch (error) {
     console.error("Sistem Hatası:", error);

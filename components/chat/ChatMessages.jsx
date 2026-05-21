@@ -2,6 +2,85 @@
 import React, { useEffect, useRef } from 'react';
 
 /* ── Markdown formatter ── */
+function extractYouTubeVideoId(input) {
+  if (!input || typeof input !== 'string') return null;
+  const idOnly = /^([a-zA-Z0-9_-]{11})$/;
+  if (idOnly.test(input.trim())) return input.trim();
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=)([a-zA-Z0-9_-]{11})/,
+    /(?:youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+    /(?:youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+    /(?:youtube\.com\/v\/)([a-zA-Z0-9_-]{11})/,
+  ];
+  for (const p of patterns) {
+    const m = input.match(p);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+/* ── Video Preview Card (YouTube embed) ── */
+const VideoPreview = ({ videoId, title, onRemove }) => (
+  <div style={{
+    marginTop: '8px', borderRadius: '14px', overflow: 'hidden',
+    border: '1px solid rgba(255,255,255,0.1)',
+    background: 'rgba(0,0,0,0.25)',
+    animation: 'ci-pop 0.3s ease-out both',
+  }}>
+    <div style={{
+      position: 'relative', width: '100%', paddingTop: '56.25%',
+      background: '#000',
+    }}>
+      <iframe
+        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+        src={`https://www.youtube.com/embed/${videoId}`}
+        title="Video"
+        frameBorder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+      />
+    </div>
+    {title && (
+      <div style={{ padding: '8px 12px', fontSize: '12px', color: 'rgba(255,255,255,0.6)', fontWeight: 500 }}>
+        🎬 {title}
+      </div>
+    )}
+  </div>
+);
+
+/* ── MP4 / Video File Preview Card ── */
+const VideoFilePreview = ({ name, hasTranscript }) => (
+  <div style={{
+    marginTop: '8px', borderRadius: '14px',
+    border: '1px solid rgba(168,85,247,0.25)',
+    background: 'rgba(139,92,246,0.07)',
+    padding: '10px 14px',
+    display: 'flex', alignItems: 'center', gap: '10px',
+    animation: 'ci-pop 0.3s ease-out both',
+  }}>
+    <div style={{
+      width: '40px', height: '40px', borderRadius: '10px', flexShrink: 0,
+      background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontSize: '18px',
+    }}>🎬</div>
+    <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ fontSize: '13px', fontWeight: 700, color: '#e9d5ff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {name}
+      </div>
+      <div style={{ fontSize: '11px', color: 'rgba(168,85,247,0.7)', marginTop: '2px' }}>
+        {hasTranscript ? '✅ Transkript çıkarıldı — AI analiz ediyor' : '⏳ İşleniyor...'}
+      </div>
+    </div>
+    {hasTranscript && (
+      <span style={{ color: '#a78bfa', background: 'rgba(139,92,246,0.15)', padding: '4px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: 600, flexShrink: 0 }}>
+        Analiz edildi
+      </span>
+    )}
+  </div>
+);
+
+/* ── Markdown formatter ── */
 const formatMarkdown = (text) => {
   // Code blocks (multi-line) with terminal look
   text = text.replace(/```(\w+)?\n?([\s\S]*?)```/g, (_, lang, code) => {
@@ -478,35 +557,49 @@ function MessageBubble({ message, isStream, onQuickAction }) {
           fontWeight: 500,
           letterSpacing: '-0.01em',
         }}>
-          {/* User Attachments in Bubble */}
-          {message.attachments && message.attachments.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
-              {message.attachments.map((at, idx) => (
-                <div key={idx} style={{ 
-                  borderRadius: '10px', overflow: 'hidden', 
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  background: 'rgba(0,0,0,0.2)',
-                  minWidth: at.preview ? 'auto' : '140px'
-                }}>
-                  {at.preview ? (
-                     <img src={at.preview} style={{ maxWidth: '200px', maxHeight: '150px', display: 'block' }} />
-                  ) : (
-                    <div style={{ padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                       <span style={{ fontSize: '18px' }}>
-                         {at.extension === 'PPTX' ? '📊' : 
-                          at.extension === 'XLSX' ? '📈' : 
-                          at.extension === 'DOCX' ? '📝' : '📁'}
-                       </span>
-                       <span style={{ fontSize: '11px', color: '#a5b4fc', maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                         {at.name}
-                       </span>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-          {message.content}
+           {/* User Attachments in Bubble */}
+           {message.attachments && message.attachments.length > 0 && (
+             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
+               {message.attachments.map((at, idx) => {
+                 // Video file type icon
+                 const isVideo = ['MP4', 'WEBM', 'MOV', 'AVI'].includes(at.extension);
+                 return (
+                 <div key={idx} style={{ 
+                   borderRadius: '10px', overflow: 'hidden', 
+                   border: '1px solid rgba(255,255,255,0.1)',
+                   background: 'rgba(0,0,0,0.2)',
+                   minWidth: at.preview ? 'auto' : (isVideo ? '200px' : '140px')
+                 }}>
+                   {at.preview ? (
+                      <img src={at.preview} style={{ maxWidth: '200px', maxHeight: '150px', display: 'block' }} />
+                   ) : (
+                     <div style={{ padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '18px' }}>
+                          {at.extension === 'PPTX' ? '📊' : 
+                           at.extension === 'XLSX' ? '📈' : 
+                           at.extension === 'DOCX' ? '📝' :
+                           isVideo ? '🎬' : '📁'}
+                        </span>
+                        <span style={{ fontSize: '11px', color: '#a5b4fc', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {at.name}
+                        </span>
+                     </div>
+                   )}
+                 </div>
+               )})}
+             </div>
+           )}
+          
+           {/* YouTube video preview from message content */}
+           {(() => {
+             if (message.content) {
+               const ytId = extractYouTubeVideoId(message.content);
+               if (ytId) return <VideoPreview videoId={ytId} />;
+             }
+             return null;
+           })()}
+
+           {message.content}
         </div>
       </div>
     );
@@ -656,6 +749,37 @@ function MessageBubble({ message, isStream, onQuickAction }) {
                 <li key={idx}>{note}</li>
               ))}
             </ul>
+          </div>
+        )}
+
+        {/* Video Notes Card — shows processed video uploads */}
+        {message.video_notes && message.video_notes.length > 0 && (
+          <div style={{ marginTop: '16px', padding: '14px', borderRadius: '16px', background: 'rgba(91,33,182,0.08)', border: '1px solid rgba(168,85,247,0.2)' }}>
+            <div style={{ marginBottom: '10px', fontSize: '13px', color: '#c084fc', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span>🎬</span> Video Analizi
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {message.video_notes.map((vn, i) => (
+                <div key={i} style={{
+                  padding: '10px 14px', borderRadius: '10px',
+                  background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.15)',
+                  display: 'flex', alignItems: 'center', gap: '10px',
+                }}>
+                  <span style={{ fontSize: '20px' }}>🎬</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '13px', fontWeight: 700, color: '#e9d5ff' }}>{vn.name}</div>
+                    <div style={{ fontSize: '11px', color: 'rgba(168,85,247,0.7)', marginTop: '2px' }}>
+                      {vn.hasTranscript ? '✅ Transkript alındı — detaylı analiz yapıldı' : '⏳ İşleniyor'}
+                    </div>
+                  </div>
+                  {vn.hasTranscript && (
+                    <span style={{ color: '#a78bfa', background: 'rgba(139,92,246,0.12)', padding: '3px 10px', borderRadius: '6px', fontSize: '10px', fontWeight: 700, flexShrink: 0 }}>
+                      ANALİZ EDİLDİ
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
