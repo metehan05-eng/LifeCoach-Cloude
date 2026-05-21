@@ -9,6 +9,9 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
+
+// CONCURRENCY LOCK: Simple in-memory lock to prevent overlapping chat requests per session
+const chatLocks = new Map(); // sessionId -> Promise
 const GOOGLE_SERVICE_ACCOUNT = process.env.GOOGLE_SERVICE_ACCOUNT; // JSON string of service account
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
 const GOOGLE_DELEGATED_USER = process.env.GOOGLE_DELEGATED_USER;
@@ -738,6 +741,31 @@ async function createGooglePresentation(title = 'New Presentation') {
   }
 }
 
+// --- DYNAMIC MODEL ROUTING: Intent-based Model Selection ---
+function selectQwenModelByIntent(message) {
+  if (!message || typeof message !== 'string') return 'qwen-flash';
+
+  const msgLower = message.toLowerCase().trim();
+
+  // Coding/Programming intent → Use qwen-coder-plus
+  const codingKeywords = /\b(kod|programlama|script|code|programming|developer|javascript|python|function|class|api|debug|fix bug|hata düzelt|yazılım|software|backend|frontend|database|sql|query|algorithm|algoritma|variable|değişken|loop|döngü|array|dizi|object|nesne|json|xml|html|css|react|vue|angular|node|express|django|flask|spring|java|c\+\+|c#|php|ruby|go|rust|swift|kotlin|typescript|git|github|gitlab|deployment|deploy|docker|kubernetes|aws|azure|gcp)\b/i;
+  if (codingKeywords.test(msgLower)) {
+    console.log(`[Model Router] 🎯 Coding intent detected → qwen-coder-plus`);
+    return 'qwen-coder-plus';
+  }
+
+  // Google Integration intent → Use qwen-plus (function calling capability)
+  const googleKeywords = /\b(harita|konum|takvim|calendar|gmail|excel|drive|slides|docs|sheet|google|maps|email gönder|mail at|dosya yükle|sunum oluştur|presentation|spreadsheet|tablo|grafik|chart|event|etkinlik|reminder|hatırlatıcı|appointment|randevu|schedule|planlama|location|yer|navigasyon|route|yol tarifi|nearby|yakınındaki|upload|download|export|import)\b/i;
+  if (googleKeywords.test(msgLower)) {
+    console.log(`[Model Router] 🎯 Google integration intent detected → qwen-plus`);
+    return 'qwen-plus';
+  }
+
+  // Default → Use qwen-flash (fastest and cheapest for general chat)
+  console.log(`[Model Router] 💬 General chat intent detected → qwen-flash`);
+  return 'qwen-flash';
+}
+
 // --- Qwen DashScope Service (Singapore Region) ---
 async function callQwenDashScope(systemPrompt, userMessages, model = 'qwen-flash', maxTokens = 4096) {
   const apiKey = process.env.DASHSCOPE_API_KEY;
@@ -812,10 +840,26 @@ Remember: Always prioritize the user's needs and use tools only when they genuin
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
+  const { message, history, email, sessionId, mode, userLanguage, attachments, deepSearch } = req.body;
+  const countryCode = req.headers['x-vercel-ip-country'] || 'Unknown';
+
+  // CONCURRENCY LOCK: Use sessionId or email as lock key to serialize requests per user/session
+  const lockKey = sessionId || email || 'default';
+  
+  // If there's an existing lock for this session, wait for it to complete
+  if (chatLocks.has(lockKey)) {
+    await chatLocks.get(lockKey);
+  }
+
+  // Create a new lock for this request
+  let resolveLock;
+  const lockPromise = new Promise(resolve => { resolveLock = resolve; });
+  chatLocks.set(lockKey, lockPromise);
+
   try {
-    const { message, history, email, sessionId, mode, userLanguage, attachments, deepSearch } = req.body;
-    const countryCode = req.headers['x-vercel-ip-country'] || 'Unknown';
-    
+    // STRICT AWAIT FLOW: All operations below are now serialized per session
+    // This ensures no overlapping requests can interfere with message processing
+
     // Improved language detection for Turkish vs English
     function detectLanguage(text) {
       if (!text) return 'en';
@@ -825,11 +869,11 @@ export default async function handler(req, res) {
       if (turkishChars.test(text)) return 'tr';
       
       // Check for common Turkish words
-      const turkishWords = /\b(ve|veya|ama|fakat|çünkü|için|ile|bu|şu|o|ben|sen|biz|siz|onlar|merhaba|günaydın|iyi|gün|akşam|gece|nasıl|ne|neden|kim|nerede|ne zaman|kaç|hangi|evet|hayır|lütfen|teşekkür|hoşça|kal|görüşürüz|güle|güle|yapmak|etmek|gitmek|gelmek|almak|vermek|sevmek|istemek|bilmek|görmek|duymak|konuşmak|yazmak|okumak|çalışmak|yaşamak|olmak|bulmak|aramak|sormak|cevaplamak|anlamak|kabul etmek|reddetmek|başarmak|başarısız olmak|denemek|yapabilmek|istememek|gerekli|gerek|zor|kolay|iyi|kötü|büyük|küçük|yeni|eski|uzun|kısa|güzel|çirkin|hızlı|yavaş|yüksek|alçak|açık|kapalı|dolu|boş|sıcak|soğuk|ağır|hafif|geniş|dar|derin|sığ|sağlıklı|hastalıklı|mutlu|üzgün|sinirli|rahat|stresli|yorgun|enerjik|zengin|fakir|akıllı|cahil|genç|yaşlı|erkek|kadın|çocuk|yetişkin|insan|hayvan|bitki|doğa|dünya|evren|zaman|mekan|madde|enerji|güç|hareket|dinlenme|uyku|uyanıklık|bilgi|beceri|deneyim|eğitim|öğrenme|öğretme|araştırma|geliştirme|yaratıcılık|yenilik|teknoloji|bilim|sanat|kültür|tarih|coğrafya|dil|edebiyat|müzik|sinema|tiyatro|spor|sağlık|beslenme|egzersiz|meditasyon|ruhsal|bedensel|zihinsel|duygusal|sosyal|ekonomik|politik|hukuki|etik|ahlaki|dini|manevi|felsefi|teorik|pratik|teorik|uygulamalı|analitik|sentetik|bütüncül|parçacı|bağıl|mutlak|öznel|nesnel|somut|soyut|gerçek|hayali|doğru|yanlış|kesin|belirsiz|açık|kapalı|net|bulanık|basit|karmaşık|kolay|zor|hızlı|yavaş|iyi|kötü|güzel|çirkin|büyük|küçük|uzun|kısa|geniş|dar|yüksek|alçak|derin|sığ|ağır|hafif|sıcak|soğuk|kuru|yaşlı|yumuşak|sert|keskin|düz|eğri|yuvarlak|kare|üçgen|daire|mavi|kırmızı|yeşil|sarı|turuncu|mor|pembe|beyaz|siyah|gri|kahverengi|lila|turkuaz|bej|krem|gümüş|altın|bronz|bakır|demir|çelik|alüminyum|plastik|cam|kağıt|karton|ahşap|taş|toprak|kum|su|hava|ateş|toprak|metal|bitki|hayvan|insan|makine|araç|gereç|eşya|nesne|madde|maddeler|elementler|atomlar|moleküller|hücreler|dokular|organlar|sistemler|organizmalar|canlılar|ölenler|doğanlar|büyüyenler|gelişenler|değişenler|sabitleşenler|yok olanlar|yeni ortaya çıkanlar|eskiyenler|yenilenenler|bozulanlar|onarılanlar|kırılanlar|düzeltilenler|yapılanlar|yıkılanlar|kurulanlar|açılanlar|kapananlar|başlatılanlar|durdurulanlar|devam edenler|tamamlananlar|yarıda kalanlar|başarılı olanlar|başarısız olanlar|iyi olanlar|kötü olanlar|doğru olanlar|yanlış olanlar|haklı olanlar|haksız olanlar|kazananlar|kaybedenler|sevinenler|üzülenler|mutlu olanlar|üzüntülü olanlar|heyecanlı olanlar|sakin olanlar|sinirli olanlar|rahat olanlar|stresli olanlar|yorgun olanlar|enerjik olanlar|hastalıklı olanlar|sağlıklı olanlar|zengin olanlar|fakir olanlar|akıllı olanlar|cahil olanlar|genç olanlar|yaşlı olanlar|erkek olanlar|kadın olanlar|çocuk olanlar|yetişkin olanlar|insan olanlar|hayvan olanlar|bitki olanlar|doğa olanlar|dünya olanlar|evren olanlar|zaman olanlar|mekan olanlar|madde olanlar|enerji olanlar|güç olanlar|hareket olanlar|dinlenme olanlar|uyku olanlar|uyanıklık olanlar|bilgi olanlar|beceri olanlar|deneyim olanlar|eğitim olanlar|öğrenme olanlar|öğretme olanlar|araştırma olanlar|geliştirme olanlar|yaratıcılık olanlar|yenilik olanlar|teknoloji olanlar|bilim olanlar|sanat olanlar|kültür olanlar|tarih olanlar|coğrafya olanlar|dil olanlar|edebiyat olanlar|müzik olanlar|sinema olanlar|tiyatro olanlar|spor olanlar|sağlık olanlar|beslenme olanlar|egzersiz olanlar|meditasyon olanlar|ruhsal olanlar|bedensel olanlar|zihinsel olanlar|duygusal olanlar|sosyal olanlar|ekonomik olanlar|politik olanlar|hukuki olanlar|etik olanlar|ahlaki olanlar|dini olanlar|manevi olanlar|felsefi olanlar|teorik olanlar|pratik olanlar|teorik olanlar|uygulamalı olanlar|analitik olanlar|sentetik olanlar|bütüncül olanlar|parçacı olanlar|bağıl olanlar|mutlak olanlar|öznel olanlar|nesnel olanlar|somut olanlar|soyut olanlar|gerçek olanlar|hayali olanlar|doğru olanlar|yanlış olanlar|kesin olanlar|belirsiz olanlar|açık olanlar|kapalı olanlar|net olanlar|bulanık olanlar|basit olanlar|karmaşık olanlar|kolay olanlar|zor olanlar|hızlı olanlar|yavaş olanlar|iyi olanlar|kötü olanlar|güzel olanlar|çirkin olanlar|büyük olanlar|küçük olanlar|uzun olanlar|kısa olanlar|geniş olanlar|dar olanlar|yüksek olanlar|alçak olanlar|derin olanlar|sığ olanlar|ağır olanlar|hafif olanlar|sıcak olanlar|soğuk olanlar|kuru olanlar|yaşlı olanlar|yumuşak olanlar|sert olanlar|keskin olanlar|düz olanlar|eğri olanlar|yuvarlak olanlar|kare olanlar|üçgen olanlar|daire olanlar|mavi olanlar|kırmızı olanlar|yeşil olanlar|sarı olanlar|turuncu olanlar|mor olanlar|pembe olanlar|beyaz olanlar|siyah olanlar|gri olanlar|kahverengi olanlar|lila olanlar|turkuaz olanlar|bej olanlar|krem olanlar|gümüş olanlar|altın olanlar|bronz olanlar|bakır olanlar|demir olanlar|çelik olanlar|alüminyum olanlar|plastik olanlar|cam olanlar|kağıt olanlar|karton olanlar|ahşap olanlar|taş olanlar|toprak olanlar|kum olanlar|su olanlar|hava olanlar|ateş olanlar|toprak olanlar|metal olanlar|bitki olanlar|hayvan olanlar|insan olanlar|makine olanlar|araç olanlar|gereç olanlar|eşya olanlar|nesne olanlar|madde olanlar|maddeler olanlar|elementler olanlar|atomlar olanlar|moleküller olanlar|hücreler olanlar|dokular olanlar|organlar olanlar|sistemler olanlar|organizmalar olanlar|canlılar olanlar|ölenler olanlar|doğanlar olanlar|büyüyenler olanlar|gelişenler olanlar|değişenler olanlar|sabitleşenler olanlar|yok olanlar olanlar|yeni ortaya çıkanlar olanlar|eskiyenler olanlar|yenilenenler olanlar|bozulanlar olanlar|onarılanlar olanlar|kırılanlar olanlar|düzeltilenler olanlar|yapılanlar olanlar|yıkılanlar olanlar|kurulanlar olanlar|açılanlar olanlar|kapananlar olanlar|başlatılanlar olanlar|durdurulanlar olanlar|devam edenler olanlar|tamamlananlar olanlar|yarıda kalanlar olanlar|başarılı olanlar olanlar|başarısız olanlar olanlar|iyi olanlar olanlar|kötü olanlar olanlar|doğru olanlar olanlar|yanlış olanlar olanlar|haklı olanlar olanlar|haksız olanlar olanlar|kazananlar olanlar|kaybedenler olanlar|sevinenler olanlar|üzülenler olanlar|mutlu olanlar olanlar|üzüntülü olanlar olanlar|heyecanlı olanlar olanlar|sakin olanlar olanlar|sinirli olanlar olanlar|rahat olanlar olanlar|stresli olanlar olanlar|yorgun olanlar olanlar|enerjik olanlar olanlar|hastalıklı olanlar olanlar|sağlıklı olanlar olanlar|zengin olanlar olanlar|fakir olanlar olanlar|akıllı olanlar olanlar|cahil olanlar olanlar|genç olanlar olanlar|yaşlı olanlar olanlar|erkek olanlar olanlar|kadın olanlar olanlar|çocuk olanlar olanlar|yetişkin olanlar olanlar)\b/i;
+      const turkishWords = /\b(ve|veya|ama|fakat|çünkü|için|ile|bu|şu|o|ben|sen|biz|siz|onlar|merhaba|günaydın|iyi|gün|akşam|gece|nasıl|ne|neden|kim|nerede|ne zaman|kaç|hangi|evet|hayır|lütfen|teşekkür|hoşça|kal|görüşürüz|güle|güle|yapmak|etmek|gitmek|gelmek|almak|vermek|sevmek|istemek|bilmek|görmek|duymak|konuşmak|yazmak|okumak|çalışmak|yaşamak|olmak|bulmak|aramak|sormak|cevaplamak|anlamak|kabul etmek|reddetmek|başarmak|başarısız olmak|denemek|yapabilmek|istememek|gerekli|gerek|zor|kolay|iyi|kötü|büyük|küçük|yeni|eski|uzun|kısa|güzel|çirkin|hızlı|yavaş|yüksek|alçak|açık|kapalı|dolu|boş|sıcak|soğuk|ağır|hafif|geniş|dar|derin|sığ|sağlıklı|hastalıklı|mutlu|üzgün|sinirli|rahat|stresli|yorgun|enerjik|zengin|fakir|akıllı|cahil|genç|yaşlı|erkek|kadın|çocuk|yetişkin|insan|hayvan|bitki|doğa|dünya|evren|zaman|mekan|madde|enerji|güç|hareket|dinlenme|uyku|uyanıklık|bilgi|beceri|deneyim|eğitim|öğrenme|öğretme|araştırma|geliştirme|yaratıcılık|yenilik|teknoloji|bilim|sanat|kültür|tarih|coğrafya|dil|edebiyat|müzik|sinema|tiyatro|spor|sağlık|beslenme|egzersiz|meditasyon|ruhsal|bedensel|zihinsel|duygusal|sosyal|ekonomik|politik|hukuki|etik|ahlaki|dini|manevi|felsefi|teorik|pratik|teorik|uygulamalı|analitik|sentetik|bütüncül|parçacı|bağıl|mutlak|öznel|nesnel|somut|soyut|gerçek|hayali|doğru|yanlış|kesin|belirsiz|açık|kapalı|net|bulanık|basit|karmaşık|kolay|zor|hızlı|yavaş|iyi|kötü|güzel|çirkin|büyük|küçük|uzun|kısa|geniş|dar|yüksek|alçak|derin|sığ|ağır|hafif|sıcak|soğuk|kuru|yaşlı|yumuşak|sert|keskin|düz|eğri|yuvarlak|kare|üçgen|daire|mavi|kırmızı|yeşil|sarı|turuncu|mor|pembe|beyaz|siyah|gri|kahverengi|lila|turkuaz|bej|krem|gümüş|altın|bronz|bakır|demir|çelik|alüminyum|plastik|cam|kağıt|karton|ahşap|taş|toprak|kum|su|hava|ateş|toprak|metal|bitki|hayvan|insan|makine|araç|gereç|eşya|nesne|madde|maddeler|elementler|atomlar|moleküller|hücreler|dokular|organlar|sistemler|organizmalar|canlı|ölü|doğan|büyüyen|gelişen|değişen|stabilize|olan|kaybolan|yeni|çıkan|yaşlanan|yenilenen|kırılan|onarılan|kırılan|fi)/i;
       if (turkishWords.test(text)) return 'tr';
       
       // Check for common English words
-      const englishWords = /\b(the|and|or|but|because|for|with|this|that|these|those|i|you|we|they|he|she|it|hello|good|morning|afternoon|evening|night|how|what|why|who|where|when|how many|which|yes|no|please|thank|goodbye|see you|take|make|go|come|get|give|love|want|know|see|hear|speak|write|read|work|live|be|find|look|ask|answer|understand|accept|reject|succeed|fail|try|can|cannot|need|must|hard|easy|good|bad|big|small|new|old|long|short|beautiful|ugly|fast|slow|high|low|open|close|full|empty|hot|cold|heavy|light|wide|narrow|deep|shallow|healthy|sick|happy|sad|angry|calm|stressed|tired|energetic|rich|poor|smart|ignorant|young|old|male|female|child|adult|human|animal|plant|nature|world|universe|time|space|matter|energy|power|movement|rest|sleep|wakefulness|knowledge|skill|experience|education|learning|teaching|research|development|creativity|innovation|technology|science|art|culture|history|geography|language|literature|music|cinema|theater|sports|health|nutrition|exercise|meditation|spiritual|physical|mental|emotional|social|economic|political|legal|ethical|moral|religious|spiritual|philosophical|theoretical|practical|theoretical|applied|analytical|synthetic|holistic|reductionist|relative|absolute|subjective|objective|concrete|abstract|real|imaginary|true|false|certain|uncertain|clear|unclear|simple|complex|easy|difficult|fast|slow|good|bad|beautiful|ugly|big|small|long|short|wide|narrow|high|low|deep|shallow|heavy|light|hot|cold|dry|wet|soft|hard|sharp|flat|curved|round|square|triangle|circle|blue|red|green|yellow|orange|purple|pink|white|black|gray|brown|lilac|turquoise|beige|cream|silver|gold|bronze|copper|iron|steel|aluminum|plastic|glass|paper|cardboard|wood|stone|earth|sand|water|air|fire|earth|metal|plant|animal|human|machine|tool|device|object|item|matter|materials|elements|atoms|molecules|cells|tissues|organs|systems|organisms|living|dead|born|growing|developing|changing|stabilizing|disappearing|newly emerging|aging|renewing|breaking|repairing|breaking|fixing|doing|destroying|establishing|opening|closing|starting|stopping|continuing|completing|halfway|successful|unsuccessful|good|bad|correct|wrong|right|wrong|winners|losers|rejoicing|sad|happy|sad|excited|calm|angry|calm|stressed|tired|energetic|sick|healthy|rich|poor|smart|ignorant|young|old|male|female|child|adult|human|animal|plant|nature|world|universe|time|space|matter|energy|power|movement|rest|sleep|wakefulness|knowledge|skill|experience|education|learning|teaching|research|development|creativity|innovation|technology|science|art|culture|history|geography|language|literature|music|cinema|theater|sports|health|nutrition|exercise|meditation|spiritual|physical|mental|emotional|social|economic|political|legal|ethical|moral|religious|spiritual|philosophical|theoretical|practical|theoretical|applied|analytical|synthetic|holistic|reductionist|relative|absolute|subjective|objective|concrete|abstract|real|imaginary|true|false|certain|uncertain|clear|unclear|simple|complex|easy|difficult|fast|slow|good|bad|beautiful|ugly|big|small|long|short|wide|narrow|high|low|deep|shallow|heavy|light|hot|cold|dry|wet|soft|hard|sharp|flat|curved|round|square|triangle|circle|blue|red|green|yellow|orange|purple|pink|white|black|gray|brown|lilac|turquoise|beige|cream|silver|gold|bronze|copper|iron|steel|aluminum|plastic|glass|paper|cardboard|wood|stone|earth|sand|water|air|fire|earth|metal|plant|animal|human|machine|tool|device|object|item|matter|materials|elements|atoms|molecules|cells|tissues|organs|systems|organisms|living|dead|born|growing|developing|changing|stabilizing|disappearing|newly emerging|aging|renewing|breaking|repairing|breaking|fixing|doing|destroying|establishing|opening|closing|starting|stopping|continuing|completing|halfway|successful|unsuccessful|good|bad|correct|wrong|right|wrong|winners|losers|rejoicing|sad|happy|sad|excited|calm|angry|calm|stressed|tired|energetic|sick|healthy|rich|poor|smart|ignorant|young|old|male|female|child|adult)\b/i;
+      const englishWords = /\b(the|and|or|but|because|for|with|this|that|these|those|i|you|we|they|he|she|it|hello|good|morning|afternoon|evening|night|how|what|why|who|where|when|how many|which|yes|no|please|thank|goodbye|see you|take|make|go|come|get|give|love|want|know|see|hear|speak|write|read|work|live|be|find|look|ask|answer|understand|accept|reject|succeed|fail|try|can|cannot|need|must|hard|easy|good|bad|big|small|new|old|long|short|beautiful|ugly|fast|slow|high|low|open|close|full|empty|hot|cold|heavy|light|wide|narrow|deep|shallow|healthy|sick|happy|sad|angry|calm|stressed|tired|energetic|rich|poor|smart|ignorant|young|old|male|female|child|adult|human|animal|plant|nature|world|universe|time|space|matter|energy|power|movement|rest|sleep|wakefulness|knowledge|skill|experience|education|learning|teaching|research|development|creativity|innovation|technology|science|art|culture|history|geography|language|literature|music|cinema|theater|sports|health|nutrition|exercise|meditation|spiritual|physical|mental|emotional|social|economic|political|legal|ethical|moral|religious|spiritual|philosophical|theoretical|practical|theoretical|applied|analytical|synthetic|holistic|reductionist|relative|absolute|subjective|objective|concrete|abstract|real|imaginary|true|false|certain|uncertain|clear|unclear|simple|complex|easy|difficult|fast|slow|good|bad|beautiful|ugly|big|small|long|short|wide|narrow|high|low|deep|shallow|heavy|light|hot|cold|dry|wet|soft|hard|sharp|flat|curved|round|square|triangle|circle|blue|red|green|yellow|orange|purple|pink|white|black|gray|brown|lilac|turquoise|beige|cream|silver|gold|bronze|copper|iron|steel|aluminum|plastic|glass|paper|cardboard|wood|stone|earth|sand|water|air|fire|earth|metal|plant|animal|human|machine|tool|device|object|item|matter|materials|elements|atoms|molecules|cells|tissues|organs|systems|organisms|living|dead|born|growing|developing|changing|stabilizing|disappearing|newly emerging|aging|renewing|breaking|repairing|breaking|fi)/i;
       if (englishWords.test(text)) return 'en';
       
       // Default to English if no clear indicators
@@ -1271,18 +1315,30 @@ HARD RULES:
     // SISTEM PROMPT (Arama bağlamı varsa ekle)
     const systemPrompt = `${BASE_SYSTEM_PROMPT}\n\n${systemInstruction}\n${localizationInjection}${searchContextInjection}\n\nMOD: DOSYA OKUMA AKTIF. Eğer kullanıcı dosya içeriği gönderdiyse, o içeriği en ince detayına kadar analiz et.`;
 
-    // Qwen DashScope Model Zinciri (Chat - Singapore Region)
-    const QWEN_MODEL_CHAIN = (process.env.QWEN_MODELS || 'qwen-flash|qwen3.6-flash').split('|');
+    // DYNAMIC MODEL ROUTING: Select model based on user intent
+    const selectedModel = selectQwenModelByIntent(message || '');
 
+    // Fallback model chain if dynamic selection fails (environment override)
+    const QWEN_MODEL_CHAIN = process.env.QWEN_MODELS ? process.env.QWEN_MODELS.split('|') : [selectedModel];
+
+    // STRICT AWAIT FLOW: Build messages array with guaranteed current message injection
+    // This ensures the latest user message is always included in the LLM payload
     const messages = [
-      { role: "system", content: systemPrompt },
-      ...(history || []).map(m => ({
-        role: m.role === 'assistant' ? 'assistant' : 'user',
-        content: m.content || ""
-      }))
+      { role: "system", content: systemPrompt }
     ];
 
-    // Kullanıcı mesajına dosya metinlerini ekle
+    // Add historical messages (if provided) - these are from previous turns
+    if (history && Array.isArray(history)) {
+      for (const m of history) {
+        messages.push({
+          role: m.role === 'assistant' ? 'assistant' : 'user',
+          content: m.content || ""
+        });
+      }
+    }
+
+    // PAYLOAD DIRECT INJECTION: Explicitly inject the current user message
+    // This guarantees the latest message is included regardless of history state
     let finalUserContent = message || "";
     if (extractedText) {
       finalUserContent += `\n\nEkli Dosya İçerikleri:\n${extractedText}`;
@@ -1724,5 +1780,10 @@ HARD RULES:
   } catch (error) {
     console.error("Sistem Hatası:", error);
     return res.status(500).json({ error: "Sistem Hatası", details: error.message });
+  } finally {
+    // CONCURRENCY LOCK: Always release the lock when done (success or error)
+    if (resolveLock) {
+      resolveLock();
+    }
   }
 }
