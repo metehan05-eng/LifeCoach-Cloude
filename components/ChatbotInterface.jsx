@@ -184,6 +184,10 @@ export default function ChatbotInterface() {
     const currentSessionExists = sessions.some(s => s.id === activeSessionId);
     let targetSessionId = activeSessionId;
     
+    // CRITICAL FIX: Create history BEFORE adding new message to state
+    // This ensures history only contains previous messages, not the current one
+    const history = messages.map(m => ({ role: m.role, content: m.content }));
+    
     if (!currentSessionExists) {
       const realId = Date.now();
       targetSessionId = realId;
@@ -206,8 +210,13 @@ export default function ChatbotInterface() {
     setIsLoading(true);
     setIsTyping(true);
     setStreamText('');
-
-    const history = messages.map(m => ({ role: m.role, content: m.content }));
+    
+    console.log('[FRONTEND DEBUG] Sending to backend:', {
+      message: text,
+      historyLength: history.length,
+      history: history,
+      currentMessage: text
+    });
 
     try {
       // Dosya içeriklerini hazırla

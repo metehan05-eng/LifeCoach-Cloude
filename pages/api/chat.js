@@ -1360,6 +1360,10 @@ HARD RULES:
       messages.push({ role: "user", content: finalUserContent });
     }
 
+    console.log('[BACKEND DEBUG] Messages array being sent to LLM:', JSON.stringify(messages, null, 2));
+    console.log('[BACKEND DEBUG] Current message from req.body:', message);
+    console.log('[BACKEND DEBUG] History received:', history);
+
     // ── OpenRouter API Çağrısı (Model Zinciri) ──
     async function tryOpenRouterModel(modelName) {
       if (!openrouterKey) throw new Error("OPENROUTER_API_KEY ayarlı değil.");
