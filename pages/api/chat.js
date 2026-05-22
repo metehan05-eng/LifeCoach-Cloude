@@ -748,16 +748,21 @@ async function getYouTubeVideoDetails(videoId) {
 async function getYouTubeTranscript(videoId) {
   try {
     const transcriptData = await fetchTranscript(videoId, {
-      lang: ['tr', 'en', 'de', 'fr', 'es', 'auto'],
+      lang: ['en', 'tr'],
     });
-    if (!transcriptData || transcriptData.length === 0) return '';
-    return transcriptData
+    if (!transcriptData || transcriptData.length === 0) {
+      console.warn('[YouTube Transcript] No transcript data found for video:', videoId);
+      return null;
+    }
+    const fullText = transcriptData
       .map(s => s.text.trim())
       .filter(Boolean)
       .join(' ');
+    console.log('Çekilen Transkript Metni:', fullText);
+    return fullText;
   } catch (err) {
     console.error('[YouTube Transcript] Error:', err.message);
-    return '';
+    return null;
   }
 }
 
@@ -766,7 +771,7 @@ async function transcribeVideoWithWhisper(videoBase64) {
   const openaiKey = process.env.OPENAI_API_KEY;
   if (!openaiKey) {
     console.warn('[Video Transcription] OPENAI_API_KEY not set, skipping Whisper transcription');
-    return '';
+    return null;
   }
   try {
     const openai = new OpenAI({ apiKey: openaiKey });
@@ -787,12 +792,14 @@ async function transcribeVideoWithWhisper(videoBase64) {
     });
 
     fs.unlinkSync(tmpFile);
-    return transcription || '';
+    const fullText = transcription || '';
+    console.log('Çekilen Transkript Metni:', fullText);
+    return fullText;
   } catch (err) {
     console.error('[Video Transcription] Error:', err.message);
     // Cleanup temp file if it exists
     try { const fs = require('fs'); const tmpFile = `/tmp/lifecoach-video-${Date.now()}.mp4`; if (fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile); } catch (_) {}
-    return '';
+    return null;
   }
 }
 
@@ -1098,7 +1105,7 @@ export default async function handler(req, res) {
                   at.ext === 'MP4' ? 'MP4' : at.ext
                 })] ---\n${transcript}\n`;
               } else {
-                tool_notes.push(`${at.name} videosu için transkript alınamadı, video hakkında mevcut bilgilerle analiz yapılacak.`);
+                tool_notes.push('Bu videonun altyazısı bulunamadı veya işlenemedi.');
               }
               videoAttachments.push({ name: at.name, ext: at.ext, transcript: transcript || '' });
             }
@@ -1121,11 +1128,17 @@ export default async function handler(req, res) {
           ]);
 
           const ytVideoDetails = ytVideoDetailsPromise.status === 'fulfilled' ? ytVideoDetailsPromise.value : null;
-          const ytTranscript = ytTranscriptPromise.status === 'fulfilled' ? ytTranscriptPromise.value : '';
+          const ytTranscript = ytTranscriptPromise.status === 'fulfilled' ? ytTranscriptPromise.value : null;
+
+          if (ytTranscript === null) {
+            tool_notes.push('Bu videonun altyazısı bulunamadı veya işlenemedi.');
+          }
 
           if (ytVideoDetails || ytTranscript) {
-            youtubeVideoContext = buildVideoContextForAI(ytVideoDetails, ytTranscript);
-            tool_notes.push(`YouTube videosu (${ytVideoDetails?.title || ytVideoId}) transkripti çıkarıldı.`);
+            youtubeVideoContext = buildVideoContextForAI(ytVideoDetails, ytTranscript || '');
+            if (ytTranscript) {
+              tool_notes.push(`YouTube videosu (${ytVideoDetails?.title || ytVideoId}) transkripti çıkarıldı.`);
+            }
           }
         }
       } catch (ytErr) {
