@@ -1,10 +1,13 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function ChatHeader({ onToggleSidebar, sidebarOpen, sessionTitle, isMobile, onConvertToProject, onOpenSettings }) {
   const router = useRouter();
   const [showComingSoon, setShowComingSoon] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
   return (
     <header style={{
       height: '56px',
@@ -35,11 +38,19 @@ export default function ChatHeader({ onToggleSidebar, sidebarOpen, sessionTitle,
         onMouseLeave={e => { e.currentTarget.style.background = 'rgba(99,102,241,0.1)'; }}
       >
         {/* Hamburger icon lines */}
-        <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-          {sidebarOpen && !isMobile
-            ? <><line x1="4" y1="4" x2="16" y2="16" stroke="#a5b4fc" strokeWidth="2" strokeLinecap="round"/><line x1="16" y1="4" x2="4" y2="16" stroke="#a5b4fc" strokeWidth="2" strokeLinecap="round"/></>
-            : <><line x1="3" y1="5" x2="17" y2="5" stroke="#a5b4fc" strokeWidth="1.8" strokeLinecap="round"/><line x1="3" y1="10" x2="17" y2="10" stroke="#a5b4fc" strokeWidth="1.8" strokeLinecap="round"/><line x1="3" y1="15" x2="17" y2="15" stroke="#a5b4fc" strokeWidth="1.8" strokeLinecap="round"/></>
-          }
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          {mounted && sidebarOpen && !isMobile ? (
+            <>
+              <line x1="4" y1="4" x2="16" y2="16" stroke="#a5b4fc" strokeWidth="2" strokeLinecap="round" />
+              <line x1="16" y1="4" x2="4" y2="16" stroke="#a5b4fc" strokeWidth="2" strokeLinecap="round" />
+            </>
+          ) : (
+            <>
+              <line x1="3" y1="5" x2="17" y2="5" stroke="#a5b4fc" strokeWidth="1.8" strokeLinecap="round" />
+              <line x1="3" y1="10" x2="17" y2="10" stroke="#a5b4fc" strokeWidth="1.8" strokeLinecap="round" />
+              <line x1="3" y1="15" x2="17" y2="15" stroke="#a5b4fc" strokeWidth="1.8" strokeLinecap="round" />
+            </>
+          )}
         </svg>
       </button>
 

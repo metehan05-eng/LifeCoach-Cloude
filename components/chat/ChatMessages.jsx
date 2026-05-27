@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useRef } from 'react';
+import ClientOnly from '../ClientOnly';
 
 /* ── Markdown formatter ── */
 function extractYouTubeVideoId(input) {
@@ -91,9 +92,30 @@ const VideoFilePreview = ({ name, hasTranscript }) => (
 );
 
 /* ── Markdown formatter ── */
+function escapeHtml(text) {
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 const formatMarkdown = (text) => {
+  if (!text) return '';
+
+  const placeholders = [];
+  let safe = text.replace(/```(\w+)?\n?([\s\S]*?)```/g, (match) => {
+    const key = `__CODE_BLOCK_${placeholders.length}__`;
+    placeholders.push(match);
+    return key;
+  });
+  safe = escapeHtml(safe);
+  placeholders.forEach((block, i) => {
+    safe = safe.replace(`__CODE_BLOCK_${i}__`, block);
+  });
+
   // Code blocks (multi-line) with terminal look
-  text = text.replace(/```(\w+)?\n?([\s\S]*?)```/g, (_, lang, code) => {
+  safe = safe.replace(/```(\w+)?\n?([\s\S]*?)```/g, (_, lang, code) => {
     const filename = (lang && lang.includes(':')) ? lang.split(':')[1] : (lang || 'terminal');
     const displayLang = lang ? lang.split(':')[0] : '';
     
@@ -109,39 +131,39 @@ const formatMarkdown = (text) => {
             ${filename} ${displayLang ? `(${displayLang})` : ''}
           </div>
         </div>
-        <pre style="padding:16px; overflow-x:auto; margin:0; font-family:'JetBrains Mono','Fira Code',monospace; font-size:12.5px; line-height:1.7; color:#d8d8f0; scrollbar-width:thin; scrollbar-color:rgba(99,102,241,0.3) rgba(0,0,0,0.1)"><code>${code.trim()}</code></pre>
+        <pre style="padding:16px; overflow-x:auto; margin:0; font-family:'JetBrains Mono','Fira Code',monospace; font-size:12.5px; line-height:1.7; color:#d8d8f0; scrollbar-width:thin; scrollbar-color:rgba(99,102,241,0.3) rgba(0,0,0,0.1)"><code>${escapeHtml(code.trim())}</code></pre>
       </div>
     `;
   });
 
   // Inline code
-  text = text.replace(/`([^`]+)`/g, '<code style="background:rgba(99,102,241,0.15);padding:3px 8px;border-radius:6px;font-size:12px;font-family:\'JetBrains Mono\',monospace;color:#a5b4fc;font-weight:500">$1</code>');
+  safe = safe.replace(/`([^`]+)`/g, '<code style="background:rgba(99,102,241,0.15);padding:3px 8px;border-radius:6px;font-size:12px;font-family:\'JetBrains Mono\',monospace;color:#a5b4fc;font-weight:500">$1</code>');
   // Bold
-  text = text.replace(/\*\*(.*?)\*\*/g, '<strong style="font-weight:700;color:#e8e8ff;letter-spacing:-0.01em">$1</strong>');
+  safe = safe.replace(/\*\*(.*?)\*\*/g, '<strong style="font-weight:700;color:#e8e8ff;letter-spacing:-0.01em">$1</strong>');
   // Italic
-  text = text.replace(/\*(.*?)\*/g, '<em style="font-style:italic;color:#c4b5fd">$1</em>');
+  safe = safe.replace(/\*(.*?)\*/g, '<em style="font-style:italic;color:#c4b5fd">$1</em>');
   // H3
-  text = text.replace(/^### (.*$)/gm, '<h3 style="font-size:14px;font-weight:800;margin:14px 0 6px;color:#c4b5fd;letter-spacing:-0.02em">$1</h3>');
+  safe = safe.replace(/^### (.*$)/gm, '<h3 style="font-size:14px;font-weight:800;margin:14px 0 6px;color:#c4b5fd;letter-spacing:-0.02em">$1</h3>');
   // H2
-  text = text.replace(/^## (.*$)/gm, '<h2 style="font-size:15px;font-weight:800;margin:16px 0 8px;color:#a5b4fc;letter-spacing:-0.02em">$1</h2>');
+  safe = safe.replace(/^## (.*$)/gm, '<h2 style="font-size:15px;font-weight:800;margin:16px 0 8px;color:#a5b4fc;letter-spacing:-0.02em">$1</h2>');
   // H1
-  text = text.replace(/^# (.*$)/gm, '<h1 style="font-size:17px;font-weight:900;margin:18px 0 10px;color:#818cf8;letter-spacing:-0.03em">$1</h1>');
+  safe = safe.replace(/^# (.*$)/gm, '<h1 style="font-size:17px;font-weight:900;margin:18px 0 10px;color:#818cf8;letter-spacing:-0.03em">$1</h1>');
   // Unordered list
-  text = text.replace(/^[\*\-] (.*$)/gm,
+  safe = safe.replace(/^[\*\-] (.*$)/gm,
     '<div style="display:flex;gap:10px;margin:4px 0;align-items:flex-start"><span style="color:#6366f1;font-size:10px;margin-top:5px;flex-shrink:0">●</span><span>$1</span></div>'
   );
   // Numbered list
-  text = text.replace(/^\d+\. (.*$)/gm,
+  safe = safe.replace(/^\d+\. (.*$)/gm,
     '<div style="display:flex;gap:10px;margin:4px 0;align-items:flex-start"><span style="color:#8b5cf6;font-weight:700;flex-shrink:0;font-size:11px;margin-top:3px">▸</span><span>$1</span></div>'
   );
   
   // Custom Advice Block detection — will wrap in a nice UI later but handle basic formatting here
-  text = text.replace(/💡 HAN Tavsiyesi:(.*$)/gm, '<div style="background:rgba(139,92,246,0.08); border-left:3px solid #8b5cf6; padding:12px 16px; border-radius:0 12px 12px 0; margin-top:16px; color:#c4b5fd"><span style="font-weight:800; color:#fff; display:block; margin-bottom:4px">💡 HAN Tavsiyesi</span>$1</div>');
+  safe = safe.replace(/💡 HAN Tavsiyesi:(.*$)/gm, '<div style="background:rgba(139,92,246,0.08); border-left:3px solid #8b5cf6; padding:12px 16px; border-radius:0 12px 12px 0; margin-top:16px; color:#c4b5fd"><span style="font-weight:800; color:#fff; display:block; margin-bottom:4px">💡 HAN Tavsiyesi</span>$1</div>');
 
   // Line breaks
-  text = text.replace(/\n\n/g, '<div style="height:10px"></div>');
-  text = text.replace(/\n/g, '<br/>');
-  return text;
+  safe = safe.replace(/\n\n/g, '<div style="height:10px"></div>');
+  safe = safe.replace(/\n/g, '<br/>');
+  return safe;
 };
 
 /* ── File Tree Component ── */
@@ -334,6 +356,8 @@ const formatViewCount = (count) => {
 
 const YouTubeSuggestionCards = ({ videos, searchQuery }) => {
   const [expandedId, setExpandedId] = React.useState(null);
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => setMounted(true), []);
   if (!videos || videos.length === 0) return null;
 
   return (
@@ -364,7 +388,7 @@ const YouTubeSuggestionCards = ({ videos, searchQuery }) => {
                 animation: 'ci-pop 0.35s ease-out both',
               }}
             >
-              {isExpanded && video.videoId && (
+              {mounted && isExpanded && video.videoId && (
                 <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%', background: '#000' }}>
                   <iframe
                     style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
@@ -792,19 +816,30 @@ function MessageBubble({ message, isStream, onQuickAction }) {
           HAN AI
           {isStream && <span style={{ animation: 'blink 0.7s ease-in-out infinite', color: '#6366f1', fontSize: '13px' }}>▊</span>}
         </div>
-        {/* Content — no bubble, just text */}
-        <div
-          style={{ 
-            fontSize: '14px', 
-            lineHeight: 1.75, 
-            color: '#d8d8f0',
-            letterSpacing: '-0.01em',
-            fontWeight: 500,
-          }}
-          dangerouslySetInnerHTML={{ 
-            __html: formatMarkdown(message.content.replace(/```json-action[\s\S]*?```/g, "").replace(/```json-memory[\s\S]*?```/g, "")) 
-          }}
-        />
+        {/* Content — HTML yalnızca client'ta (hydration #425 önlemi) */}
+        <ClientOnly
+          fallback={
+            <div style={{ fontSize: '14px', lineHeight: 1.75, color: '#d8d8f0', whiteSpace: 'pre-wrap' }}>
+              {(message.content || '').replace(/```json-action[\s\S]*?```/g, '').replace(/```json-memory[\s\S]*?```/g, '')}
+            </div>
+          }
+        >
+          <div
+            style={{
+              fontSize: '14px',
+              lineHeight: 1.75,
+              color: '#d8d8f0',
+              letterSpacing: '-0.01em',
+              fontWeight: 500,
+            }}
+            suppressHydrationWarning
+            dangerouslySetInnerHTML={{
+              __html: formatMarkdown(
+                (message.content || '').replace(/```json-action[\s\S]*?```/g, '').replace(/```json-memory[\s\S]*?```/g, '')
+              ),
+            }}
+          />
+        </ClientOnly>
  
         {/* Action Renderer */}
         {(() => {

@@ -20,12 +20,12 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="tr" className={`${inter.variable} ${spaceGrotesk.variable}`}>
+    <html lang="tr" className={`${inter.variable} ${spaceGrotesk.variable}`} suppressHydrationWarning>
       <head>
         <meta name="theme-color" content="#030308" />
         <link rel="icon" href="/lifecoach-favicon.svg" type="image/svg+xml" />
       </head>
-      <body style={{ background: '#030308' }}>
+      <body style={{ background: '#030308' }} suppressHydrationWarning>
         <Providers>{children}</Providers>
         <Analytics />
         <SpeedInsights />
