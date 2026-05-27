@@ -275,6 +275,13 @@ export default function ChatbotInterface() {
         await new Promise(r => setTimeout(r, 16));
       }
 
+      // ÖNEMLİ: Önce stream'i ve typing göstergesini kapat, SONRA mesajı ekle.
+      // Bu sıralama, stream balonu ile kaydedilen mesajın aynı anda ekranda görünmesini
+      // (çift mesaj sorununu) önler.
+      setStreamText('');
+      setIsTyping(false);
+      setIsLoading(false);
+
       setSessions(prev => prev.map(s =>
         s.id === targetSessionId
           ? { ...s, messages: [...s.messages, { 
@@ -293,7 +300,7 @@ export default function ChatbotInterface() {
             }] }
           : s
       ));
-      setStreamText('');
+
       // Deep search'i otomatik sıfırla (tek seferlik arama)
       if (deepSearch) setDeepSearch(false);
       // Goal planning mode'u otomatik sıfırla
@@ -301,8 +308,10 @@ export default function ChatbotInterface() {
     } catch (err) {
       setError("Hata oldu daha sonra tekrar deneyin");
     } finally {
+      // Hata durumunda da temizle (başarılı durumda zaten yukarıda temizlendi)
       setIsLoading(false);
       setIsTyping(false);
+      setStreamText('');
     }
   }, [activeSessionId, sessions, isMounted, userStats, session, isLoading]);
   
