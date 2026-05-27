@@ -264,6 +264,7 @@ export default function ChatbotInterface() {
       const aiSources = data.sources || [];  // Tavily'den gelen kaynaklar
       const generatedFiles = data.generated_files || [];
       const youtubeSuggestions = data.youtube_suggestions || [];
+      const youtubeSearchQuery = data.youtube_search_query || null;
       const videoNotes = data.video_notes || [];
 
       let displayed = '';
@@ -283,6 +284,7 @@ export default function ChatbotInterface() {
               sources: aiSources,  // 🔗 Tıklanabilir kaynaklar
               files: generatedFiles,
               youtube_suggestions: youtubeSuggestions,
+              youtube_search_query: youtubeSearchQuery,
               video_notes: videoNotes,
               tool_notes: data.tool_notes || [],
               calendar_events: data.calendar_events || [],

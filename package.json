@@ -33,6 +33,7 @@
     "@emotion/styled": "^11.14.1",
     "@getmetal/metal-sdk": "^7.7.1",
     "@google/generative-ai": "^0.24.1",
+    "@huggingface/inference": "^3.15.0",
     "@langchain/community": "^1.1.27",
     "@langchain/core": "^1.1.42",
     "@microsoft/fetch-event-source": "^2.0.1",

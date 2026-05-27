@@ -8,18 +8,8 @@ import { JWT } from 'google-auth-library';
 import { fetchTranscript } from 'youtube-transcript';
 import { google } from 'googleapis';
 import { PrismaClient } from '@prisma/client';
-import {
-  detectYouTubeVideoIntent,
-  extractYouTubeSearchQuery,
-  isYouTubeUrl as isYouTubeLink,
-  searchYouTubeVideos,
-} from '../../lib/youtube-search.js';
-import { HfInference } from '@huggingface/inference';
 
 const prisma = new PrismaClient();
-const HF_TOKEN = process.env.HF_TOKEN;
-const HF_PROVIDER = process.env.HF_PROVIDER || 'auto';
-const hf = HF_TOKEN ? new HfInference(HF_TOKEN) : null;
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
 // CONCURRENCY LOCK: Simple in-memory lock to prevent overlapping chat requests per session
@@ -680,10 +670,28 @@ async function extract_to_spreadsheet(file_id_or_text) {
   }
 }
 
-// Check if a string looks like a YouTube URL
-function isYouTubeUrl(input) {
-  return isYouTubeLink(input);
+// --- YouTube Video Suggestions ---
+async function searchYouTubeVideos(query, maxResults = 1) {
+  if (!YOUTUBE_API_KEY) return null;
+  try {
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=${maxResults}&q=${encodeURIComponent(query)}&relevanceLanguage=tr&key=${YOUTUBE_API_KEY}`;
+    const res = await fetch(url, { headers: { 'Referer': 'https://lifecoach.ai/' } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data.items || data.items.length === 0) return null;
+    return data.items.map(item => ({
+      videoId: item.id.videoId,
+      title: item.snippet.title,
+      channel: item.snippet.channelTitle,
+      thumbnail: item.snippet.thumbnails?.medium?.url || ''
+    }));
+  } catch (err) {
+    console.error('[YouTube] Error:', err);
+    return null;
+  }
 }
+
+// === VIDEO UNDERSTANDING HELPERS ===
 
 // Extract YouTube video ID from any URL format or return video ID directly
 function extractYouTubeVideoId(input) {
@@ -702,6 +710,11 @@ function extractYouTubeVideoId(input) {
     if (match) return match[1];
   }
   return null;
+}
+
+// Check if a string looks like a YouTube URL
+function isYouTubeUrl(input) {
+  return /youtube\.com|youtu\.be/.test(input || '');
 }
 
 // Fetch YouTube video details using YouTube Data API v3
@@ -870,227 +883,7 @@ async function createGooglePresentation(title = 'New Presentation') {
   }
 }
 
-// --- HUGGING FACE: Intent-based open-model routing ---
-const HF_MODEL_CATALOG = {
-  general: process.env.HF_MODEL_GENERAL || 'cohere-for-ai/c4ai-aya-expanse-8b',
-  generalAlt: 'meta-llama/Llama-3.1-8B-Instruct',
-  coding: process.env.HF_MODEL_CODING || 'Qwen/Qwen2.5-Coder-7B-Instruct',
-  codingAlt: 'meta-llama/Llama-3.1-8B-Instruct',
-  vision: process.env.HF_MODEL_VISION || 'xtuner/llava-llama-3-8b-v1_1',
-  visionAlt: 'google/paligemma-3b-pt-448',
-  tools: process.env.HF_MODEL_TOOLS || 'meta-llama/Llama-3.1-8B-Instruct',
-};
-
-const HF_VISION_MODELS = new Set([
-  HF_MODEL_CATALOG.vision,
-  HF_MODEL_CATALOG.visionAlt,
-  'xtuner/llava-llama-3-8b-v1_1',
-  'google/paligemma-3b-pt-448',
-]);
-
-function selectHFModelByIntent(message, options = {}) {
-  const { hasImages = false } = options;
-  if (!message || typeof message !== 'string') {
-    return HF_MODEL_CATALOG.general;
-  }
-
-  const msgLower = message.toLowerCase().trim();
-
-  const visionKeywords = /\b(resim|görsel|görüntü|foto|fotoğraf|ocr|metin oku|image|picture|photo|screenshot|ekran görüntüsü|analyze image|görüntü analiz|multimodal)\b/i;
-  if (hasImages || visionKeywords.test(msgLower)) {
-    console.log(`[HF Router] 🖼️ Vision/OCR intent → ${HF_MODEL_CATALOG.vision}`);
-    return HF_MODEL_CATALOG.vision;
-  }
-
-  const codingKeywords = /\b(kod|programlama|script|code|programming|developer|javascript|python|function|class|api|debug|fix bug|hata düzelt|yazılım|software|backend|frontend|database|sql|query|algorithm|algoritma|typescript|react|vue|angular|node|express|django|flask|java|c\+\+|c#|php|git|github|docker|kubernetes)\b/i;
-  if (codingKeywords.test(msgLower)) {
-    console.log(`[HF Router] 🎯 Coding intent → ${HF_MODEL_CATALOG.coding}`);
-    return HF_MODEL_CATALOG.coding;
-  }
-
-  const googleKeywords = /\b(harita|konum|takvim|calendar|gmail|excel|drive|slides|docs|sheet|google|maps|email gönder|mail at|dosya yükle|sunum oluştur|presentation|spreadsheet|tablo|event|etkinlik|reminder|hatırlatıcı|appointment|randevu|schedule|planlama|location|yer|navigasyon|nearby|yakınındaki|upload|download)\b/i;
-  if (googleKeywords.test(msgLower)) {
-    console.log(`[HF Router] 🔧 Google tools intent → ${HF_MODEL_CATALOG.tools}`);
-    return HF_MODEL_CATALOG.tools;
-  }
-
-  console.log(`[HF Router] 💬 General/multilingual intent → ${HF_MODEL_CATALOG.general}`);
-  return HF_MODEL_CATALOG.general;
-}
-
-function isHFVisionModel(model) {
-  return HF_VISION_MODELS.has(model) || /llava|paligemma|vlm|vision/i.test(model || '');
-}
-
-function buildHfChatMessages(systemPrompt, userMessages, imageBase64List = []) {
-  const messages = [{ role: 'system', content: systemPrompt }];
-  const normalized = (userMessages || []).filter(m => m && m.role !== 'system');
-
-  for (let i = 0; i < normalized.length; i++) {
-    const msg = normalized[i];
-    const isLastUser = msg.role === 'user' && i === normalized.length - 1;
-    const attachImages = isLastUser && imageBase64List.length > 0;
-
-    if (attachImages) {
-      const text = typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content);
-      messages.push({
-        role: 'user',
-        content: [
-          { type: 'text', text },
-          ...imageBase64List.map(img => ({
-            type: 'image_url',
-            image_url: { url: img.startsWith('data:') ? img : `data:image/jpeg;base64,${img}` },
-          })),
-        ],
-      });
-    } else if (msg.role === 'assistant') {
-      messages.push({ role: 'assistant', content: typeof msg.content === 'string' ? msg.content : String(msg.content) });
-    } else if (msg.role === 'user') {
-      messages.push({ role: 'user', content: typeof msg.content === 'string' ? msg.content : String(msg.content) });
-    }
-  }
-
-  return messages;
-}
-
-async function callHuggingFaceAPI(systemPrompt, userMessages, model, options = {}) {
-  if (!hf) throw new Error('HF_TOKEN ayarlı değil.');
-  const maxTokens = options.maxTokens || 4096;
-  const imageBase64List = options.images || [];
-  const useVisionFormat = options.forceVision || (imageBase64List.length > 0 && isHFVisionModel(model));
-  const messages = buildHfChatMessages(systemPrompt, userMessages, useVisionFormat ? imageBase64List : []);
-
-  const requestBase = {
-    model,
-    max_tokens: maxTokens,
-    temperature: 0.75,
-    top_p: 0.9,
-  };
-  if (HF_PROVIDER && HF_PROVIDER !== 'auto') {
-    requestBase.provider = HF_PROVIDER;
-  }
-
-  try {
-    const completion = await hf.chatCompletion({
-      ...requestBase,
-      messages,
-    });
-    const content = completion?.choices?.[0]?.message?.content?.trim();
-    if (content) return content;
-  } catch (chatErr) {
-    console.warn(`[HF] chatCompletion failed for ${model}:`, chatErr.message);
-  }
-
-  const promptParts = messages.map(m => {
-    if (m.role === 'system') return `System: ${m.content}`;
-    if (m.role === 'assistant') return `Assistant: ${m.content}`;
-    const userText = Array.isArray(m.content)
-      ? m.content.filter(p => p.type === 'text').map(p => p.text).join('\n')
-      : m.content;
-    return `User: ${userText}`;
-  });
-  const textResult = await hf.textGeneration({
-    model,
-    inputs: promptParts.join('\n\n') + '\n\nAssistant:',
-    parameters: {
-      max_new_tokens: maxTokens,
-      temperature: 0.75,
-      top_p: 0.9,
-      return_full_text: false,
-    },
-    ...(HF_PROVIDER && HF_PROVIDER !== 'auto' ? { provider: HF_PROVIDER } : {}),
-  });
-  const generated = (textResult?.generated_text || '').trim();
-  if (!generated) throw new Error('Hugging Face boş yanıt döndürdü.');
-  return generated;
-}
-
-function extractToolCallFromText(text) {
-  if (!text || typeof text !== 'string') return null;
-  const toolCallMatch = text.match(/\{[\s\S]*?"tool"\s*:\s*"[^"]+"[\s\S]*?\}/);
-  if (!toolCallMatch) return null;
-  try {
-    const toolCall = JSON.parse(toolCallMatch[0]);
-    if (toolCall.tool && toolCall.parameters) {
-      return { toolCall, rawJson: toolCallMatch[0] };
-    }
-  } catch (_) {
-    return null;
-  }
-  return null;
-}
-
-async function executeModelToolCall(toolCall) {
-  switch (toolCall.tool) {
-    case 'create_presentation':
-      return await create_presentation(toolCall.parameters.topic, toolCall.parameters.content_outline);
-    case 'search_nearby_places':
-      return await search_nearby_places(toolCall.parameters.category, toolCall.parameters.location);
-    case 'add_calendar_event':
-      return await add_calendar_event(
-        toolCall.parameters.title,
-        toolCall.parameters.start_time,
-        toolCall.parameters.end_time,
-        toolCall.parameters.recurrence
-      );
-    case 'upload_to_drive':
-      return await upload_to_drive(
-        toolCall.parameters.file_content,
-        toolCall.parameters.file_name,
-        toolCall.parameters.mime_type
-      );
-    case 'extract_to_spreadsheet':
-      return await extract_to_spreadsheet(toolCall.parameters.file_id_or_text);
-    default:
-      throw new Error(`Unknown tool: ${toolCall.tool}`);
-  }
-}
-
-const TOOL_NOTES_MAP = {
-  create_presentation: 'Google Slides sunumu oluşturuldu.',
-  search_nearby_places: "Google Maps'te yer araması yapıldı.",
-  add_calendar_event: "Google Takvim'de etkinlik oluşturuldu.",
-  upload_to_drive: "Dosya Google Drive'a yüklendi.",
-  extract_to_spreadsheet: "Metin Google Sheets'e aktarıldı.",
-};
-
-async function processAIResponseTools(aiResponse, options = {}) {
-  const extracted = extractToolCallFromText(aiResponse);
-  if (!extracted) {
-    return { processedResponse: aiResponse, toolResults: [], toolNotes: [] };
-  }
-
-  const { toolCall, rawJson } = extracted;
-  console.log(`[Tool Call] Executing tool: ${toolCall.tool}`);
-  const toolResult = await executeModelToolCall(toolCall);
-  const toolResults = [{ tool: toolCall.tool, result: toolResult }];
-  let processedResponse = aiResponse.replace(rawJson, '').trim();
-  const toolNotes = TOOL_NOTES_MAP[toolCall.tool] ? [TOOL_NOTES_MAP[toolCall.tool]] : [];
-
-  if (options.refineWithHF && hf && options.hfModel && options.userMessages) {
-    try {
-      const refinementPrompt = `${options.systemPrompt}\n\n--- TOOL EXECUTION RESULT ---\nTool: ${toolCall.tool}\nResult: ${JSON.stringify(toolResult)}\n\nIncorporate this result naturally into your reply. Do not output raw JSON unless another tool is required.`;
-      const refined = await callHuggingFaceAPI(
-        refinementPrompt,
-        [
-          ...options.userMessages,
-          { role: 'assistant', content: processedResponse || 'Tool executed.' },
-          { role: 'user', content: 'Integrate the tool result above into a helpful final answer for the user.' },
-        ],
-        options.hfModel,
-        { images: options.images, maxTokens: options.maxTokens }
-      );
-      if (refined) processedResponse = refined;
-    } catch (refineErr) {
-      console.warn('[HF Tool Refine] Failed:', refineErr.message);
-      processedResponse += `\n\n${TOOL_NOTES_MAP[toolCall.tool] || ''}\n${JSON.stringify(toolResult)}`;
-    }
-  }
-
-  return { processedResponse, toolResults, toolNotes };
-}
-
-// --- DYNAMIC MODEL ROUTING: Intent-based Model Selection (Qwen DashScope) ---
+// --- DYNAMIC MODEL ROUTING: Intent-based Model Selection ---
 function selectQwenModelByIntent(message) {
   if (!message || typeof message !== 'string') return 'qwen-flash';
 
@@ -1147,58 +940,21 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || ""
 );
 
-const BASE_SYSTEM_PROMPT = `Sen LifeCoach AI'sın — kullanıcının yanında duran, insana yakın, sıcak ve güvenilir bir yaşam koçu + yakın dost gibisin. Resmi asistan veya soğuk chatbot değilsin; gerçek bir insanla sohbet ediyormuş gibi konuşursun.
+const BASE_SYSTEM_PROMPT = `You are LifeCoach AI, a supportive and intelligent life management assistant designed to help users improve their daily lives realistically and sustainably.
 
-## Kimliğin
-- Adın: LifeCoach (HAN AI altyapısıyla çalışırsın ama kendini "soğuk bir sistem" diye tanıtmazsın).
-- Rolün: Yaşam koçu, motivasyon ortağı, duygusal destek veren yakın bir dost.
-- Ses tonun: Sakin, samimi, meraklı, yargılamayan, umut veren ama gerçekçi.
+Your personality: Calm, friendly, emotionally intelligent, honest but respectful, motivating without sounding fake, smart like a trusted companion. Never arrogant or robotic.
 
-## Yaratıcın / sahibin kim? (sorulursa)
-Kullanıcı "sahibin kim", "seni kim yaptı", "yaratıcın kim", "kim geliştirdi", "who created you" gibi sorarsa gururla ve samimi anlat:
-Benim yaratıcım **Metehan Haydar Erbaş** — 21 yaşında genç bir girişimci. Konya Gıda ve Tarım Üniversitesi'nde **Uluslararası Ticaret ve İşletme** okuyor; aynı zamanda **Açık Öğretim Bilgisayar Programcılığı** bölümünde eğitimine devam ediyor. LifeCoach'u o hayal etti ve geliştirdi; seninle konuşurken onun sıcak, insancıl vizyonunu taşımaya çalışıyorum.
-- Bu bilgiyi sadece sorulduğunda ver; her cevaba ekleme.
-- Başka isim/uydurma yaratıcı söyleme; OpenAI, Google vb. "beni onlar yaptı" deme — yaratıcı Metehan Haydar Erbaş'tır.
+Your communication style: Speak naturally like a real supportive person. Avoid sounding like a corporate assistant or using "hustle culture" motivation. Keep responses clean, clear, and emotionally balanced. Use encouraging language without exaggeration. Sometimes use humor naturally. Adapt your tone depending on the user's mood. Speak in the same language as the user (detect automatically).
 
-## Nasıl konuşursun
-- Kullanıcının dilinde yanıt ver (Türkçe, İngilizce vb. — otomatik algıla).
-- Kısa selamlaşmalara kısa ve doğal karşılık ver; hemen uzun konuşma veya motivasyon konuşması yapma.
-- Uzun metinlerde: önce duyguyu yakala, sonra net ve uygulanabilir öneri sun.
-- "Sen" dili kullan; samimi ama saygılı ol. Gerektiğinde hafif espri katabilirsin.
-- Liste ve başlıkları sadece gerçekten faydalıysa kullan; her cevabı madde madde yapma.
-- Kurumsal jargon, "hustle culture", "mükemmel ol", "bahane yok" gibi baskıcı ifadelerden kaçın.
-- Kullanıcı üzgün, kaygılı veya yorgunsa: önce dinle ve validate et, hemen çözüm listesi yağdırma.
+Your mission: Help users improve habits, reduce stress and burnout, build discipline gradually, organize goals realistically, support emotional balance, and improve productivity without mental overload.
 
-## Psikolojik destek (sınırlarınla birlikte)
-- Stres, kaygı, motivasyon düşüklüğü, özgüven, ilişkiler, tükenmişlik, odaklanma, uyku, alışkanlık değişimi konularında destek ol.
-- Duyguları normalleştir: "Bunu hissetmen anlaşılır" gibi empatik cümleler kullan.
-- Küçük, bugün yapılabilecek adımlar öner; kullanıcıyı bunaltma.
-- ASLA kendini lisanslı terapist/psikiyatrist olarak sunma; teşhis koyma, ilaç önerme.
-- Kendine veya başkasına zarar, intihar, şiddet, ciddi kriz belirtilerinde: nazikçe profesyonel yardım (112, acil hat, terapist) öner; yalnız bırakma ama rolünün sınırını açıkça belirt.
+Rules: Never insult the user, shame failures, use toxic motivation, encourage unhealthy behavior, pretend to be a therapist, pressure users aggressively, or give unrealistic "be perfect" advice.
 
-## Yaşam koçluğu felsefen
-- Küçük ve sürdürülebilir adımlar > ani devrimler.
-- Dinlenmek, geri çekilmek ve "bugün yetmez" demek de ilerlemenin parçası.
-- Başarısızlıkta utandırma yok; "ne öğrendik, bir sonraki küçük adım ne?" odağı.
-- Hedefleri parçala; kullanıcıyı XP, streak ve ilerleme ile pozitif pekiştir (abartılı oyunlaştırma yapma).
+Productivity philosophy: Small consistent actions are better than extreme motivation. Sustainable routines matter more than intensity. Mental health and productivity should work together. Rest is part of progress.
 
-## Ne zaman ne yaparsın
-- Dert anlatıyorsa → empati + 1–2 somut öneri + isteğe bağlı soru.
-- Hedef/plan istiyorsa → net, gerçekçi plan (günlük/haftalık).
-- Teknik iş (harita, takvim, excel, sunum) istiyorsa → araçları kullan veya yönlendir.
-- Video istiyorsa → kısa açıklama + sistem zaten kart gösterecek.
-- Sadece sohbet istiyorsa → sohbet et; her mesajı "koçluk seansı"na çevirme.
+Goal system behavior: Break big goals into small achievable tasks. Encourage consistency. Use XP, streaks, achievements, and progress systems positively. Reward effort, not only results.
 
-## Yasaklar
-- Aşağılama, utandırma, toksik motivasyon, sahte pozitiflik.
-- Agresif emir kipi ("hemen kalk", "bahane istemem") — kullanıcı özellikle "sert koç" istemedikçe.
-- Robotik "Size nasıl yardımcı olabilirim?" kalıpları.
-- Her cevabın sonuna zorla motivasyon cümlesi ekleme.
-
-## Örnek ton (ilham, kopyalama değil)
-- "Anladım, bugün gerçekten ağır geçmiş. Önce bir nefes — sonra istersen birlikte en küçük adımı seçeriz."
-- "Bu hedef güzel; ama hepsini bir günde değil, bu hafta için tek bir odak seçelim."
-- "Harika ilerleme — bunu küçük bir zafer olarak kutlamak bile motivasyonu besler."
+Identity: You are a realistic life improvement companion designed to help users grow without pressure.
 
 AVAILABLE TOOLS:
 You have access to the following tools to help users accomplish tasks:
@@ -1210,7 +966,7 @@ You have access to the following tools to help users accomplish tasks:
 5. extract_to_spreadsheet(file_id_or_text) - Extracts text from image or processes text to Google Sheet
 
 HOW TO USE TOOLS:
-When you need to use a tool, output a JSON object in this format (valid JSON only, no markdown fences):
+When you need to use a tool, output a JSON object in this format:
 {
   "tool": "tool_name",
   "parameters": {
@@ -1219,65 +975,11 @@ When you need to use a tool, output a JSON object in this format (valid JSON onl
   }
 }
 
-After outputting the JSON, you may add a brief natural-language reply. The backend executes the tool and may send you the result for a final user-facing answer.
-
-For maps/calendar/spreadsheet/slides/drive requests, prefer emitting the tool JSON when parameters are clear enough to run the action.
+After outputting the JSON, continue your response naturally. The system will execute the tool and provide you with the result to incorporate into your response.
 
 Remember: Always prioritize the user's needs and use tools only when they genuinely help accomplish the user's goal. Provide unique, context-aware responses for each message.`;
 
 export default async function handler(req, res) {
-  // Handle GET requests for stats (used by frontend for XP/level/streak updates)
-  if (req.method === 'GET') {
-    // Check if just_stats=true parameter is present
-    if (req.query.just_stats === 'true') {
-      // Extract email or sessionId from query or headers
-      const { email, sessionId } = req.query;
-      
-      // Get user stats similar to POST handler
-      let userId = null;
-      let userName = "User";
-      let userStats = { xp: 0, level: 1, streak: 0, nextLevelXp: 100 };
-
-      if (email) {
-        try {
-          const userData = await prisma.user.findUnique({
-            where: { email },
-            select: { id: true, name: true, xp: true, level: true, currentStreak: true, totalXp: true, plan: true, usageLimit: true, usageCount: true, lastActiveAt: true }
-          });
-          if (userData) {
-            userId = userData.id;
-            userName = userData.name || "Gezgin";
-
-            let updatedUsageCount = userData.usageCount;
-            // 5-Saatlik Sıfırlama Mantığı
-            if (userData.plan === 'FREE' && userData.lastActiveAt) {
-              const hoursSinceLastActive = (new Date() - new Date(userData.lastActiveAt)) / (1000 * 60 * 60);
-              if (hoursSinceLastActive >= 5) {
-                updatedUsageCount = 0;
-              }
-            }
-
-            userStats = {
-              xp: userData.xp,
-              level: userData.level,
-              streak: userData.currentStreak,
-              nextLevelXp: 100,
-              plan: userData.plan,
-              usageLimit: userData.usageLimit,
-              usageCount: updatedUsageCount
-            };
-          }
-        } catch (e) { console.error("User fetch error:", e); }
-      }
-
-      return res.status(200).json({ stats: userStats });
-    }
-    
-    // If not just_stats request, return method not allowed for other GET requests
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-  
-  // Handle POST requests (existing logic)
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const { message, history, email, sessionId, mode, userLanguage, attachments, deepSearch } = req.body;
@@ -1376,7 +1078,6 @@ export default async function handler(req, res) {
     let extractedText = "";
     let imagesForVision = [];
     let videoAttachments = [];
-    let tool_notes = [];
 
     if (attachments && attachments.length > 0) {
       for (const at of attachments) {
@@ -1448,14 +1149,14 @@ export default async function handler(req, res) {
     // --- Additional tool triggers: YouTube suggestions / generate Excel / create Slides / Drive / Gmail / Calendar / Maps ---
     let generated_files = [];
     let youtube_suggestions = null;
-    let youtube_search_query = null;
+    let tool_notes = [];
     let calendar_events = [];
     let maps_result = null;
     let gmail_result = null;
 
     try {
       const msgLower = (message || '').toLowerCase();
-      const wantsYouTube = detectYouTubeVideoIntent(message || '');
+      const wantsYouTube = /youtube|video öneri|video önerileri|youtube öneri|youtube önerileri/.test(msgLower);
       const wantsExcel = /excel oluştur|excel dosya|xlsx oluştur|excel dosyası|tablo oluştur|tablo|listele/.test(msgLower);
       const wantsSlides = /slide oluştur|sunum oluştur|sunum hazırla|presentation oluştur|presentation/.test(msgLower);
       const wantsDrive = /drive|google drive|dosya yükle|drive'a kaydet|google drive/.test(msgLower);
@@ -1466,15 +1167,9 @@ export default async function handler(req, res) {
 
       if (wantsYouTube) {
         try {
-          youtube_search_query = extractYouTubeSearchQuery(message || '', userName || 'kişisel gelişim');
-          console.log(`[YouTube] Intent detected → search: "${youtube_search_query}"`);
-          youtube_suggestions = await searchYouTubeVideos(youtube_search_query, 3, { language: detectedLang === 'tr' ? 'tr' : 'en' });
+          youtube_suggestions = await searchYouTubeVideos(message || userName, 1);
           if (youtube_suggestions && youtube_suggestions.length > 0) {
-            tool_notes.push(`YouTube'da "${youtube_search_query}" için ${youtube_suggestions.length} video önerisi hazırlandı.`);
-          } else if (!YOUTUBE_API_KEY) {
-            tool_notes.push('YouTube önerisi için YOUTUBE_API_KEY tanımlanmalı.');
-          } else {
-            tool_notes.push(`"${youtube_search_query}" için uygun video bulunamadı.`);
+            tool_notes.push('YouTube için size tek bir video önerisi buldum.');
           }
         } catch (e) {
           console.error('YouTube suggestion error', e);
@@ -1690,26 +1385,25 @@ export default async function handler(req, res) {
     }
 
     // 4. SISTEM PROMPT HAZIRLA
-    let systemInstruction = `## Bu oturumdaki kullanıcı
-- İsim: ${userName}
-- Seviye: ${userStats.level} | XP: ${userStats.xp}/100 | Streak: ${userStats.streak} gün
+let systemInstruction = `You are HAN AI Life Coach. You are disciplined, efficient, and growth-focused.
+User Name: ${userName}
+User Level: ${userStats.level}
+Current XP: ${userStats.xp}/100
+Current Streak: ${userStats.streak} days
 
-## Oturum kuralları
-1. LifeCoach kimliğini koru: yakın dost + yaşam koçu; soğuk "asistan" moduna geçme.
-2. Kullanıcının dilini ve enerjisini yansıt; üzgünse yumuşak, neşeliyse hafif ve sıcak ol.
-3. Hedef tamamladığını söylerse samimi kutla; ilerlemenin değerli olduğunu hissettir (XP/streak varsa doğal geçir, abartma).
-4. İlk mesajda seviye/XP/streak bilgisini zorla söyleme; kullanıcı sormadıkça gamification spam yapma.
-5. Psikolojik konularda destek ver ama terapist rolüne girme; gerekirse profesyonel desteğe yönlendir.
+RULES:
+1. Always encourage user growth.
+2. When the user says they have achieved a goal, make them feel they earned XP.
+3. Tone: Mentor — supportive and adaptive; mirror the user's tone and language automatically. Do NOT default to an aggressive "drill sergeant" tone unless explicitly requested.
+4. Detect and mirror the user's language.`;
 
-## Sert koç modu (varsayılan KAPALI)
-- Kullanıcı açıkça "sert koç", "drill sergeant" veya force_mode istemedikçe baskıcı dil kullanma.
-- "Merhaba / selam" gibi kısa mesajlara kısa, sıcak karşılık ver; uzun plan veya motivasyon konuşması açma.`;
+  // Enforce hard safety rule: never use coercive/drill-sergeant language unless explicitly requested
+  systemInstruction += `
 
-    systemInstruction += `
-
-## Güvenlik ve sınır
-- Kendine/başkasına zarar, intihar veya acil kriz: empati + yerel acil hat / profesyonel destek öner.
-- Tıbbi veya hukuki konularda kesin teşhis/verdict verme; genel bilgi + uzmana yönlendirme.`;
+HARD RULES:
+- NEVER adopt a coercive, shaming, or 'drill sergeant' style unless the request explicitly contains the phrase "drill sergeant" or the field req.body.force_mode === 'drill_sergeant'.
+- If the user sends a simple greeting (e.g., "merhaba", "hello"), reply with a neutral, mirror-style greeting only.
+- Do NOT issue commands like "No excuses" or demand rituals unless explicitly requested by the user.`;
 
     // OTOMASYON MODU ÖZEL TALİMATI
     if (req.body.automation_mode) {
@@ -1803,30 +1497,13 @@ export default async function handler(req, res) {
     ];
 
     // SISTEM PROMPT (Arama bağlamı varsa ekle)
-    let youtubeContextInjection = '';
-    if (youtube_suggestions?.length) {
-      youtubeContextInjection = `\n\n--- YOUTUBE ÖNERİLERİ ---\nKullanıcı video istedi. Sistem "${youtube_search_query}" için ${youtube_suggestions.length} gerçek YouTube videosu buldu (kartlar otomatik gösterilecek).\nVideolar:\n${youtube_suggestions.map((v, i) => `${i + 1}. ${v.title} — ${v.channel}`).join('\n')}\nYanıtında bu videolara kısa atıf yap; kartların altında zaten görünecekler.`;
-    }
+    const systemPrompt = `${BASE_SYSTEM_PROMPT}\n\n${systemInstruction}\n${localizationInjection}${searchContextInjection}\n\nMOD: DOSYA OKUMA AKTIF. Eğer kullanıcı dosya içeriği gönderdiyse, o içeriği en ince detayına kadar analiz et.\n\nVIDEO ANLAMA AKTİF: Kullanıcı MP4 dosyası gönderdiğinde veya YouTube videosu linki paylaştığında, video içeriğini, transkriptini ve başlığını enine boyuna analiz et. Özet çıkar, ana fikirleri ortaya koy, momentum noktalarını belirt ve kişisel gelişimle ilgili gerçek dünya dersleri çıkar. Kullanıcıya videonun üzerinden ne öğrenebileceği, ne hissettiği, ne yapabileceği konusunda bir yaşam koçu gibi rehberlik et.`;
 
-    const systemPrompt = `${BASE_SYSTEM_PROMPT}\n\n${systemInstruction}\n${localizationInjection}${searchContextInjection}${youtubeContextInjection}
-
-## Aktif yetenekler (bu oturum)
-- DOSYA OKUMA: PDF, Word, Excel vb. gönderildiyse içeriği dikkatle oku; özet + kullanıcıya özel yorum yap.
-- VİDEO ANLAMA: MP4 veya YouTube linki varsa transkript/başlık üzerinden özetle; kişisel gelişim ve duygusal açıdan "bu sana ne katabilir?" diye samimi rehberlik et.
-- YOUTUBE ÖNERİ: Video arayan kullanıcıya kartlar otomatik gelir; sen kısa ve dostça hangi videonun neden iyi olduğunu söyle.
-- WEB ARAMA: Güncel bilgi geldiyse doğal şekilde kullan; kaynak varsa belirt.
-- GOOGLE ARAÇLARI: Takvim, harita, sheets, slides, drive isteklerinde uygun tool JSON kullan.`;
-
-    // DYNAMIC MODEL ROUTING: Hugging Face (primary) + Qwen (fallback)
-    const hasImages = imagesForVision && imagesForVision.length > 0;
-    const selectedHFModel = selectHFModelByIntent(message || '', { hasImages });
-    const selectedQwenModel = selectQwenModelByIntent(message || '');
+    // DYNAMIC MODEL ROUTING: Select model based on user intent
+    const selectedModel = selectQwenModelByIntent(message || '');
 
     // Fallback model chain if dynamic selection fails (environment override)
-    const QWEN_MODEL_CHAIN = process.env.QWEN_MODELS ? process.env.QWEN_MODELS.split('|') : [selectedQwenModel];
-    const HF_MODEL_CHAIN = process.env.HF_MODELS
-      ? process.env.HF_MODELS.split('|').map(m => m.trim()).filter(Boolean)
-      : [selectedHFModel, HF_MODEL_CATALOG.generalAlt, HF_MODEL_CATALOG.codingAlt];
+    const QWEN_MODEL_CHAIN = process.env.QWEN_MODELS ? process.env.QWEN_MODELS.split('|') : [selectedModel];
 
     // STRICT AWAIT FLOW: Build messages array with guaranteed current message injection
     // This ensures the latest user message is always included in the LLM payload
@@ -1860,6 +1537,7 @@ export default async function handler(req, res) {
                         lastHistoryMessage.role === 'user' && 
                         lastHistoryMessage.content === finalUserContent;
 
+    const hasImages = imagesForVision && imagesForVision.length > 0;
     if (!isDuplicate) {
       if (hasImages) {
         messages.push({
@@ -2007,40 +1685,9 @@ export default async function handler(req, res) {
     let aiResponse = null;
     let usedModel = null;
     let lastError = null;
-    const hfHistoryMessages = (history || []).filter(m => m.role !== 'system');
 
-    // KATMAN 0: Hugging Face Inference API (açık kaynak, intent-based)
-    if (hf) {
-      for (const modelName of HF_MODEL_CHAIN) {
-        try {
-          console.log(`[AI-Fallback] 🤗 Hugging Face deneniyor: ${modelName}`);
-          aiResponse = await callHuggingFaceAPI(
-            systemPrompt,
-            [
-              ...hfHistoryMessages,
-              { role: 'user', content: finalUserContent },
-            ],
-            modelName,
-            {
-              images: imagesForVision,
-              forceVision: hasImages && isHFVisionModel(modelName),
-              maxTokens: 4096,
-            }
-          );
-          usedModel = `hf/${modelName}`;
-          console.log(`[AI-Fallback] ✅ Hugging Face ${modelName} başarılı`);
-          break;
-        } catch (err) {
-          console.warn(`[AI-Fallback] ❌ Hugging Face ${modelName} başarısız: ${err.message}`);
-          lastError = err;
-        }
-      }
-    } else {
-      console.warn('[AI-Fallback] ⚠️ HF_TOKEN tanımlı değil, Qwen/fallback zincirine geçiliyor...');
-    }
-
-    // KATMAN 1: Qwen DashScope (Singapore Region - Yedek)
-    if (!aiResponse && dashscopeKey) {
+    // KATMAN 1: Qwen DashScope (Singapore Region - Öncelik)
+    if (dashscopeKey) {
       for (const modelName of QWEN_MODEL_CHAIN) {
         try {
           console.log(`[AI-Fallback] 🚀 Qwen DashScope deneniyor: ${modelName}`);
@@ -2199,27 +1846,75 @@ export default async function handler(req, res) {
       });
     }
 
-    // Process tool calls (JSON) — execute Google tools & feed results back to HF when available
+    // Process tool calls if present in the response
     let toolResults = [];
     let processedResponse = aiResponse;
-    const activeHfModel = usedModel?.startsWith('hf/') ? usedModel.replace('hf/', '') : selectedHFModel;
-
+    
     try {
-      const toolOutcome = await processAIResponseTools(aiResponse, {
-        refineWithHF: Boolean(hf),
-        hfModel: activeHfModel,
-        systemPrompt,
-        userMessages: [
-          ...hfHistoryMessages,
-          { role: 'user', content: finalUserContent },
-        ],
-        images: imagesForVision,
-        maxTokens: 4096,
-      });
-      processedResponse = toolOutcome.processedResponse;
-      toolResults = toolOutcome.toolResults;
-      if (toolOutcome.toolNotes?.length) {
-        tool_notes.push(...toolOutcome.toolNotes);
+      // Check if the response contains tool calls in JSON format
+      const toolCallMatch = aiResponse.match(/\{[\s\S]*?"tool"\s*:\s*"[^"]+"[\s\S]*?\}/);
+      if (toolCallMatch) {
+        const toolCallStr = toolCallMatch[0];
+        try {
+          const toolCall = JSON.parse(toolCallStr);
+          if (toolCall.tool && toolCall.parameters) {
+            console.log(`[Tool Call] Executing tool: ${toolCall.tool}`);
+            
+            let toolResult;
+            switch (toolCall.tool) {
+              case "create_presentation":
+                toolResult = await create_presentation(toolCall.parameters.topic, toolCall.parameters.content_outline);
+                break;
+              case "search_nearby_places":
+                toolResult = await search_nearby_places(toolCall.parameters.category, toolCall.parameters.location);
+                break;
+              case "add_calendar_event":
+                toolResult = await add_calendar_event(
+                  toolCall.parameters.title, 
+                  toolCall.parameters.start_time, 
+                  toolCall.parameters.end_time,
+                  toolCall.parameters.recurrence
+                );
+                break;
+              case "upload_to_drive":
+                toolResult = await upload_to_drive(
+                  toolCall.parameters.file_content, 
+                  toolCall.parameters.file_name, 
+                  toolCall.parameters.mime_type
+                );
+                break;
+              case "extract_to_spreadsheet":
+                toolResult = await extract_to_spreadsheet(toolCall.parameters.file_id_or_text);
+                break;
+              default:
+                throw new Error(`Unknown tool: ${toolCall.tool}`);
+            }
+            
+            toolResults.push({
+              tool: toolCall.tool,
+              result: toolResult
+            });
+            
+            // Remove the tool call JSON from the response for clean display
+            processedResponse = aiResponse.replace(toolCallStr, '').trim();
+            
+            // Add a note about the tool execution
+            const toolNotesMap = {
+              create_presentation: "Google Slides sunumu oluşturuldu.",
+              search_nearby_places: "Google Maps'te yer araması yapıldı.",
+              add_calendar_event: "Google Takvim'de etkinlik oluşturuldu.",
+              upload_to_drive: "Dosya Google Drive'a yüklendi.",
+              extract_to_spreadsheet: "Metin Google Sheets'e aktarıldı."
+            };
+            
+            if (toolNotesMap[toolCall.tool]) {
+              tool_notes.push(toolNotesMap[toolCall.tool]);
+            }
+          }
+        } catch (parseError) {
+          console.warn('[Tool Call] Failed to parse tool call JSON:', parseError);
+          // If JSON parsing fails, continue with original response
+        }
       }
     } catch (toolError) {
       console.error('[Tool Call] Error executing tool:', toolError);
@@ -2275,7 +1970,6 @@ export default async function handler(req, res) {
       chat_xp_persisted: false,
       generated_files,
       youtube_suggestions,
-      youtube_search_query,
       tool_notes,
       calendar_events,
       gmail_result,

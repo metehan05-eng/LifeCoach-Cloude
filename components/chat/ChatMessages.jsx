@@ -20,33 +20,43 @@ function extractYouTubeVideoId(input) {
 }
 
 /* ── Video Preview Card (YouTube embed) ── */
-const VideoPreview = ({ videoId, title, onRemove }) => (
-  <div style={{
-    marginTop: '8px', borderRadius: '14px', overflow: 'hidden',
-    border: '1px solid rgba(255,255,255,0.1)',
-    background: 'rgba(0,0,0,0.25)',
-    animation: 'ci-pop 0.3s ease-out both',
-  }}>
+const VideoPreview = ({ videoId, title, onRemove }) => {
+  const [isClient, setIsClient] = React.useState(false);
+  
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
+  
+  if (!isClient) return null;
+  
+  return (
     <div style={{
-      position: 'relative', width: '100%', paddingTop: '56.25%',
-      background: '#000',
+      marginTop: '8px', borderRadius: '14px', overflow: 'hidden',
+      border: '1px solid rgba(255,255,255,0.1)',
+      background: 'rgba(0,0,0,0.25)',
+      animation: 'ci-pop 0.3s ease-out both',
     }}>
-      <iframe
-        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-        src={`https://www.youtube.com/embed/${videoId}`}
-        title="Video"
-        frameBorder="0"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        allowFullScreen
-      />
-    </div>
-    {title && (
-      <div style={{ padding: '8px 12px', fontSize: '12px', color: 'rgba(255,255,255,0.6)', fontWeight: 500 }}>
-        🎬 {title}
+      <div style={{
+        position: 'relative', width: '100%', paddingTop: '56.25%',
+        background: '#000',
+      }}>
+        <iframe
+          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+          src={`https://www.youtube.com/embed/${videoId}`}
+          title="Video"
+          frameBorder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        />
       </div>
-    )}
-  </div>
-);
+      {title && (
+        <div style={{ padding: '8px 12px', fontSize: '12px', color: 'rgba(255,255,255,0.6)', fontWeight: 500 }}>
+          🎬 {title}
+        </div>
+      )}
+    </div>
+  );
+};
 
 /* ── MP4 / Video File Preview Card ── */
 const VideoFilePreview = ({ name, hasTranscript }) => (
@@ -210,28 +220,31 @@ const GoalCard = ({ data, onQuickAction }) => {
         }}>🎯</div>
       </div>
 
-      {/* YouTube Player */}
-      {data.youtube_id && (
-        <div style={{ 
-          marginTop: '16px', 
-          borderRadius: '12px', 
-          overflow: 'hidden', 
-          aspectRatio: '16/9',
-          background: '#000',
-          border: '1px solid rgba(255,255,255,0.1)',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.4)'
-        }}>
-          <iframe 
-            width="100%" 
-            height="100%" 
-            src={`https://www.youtube.com/embed/${data.youtube_id}`}
-            title="Video Player"
-            frameBorder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          ></iframe>
-        </div>
-      )}
+       {/* YouTube Player */}
+       {data.youtube_id && (
+         <div style={{ 
+           marginTop: '16px', 
+           borderRadius: '12px', 
+           overflow: 'hidden', 
+           aspectRatio: '16/9',
+           background: '#000',
+           border: '1px solid rgba(255,255,255,0.1)',
+           boxShadow: '0 4px 20px rgba(0,0,0,0.4)'
+         }}>
+           <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+             <iframe 
+               style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+               width="100%" 
+               height="100%" 
+               src={`https://www.youtube.com/embed/${data.youtube_id}`}
+               title="Video Player"
+               frameBorder="0"
+               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+               allowFullScreen
+             />
+           </div>
+         </div>
+       )}
 
       {/* Progress Section */}
       <div style={{ marginTop: '20px', marginBottom: '20px' }}>
@@ -310,6 +323,145 @@ const TypingIndicator = () => (
     </div>
   </div>
 );
+
+/* ── YouTube Suggestion Cards ── */
+const formatViewCount = (count) => {
+  if (!count && count !== 0) return null;
+  if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1)}M izlenme`;
+  if (count >= 1_000) return `${(count / 1_000).toFixed(1)}K izlenme`;
+  return `${count} izlenme`;
+};
+
+const YouTubeSuggestionCards = ({ videos, searchQuery }) => {
+  const [expandedId, setExpandedId] = React.useState(null);
+  if (!videos || videos.length === 0) return null;
+
+  return (
+    <div style={{ marginTop: '16px' }}>
+      <div style={{
+        fontSize: '11px', fontWeight: 700, color: 'rgba(239, 68, 68, 0.85)',
+        letterSpacing: '0.8px', textTransform: 'uppercase',
+        display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px',
+      }}>
+        <span style={{ fontSize: '13px' }}>📺</span> YouTube Önerileri
+        {searchQuery && (
+          <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)', textTransform: 'none', fontWeight: 600 }}>
+            · "{searchQuery}"
+          </span>
+        )}
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {videos.slice(0, 3).map((video, idx) => {
+          const isExpanded = expandedId === video.videoId;
+          return (
+            <div
+              key={video.videoId || idx}
+              style={{
+                background: 'rgba(239, 68, 68, 0.05)',
+                border: '1px solid rgba(239, 68, 68, 0.18)',
+                borderRadius: '16px',
+                overflow: 'hidden',
+                animation: 'ci-pop 0.35s ease-out both',
+              }}
+            >
+              {isExpanded && video.videoId && (
+                <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%', background: '#000' }}>
+                  <iframe
+                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
+                    src={`https://www.youtube.com/embed/${video.videoId}?autoplay=1`}
+                    title={video.title}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: '12px', padding: '12px', alignItems: 'stretch' }}>
+                <button
+                  type="button"
+                  onClick={() => setExpandedId(isExpanded ? null : video.videoId)}
+                  style={{
+                    position: 'relative', width: '132px', minWidth: '132px', height: '74px',
+                    border: 'none', padding: 0, borderRadius: '12px', overflow: 'hidden', cursor: 'pointer', background: '#111',
+                  }}
+                >
+                  {video.thumbnail ? (
+                    <img src={video.thumbnail} alt={video.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>▶</div>
+                  )}
+                  <div style={{
+                    position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: 'rgba(0,0,0,0.25)',
+                  }}>
+                    <span style={{
+                      width: '34px', height: '34px', borderRadius: '50%',
+                      background: 'rgba(239, 68, 68, 0.92)', color: '#fff',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 900,
+                    }}>▶</span>
+                  </div>
+                  {video.duration && (
+                    <span style={{
+                      position: 'absolute', right: '6px', bottom: '6px',
+                      background: 'rgba(0,0,0,0.75)', color: '#fff', fontSize: '10px',
+                      padding: '2px 6px', borderRadius: '6px', fontWeight: 700,
+                    }}>
+                      {video.duration}
+                    </span>
+                  )}
+                </button>
+                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <a
+                    href={video.url || `https://www.youtube.com/watch?v=${video.videoId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ textDecoration: 'none', color: '#fecaca', fontSize: '14px', fontWeight: 700, lineHeight: 1.4 }}
+                  >
+                    {video.title}
+                  </a>
+                  <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.55)' }}>
+                    {video.channel}
+                    {video.viewCount != null && ` · ${formatViewCount(video.viewCount)}`}
+                  </div>
+                  {video.description && (
+                    <div style={{
+                      fontSize: '11px', color: 'rgba(255,255,255,0.42)', lineHeight: 1.5,
+                      display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                    }}>
+                      {video.description}
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', gap: '8px', marginTop: 'auto' }}>
+                    <button
+                      type="button"
+                      onClick={() => setExpandedId(isExpanded ? null : video.videoId)}
+                      style={{
+                        padding: '6px 10px', borderRadius: '8px', border: '1px solid rgba(239,68,68,0.25)',
+                        background: 'rgba(239,68,68,0.08)', color: '#fca5a5', fontSize: '11px', fontWeight: 700, cursor: 'pointer',
+                      }}
+                    >
+                      {isExpanded ? 'Gizle' : 'Burada Oynat'}
+                    </button>
+                    <a
+                      href={video.url || `https://www.youtube.com/watch?v=${video.videoId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        padding: '6px 10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)',
+                        background: 'rgba(255,255,255,0.04)', color: '#e5e7eb', fontSize: '11px', fontWeight: 700, textDecoration: 'none',
+                      }}
+                    >
+                      YouTube'da Aç ↗
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
 /* ── Source Cards Component (Tavily Web Arama Kaynakları) ── */
 const SourceCards = ({ sources }) => {
@@ -725,19 +877,10 @@ function MessageBubble({ message, isStream, onQuickAction }) {
 
         {/* YouTube Suggestions */}
         {message.youtube_suggestions && message.youtube_suggestions.length > 0 && (
-          <div style={{ marginTop: '16px', padding: '14px', borderRadius: '16px', background: 'rgba(0,0,0,0.18)', border: '1px solid rgba(255,255,255,0.08)' }}>
-            <div style={{ marginBottom: '10px', fontSize: '13px', color: '#9ca3af', fontWeight: 700 }}>YouTube Videoları</div>
-            {message.youtube_suggestions.slice(0, 1).map((video, idx) => (
-              <a key={idx} href={`https://www.youtube.com/watch?v=${video.videoId}`} target="_blank" rel="noreferrer" style={{ display: 'flex', gap: '12px', alignItems: 'center', textDecoration: 'none', color: '#e5e7eb' }}>
-                {video.thumbnail ? <img src={video.thumbnail} alt={video.title} style={{ width: '110px', height: '62px', objectFit: 'cover', borderRadius: '10px' }} /> : null}
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '14px', fontWeight: 700 }}>{video.title}</div>
-                  <div style={{ fontSize: '12px', color: '#cbd5e1', marginTop: '4px' }}>{video.channel}</div>
-                </div>
-                <span style={{ color: '#3b82f6', fontWeight: 700 }}>▶</span>
-              </a>
-            ))}
-          </div>
+          <YouTubeSuggestionCards
+            videos={message.youtube_suggestions}
+            searchQuery={message.youtube_search_query}
+          />
         )}
 
         {/* Tool Notes */}
