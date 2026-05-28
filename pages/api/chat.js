@@ -225,19 +225,42 @@ async function searchGoogleMaps(query) {
 // --- DuckDuckGo Web Search (Fast & Accurate) ---
 async function searchWithDuckDuckGo(query) {
     try {
-      const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&pretty=1`;
+      // First try Instant Answer API (fast)
+      const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`;
       const res = await fetch(url);
       if (!res.ok) return null;
       const data = await res.json();
       
       const results = [];
       
-      // Abstract text (main result)
+      // Direct answer (e.g. weather, currency, definitions)
+      if (data.Answer && data.AnswerType) {
+        results.push({
+          title: data.AnswerType,
+          snippet: data.Answer,
+          url: data.AnswerURL || ''
+        });
+      }
+      
+      // Abstract text (Wikipedia summary)
       if (data.AbstractText) {
         results.push({
-          title: 'Abstract',
-          snippet: data.AbstractText.substring(0, 200),
+          title: data.AbstractSource || 'Özet',
+          snippet: data.AbstractText.substring(0, 300),
           url: data.AbstractURL || ''
+        });
+      }
+      
+      // Results array (actual web search results)
+      if (data.Results && data.Results.length > 0) {
+        data.Results.slice(0, 4).forEach(r => {
+          if (r.Text) {
+            results.push({
+              title: r.FirstURL ? r.FirstURL.split('/').pop().replace(/_/g, ' ') || 'Sonuç' : 'Sonuç',
+              snippet: r.Text.substring(0, 300),
+              url: r.FirstURL || ''
+            });
+          }
         });
       }
       
@@ -246,11 +269,34 @@ async function searchWithDuckDuckGo(query) {
         data.RelatedTopics.slice(0, 3).forEach(topic => {
           if (topic.Text) {
             results.push({
-              title: topic.FirstURL ? 'Search Result' : 'Related Topic',
-              snippet: topic.Text.substring(0, 200),
+              title: topic.FirstURL ? topic.FirstURL.split('/').pop().replace(/_/g, ' ') : 'İlgili',
+              snippet: topic.Text.substring(0, 300),
               url: topic.FirstURL || ''
             });
           }
+        });
+      }
+      
+      if (results.length > 0) return results;
+
+      // Fallback: scrape lite HTML for proper search results
+      const htmlRes = await fetch('https://lite.duckduckgo.com/lite/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `q=${encodeURIComponent(query)}`
+      });
+      if (!htmlRes.ok) return null;
+      const html = await htmlRes.text();
+      const linkRegex = /<a[^>]*href="([^"]*)"[^>]*class="result-link"[^>]*>([\s\S]*?)<\/a>/g;
+      const snippetRegex = /<td[^>]*class="result-snippet"[^>]*>([\s\S]*?)<\/td>/g;
+      const linkMatches = [...html.matchAll(linkRegex)];
+      const snippetMatches = [...html.matchAll(snippetRegex)];
+      
+      for (let i = 0; i < Math.min(linkMatches.length, 5); i++) {
+        results.push({
+          title: linkMatches[i][2].replace(/<[^>]*>/g, '').trim().substring(0, 100),
+          snippet: snippetMatches[i] ? snippetMatches[i][1].replace(/<[^>]*>/g, '').trim().substring(0, 300) : '',
+          url: linkMatches[i][1]
         });
       }
       
@@ -1741,12 +1787,20 @@ export default async function handler(req, res) {
 
       // Short messages or greetings → skip search
       const isGreeting = /^(merhaba|selam|hi|hello|hey|günaydın|tünaydın|iyi akşam|iyi gece|nasılsın|naber|ne var|how are)/i.test(msgLower);
-      const isShortQuery = message.trim().split(/\s+/).length < 4;
-      const isPersonalQuestion = /(benim|bana|hedefim|planım|yardım et|ne yapmalıyım|tavsiye|öneri|düşünce|fikir)/i.test(msgLower);
+      const isShortQuery = message.trim().split(/\s+/).length < 3;
+      const isPersonalQuestion = /(benim|bana|hedefim|planım|yardım et|ne yapmalıyım|tavsiye|öneri|düşünce|fikir|sence|ne önerirsin)/i.test(msgLower);
 
-      // Real-time information triggers
-      const needsSearch = deepSearch || (!isGreeting && !isShortQuery && !isPersonalQuestion && (
-        /(haber|güncel|bugün|dün|yarın|son dakika|son durum|şu an|şimdi|2024|2025|2026|puan durumu|hava durumu|borsa|kripto|bitcoin|ethereum|dolar|euro|altın|gümüş|fiyatı nedir|fiyatları|kimdir|nedir|vizyondaki film|sinema|maç sonucu|maç skoru|transfer|seçim|cumhurbaşkan|başbakan|bakan|deprem|sel|yangın|kaza|olay|teknoloji haberi|yapay zeka haberi|yeni model|çıktı mı|piyasaya çıktı)/i.test(msgLower)
+      // Information-seeking patterns — automatic web search for factual queries
+      const isInfoQuery = /(kimdir|nedir|nasıl|nerede|ne zaman|kaç|hangi|neden|ne kadar|fiyatı|puanı|puanları|sonucu|sonuçları|listesi|sıralaması|şartları|başvuru|atama|sınav|bakanlık|bakanlığı|için|ücreti|programı|yılı|tarihi|dönemi|merkezi|illeri|nelerdir|arasındaki fark|özellikleri|anlamı|hesaplama|hesapla|indirimi|kampanyası|modeli|versiyonu|karşılaştırma|yorumları|inceleme)/i.test(msgLower);
+
+      // Real-time/current info triggers
+      const isCurrentQuery = /(haber|güncel|bugün|dün|yarın|son dakika|son durum|şu an|şimdi|2024|2025|2026|puan durumu|hava durumu|borsa|kripto|bitcoin|ethereum|dolar|euro|altın|gümüş|fiyatı nedir|fiyatları|vizyondaki film|sinema|maç sonucu|maç skoru|transfer|seçim|cumhurbaşkan|başbakan|bakan|deprem|sel|yangın|kaza|olay|teknoloji haberi|yapay zeka haberi|yeni model|çıktı mı|piyasaya çıktı)/i.test(msgLower);
+
+      // Search triggers for any factual/informational query
+      const needsSearch = deepSearch || (!isGreeting && !isPersonalQuestion && (
+        isCurrentQuery || isInfoQuery || (!isShortQuery && (
+          /(kpss|yks|ales|dgs|tus|dus|e-us|memur|öğretmen|polis|asker|doktor|hemşire|mühendis|avukat|hukuk|tıp|mimarlık|eczacılık|diş|puan türü|taban puan|sıralama|bölüm|üniversite|fakülte|enstitü|yüksekokul|yök|ösym|meb|sgk|bağkur|emekli|maaş|tazminat|borçlanma|asgari ücret|enflasyon|faiz|kredi|burs|staj|iş ilanı|ihale|şartname|mevzuat|kanun|yönetmelik|genelge)/i.test(msgLower)
+        ))
       ));
 
       if (needsSearch) {
