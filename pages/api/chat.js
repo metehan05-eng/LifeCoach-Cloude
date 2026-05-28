@@ -965,6 +965,7 @@ async function callHuggingFaceAPI(systemPrompt, userMessages, model, options = {
     max_tokens: maxTokens,
     temperature: 0.75,
     top_p: 0.9,
+    repetition_penalty: 1.1,
   };
   if (HF_PROVIDER && HF_PROVIDER !== 'auto') {
     requestBase.provider = HF_PROVIDER;
@@ -997,6 +998,7 @@ async function callHuggingFaceAPI(systemPrompt, userMessages, model, options = {
       temperature: 0.75,
       top_p: 0.9,
       return_full_text: false,
+      repetition_penalty: 1.1,
     },
     ...(HF_PROVIDER && HF_PROVIDER !== 'auto' ? { provider: HF_PROVIDER } : {}),
   });
