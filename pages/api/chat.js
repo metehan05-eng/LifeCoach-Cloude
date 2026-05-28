@@ -1009,9 +1009,9 @@ async function callHuggingFaceAPI(systemPrompt, userMessages, model, options = {
   const requestBase = {
     model,
     max_tokens: maxTokens,
-    temperature: 0.75,
+    temperature: 0.85,
     top_p: 0.9,
-    repetition_penalty: 1.1,
+    repetition_penalty: 1.15,
   };
   if (HF_PROVIDER && HF_PROVIDER !== 'auto') {
     requestBase.provider = HF_PROVIDER;
@@ -1041,10 +1041,10 @@ async function callHuggingFaceAPI(systemPrompt, userMessages, model, options = {
     inputs: promptParts.join('\n\n') + '\n\nAssistant:',
     parameters: {
       max_new_tokens: maxTokens,
-      temperature: 0.75,
+      temperature: 0.85,
       top_p: 0.9,
       return_full_text: false,
-      repetition_penalty: 1.1,
+      repetition_penalty: 1.15,
     },
     ...(HF_PROVIDER && HF_PROVIDER !== 'auto' ? { provider: HF_PROVIDER } : {}),
   });
@@ -1956,8 +1956,10 @@ export default async function handler(req, res) {
         const completion = await client.chat.completions.create({
           model: modelName,
           messages: messages,
-          temperature: 0.5,
+          temperature: 0.7,
           max_tokens: 4096,
+          frequency_penalty: 0.5,
+          presence_penalty: 0.3,
           stream: false
         }, { signal: controller.signal });
 
@@ -1987,8 +1989,10 @@ export default async function handler(req, res) {
         const completion = await client.chat.completions.create({
           model: modelName,
           messages: messages,
-          temperature: 0.5,
+          temperature: 0.7,
           max_tokens: 4096,
+          frequency_penalty: 0.5,
+          presence_penalty: 0.3,
           stream: false
         }, { signal: controller.signal });
 
@@ -2013,8 +2017,10 @@ export default async function handler(req, res) {
         const completion = await client.chat.completions.create({
           model: modelName,
           messages: messages,
-          temperature: 0.5,
+          temperature: 0.7,
           max_tokens: 4096,
+          frequency_penalty: 0.5,
+          presence_penalty: 0.3,
           stream: false
         }, { signal: controller.signal });
 
