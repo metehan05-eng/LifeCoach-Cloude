@@ -7,7 +7,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma migrate deploy && next build",
+    "build": "prisma db push && next build",
     "start:next": "next start",
     "start": "node index.js",
     "lint": "next lint",
