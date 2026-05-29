@@ -39,6 +39,7 @@ export default function ChatbotInterface() {
   const [isMounted, setIsMounted] = useState(false);
   const [sessions, setSessions] = useState([]);
   const [activeSessionId, setActiveSessionId] = useState(null);
+  const [activeChatId, setActiveChatId] = useState(null);
 
   const [isTyping, setIsTyping] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true); // SSR için varsayılan
@@ -72,29 +73,30 @@ export default function ChatbotInterface() {
     }
   }, [isMounted]);
 
-  // 3. Sessions Yükle (Kullanıcıya özel key) - sadece client'te
-  // NOT: createNewSession'ı burada çağırmıyoruz, mount sonrası UI içinde kontrol edilecek
+  // 3. Sessions Yükle (Backend API'den)
   useEffect(() => {
     if (!isMounted || !session?.user?.email) return;
-    
-    const userEmail = session.user.email;
-    const storageKey = `lifeCoachSessions_${userEmail}`;
-    
-    // Zaten yüklendiyse tekrar yükleme
     if (sessions.length > 0) return;
     
-    try {
-      const saved = localStorage.getItem(storageKey);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        const validSessions = parsed.filter(s => s.messages && s.messages.length > 0);
-        setSessions(validSessions);
-        // NOT: Otomatik ilk session'ı seçmiyoruz - kullanıcı "Yeni Sohbet" ile başlamalı
-        // veya sidebar'dan eski bir konuşma seçmeli
-      }
-    } catch (e) {
-      console.error("Session yükleme hatası:", e);
-    }
+    fetch(`/api/chat/history?email=${session.user.email}`)
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          const mapped = data.map(c => ({
+            id: c.id,
+            title: c.title || 'Sohbet',
+            messages: (c.messages || []).map(m => ({
+              role: m.role,
+              content: m.content,
+              id: m.id,
+              metadata: m.metadata
+            })),
+            createdAt: c.createdAt
+          }));
+          setSessions(mapped);
+        }
+      })
+      .catch(e => console.error("Session yükleme hatası:", e));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMounted, session]);
 
@@ -109,7 +111,7 @@ export default function ChatbotInterface() {
       }).catch(e => console.log("Stats fetch error"));
   }, [isMounted, session]);
 
-  // Sohbetleri her değişimde kaydet (Sadece mesajı olanları)
+  // Sohbetleri her değişimde localStorage'a kaydet (offline yedek)
   useEffect(() => {
     const currentUserEmail = session?.user?.email;
     if (isMounted && sessions.length > 0 && currentUserEmail) {
@@ -141,24 +143,33 @@ export default function ChatbotInterface() {
     const timestamp = Date.now();
     const tempId = `temp-${timestamp}`;
     setActiveSessionId(tempId);
+    setActiveChatId(null);
     setError(null);
     if (isMobile) setSidebarOpen(false);
     return { id: tempId, timestamp };
   }, [isMobile]);
 
   const deleteSession = useCallback((id) => {
+    if (id && !id.toString().startsWith('temp-')) {
+      fetch('/api/chat/history', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chatId: id, email: session?.user?.email })
+      }).catch(e => console.error("Chat silme hatasi:", e));
+    }
     setSessions(prev => {
       const remaining = prev.filter(s => s.id !== id);
       if (remaining.length === 0) {
         const timestamp = Date.now();
         const fresh = { id: timestamp, title: 'Yeni Sohbet', messages: [], createdAt: timestamp };
         setActiveSessionId(fresh.id);
+        setActiveChatId(null);
         return [fresh];
       }
       if (activeSessionId === id) setActiveSessionId(remaining[0].id);
       return remaining;
     });
-  }, [activeSessionId]);
+  }, [activeSessionId, session]);
 
   const sendMessage = useCallback(async (text, attachments = []) => {
     if ((!text.trim() && attachments.length === 0) || isLoading) return;
@@ -170,7 +181,7 @@ export default function ChatbotInterface() {
       name: a.name,
       extension: a.extension,
       type: a.type,
-      preview: a.preview // Görüntüler için base64, diğerleri için null
+      preview: a.preview
     }));
 
     const userMsg = { 
@@ -185,7 +196,6 @@ export default function ChatbotInterface() {
     let targetSessionId = activeSessionId;
     
     // CRITICAL FIX: Create history BEFORE adding new message to state
-    // This ensures history only contains previous messages, not the current one
     const history = messages.map(m => ({ role: m.role, content: m.content }));
     
     if (!currentSessionExists) {
@@ -210,16 +220,8 @@ export default function ChatbotInterface() {
     setIsLoading(true);
     setIsTyping(true);
     setStreamText('');
-    
-    console.log('[FRONTEND DEBUG] Sending to backend:', {
-      message: text,
-      historyLength: history.length,
-      history: history,
-      currentMessage: text
-    });
 
     try {
-      // Dosya içeriklerini hazırla
       const preparedAttachments = await Promise.all(attachments.map(async (a) => {
         if (a.type.startsWith('image/')) {
           return { name: a.name, type: 'image', data: a.preview.split(',')[1] };
@@ -239,10 +241,11 @@ export default function ChatbotInterface() {
           message: text, 
           history, 
           attachments: preparedAttachments,
+          chatId: activeChatId,
           sessionId: targetSessionId, 
           email: session?.user?.email,
           deepSearch: deepSearch,
-          goal_planning_mode: goalPlanningMode  // 🎯 Hedef planlama modu
+          goal_planning_mode: goalPlanningMode
         }),
       });
 
@@ -261,6 +264,17 @@ export default function ChatbotInterface() {
 
       const aiText = data.reply || data.response;
       if (!aiText) throw new Error("Empty response");
+      // chatId'yi kaydet (backend'den gelen)
+      if (data.chatId) {
+        setActiveChatId(data.chatId);
+        // Session'un id'sini de backend'den gelen chatId ile güncelle
+        setSessions(prev => prev.map(s =>
+          s.id === targetSessionId
+            ? { ...s, id: data.chatId }
+            : s
+        ));
+        setActiveSessionId(data.chatId);
+      }
       const aiSources = data.sources || [];  // Tavily'den gelen kaynaklar
       const generatedFiles = data.generated_files || [];
       const youtubeSuggestions = data.youtube_suggestions || [];
@@ -313,7 +327,7 @@ export default function ChatbotInterface() {
       setIsTyping(false);
       setStreamText('');
     }
-  }, [activeSessionId, sessions, isMounted, userStats, session, isLoading]);
+  }, [activeSessionId, sessions, isMounted, userStats, session, isLoading, activeChatId]);
   
   const handleConvertToProject = useCallback(() => {
     if (!activeSession || activeSession.messages.length === 0) return;
@@ -417,6 +431,7 @@ export default function ChatbotInterface() {
                  setShowProjects(true);
               } else {
                  setActiveSessionId(id);
+                 setActiveChatId(id);
                  setShowProjects(false);
               }
               if (isMobile) setSidebarOpen(false);

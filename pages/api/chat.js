@@ -1329,7 +1329,7 @@ export default async function handler(req, res) {
   // Handle POST requests (existing logic)
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { message, history, email, sessionId, mode, userLanguage, attachments, deepSearch } = req.body;
+  const { message, history, email, sessionId, chatId, mode, userLanguage, attachments, deepSearch } = req.body;
   const countryCode = req.headers['x-vercel-ip-country'] || 'Unknown';
 
   // CONCURRENCY LOCK: Use sessionId or email as lock key to serialize requests per user/session
@@ -1413,6 +1413,49 @@ export default async function handler(req, res) {
       return res.status(403).json({
         error: "LIMIT_REACHED",
         message: "Günlük mesaj limitine ulaştın. Sınırsız erişim ve daha güçlü modeller için Premium'a geç!"
+      });
+    }
+
+    // ==========================================
+    // CHAT / MESSAGE DATABASE PERSISTENCE
+    // ==========================================
+    let finalUserContent = message || "";
+    let activeChatId = chatId || null;
+    let dbHistory = [];
+
+    if (userId && message) {
+      // Load or create chat
+      if (activeChatId) {
+        const existing = await prisma.chat.findFirst({
+          where: { id: activeChatId, userId },
+          include: { messages: { orderBy: { createdAt: 'asc' } } },
+        });
+        if (!existing) activeChatId = null; // Invalid chatId → create new
+        else dbHistory = existing.messages;
+      }
+
+      if (!activeChatId) {
+        const newChat = await prisma.chat.create({
+          data: {
+            userId,
+            title: message.slice(0, 80) || 'Yeni Sohbet',
+          },
+        });
+        activeChatId = newChat.id;
+      }
+
+      // Save user message to DB
+      const hasImagesInAttachments = attachments?.some(a => a.type === 'image') || false;
+      await prisma.chatMessage.create({
+        data: {
+          chatId: activeChatId,
+          role: 'user',
+          content: finalUserContent || message,
+          metadata: {
+            attachments: attachments?.length ? attachments.map(a => ({ name: a.name, type: a.type })) : null,
+            hasImages: hasImagesInAttachments,
+          },
+        },
       });
     }
 
@@ -1885,25 +1928,23 @@ export default async function handler(req, res) {
       ? process.env.HF_MODELS.split('|').map(m => m.trim()).filter(Boolean)
       : [selectedHFModel, HF_MODEL_CATALOG.generalAlt, HF_MODEL_CATALOG.codingAlt];
 
-    // STRICT AWAIT FLOW: Build messages array with guaranteed current message injection
-    // This ensures the latest user message is always included in the LLM payload
+    // STRICT AWAIT FLOW: Build messages array from DATABASE history
+    // This ensures full context is maintained across sessions and devices
     const messages = [
       { role: "system", content: systemPrompt }
     ];
 
-    // Add historical messages (if provided) - these are from previous turns
-    if (history && Array.isArray(history)) {
-      for (const m of history) {
+    // Add historical messages from DATABASE (persisted, cross-device)
+    if (dbHistory && dbHistory.length > 0) {
+      for (const m of dbHistory) {
         messages.push({
           role: m.role === 'assistant' ? 'assistant' : 'user',
-          content: m.content || ""
+          content: typeof m.content === 'string' ? m.content : String(m.content || "")
         });
       }
     }
 
-    // PAYLOAD DIRECT INJECTION: Explicitly inject the current user message
-    // This guarantees the latest message is included regardless of history state
-    let finalUserContent = message || "";
+    // PAYLOAD DIRECT INJECTION: Append file/video context to current message
     if (extractedText) {
       finalUserContent += `\n\nEkli Dosya İçerikleri:\n${extractedText}`;
     }
@@ -1911,11 +1952,11 @@ export default async function handler(req, res) {
       finalUserContent += `\n${youtubeVideoContext}`;
     }
 
-    // Check if the last message in history is the same as current message to avoid duplication
-    const lastHistoryMessage = history && history.length > 0 ? history[history.length - 1] : null;
-    const isDuplicate = lastHistoryMessage && 
-                        lastHistoryMessage.role === 'user' && 
-                        lastHistoryMessage.content === finalUserContent;
+    // Check if the last message in DB is the same as current message to avoid duplication
+    const lastDbMessage = dbHistory.length > 0 ? dbHistory[dbHistory.length - 1] : null;
+    const isDuplicate = lastDbMessage && 
+                        lastDbMessage.role === 'user' && 
+                        lastDbMessage.content === finalUserContent;
 
     if (!isDuplicate) {
       if (hasImages) {
@@ -1934,9 +1975,7 @@ export default async function handler(req, res) {
       }
     }
 
-    console.log('[BACKEND DEBUG] Messages array being sent to LLM:', JSON.stringify(messages, null, 2));
-    console.log('[BACKEND DEBUG] Current message from req.body:', message);
-    console.log('[BACKEND DEBUG] History received:', history);
+    console.log('[BACKEND DEBUG] Messages array:', messages.length, 'messages for chat:', activeChatId);
 
     // ── OpenRouter API Çağrısı (Model Zinciri) ──
     async function tryOpenRouterModel(modelName) {
@@ -2044,9 +2083,9 @@ export default async function handler(req, res) {
       const genAI = new GoogleGenerativeAI(geminiKey.trim());
 
       // Gemini için history'yi düzelt (system mesajını ayır)
-      const geminiHistory = (history || []).map(m => ({
+      const geminiHistory = (dbHistory || []).map(m => ({
         role: m.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: m.content || "" }]
+        parts: [{ text: typeof m.content === 'string' ? m.content : String(m.content || "") }]
       }));
 
       const geminiModel = genAI.getGenerativeModel({
@@ -2070,7 +2109,7 @@ export default async function handler(req, res) {
     let aiResponse = null;
     let usedModel = null;
     let lastError = null;
-    const hfHistoryMessages = (history || []).filter(m => m.role !== 'system');
+    const hfHistoryMessages = (dbHistory || []).filter(m => m.role !== 'system');
 
     // KATMAN 0: Hugging Face Inference API (açık kaynak, intent-based)
     if (hf) {
@@ -2107,7 +2146,7 @@ export default async function handler(req, res) {
       for (const modelName of QWEN_MODEL_CHAIN) {
         try {
           console.log(`[AI-Fallback] 🚀 Qwen DashScope deneniyor: ${modelName}`);
-          aiResponse = await callQwenDashScope(systemPrompt, (history || []).filter(m => m.role !== 'system'), modelName, 4096);
+          aiResponse = await callQwenDashScope(systemPrompt, (dbHistory || []).filter(m => m.role !== 'system'), modelName, 4096);
           usedModel = `qwen/${modelName}`;
           console.log(`[AI-Fallback] ✅ Qwen ${modelName} başarılı`);
           break;
@@ -2324,12 +2363,44 @@ export default async function handler(req, res) {
       } catch (e) { console.error("Usage count update error", e); }
     }
 
+    // Save AI response to database and update chat title
+    if (userId && activeChatId) {
+      try {
+        await prisma.chatMessage.create({
+          data: {
+            chatId: activeChatId,
+            role: 'assistant',
+            content: cleanReply,
+            metadata: {
+              model: usedModel,
+              sources: searchSources?.length ? searchSources : null,
+              searched: searchSources?.length > 0 || false,
+            },
+          },
+        });
+        // Update chat title with first meaningful message
+        const msgCount = await prisma.chatMessage.count({ where: { chatId: activeChatId } });
+        if (msgCount <= 2) {
+          await prisma.chat.update({
+            where: { id: activeChatId },
+            data: { title: message ? message.slice(0, 80) : 'Yeni Sohbet' },
+          });
+        } else {
+          await prisma.chat.update({
+            where: { id: activeChatId },
+            data: { updatedAt: new Date() },
+          });
+        }
+      } catch (e) { console.error("[DB] Message save error:", e); }
+    }
+
     // Ephemeral chat XP: small incremental XP for interactive chat messages.
     // NOTE: This is ephemeral and does NOT update persistent user XP/level unless a goal/completion action occurs.
     const chatXp = Math.floor(Math.random() * 2) + 1; // 1-2 XP per message
 
     return res.status(200).json({
       reply: cleanReply,
+      chatId: activeChatId,
       automation_data,
       sources: searchSources,
       searched: searchSources.length > 0,
