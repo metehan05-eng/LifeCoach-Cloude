@@ -264,18 +264,11 @@ export default function ChatbotInterface() {
 
       const aiText = data.reply || data.response;
       if (!aiText) throw new Error("Empty response");
-      // chatId'yi kaydet (backend'den gelen)
-      if (data.chatId) {
-        setActiveChatId(data.chatId);
-        // Session'un id'sini de backend'den gelen chatId ile güncelle
-        setSessions(prev => prev.map(s =>
-          s.id === targetSessionId
-            ? { ...s, id: data.chatId }
-            : s
-        ));
-        setActiveSessionId(data.chatId);
-      }
-      const aiSources = data.sources || [];  // Tavily'den gelen kaynaklar
+
+      // Eğer backend yeni bir chatId döndüyse (ilk mesaj), session ID'sini güncelle
+      const finalSessionId = data.chatId || targetSessionId;
+
+      const aiSources = data.sources || [];
       const generatedFiles = data.generated_files || [];
       const youtubeSuggestions = data.youtube_suggestions || [];
       const youtubeSearchQuery = data.youtube_search_query || null;
@@ -289,20 +282,19 @@ export default function ChatbotInterface() {
         await new Promise(r => setTimeout(r, 16));
       }
 
-      // ÖNEMLİ: Önce stream'i ve typing göstergesini kapat, SONRA mesajı ekle.
-      // Bu sıralama, stream balonu ile kaydedilen mesajın aynı anda ekranda görünmesini
-      // (çift mesaj sorununu) önler.
+      // Stream bitti: önce stream'i kapat, SONRA kalıcı mesajı ekle (çift balon sorununu önler)
       setStreamText('');
       setIsTyping(false);
       setIsLoading(false);
 
+      // Session'a assistant mesajını ekle (finalSessionId ile)
       setSessions(prev => prev.map(s =>
-        s.id === targetSessionId
+        s.id === targetSessionId || s.id === finalSessionId
           ? { ...s, messages: [...s.messages, { 
               role: 'assistant', 
               content: aiText, 
               id: Date.now(),
-              sources: aiSources,  // 🔗 Tıklanabilir kaynaklar
+              sources: aiSources,
               files: generatedFiles,
               youtube_suggestions: youtubeSuggestions,
               youtube_search_query: youtubeSearchQuery,
@@ -314,6 +306,17 @@ export default function ChatbotInterface() {
             }] }
           : s
       ));
+
+      // Session ID'sini backend'den gelen chatId ile güncelle (ilk mesajda)
+      if (data.chatId && data.chatId !== targetSessionId) {
+        setSessions(prev => prev.map(s =>
+          s.id === targetSessionId
+            ? { ...s, id: data.chatId }
+            : s
+        ));
+        setActiveChatId(data.chatId);
+        setActiveSessionId(data.chatId);
+      }
 
       // Deep search'i otomatik sıfırla (tek seferlik arama)
       if (deepSearch) setDeepSearch(false);
