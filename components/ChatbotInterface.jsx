@@ -73,12 +73,15 @@ export default function ChatbotInterface() {
     }
   }, [isMounted]);
 
-  // 3. Sessions Yükle (Backend API'den)
+  // 3. Sessions Yükle (Backend API'den + localStorage yedek)
   useEffect(() => {
     if (!isMounted || !session?.user?.email) return;
     if (sessions.length > 0) return;
+
+    const userEmail = session.user.email;
+    const storageKey = `lifeCoachSessions_${userEmail}`;
     
-    fetch(`/api/chat/history?email=${session.user.email}`)
+    fetch(`/api/chat/history?email=${encodeURIComponent(userEmail)}`)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data) && data.length > 0) {
@@ -94,9 +97,34 @@ export default function ChatbotInterface() {
             createdAt: c.createdAt
           }));
           setSessions(mapped);
+        } else {
+          // API boş döndü → localStorage'dan yedek yükle
+          try {
+            const saved = localStorage.getItem(storageKey);
+            if (saved) {
+              const parsed = JSON.parse(saved);
+              const valid = parsed.filter(s => s.messages && s.messages.length > 0);
+              if (valid.length > 0) setSessions(valid);
+            }
+          } catch (e) {
+            console.error("LocalStorage yedek yükleme hatası:", e);
+          }
         }
       })
-      .catch(e => console.error("Session yükleme hatası:", e));
+      .catch(e => {
+        console.error("Session yükleme hatası:", e);
+        // API hatasında localStorage yedek dene
+        try {
+          const saved = localStorage.getItem(storageKey);
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            const valid = parsed.filter(s => s.messages && s.messages.length > 0);
+            if (valid.length > 0) setSessions(valid);
+          }
+        } catch (e2) {
+          console.error("LocalStorage yedek yükleme hatası:", e2);
+        }
+      });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMounted, session]);
 
@@ -441,7 +469,7 @@ export default function ChatbotInterface() {
             }}
             onNewSession={createNewSession}
             onDeleteSession={deleteSession}
-            isOpen={isMobile ? true : sidebarOpen}
+            isOpen={sidebarOpen}
             user={{...session?.user, ...userStats}}
             onToggle={toggleSidebar}
           />

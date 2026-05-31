@@ -28,6 +28,7 @@ export default async function handler(req, res) {
         where: { userId: user.id },
         orderBy: { updatedAt: 'desc' },
         include: {
+          messages: { orderBy: { createdAt: 'asc' } },
           _count: { select: { messages: true } },
         },
       });
