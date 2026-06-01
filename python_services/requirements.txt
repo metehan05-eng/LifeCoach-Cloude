@@ -13,3 +13,4 @@ uvicorn
 deepface
 opencv-python
 tf-keras
+yt-dlp>=2024.0.0
