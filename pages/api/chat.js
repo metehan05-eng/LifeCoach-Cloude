@@ -776,37 +776,55 @@ async function getYouTubeVideoDetails(videoId) {
   }
 }
 
-// Call Python video_processor.py script to download audio + transcribe via HF Whisper
-// Falls back to graceful message on Vercel Serverless (no python3 binary)
-async function callVideoProcessorPython(videoUrl) {
-  if (process.env.VERCEL) {
-    console.log('[video_processor] Vercel ortamı — Python desteklenmiyor, video analizi atlanıyor.');
-    return null;
-  }
-  const path = require('path');
-  const scriptPath = path.join(process.cwd(), 'python_services', 'video_processor.py');
-  const { execFile } = require('child_process');
-  const { promisify } = require('util');
-  const execFilePromise = promisify(execFile);
-  const env = {
-    ...process.env,
-    HUGGING_FACE_API_KEY: process.env.HUGGING_FACE_API_KEY || process.env.HF_TOKEN || '',
-  };
+// Pure JS YouTube transcription: extracts audio via ytdl-core → sends to HF Whisper API
+// No Python, no child_process, no temp files — fully serverless-compliant
+async function transcribeYouTubeViaWhisperJS(videoUrl) {
+  const ytdl = require('@distube/ytdl-core');
   try {
-    const { stdout } = await execFilePromise('python3', [scriptPath, videoUrl], {
-      timeout: 180000,
-      maxBuffer: 10 * 1024 * 1024,
-      env,
+    // 1. Get the best audio stream URL from YouTube (pure JS, no downloads)
+    const info = await ytdl.getInfo(videoUrl, {
+      requestOptions: {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/119.0',
+          'Referer': 'https://www.youtube.com/',
+        },
+      },
     });
-    const result = JSON.parse(stdout);
-    if (result.success && result.transcript) {
-      console.log('[video_processor] Transcript length:', result.transcript.length, 'chars');
-      return result.transcript;
+    const audioFormat = ytdl.chooseFormat(info.formats, { quality: 'lowestaudio', filter: 'audioonly' });
+    if (!audioFormat || !audioFormat.url) {
+      console.error('[ytdl-core] No audio format found');
+      return null;
     }
-    console.error('[video_processor] Failed:', result.error || 'Unknown error');
-    return null;
+    console.log('[ytdl-core] Audio URL obtained, streaming to Whisper...');
+
+    // 2. Download audio stream to buffer
+    const response = await fetch(audioFormat.url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/119.0',
+        'Referer': 'https://www.youtube.com/',
+      },
+    });
+    if (!response.ok) throw new Error(`Audio fetch failed: ${response.status}`);
+    const audioBuffer = Buffer.from(await response.arrayBuffer());
+
+    // 3. Transcribe via Hugging Face Whisper Inference API
+    if (!hf) {
+      console.warn('[HF Whisper] HF_TOKEN not set, skipping transcription');
+      return null;
+    }
+    const result = await hf.automaticSpeechRecognition({
+      model: 'openai/whisper-large-v3',
+      data: audioBuffer,
+    });
+    const text = (result && result.text) || '';
+    if (!text.trim()) {
+      console.warn('[HF Whisper] Empty transcription result');
+      return null;
+    }
+    console.log('[HF Whisper] Transcription length:', text.length, 'chars');
+    return text;
   } catch (err) {
-    console.error('[video_processor] Execution error:', err.message);
+    console.error('[transcribeYouTubeViaWhisperJS] Error:', err.message);
     return null;
   }
 }
@@ -1519,16 +1537,14 @@ export default async function handler(req, res) {
           const fullUrl = `https://www.youtube.com/watch?v=${ytVideoId}`;
           const [ytVideoDetailsResult, transcriptResult] = await Promise.allSettled([
             getYouTubeVideoDetails(ytVideoId),
-            callVideoProcessorPython(fullUrl),
+            transcribeYouTubeViaWhisperJS(fullUrl),
           ]);
 
           const ytVideoDetails = ytVideoDetailsResult.status === 'fulfilled' ? ytVideoDetailsResult.value : null;
           const ytTranscript = transcriptResult.status === 'fulfilled' ? transcriptResult.value : null;
 
           if (ytTranscript === null) {
-            tool_notes.push(process.env.VERCEL
-              ? 'Video analizi şu an sadece yerel modda aktiftir, çok yakında Serverless desteği gelecektir.'
-              : 'Bu videonun ses dosyası çözümlenemedi veya transkript alınamadı.');
+            tool_notes.push('Bu videonun ses dosyası çözümlenemedi veya transkript alınamadı.');
           } else {
             isVideoProcessed = true;
             tool_notes.push(`YouTube videosu (${ytVideoDetails?.title || ytVideoId}) ses tanıma ile çözümlendi.`);
