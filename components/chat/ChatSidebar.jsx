@@ -99,11 +99,11 @@ export default function ChatSidebar({
           padding: '20px 16px 12px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '12px',
+          gap: '8px',
           borderBottom: '1px solid rgba(99,102,241,0.08)',
         }}>
           {/* Logo */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '4px 0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '4px 0', marginBottom: '4px' }}>
             <div style={{
               width: '36px', height: '36px', borderRadius: '10px',
               background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
@@ -115,6 +115,34 @@ export default function ChatSidebar({
               <div style={{ fontSize: '11px', color: 'rgba(99,102,241,0.8)', fontWeight: 500 }}>HAN 4.2 Ultra Core</div>
             </div>
           </div>
+
+          {/* Waffle Studio Button - above New Chat */}
+          <button
+            onClick={() => onSelectSession('waffle')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '8px',
+              padding: '10px 14px', borderRadius: '12px',
+              background: 'linear-gradient(135deg, rgba(234,179,8,0.2), rgba(245,158,11,0.12))',
+              border: '1px solid rgba(234,179,8,0.35)',
+              color: '#fbbf24', fontWeight: 700, fontSize: '13px',
+              cursor: 'pointer', width: '100%',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = 'linear-gradient(135deg, rgba(234,179,8,0.35), rgba(245,158,11,0.2))';
+              e.currentTarget.style.borderColor = 'rgba(234,179,8,0.6)';
+              e.currentTarget.style.color = '#fcd34d';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = 'linear-gradient(135deg, rgba(234,179,8,0.2), rgba(245,158,11,0.12))';
+              e.currentTarget.style.borderColor = 'rgba(234,179,8,0.35)';
+              e.currentTarget.style.color = '#fbbf24';
+            }}
+          >
+            <span style={{ fontSize: '18px' }}>🧇</span>
+            Waffle Studio
+            <span style={{ marginLeft: 'auto', fontSize: '11px', opacity: 0.6 }}>🎨</span>
+          </button>
 
           {/* New Chat Button */}
           <button
@@ -247,16 +275,25 @@ export default function ChatSidebar({
         {/* XP Area */}
         <div style={{ padding: '16px', margin: '0 12px 12px', borderRadius: '16px', background: 'rgba(99,102,241,0.05)', border: '1px solid rgba(99,102,241,0.1)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <span style={{ fontSize: '11px', fontWeight: 800, color: '#a5b4fc' }}>SEVİYE {ephLevel ?? (user?.level || 1)}</span>
-              <span style={{ fontSize: '10px', color: 'rgba(165,180,252,0.5)' }}>{(ephXp ?? user?.xp ?? 0)}/100 XP</span>
+              <span style={{ fontSize: '11px', fontWeight: 800, color: '#a5b4fc' }}>
+                SEVİYE {user?.level || 1}
+              </span>
+              <span style={{ fontSize: '10px', color: 'rgba(165,180,252,0.5)' }}>
+                {user?.totalXp ? `${user.totalXp % 100}/100 XP` : '0/100 XP'}
+              </span>
             </div>
             <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', overflow: 'hidden', marginBottom: '16px' }}>
-              <div style={{ width: `${(ephXp ?? user?.xp ?? 0)}%`, height: '100%', background: 'linear-gradient(90deg, #6366f1, #8b5cf6)' }} />
+              <div style={{
+                width: `${user?.totalXp ? user.totalXp % 100 : 0}%`,
+                height: '100%',
+                background: 'linear-gradient(90deg, #6366f1, #8b5cf6)',
+                borderRadius: '10px',
+                transition: 'width 0.5s ease',
+              }} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <button onClick={() => onSelectSession('leaderboard')} style={{ width: '100%', padding: '8px', borderRadius: '10px', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', color: '#fff', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>🌍 Sıralama</button>
                 <button onClick={() => onSelectSession('automation')} style={{ width: '100%', padding: '8px', borderRadius: '10px', background: 'linear-gradient(135deg, rgba(234, 179, 8, 0.1), rgba(245, 158, 11, 0.05))', border: '1px solid rgba(234, 179, 8, 0.25)', color: '#fbbf24', fontSize: '11px', fontWeight: 800, cursor: 'pointer' }}>⚡ Life Automation</button>
-                <button onClick={() => onSelectSession('waffle')} style={{ width: '100%', padding: '8px', borderRadius: '10px', background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.1), rgba(244, 114, 182, 0.05))', border: '1px solid rgba(236, 72, 153, 0.25)', color: '#f472b6', fontSize: '11px', fontWeight: 800, cursor: 'pointer' }}>🎨 Waffle Studio</button>
                 <button onClick={() => onSelectSession('lootbox')} style={{ width: '100%', padding: '8px', borderRadius: '10px', background: 'linear-gradient(135deg, rgba(250, 204, 21, 0.1), rgba(245, 158, 11, 0.05))', border: '1px solid rgba(250, 204, 21, 0.25)', color: '#fbbf24', fontSize: '11px', fontWeight: 800, cursor: 'pointer' }}>🎁 Kasa Aç ({user?.han_coins || 0} 🪙)</button>
             </div>
         </div>

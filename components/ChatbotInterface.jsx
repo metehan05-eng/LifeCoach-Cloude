@@ -520,7 +520,7 @@ export default function ChatbotInterface() {
             onNewSession={createNewSession}
             onDeleteSession={deleteSession}
             isOpen={sidebarOpen}
-            user={{...session?.user, ...userStats, han_coins: gamification.han_coins, isPremium: gamification.isPremium}}
+            user={{...session?.user, ...userStats, han_coins: gamification.han_coins, isPremium: gamification.isPremium, totalXp: gamification.totalXp, level: gamification.level}}
             onToggle={toggleSidebar}
           />
         </div>
@@ -530,7 +530,7 @@ export default function ChatbotInterface() {
           <ChatHeader
             onToggleSidebar={toggleSidebar}
             sidebarOpen={sidebarOpen}
-            sessionTitle={activeSessionId === 'waffle' ? 'Waffle AI Studio' : activeSession?.title}
+            sessionTitle={activeSessionId === 'waffle' ? '🧇 Waffle Studio' : activeSession?.title}
             isMobile={isMobile}
             onConvertToProject={handleConvertToProject}
             onOpenSettings={() => setShowSettings(true)}
