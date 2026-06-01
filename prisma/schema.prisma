@@ -19,19 +19,22 @@ model User {
   image                   String?
   
   // Gamification System
-  // Gamification System
   xp                      Int                     @default(0)
   level                   Int                     @default(1)
   totalXp                 Int                     @default(0)
+  han_coins               Int                     @default(0)
+  isPremium               Boolean                 @default(false)
   currentStreak           Int                     @default(0)
   maxStreak               Int                     @default(0)
   lastActiveAt            DateTime?
 
   // Subscription & Usage System
   plan                    String                  @default("FREE") // FREE, PRO, ELITE
-  usageLimit              Int                     @default(10)     // Günlük mesaj limiti
-  usageCount              Int                     @default(0)      // Mevcut kullanım
-  premiumExpiresAt        DateTime?               // Abonelik bitiş tarihi
+  usageLimit              Int                     @default(10)
+  usageCount              Int                     @default(0)
+  premiumExpiresAt        DateTime?
+
+  inventory               UserItem[]
   
   accounts                Account[]
   sessions                Session[]
@@ -225,6 +228,21 @@ model Achievement {
   category      String
   points        Int      @default(0)
   createdAt     DateTime @default(now())
+  @@index([userId])
+}
+
+model UserItem {
+  id        String   @id @default(cuid())
+  userId    String
+  itemId    String
+  itemType  String   // theme, title, boost, cosmetic
+  name      String
+  rarity    String   // common, rare, epic, legendary
+  icon      String
+  quantity  Int      @default(1)
+  equipped  Boolean  @default(false)
+  acquiredAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@index([userId])
 }
 

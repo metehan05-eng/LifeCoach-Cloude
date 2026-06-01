@@ -2388,6 +2388,37 @@ export default async function handler(req, res) {
     // NOTE: This is ephemeral and does NOT update persistent user XP/level unless a goal/completion action occurs.
     const chatXp = Math.floor(Math.random() * 2) + 1; // 1-2 XP per message
 
+    // Gamification: persist XP and coins for this message
+    let gamification = {};
+    if (userId) {
+      try {
+        const { rewardForAction, applyXpAndLevel } = require('../../../lib/gamification');
+        const userRecord = await prisma.user.findUnique({ where: { id: userId } });
+        if (userRecord) {
+          const reward = rewardForAction('message_sent', userRecord.isPremium);
+          const levelResult = applyXpAndLevel(userRecord, reward.xp);
+          await prisma.user.update({
+            where: { id: userId },
+            data: {
+              xp: levelResult.newTotalXp,
+              level: levelResult.newLevel,
+              totalXp: levelResult.newTotalXp,
+              han_coins: { increment: reward.coins },
+            },
+          });
+          gamification = {
+            xp_gained: reward.xp,
+            coins_gained: reward.coins,
+            leveledUp: levelResult.leveledUp,
+            oldLevel: levelResult.oldLevel,
+            newLevel: levelResult.newLevel,
+            totalXp: levelResult.newTotalXp,
+            han_coins: (await prisma.user.findUnique({ where: { id: userId }, select: { han_coins: true } })).han_coins,
+          };
+        }
+      } catch (e) { console.error('[Gamification] Reward error:', e); }
+    }
+
     return res.status(200).json({
       reply: cleanReply,
       chatId: activeChatId,
@@ -2397,6 +2428,7 @@ export default async function handler(req, res) {
       _model: usedModel,
       chat_xp: chatXp,
       chat_xp_persisted: false,
+      gamification,
       generated_files,
       youtube_suggestions,
       youtube_search_query,
@@ -2404,7 +2436,7 @@ export default async function handler(req, res) {
       calendar_events,
       gmail_result,
       maps_result,
-      tool_results: toolResults, // Add tool results to response
+      tool_results: toolResults,
       video_notes: videoAttachments && videoAttachments.length > 0
         ? videoAttachments.map(v => ({ 
             name: v.name, 

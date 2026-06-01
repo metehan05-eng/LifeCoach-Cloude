@@ -11,6 +11,8 @@ import SettingsModal from './chat/SettingsModal';
 import ProjectHub from './chat/ProjectHub';
 import PremiumHub from './chat/PremiumHub';
 import HANVision from './chat/HANVision';
+import LootBox from './chat/LootBox';
+import LevelUpCelebration from './chat/LevelUpCelebration';
 import styles from './ChatbotInterface.module.css';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -42,7 +44,7 @@ export default function ChatbotInterface() {
   const [activeChatId, setActiveChatId] = useState(null);
 
   const [isTyping, setIsTyping] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true); // SSR için varsayılan
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -50,12 +52,15 @@ export default function ChatbotInterface() {
   const [deepSearch, setDeepSearch] = useState(false);
   const [goalPlanningMode, setGoalPlanningMode] = useState(false);
   const [userStats, setUserStats] = useState({ xp: 0, level: 1, currentStreak: 0 });
+  const [gamification, setGamification] = useState({ xp: 0, level: 1, totalXp: 0, han_coins: 0, isPremium: false, inventory: [] });
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showAutomation, setShowAutomation] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showProjects, setShowProjects] = useState(false);
   const [showPremium, setShowPremium] = useState(false);
   const [showVision, setShowVision] = useState(false);
+  const [showLootBox, setShowLootBox] = useState(false);
+  const [levelUpData, setLevelUpData] = useState(null);
 
   // 1. Mount Kontrolü
   useEffect(() => {
@@ -128,7 +133,7 @@ export default function ChatbotInterface() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMounted, session]);
 
-  // 4. Stats Çek
+  // 4. Stats + Gamification Çek
   useEffect(() => {
     if (!isMounted || !session?.user?.email) return;
     
@@ -137,6 +142,14 @@ export default function ChatbotInterface() {
       .then(data => {
          if (data.stats) setUserStats(data.stats);
       }).catch(e => console.log("Stats fetch error"));
+
+    fetch(`/api/gamification?email=${encodeURIComponent(session.user.email)}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data && typeof data.han_coins === 'number') {
+          setGamification(data);
+        }
+      }).catch(e => console.log("Gamification fetch error"));
   }, [isMounted, session]);
 
   // Sohbetleri her değişimde localStorage'a kaydet (offline yedek)
@@ -293,6 +306,24 @@ export default function ChatbotInterface() {
       const aiText = data.reply || data.response;
       if (!aiText) throw new Error("Empty response");
 
+      // Gamification: XP/coin kazancını state'e yansıt
+      if (data.gamification) {
+        setGamification(prev => ({
+          ...prev,
+          xp: data.gamification.totalXp,
+          level: data.gamification.newLevel,
+          totalXp: data.gamification.totalXp,
+          han_coins: data.gamification.han_coins,
+        }));
+        if (data.gamification.leveledUp) {
+          setLevelUpData({
+            oldLevel: data.gamification.oldLevel,
+            newLevel: data.gamification.newLevel,
+          });
+          setTimeout(() => setLevelUpData(null), 4000);
+        }
+      }
+
       // Eğer backend yeni bir chatId döndüyse (ilk mesaj), session ID'sini güncelle
       const finalSessionId = data.chatId || targetSessionId;
 
@@ -392,6 +423,23 @@ export default function ChatbotInterface() {
     <div className={styles.root}>
       {/* ... orbs ... */}
       
+      {showLootBox && (
+        <LootBox
+          email={session?.user?.email}
+          isPremium={gamification.isPremium}
+          balance={gamification.han_coins}
+          onClose={() => setShowLootBox(false)}
+          onReward={(data) => {
+            setGamification(prev => ({ ...prev, han_coins: data.balance }));
+            if (data.drop?.itemType === 'coin') {
+              // coin reward already reflected in data.balance
+            }
+          }}
+        />
+      )}
+
+      <LevelUpCelebration levelUpData={levelUpData} />
+
       {showLeaderboard && (
         <Leaderboard 
           userEmail={session?.user?.email} 
@@ -454,13 +502,15 @@ export default function ChatbotInterface() {
             sessions={sessions}
             activeSessionId={activeSessionId}
             onSelectSession={(id) => {
-              if (id === 'leaderboard') {
-                 setShowLeaderboard(true);
-              } else if (id === 'automation') {
-                 setShowAutomation(true);
-              } else if (id === 'projects') {
-                 setShowProjects(true);
-              } else {
+               if (id === 'leaderboard') {
+                  setShowLeaderboard(true);
+               } else if (id === 'automation') {
+                  setShowAutomation(true);
+               } else if (id === 'projects') {
+                  setShowProjects(true);
+               } else if (id === 'lootbox') {
+                  setShowLootBox(true);
+               } else {
                  setActiveSessionId(id);
                  setActiveChatId(id);
                  setShowProjects(false);
@@ -470,7 +520,7 @@ export default function ChatbotInterface() {
             onNewSession={createNewSession}
             onDeleteSession={deleteSession}
             isOpen={sidebarOpen}
-            user={{...session?.user, ...userStats}}
+            user={{...session?.user, ...userStats, han_coins: gamification.han_coins, isPremium: gamification.isPremium}}
             onToggle={toggleSidebar}
           />
         </div>
