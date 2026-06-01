@@ -777,13 +777,17 @@ async function getYouTubeVideoDetails(videoId) {
 }
 
 // Call Python video_processor.py script to download audio + transcribe via HF Whisper
+// Falls back to graceful message on Vercel Serverless (no python3 binary)
 async function callVideoProcessorPython(videoUrl) {
+  if (process.env.VERCEL) {
+    console.log('[video_processor] Vercel ortamı — Python desteklenmiyor, video analizi atlanıyor.');
+    return null;
+  }
   const path = require('path');
   const scriptPath = path.join(process.cwd(), 'python_services', 'video_processor.py');
   const { execFile } = require('child_process');
   const { promisify } = require('util');
   const execFilePromise = promisify(execFile);
-  // Ensure HUGGING_FACE_API_KEY is forwarded to the Python process
   const env = {
     ...process.env,
     HUGGING_FACE_API_KEY: process.env.HUGGING_FACE_API_KEY || process.env.HF_TOKEN || '',
@@ -1522,7 +1526,9 @@ export default async function handler(req, res) {
           const ytTranscript = transcriptResult.status === 'fulfilled' ? transcriptResult.value : null;
 
           if (ytTranscript === null) {
-            tool_notes.push('Bu videonun ses dosyası çözümlenemedi veya transkript alınamadı.');
+            tool_notes.push(process.env.VERCEL
+              ? 'Video analizi şu an sadece yerel modda aktiftir, çok yakında Serverless desteği gelecektir.'
+              : 'Bu videonun ses dosyası çözümlenemedi veya transkript alınamadı.');
           } else {
             isVideoProcessed = true;
             tool_notes.push(`YouTube videosu (${ytVideoDetails?.title || ytVideoId}) ses tanıma ile çözümlendi.`);
@@ -2402,7 +2408,7 @@ export default async function handler(req, res) {
     let gamification = {};
     if (userId) {
       try {
-        const { rewardForAction, applyXpAndLevel } = require('../../../lib/gamification');
+        const { rewardForAction, applyXpAndLevel } = require('../../lib/gamification');
         const userRecord = await prisma.user.findUnique({ where: { id: userId } });
         if (userRecord) {
           const reward = rewardForAction('message_sent', userRecord.isPremium);
