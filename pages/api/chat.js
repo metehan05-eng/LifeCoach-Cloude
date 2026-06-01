@@ -20,6 +20,7 @@ const HF_TOKEN = process.env.HF_TOKEN;
 const HF_PROVIDER = process.env.HF_PROVIDER || 'auto';
 const hf = HF_TOKEN ? new HfInference(HF_TOKEN) : null;
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
+const ASSEMBLYAI_API_KEY = process.env.ASSEMBLYAI_API_KEY;
 
 // CONCURRENCY LOCK: Simple in-memory lock to prevent overlapping chat requests per session
 const chatLocks = new Map(); // sessionId -> Promise
@@ -776,12 +777,16 @@ async function getYouTubeVideoDetails(videoId) {
   }
 }
 
-// Pure JS YouTube transcription: extracts audio via ytdl-core → sends to HF Whisper API
+// YouTube transcription via AssemblyAI: extracts audio URL via ytdl-core → submits to AssemblyAI
 // No Python, no child_process, no temp files — fully serverless-compliant
-async function transcribeYouTubeViaWhisperJS(videoUrl) {
+async function transcribeYouTubeViaAssemblyAI(videoUrl) {
   const ytdl = require('@distube/ytdl-core');
+  if (!ASSEMBLYAI_API_KEY) {
+    console.warn('[AssemblyAI] ASSEMBLYAI_API_KEY not set');
+    return null;
+  }
   try {
-    // 1. Get the best audio stream URL from YouTube (pure JS, no downloads)
+    // 1. Get direct audio URL from YouTube
     const info = await ytdl.getInfo(videoUrl, {
       requestOptions: {
         headers: {
@@ -792,39 +797,52 @@ async function transcribeYouTubeViaWhisperJS(videoUrl) {
     });
     const audioFormat = ytdl.chooseFormat(info.formats, { quality: 'lowestaudio', filter: 'audioonly' });
     if (!audioFormat || !audioFormat.url) {
-      console.error('[ytdl-core] No audio format found');
+      console.error('[AssemblyAI] No audio format found');
       return null;
     }
-    console.log('[ytdl-core] Audio URL obtained, streaming to Whisper...');
+    console.log('[AssemblyAI] Audio URL obtained, submitting for transcription...');
 
-    // 2. Download audio stream to buffer
-    const response = await fetch(audioFormat.url, {
+    // 2. Submit to AssemblyAI
+    const submitRes = await fetch('https://api.assemblyai.com/v2/transcript', {
+      method: 'POST',
       headers: {
-        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/119.0',
-        'Referer': 'https://www.youtube.com/',
+        'Authorization': ASSEMBLYAI_API_KEY,
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify({ audio_url: audioFormat.url }),
     });
-    if (!response.ok) throw new Error(`Audio fetch failed: ${response.status}`);
-    const audioBuffer = Buffer.from(await response.arrayBuffer());
+    if (!submitRes.ok) {
+      const errBody = await submitRes.text();
+      throw new Error(`AssemblyAI submit failed (${submitRes.status}): ${errBody}`);
+    }
+    const { id } = await submitRes.json();
 
-    // 3. Transcribe via Hugging Face Whisper Inference API
-    if (!hf) {
-      console.warn('[HF Whisper] HF_TOKEN not set, skipping transcription');
+    // 3. Poll until completed
+    let transcript = null;
+    while (true) {
+      await new Promise(r => setTimeout(r, 3000));
+      const pollRes = await fetch(`https://api.assemblyai.com/v2/transcript/${id}`, {
+        headers: { 'Authorization': ASSEMBLYAI_API_KEY },
+      });
+      const pollData = await pollRes.json();
+      if (pollData.status === 'completed') {
+        transcript = pollData.text;
+        break;
+      }
+      if (pollData.status === 'error') {
+        console.error('[AssemblyAI] Transcription error:', pollData.error);
+        return null;
+      }
+    }
+
+    if (!transcript || !transcript.trim()) {
+      console.warn('[AssemblyAI] Empty transcript');
       return null;
     }
-    const result = await hf.automaticSpeechRecognition({
-      model: 'openai/whisper-large-v3',
-      data: audioBuffer,
-    });
-    const text = (result && result.text) || '';
-    if (!text.trim()) {
-      console.warn('[HF Whisper] Empty transcription result');
-      return null;
-    }
-    console.log('[HF Whisper] Transcription length:', text.length, 'chars');
-    return text;
+    console.log('[AssemblyAI] Transcript length:', transcript.length, 'chars');
+    return transcript;
   } catch (err) {
-    console.error('[transcribeYouTubeViaWhisperJS] Error:', err.message);
+    console.error('[AssemblyAI] Error:', err.message);
     return null;
   }
 }
@@ -1537,7 +1555,7 @@ export default async function handler(req, res) {
           const fullUrl = `https://www.youtube.com/watch?v=${ytVideoId}`;
           const [ytVideoDetailsResult, transcriptResult] = await Promise.allSettled([
             getYouTubeVideoDetails(ytVideoId),
-            transcribeYouTubeViaWhisperJS(fullUrl),
+            transcribeYouTubeViaAssemblyAI(fullUrl),
           ]);
 
           const ytVideoDetails = ytVideoDetailsResult.status === 'fulfilled' ? ytVideoDetailsResult.value : null;
