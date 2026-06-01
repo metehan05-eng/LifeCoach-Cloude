@@ -5,7 +5,6 @@ import pdf from 'pdf-parse';
 import mammoth from 'mammoth'; 
 import * as xlsx from 'xlsx';
 import { JWT } from 'google-auth-library';
-import { fetchTranscript } from 'youtube-transcript';
 import { google } from 'googleapis';
 import { PrismaClient } from '@prisma/client';
 import {
@@ -15,6 +14,9 @@ import {
   searchYouTubeVideos,
 } from '../../lib/youtube-search.js';
 import { HfInference } from '@huggingface/inference';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+const execPromise = promisify(exec);
 
 const prisma = new PrismaClient();
 const HF_TOKEN = process.env.HF_TOKEN;
@@ -777,26 +779,71 @@ async function getYouTubeVideoDetails(videoId) {
   }
 }
 
-// Fetch YouTube video transcript from available captions/subtitles
-async function getYouTubeTranscript(videoId) {
+// Download YouTube video audio using yt-dlp (extracts audio-only, 16kHz mp3)
+async function downloadYouTubeAudio(videoId) {
+  const outputTemplate = `/tmp/lifecoach-audio-${videoId}-${Date.now()}.%(ext)s`;
+  const finalPath = `/tmp/lifecoach-audio-${videoId}-${Date.now()}.mp3`;
   try {
-    const transcriptData = await fetchTranscript(videoId, {
-      lang: ['en', 'tr'],
-    });
-    if (!transcriptData || transcriptData.length === 0) {
-      console.warn('[YouTube Transcript] No transcript data found for video:', videoId);
-      return null;
+    await execPromise(
+      `yt-dlp -x --audio-format mp3 --audio-quality 0 --postprocessor-args "-ar 16000" -o "${outputTemplate}" "https://www.youtube.com/watch?v=${videoId}"`,
+      { timeout: 120000 }
+    );
+    // yt-dlp writes the file with its own extension, find it
+    const fs = require('fs');
+    const files = fs.readdirSync('/tmp').filter(f => f.startsWith(`lifecoach-audio-${videoId}`));
+    if (files.length === 0) throw new Error('Audio file not found after download');
+    const found = `/tmp/${files[0]}`;
+    // Rename to .mp3 if needed
+    if (!found.endsWith('.mp3')) {
+      fs.renameSync(found, finalPath);
+      return finalPath;
     }
-    const fullText = transcriptData
-      .map(s => s.text.trim())
-      .filter(Boolean)
-      .join(' ');
-    console.log('Çekilen Transkript Metni:', fullText);
-    return fullText;
+    return found;
   } catch (err) {
-    console.error('[YouTube Transcript] Error:', err.message);
+    console.error('[yt-dlp] Download failed:', err.message);
+    throw err;
+  }
+}
+
+// Transcribe audio file via Hugging Face Whisper (openai/whisper-large-v3)
+async function transcribeWithHuggingFaceWhisper(audioPath) {
+  if (!hf) {
+    console.warn('[HF Whisper] HF_TOKEN not set, skipping transcription');
     return null;
   }
+  let audioBuffer;
+  try {
+    const fs = require('fs');
+    audioBuffer = fs.readFileSync(audioPath);
+  } catch (err) {
+    console.error('[HF Whisper] Audio read error:', err.message);
+    return null;
+  }
+  try {
+    const result = await hf.automaticSpeechRecognition({
+      model: 'openai/whisper-large-v3',
+      data: audioBuffer,
+    });
+    const text = (result && result.text) || '';
+    if (!text.trim()) {
+      console.warn('[HF Whisper] Empty transcription result');
+      return null;
+    }
+    console.log('[HF Whisper] Transcription length:', text.length, 'chars');
+    return text;
+  } catch (err) {
+    console.error('[HF Whisper] API error:', err.message);
+    return null;
+  }
+}
+
+// Cleanup temp audio file
+function cleanupAudioFile(audioPath) {
+  if (!audioPath) return;
+  try {
+    const fs = require('fs');
+    if (fs.existsSync(audioPath)) fs.unlinkSync(audioPath);
+  } catch (_) {}
 }
 
 // Analyze MP4 video file using OpenAI Whisper for transcription
@@ -848,7 +895,7 @@ function buildVideoContextForAI(youtubeInfo, transcript, filename) {
     parts.push(`İzlenme: ${Number(youtubeInfo.viewCount).toLocaleString('tr-TR')}`);
     parts.push(`Yayınlanma: ${new Date(youtubeInfo.publishedAt).toLocaleDateString('tr-TR')}`);
     if (youtubeInfo.tags.length > 0) parts.push(`Etiketler: ${youtubeInfo.tags.join(', ')}`);
-    parts.push(`Alakılı içerik özeti (transkript):\n${transcript || 'Transkript bulunamadı, sadece başlık ve açıklama ile analiz yap.'}`);
+    parts.push(`Ses tanıma (Whisper STT) ile çözümlenen içerik:\n${transcript || 'Video sesi çözümlenemedi, sadece başlık ve açıklama ile analiz yap.'}`);
   } else if (filename && transcript) {
     parts.push(`\n\n🎬 [MP4 VİDEOSU ANALİZİ]`);
     parts.push(`Dosya: ${filename}`);
@@ -1499,27 +1546,35 @@ export default async function handler(req, res) {
 
     // 2b. YOUTUBE VİDEOSU TESPİTİ (message içinde YouTube linki var mı?)
     let youtubeVideoContext = '';
+    let isVideoProcessed = false;
     if (message && isYouTubeUrl(message)) {
       try {
         const ytVideoId = extractYouTubeVideoId(message);
         if (ytVideoId) {
-          const [ytVideoDetailsPromise, ytTranscriptPromise] = await Promise.allSettled([
+          // Fetch metadata + download audio + transcribe in parallel
+          let audioPath = null;
+          const [ytVideoDetailsResult, audioResult] = await Promise.allSettled([
             getYouTubeVideoDetails(ytVideoId),
-            getYouTubeTranscript(ytVideoId),
+            downloadYouTubeAudio(ytVideoId).then(async (path) => {
+              audioPath = path;
+              return await transcribeWithHuggingFaceWhisper(path);
+            }).finally(() => {
+              if (audioPath) cleanupAudioFile(audioPath);
+            }),
           ]);
 
-          const ytVideoDetails = ytVideoDetailsPromise.status === 'fulfilled' ? ytVideoDetailsPromise.value : null;
-          const ytTranscript = ytTranscriptPromise.status === 'fulfilled' ? ytTranscriptPromise.value : null;
+          const ytVideoDetails = ytVideoDetailsResult.status === 'fulfilled' ? ytVideoDetailsResult.value : null;
+          const ytTranscript = audioResult.status === 'fulfilled' ? audioResult.value : null;
 
           if (ytTranscript === null) {
-            tool_notes.push('Bu videonun altyazısı bulunamadı veya işlenemedi.');
+            tool_notes.push('Bu videonun ses dosyası çözümlenemedi veya transkript alınamadı.');
+          } else {
+            isVideoProcessed = true;
+            tool_notes.push(`YouTube videosu (${ytVideoDetails?.title || ytVideoId}) ses tanıma ile çözümlendi.`);
           }
 
           if (ytVideoDetails || ytTranscript) {
             youtubeVideoContext = buildVideoContextForAI(ytVideoDetails, ytTranscript || '');
-            if (ytTranscript) {
-              tool_notes.push(`YouTube videosu (${ytVideoDetails?.title || ytVideoId}) transkripti çıkarıldı.`);
-            }
           }
         }
       } catch (ytErr) {
@@ -2446,6 +2501,7 @@ export default async function handler(req, res) {
         : null,
       youtube_video: youtubeVideoContext ? {
         context_injected: true,
+        is_video_processed: isVideoProcessed || false,
       } : null
     });
   } catch (error) {
