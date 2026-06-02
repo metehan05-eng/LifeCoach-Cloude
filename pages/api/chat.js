@@ -2854,6 +2854,154 @@ export default async function handler(req, res) {
         }
       }
     } else {
+      console.warn('[AI-Fallback] ⚠️ HF_TOKEN tanımlı değil, DeepSeek zincirine geçiliyor...');
+    }
+
+    // KATMAN 1: DeepSeek (ASIL MODEL)
+    if (!aiResponse && deepseekKey) {
+      for (const modelName of DEEPSEEK_MODEL_CHAIN) {
+        try {
+          console.log(`[AI-Fallback] 🚀 DeepSeek deneniyor: ${modelName}`);
+          aiResponse = await tryDeepseekModel(modelName);
+          usedModel = `deepseek/${modelName}`;
+          console.log(`[AI-Fallback] ✅ DeepSeek ${modelName} başarılı`);
+          break;
+        } catch (err) {
+          console.warn(`[AI-Fallback] ❌ DeepSeek ${modelName} başarısız: ${err.message}`);
+          lastError = err;
+
+          const isRecoverable = 
+            err.message?.includes('rate_limit') ||
+            err.message?.includes('quota') ||
+            err.message?.includes('context_length') ||
+            err.message?.includes('model_not_found') ||
+            err.message?.includes('boş yanıt') ||
+            err.message?.includes('deprecated') ||
+            err.name === 'AbortError' ||
+            err.status === 429 ||
+            err.status === 503 ||
+            err.status === 404;
+
+          const isFatal = err.status === 401 || err.status === 403;
+          if (isFatal) {
+            console.warn(`[AI-Fallback] ⚠️ DeepSeek kimlik doğrulama hatası, Qwen'e geçiliyor...`);
+            break;
+          }
+
+          if (!isRecoverable) {
+            console.warn(`[AI-Fallback] ⚠️ ${modelName} beklenmedik hata, sonraki modeli deniyorum...`);
+          }
+        }
+      }
+    } else if (!aiResponse) {
+      console.warn(`[AI-Fallback] ⚠️ DEEPSEEK_API_KEY tanımlı değil, Qwen'e geçiliyor...`);
+    }
+
+    // KATMAN 2: Qwen DashScope (Yedek)
+    if (!aiResponse && dashscopeKey) {
+      for (const modelName of QWEN_MODEL_CHAIN) {
+        try {
+          console.log(`[AI-Fallback] 🚀 Qwen DashScope deneniyor: ${modelName}`);
+          aiResponse = await callQwenDashScope(systemPrompt, (dbHistory || []).filter(m => m.role !== 'system'), modelName, 4096);
+          usedModel = `qwen/${modelName}`;
+          console.log(`[AI-Fallback] ✅ Qwen ${modelName} başarılı`);
+          break;
+        } catch (err) {
+          console.warn(`[AI-Fallback] ❌ Qwen ${modelName} başarısız: ${err.message}`);
+          lastError = err;
+        }
+      }
+    }
+
+    // KATMAN 3: OpenRouter (Yedek)
+    if (!aiResponse) {
+      if (openrouterKey) {
+        for (const modelName of OPENROUTER_MODEL_CHAIN) {
+          try {
+            console.log(`[AI-Fallback] 🚀 OpenRouter deneniyor: ${modelName}`);
+            aiResponse = await tryOpenRouterModel(modelName);
+            usedModel = `openrouter/${modelName}`;
+
+            console.log(`[AI-Fallback] ✅ OpenRouter ${modelName} başarılı`);
+            break;
+          } catch (err) {
+            console.warn(`[AI-Fallback] ❌ OpenRouter ${modelName} başarısız: ${err.message}`);
+            lastError = err;
+
+            const isRecoverable = 
+              err.message?.includes('rate_limit') ||
+              err.message?.includes('quota') ||
+              err.message?.includes('context_length') ||
+              err.message?.includes('model_not_found') ||
+              err.message?.includes('boş yanıt') ||
+              err.name === 'AbortError' ||
+              err.status === 429 ||
+              err.status === 503 ||
+              err.status === 404;
+
+            const isFatal = err.status === 401 || err.status === 403;
+            if (isFatal) {
+              console.warn(`[AI-Fallback] ⚠️ OpenRouter kimlik doğrulama hatası, Groq'a geçiliyor...`);
+              break;
+            }
+
+            if (!isRecoverable) {
+              console.warn(`[AI-Fallback] ⚠️ ${modelName} beklenmedik hata, sonraki modeli deniyorum...`);
+            }
+          }
+        }
+      } else {
+        console.warn(`[AI-Fallback] ⚠️ OPENROUTER_API_KEY tanımlı değil, Groq'a geçiliyor...`);
+      }
+    }
+
+    // KATMAN 4: Groq (Son çare yedek)
+    if (!aiResponse) {
+      if (groqKey) {
+        for (const modelName of GROQ_MODEL_CHAIN) {
+          try {
+            console.log(`[AI-Fallback] 🚀 Groq deneniyor: ${modelName}`);
+            aiResponse = await tryGroqModel(modelName);
+            usedModel = `groq/${modelName}`;
+            console.log(`[AI-Fallback] ✅ Groq ${modelName} başarılı`);
+            break;
+          } catch (err) {
+            console.warn(`[AI-Fallback] ❌ Groq ${modelName} başarısız: ${err.message}`);
+            lastError = err;
+
+            const isRecoverable = 
+              err.message?.includes('rate_limit') ||
+              err.message?.includes('quota') ||
+              err.message?.includes('context_length') ||
+              err.message?.includes('model_not_found') ||
+              err.message?.includes('boş yanıt') ||
+              err.name === 'AbortError' ||
+              err.status === 429 ||
+              err.status === 503 ||
+              err.status === 404;
+
+            const isFatal = err.status === 401 || err.status === 403;
+            if (isFatal) break;
+
+            if (!isRecoverable) {
+              console.warn(`[AI-Fallback] ⚠️ ${modelName} beklenmedik hata, sonraki modeli deniyorum...`);
+            }
+          }
+        }
+      } else {
+        console.warn(`[AI-Fallback] ⚠️ GROQ_API_KEY tanımlı değil, Gemini'ye geçiliyor...`);
+      }
+    }
+          );
+          usedModel = `hf/${modelName}`;
+          console.log(`[AI-Fallback] ✅ Hugging Face ${modelName} başarılı`);
+          break;
+        } catch (err) {
+          console.warn(`[AI-Fallback] ❌ Hugging Face ${modelName} başarısız: ${err.message}`);
+          lastError = err;
+        }
+      }
+    } else {
       console.warn('[AI-Fallback] ⚠️ HF_TOKEN tanımlı değil, Qwen/fallback zincirine geçiliyor...');
     }
 
