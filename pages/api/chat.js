@@ -888,8 +888,8 @@ async function searchGoogleScholar(query) {
 async function searchGoogleTravel(query) {
   const apiKey = process.env.SERPAPI_API_KEY;
   if (!apiKey) return null;
-  try {
-    const params = new URLSearchParams({ api_key: apiKey, engine: 'google_travel_explore', q: query, hl: 'tr', gl: 'TR', currency: 'TRY' });
+  const tryQuery = async (q) => {
+    const params = new URLSearchParams({ api_key: apiKey, engine: 'google_travel_explore', q, hl: 'tr', gl: 'TR', currency: 'TRY' });
     const res = await fetch(`https://serpapi.com/search?${params}`);
     if (!res.ok) return null;
     const data = await res.json();
@@ -903,10 +903,11 @@ async function searchGoogleTravel(query) {
       link: d.link || d.flights_link || '',
     }));
     return destinations.length ? destinations : null;
-  } catch (err) {
-    console.error('[SerpAPI Travel]', err.message);
-    return null;
-  }
+  };
+  let result = await tryQuery(query);
+  if (!result) result = await tryQuery('yaz tatili');
+  if (!result) result = await tryQuery('Türkiye tatil');
+  return result;
 }
 
 // ─── SerpAPI: Instagram Profile Search ──────────────────────────────────────
@@ -2096,7 +2097,7 @@ export default async function handler(req, res) {
       const wantsAmazon = /amazon|ürün ara|ürün bul|alışveriş|satın al|en iyi ürün|çok satan|fiyat ara/i.test(msgLower);
       const wantsScholar = /makale|akademik|araştırma|tez|bilimsel yayın|scholar|üniversite ödev|literatür/i.test(msgLower);
       const wantsFinance = /hisse|borsa|finans|hisseleri|yatırım|yükselen|düşen|BİST|endeks|hangi hisse/i.test(msgLower);
-      const wantsTravel = /tatil|seyahat|gezi|oteller|uçak bileti|turlar|yolculuk|keşfet/i.test(msgLower);
+      const wantsTravel = /tatil|seyahat|gezi|oteller|uçak bileti|turlar|yolculuk|keşfet|yaz (tatili|ın)|wanderlust/i.test(msgLower);
       const wantsInstagram = /instagram|insta profili|instagram hesabı|ig profil/i.test(msgLower);
       const wantsShopping = /alışveriş|shopping|en ucuz|fiyat karşılaştır|fiyat ara|nerede satılıyor/i.test(msgLower);
       const wantsFlights = /uçak bileti|ucuş|flight|nereden nereye|bilet ara|sefer/i.test(msgLower);
@@ -2369,7 +2370,7 @@ export default async function handler(req, res) {
 
       if (wantsTravel) {
         try {
-          const query = message.replace(/tatil|seyahat|gezi|uçak bileti|turlar|keşfet/gi, '').trim() || 'Türkiye tatil';
+          const query = message.replace(/bana|söyle|öner|ner(e|aya)|gideyim|gitsem|gidelim|gitmek|istiyorum|lütfen/gi, '').trim();
           google_travel_destinations = await searchGoogleTravel(query);
           if (google_travel_destinations) {
             tool_notes.push(`✈️ "${query}" için ${google_travel_destinations.length} destinasyon önerisi hazır.`);
