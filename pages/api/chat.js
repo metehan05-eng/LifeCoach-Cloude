@@ -223,89 +223,64 @@ async function searchGoogleMaps(query) {
 }
 
 // --- DuckDuckGo Web Search (Fast & Accurate) ---
-async function searchWithDuckDuckGo(query) {
-    try {
-      // First try Instant Answer API (fast)
-      const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`;
-      const res = await fetch(url);
-      if (!res.ok) return null;
-      const data = await res.json();
-      
-      const results = [];
-      
-      // Direct answer (e.g. weather, currency, definitions)
-      if (data.Answer && data.AnswerType) {
-        results.push({
-          title: data.AnswerType,
-          snippet: data.Answer,
-          url: data.AnswerURL || ''
-        });
+async function searchWithSerpAPI(query, options = {}) {
+  const apiKey = process.env.SERPAPI_API_KEY;
+  if (!apiKey) {
+    console.warn('[SerpAPI] SERPAPI_API_KEY not set');
+    return null;
+  }
+  const useAiMode = options.aiMode || false;
+  try {
+    const params = new URLSearchParams({
+      api_key: apiKey,
+      q: query,
+      hl: 'tr',
+      gl: 'tr',
+      num: options.numResults || 10,
+    });
+    if (useAiMode) {
+      params.set('engine', 'google_ai_mode');
+      console.log(`[SerpAPI] 🔍 AI Mode search: "${query}"`);
+    } else {
+      params.set('engine', 'google');
+      console.log(`[SerpAPI] 🔍 Google search: "${query}"`);
+    }
+    const res = await fetch(`https://serpapi.com/search?${params}`);
+    if (!res.ok) {
+      const errBody = await res.text();
+      throw new Error(`SerpAPI ${res.status}: ${errBody}`);
+    }
+    const data = await res.json();
+    if (useAiMode) {
+      // AI Mode returns a single AI-generated response + sources
+      const aiResponse = data.ai_response || data.ai_answer || '';
+      const sources = (data.sources || data.ai_sources || []).slice(0, 5).map(s => ({
+        title: s.title || 'Kaynak',
+        snippet: s.snippet || '',
+        url: s.source || s.url || '',
+      }));
+      if (aiResponse) {
+        return {
+          aiMode: true,
+          answer: aiResponse,
+          sources,
+        };
       }
-      
-      // Abstract text (Wikipedia summary)
-      if (data.AbstractText) {
-        results.push({
-          title: data.AbstractSource || 'Özet',
-          snippet: data.AbstractText.substring(0, 300),
-          url: data.AbstractURL || ''
-        });
-      }
-      
-      // Results array (actual web search results)
-      if (data.Results && data.Results.length > 0) {
-        data.Results.slice(0, 4).forEach(r => {
-          if (r.Text) {
-            results.push({
-              title: r.FirstURL ? r.FirstURL.split('/').pop().replace(/_/g, ' ') || 'Sonuç' : 'Sonuç',
-              snippet: r.Text.substring(0, 300),
-              url: r.FirstURL || ''
-            });
-          }
-        });
-      }
-      
-      // Related topics (up to 3)
-      if (data.RelatedTopics && data.RelatedTopics.length > 0) {
-        data.RelatedTopics.slice(0, 3).forEach(topic => {
-          if (topic.Text) {
-            results.push({
-              title: topic.FirstURL ? topic.FirstURL.split('/').pop().replace(/_/g, ' ') : 'İlgili',
-              snippet: topic.Text.substring(0, 300),
-              url: topic.FirstURL || ''
-            });
-          }
-        });
-      }
-      
-      if (results.length > 0) return results;
-
-      // Fallback: scrape lite HTML for proper search results
-      const htmlRes = await fetch('https://lite.duckduckgo.com/lite/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `q=${encodeURIComponent(query)}`
-      });
-      if (!htmlRes.ok) return null;
-      const html = await htmlRes.text();
-      const linkRegex = /<a[^>]*href="([^"]*)"[^>]*class="result-link"[^>]*>([\s\S]*?)<\/a>/g;
-      const snippetRegex = /<td[^>]*class="result-snippet"[^>]*>([\s\S]*?)<\/td>/g;
-      const linkMatches = [...html.matchAll(linkRegex)];
-      const snippetMatches = [...html.matchAll(snippetRegex)];
-      
-      for (let i = 0; i < Math.min(linkMatches.length, 5); i++) {
-        results.push({
-          title: linkMatches[i][2].replace(/<[^>]*>/g, '').trim().substring(0, 100),
-          snippet: snippetMatches[i] ? snippetMatches[i][1].replace(/<[^>]*>/g, '').trim().substring(0, 300) : '',
-          url: linkMatches[i][1]
-        });
-      }
-      
-      return results.length > 0 ? results : null;
-    } catch (error) {
-      console.error('[DuckDuckGo Search] Error:', error.message);
       return null;
     }
+    // Standard Google results
+    const results = (data.organic_results || []).slice(0, 5).map(r => ({
+      title: r.title || '',
+      snippet: r.snippet || '',
+      url: r.link || '',
+    }));
+    if (results.length === 0) return null;
+    return { aiMode: false, results };
+  } catch (err) {
+    console.error('[SerpAPI] Error:', err.message);
+    return null;
   }
+}
 
 
 // --- GOOGLE SLIDES ---
@@ -1857,27 +1832,35 @@ export default async function handler(req, res) {
         try {
           const searchQuery = message.replace(/[?!.]\s*$/g, '').substring(0, 100).trim();
           
-          console.log(`[WebSearch] 🔍 DuckDuckGo search: "${searchQuery}" (deepSearch: ${deepSearch})`);
+          console.log(`[WebSearch] 🔍 SerpAPI search: "${searchQuery}" (deepSearch/AI Mode: ${deepSearch})`);
           
-          const searchResults = await searchWithDuckDuckGo(searchQuery);
+          const searchResult = await searchWithSerpAPI(searchQuery, {
+            aiMode: deepSearch,
+            numResults: deepSearch ? 5 : 10,
+          });
           
-          if (searchResults && searchResults.length > 0) {
-            searchSources = searchResults.slice(0, 5);
-            
-            // Inject search context into AI prompt
-            let searchContext = `\n\n--- REAL-TIME WEB SEARCH RESULTS FOR: "${searchQuery}" ---\n`;
-            searchResults.forEach((r, i) => {
-              searchContext += `\n[${i + 1}] ${r.title || 'Result'}\n`;
-              searchContext += `   ${r.snippet}\n`;
-              if (r.url) searchContext += `   URL: ${r.url}\n`;
-            });
-            searchContext += `\n---\nIncorporate this information naturally into your response. Always cite sources when relevant.\n`;
-            
-            searchContextInjection = searchContext;
+          if (searchResult) {
+            if (searchResult.aiMode && searchResult.answer) {
+              searchSources = searchResult.sources || [];
+              let searchContext = `\n\n--- REAL-TIME WEB SEARCH (AI MODE) FOR: "${searchQuery}" ---\n`;
+              searchContext += `${searchResult.answer}\n`;
+              searchContext += `\n---\nIncorporate this information naturally into your response. Always cite sources when relevant.\n`;
+              searchContextInjection = searchContext;
+            } else if (searchResult.results && searchResult.results.length > 0) {
+              searchSources = searchResult.results.slice(0, 5);
+              let searchContext = `\n\n--- REAL-TIME WEB SEARCH RESULTS FOR: "${searchQuery}" ---\n`;
+              searchResult.results.forEach((r, i) => {
+                searchContext += `\n[${i + 1}] ${r.title || 'Result'}\n`;
+                searchContext += `   ${r.snippet}\n`;
+                if (r.url) searchContext += `   URL: ${r.url}\n`;
+              });
+              searchContext += `\n---\nIncorporate this information naturally into your response. Always cite sources when relevant.\n`;
+              searchContextInjection = searchContext;
+            }
           }
         } catch (error) {
-          console.error('[WebSearch] Error during DuckDuckGo search:', error);
-          searchContextInjection = ''; // Graceful degradation
+          console.error('[WebSearch] Error during SerpAPI search:', error);
+          searchContextInjection = '';
         }
       }
     }
