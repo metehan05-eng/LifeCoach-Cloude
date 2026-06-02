@@ -570,7 +570,7 @@ async function getOrCreateLifeCoachFolder() {
     const token = await getGoogleAccessToken([...GOOGLE_DRIVE_SCOPES], GOOGLE_DRIVE_USER);
     
     // Search for existing folder
-    const searchResp = await fetch(`https://www.googleapis.com/drive/v3/files?q=mimeType%3D'application/vnd.google-apps.folder'%20and%20name%3D'LifeCoach%20AI'%20and%20trashed%3Dfalse&fields=files(id%2Cname)&key=${GOOGLE_MAPS_API_KEY}`, {
+    const searchResp = await fetch(`https://www.googleapis.com/drive/v3/files?q=mimeType%3D'application/vnd.google-apps.folder'%20and%20name%3D'LifeCoach%20AI'%20and%20trashed%3Dfalse&fields=files(id%2Cname)`, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${token}`
