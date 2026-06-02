@@ -200,27 +200,6 @@ async function createCalendarEvents(events) {
   return results;
 }
 
-async function searchGoogleMaps(query) {
-  if (!GOOGLE_MAPS_API_KEY) return null;
-  try {
-    const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${GOOGLE_MAPS_API_KEY}`;
-    const res = await fetch(url);
-    if (!res.ok) return null;
-    const data = await res.json();
-    const place = data.results?.[0];
-    if (!place) return null;
-    return {
-      name: place.name,
-      address: place.formatted_address,
-      location: place.geometry?.location,
-      mapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.name + ' ' + place.formatted_address)}`
-    };
-  } catch (err) {
-    console.error('[GoogleMaps] error', err);
-    return null;
-  }
-}
-
 // --- DuckDuckGo Web Search (Fast & Accurate) ---
 async function searchWithSerpAPI(query, options = {}) {
   const apiKey = process.env.SERPAPI_API_KEY;
