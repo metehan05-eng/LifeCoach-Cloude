@@ -1,6 +1,13 @@
 import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
+const dbUrl = process.env.DATABASE_URL || '';
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: dbUrl.includes('pgbouncer') ? dbUrl : dbUrl + (dbUrl.includes('?') ? '&' : '?') + 'pgbouncer=true&connection_limit=1&pool_timeout=5',
+    },
+  },
+});
 
 export default async function handler(req, res) {
   const { method } = req;

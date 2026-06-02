@@ -7,15 +7,16 @@ import * as xlsx from 'xlsx';
 import { JWT } from 'google-auth-library';
 import { google } from 'googleapis';
 import { PrismaClient } from '@prisma/client';
-import {
-  detectYouTubeVideoIntent,
-  extractYouTubeSearchQuery,
-  isYouTubeUrl as isYouTubeLink,
-  searchYouTubeVideos,
-} from '../../lib/youtube-search.js';
-import { HfInference } from '@huggingface/inference';
 
-const prisma = new PrismaClient();
+// Prisma: append ?pgbouncer=true for Vercel serverless (transaction mode = 1 conn per query)
+const dbUrl = process.env.DATABASE_URL || '';
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: dbUrl.includes('pgbouncer') ? dbUrl : dbUrl + (dbUrl.includes('?') ? '&' : '?') + 'pgbouncer=true&connection_limit=1&pool_timeout=5',
+    },
+  },
+});
 const HF_TOKEN = process.env.HF_TOKEN;
 const HF_PROVIDER = process.env.HF_PROVIDER || 'auto';
 const hf = HF_TOKEN ? new HfInference(HF_TOKEN) : null;
