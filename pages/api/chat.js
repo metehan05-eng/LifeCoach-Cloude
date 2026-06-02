@@ -20,7 +20,6 @@ const HF_TOKEN = process.env.HF_TOKEN;
 const HF_PROVIDER = process.env.HF_PROVIDER || 'auto';
 const hf = HF_TOKEN ? new HfInference(HF_TOKEN) : null;
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
-const ASSEMBLYAI_API_KEY = process.env.ASSEMBLYAI_API_KEY;
 
 // CONCURRENCY LOCK: Simple in-memory lock to prevent overlapping chat requests per session
 const chatLocks = new Map(); // sessionId -> Promise
@@ -752,72 +751,460 @@ async function getYouTubeVideoDetails(videoId) {
   }
 }
 
-// YouTube transcription via AssemblyAI: extracts audio URL via ytdl-core → submits to AssemblyAI
-// No Python, no child_process, no temp files — fully serverless-compliant
-async function transcribeYouTubeViaAssemblyAI(videoUrl) {
-  const ytdl = require('@distube/ytdl-core');
-  if (!ASSEMBLYAI_API_KEY) {
-    console.warn('[AssemblyAI] ASSEMBLYAI_API_KEY not set');
+// YouTube transcript via SerpAPI video transcript engine — pure API call, no downloads
+async function transcribeYouTubeViaSerpAPI(videoId) {
+  const apiKey = process.env.SERPAPI_API_KEY;
+  if (!apiKey) {
+    console.warn('[SerpAPI] SERPAPI_API_KEY not set for transcript');
     return null;
   }
   try {
-    // 1. Get direct audio URL from YouTube
-    const info = await ytdl.getInfo(videoUrl, {
-      requestOptions: {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/119.0',
-          'Referer': 'https://www.youtube.com/',
-        },
-      },
+    const params = new URLSearchParams({
+      api_key: apiKey,
+      engine: 'youtube_video_transcript',
+      video_id: videoId,
     });
-    const audioFormat = ytdl.chooseFormat(info.formats, { quality: 'lowestaudio', filter: 'audioonly' });
-    if (!audioFormat || !audioFormat.url) {
-      console.error('[AssemblyAI] No audio format found');
+    console.log(`[SerpAPI] Fetching transcript for video ${videoId}...`);
+    const res = await fetch(`https://serpapi.com/search?${params}`);
+    if (!res.ok) {
+      const errBody = await res.text();
+      throw new Error(`SerpAPI transcript ${res.status}: ${errBody}`);
+    }
+    const data = await res.json();
+    const segments = data.transcript || data.transcript_segments || data.captions || [];
+    if (!segments.length) {
+      console.warn('[SerpAPI] No transcript segments found');
       return null;
     }
-    console.log('[AssemblyAI] Audio URL obtained, submitting for transcription...');
-
-    // 2. Submit to AssemblyAI
-    const submitRes = await fetch('https://api.assemblyai.com/v2/transcript', {
-      method: 'POST',
-      headers: {
-        'Authorization': ASSEMBLYAI_API_KEY,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ audio_url: audioFormat.url }),
-    });
-    if (!submitRes.ok) {
-      const errBody = await submitRes.text();
-      throw new Error(`AssemblyAI submit failed (${submitRes.status}): ${errBody}`);
-    }
-    const { id } = await submitRes.json();
-
-    // 3. Poll until completed
-    let transcript = null;
-    while (true) {
-      await new Promise(r => setTimeout(r, 3000));
-      const pollRes = await fetch(`https://api.assemblyai.com/v2/transcript/${id}`, {
-        headers: { 'Authorization': ASSEMBLYAI_API_KEY },
-      });
-      const pollData = await pollRes.json();
-      if (pollData.status === 'completed') {
-        transcript = pollData.text;
-        break;
-      }
-      if (pollData.status === 'error') {
-        console.error('[AssemblyAI] Transcription error:', pollData.error);
-        return null;
-      }
-    }
-
-    if (!transcript || !transcript.trim()) {
-      console.warn('[AssemblyAI] Empty transcript');
+    const fullText = segments
+      .map(s => s.text || s.snippet || '')
+      .filter(Boolean)
+      .join(' ');
+    if (!fullText.trim()) {
+      console.warn('[SerpAPI] Empty transcript');
       return null;
     }
-    console.log('[AssemblyAI] Transcript length:', transcript.length, 'chars');
-    return transcript;
+    console.log('[SerpAPI] Transcript length:', fullText.length, 'chars');
+    return fullText;
   } catch (err) {
-    console.error('[AssemblyAI] Error:', err.message);
+    console.error('[SerpAPI] Transcript error:', err.message);
+    return null;
+  }
+}
+
+// ─── SerpAPI: Amazon Product Search ─────────────────────────────────────────
+async function searchAmazonProducts(query) {
+  const apiKey = process.env.SERPAPI_API_KEY;
+  if (!apiKey) return null;
+  try {
+    const params = new URLSearchParams({ api_key: apiKey, engine: 'amazon', q: query, hl: 'tr', gl: 'tr' });
+    const res = await fetch(`https://serpapi.com/search?${params}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const results = (data.organic_results || []).slice(0, 3).map(r => ({
+      title: r.title || '',
+      price: r.price || r.extracted_price || '',
+      rating: r.rating || r.reviews_rating || '',
+      reviews: r.reviews_count || '',
+      thumbnail: r.thumbnail || r.image || '',
+      link: r.link || r.product_url || '',
+    }));
+    return results.length ? results : null;
+  } catch (err) {
+    console.error('[SerpAPI Amazon]', err.message);
+    return null;
+  }
+}
+
+// ─── SerpAPI: Google Maps ───────────────────────────────────────────────────
+async function searchGoogleMaps(query, options = {}) {
+  const apiKey = process.env.SERPAPI_API_KEY;
+  if (!apiKey) return null;
+  const location = options.location || '';
+  try {
+    const params = new URLSearchParams({ api_key: apiKey, engine: 'google_maps', q: query, hl: 'tr' });
+    if (location) params.set('ll', `@${location.lat},${location.lng},14z`);
+    const res = await fetch(`https://serpapi.com/search?${params}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const places = (data.local_results || []).slice(0, 5).map(p => ({
+      name: p.title || p.name || '',
+      address: p.address || '',
+      rating: p.rating || '',
+      reviews: p.reviews || p.reviews_count || '',
+      phone: p.phone || '',
+      coordinates: p.gps_coordinates || null,
+      thumbnail: p.thumbnail || '',
+      mapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((p.title || p.name || '') + ', ' + (p.address || ''))}`,
+    }));
+    return places.length ? { places, searchQuery: query } : null;
+  } catch (err) {
+    console.error('[SerpAPI Maps]', err.message);
+    return null;
+  }
+}
+
+// ─── SerpAPI: Google Finance ────────────────────────────────────────────────
+async function searchGoogleFinance(query) {
+  const apiKey = process.env.SERPAPI_API_KEY;
+  if (!apiKey) return null;
+  try {
+    const params = new URLSearchParams({ api_key: apiKey, engine: 'google_finance', q: query, hl: 'tr', gl: 'TR' });
+    const res = await fetch(`https://serpapi.com/search?${params}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const gainers = (data.market_trends?.gainers || data.gainers || []).slice(0, 5).map(s => ({
+      name: s.name || s.title || '',
+      price: s.price || s.current_price || '',
+      change: s.change || s.price_change || '',
+      changePercent: s.change_percent || s.extracted_price_change_percent || '',
+      link: s.link || s.stock_link || '',
+    }));
+    const losers = (data.market_trends?.losers || data.losers || []).slice(0, 5).map(s => ({
+      name: s.name || s.title || '',
+      price: s.price || s.current_price || '',
+      change: s.change || s.price_change || '',
+      changePercent: s.change_percent || s.extracted_price_change_percent || '',
+      link: s.link || s.stock_link || '',
+    }));
+    const mostActives = (data.most_actives || data.active_stocks || []).slice(0, 3).map(s => ({
+      name: s.name || s.title || '',
+      price: s.price || '',
+      change: s.change || '',
+      link: s.link || '',
+    }));
+    return { gainers, losers, mostActives };
+  } catch (err) {
+    console.error('[SerpAPI Finance]', err.message);
+    return null;
+  }
+}
+
+// ─── SerpAPI: Google Scholar ────────────────────────────────────────────────
+async function searchGoogleScholar(query) {
+  const apiKey = process.env.SERPAPI_API_KEY;
+  if (!apiKey) return null;
+  try {
+    const params = new URLSearchParams({ api_key: apiKey, engine: 'google_scholar', q: query, hl: 'tr', num: 3 });
+    const res = await fetch(`https://serpapi.com/search?${params}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const articles = (data.organic_results || []).slice(0, 3).map(a => ({
+      title: a.title || '',
+      authors: a.authors?.[0]?.name || a.publication_info?.authors?.[0] || '',
+      publication: a.publication_info?.summary || a.publication || '',
+      year: a.publication_info?.summary?.match(/\b(19|20)\d{2}\b/)?.[0] || '',
+      snippet: a.snippet || a.publication_info?.summary || '',
+      link: a.link || a.results_link || '',
+      citedBy: a.inline_links?.cited_by?.total || a.cited_by || '',
+    }));
+    return articles.length ? articles : null;
+  } catch (err) {
+    console.error('[SerpAPI Scholar]', err.message);
+    return null;
+  }
+}
+
+// ─── SerpAPI: Google Travel Explore ─────────────────────────────────────────
+async function searchGoogleTravel(query) {
+  const apiKey = process.env.SERPAPI_API_KEY;
+  if (!apiKey) return null;
+  try {
+    const params = new URLSearchParams({ api_key: apiKey, engine: 'google_travel_explore', q: query, hl: 'tr', gl: 'TR', currency: 'TRY' });
+    const res = await fetch(`https://serpapi.com/search?${params}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const destinations = (data.destinations || data.results || []).slice(0, 10).map(d => ({
+      name: d.name || d.title || '',
+      type: d.type || d.destination_type || 'Bölge',
+      price: d.price || d.extracted_price || '',
+      rating: d.rating || '',
+      description: d.description || d.snippet || '',
+      image: d.image || d.thumbnail || '',
+      link: d.link || d.flights_link || '',
+    }));
+    return destinations.length ? destinations : null;
+  } catch (err) {
+    console.error('[SerpAPI Travel]', err.message);
+    return null;
+  }
+}
+
+// ─── SerpAPI: Instagram Profile Search ──────────────────────────────────────
+async function searchInstagramProfile(query) {
+  const apiKey = process.env.SERPAPI_API_KEY;
+  if (!apiKey) return null;
+  try {
+    const params = new URLSearchParams({ api_key: apiKey, engine: 'instagram_profile', q: query, hl: 'tr' });
+    const res = await fetch(`https://serpapi.com/search?${params}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const profile = {
+      username: data.username || data.name || '',
+      fullName: data.full_name || data.title || '',
+      biography: data.biography || data.description || '',
+      followers: data.followers || data.followers_count || '',
+      following: data.following || data.following_count || '',
+      postsCount: data.posts_count || data.video_count || '',
+      isPrivate: data.is_private || false,
+      isVerified: data.is_verified || false,
+      profilePic: data.profile_pic || data.thumbnail || '',
+      link: data.link || data.profile_link || `https://instagram.com/${data.username || query}`,
+    };
+    const posts = (data.posts || data.media || []).slice(0, 4).map(p => ({
+      caption: p.caption || p.description || '',
+      likes: p.likes || p.likes_count || '',
+      comments: p.comments || p.comments_count || '',
+      image: p.image || p.thumbnail || '',
+      link: p.link || p.post_link || '',
+    }));
+    return profile.username ? { profile, posts } : null;
+  } catch (err) {
+    console.error('[SerpAPI Instagram]', err.message);
+    return null;
+  }
+}
+
+// ─── SerpAPI: Google Shopping ───────────────────────────────────────────────
+async function searchGoogleShopping(query) {
+  const apiKey = process.env.SERPAPI_API_KEY;
+  if (!apiKey) return null;
+  try {
+    const params = new URLSearchParams({ api_key: apiKey, engine: 'google_shopping', q: query, hl: 'tr', gl: 'tr', currency: 'TRY' });
+    const res = await fetch(`https://serpapi.com/search?${params}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const results = (data.shopping_results || []).slice(0, 5).map(r => ({
+      title: r.title || '',
+      price: r.price || r.extracted_price || '',
+      store: r.source || r.store || r.seller || '',
+      rating: r.rating || '',
+      reviews: r.reviews_count || '',
+      thumbnail: r.thumbnail || '',
+      link: r.link || r.product_link || '',
+    }));
+    return results.length ? results : null;
+  } catch (err) {
+    console.error('[SerpAPI Shopping]', err.message);
+    return null;
+  }
+}
+
+// ─── SerpAPI: Google Flights ────────────────────────────────────────────────
+async function searchGoogleFlights(query) {
+  const apiKey = process.env.SERPAPI_API_KEY;
+  if (!apiKey) return null;
+  try {
+    const params = new URLSearchParams({ api_key: apiKey, engine: 'google_flights', q: query, hl: 'tr', gl: 'TR', currency: 'TRY' });
+    const res = await fetch(`https://serpapi.com/search?${params}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const flights = (data.flights || data.best_flights || data.other_flights || []).slice(0, 5).map(f => ({
+      airline: f.airline || f.carrier || '',
+      departure: f.departure?.airport || f.departure_airport || '',
+      arrival: f.arrival?.airport || f.arrival_airport || '',
+      price: f.price || f.extracted_price || '',
+      duration: f.duration || f.total_duration || '',
+      stops: f.stops || f.number_of_stops || 0,
+      link: f.link || f.booking_link || '',
+    }));
+    return flights.length ? flights : null;
+  } catch (err) {
+    console.error('[SerpAPI Flights]', err.message);
+    return null;
+  }
+}
+
+// ─── SerpAPI: Google Jobs ───────────────────────────────────────────────────
+async function searchGoogleJobs(query) {
+  const apiKey = process.env.SERPAPI_API_KEY;
+  if (!apiKey) return null;
+  try {
+    const params = new URLSearchParams({ api_key: apiKey, engine: 'google_jobs', q: query, hl: 'tr', gl: 'tr' });
+    const res = await fetch(`https://serpapi.com/search?${params}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const jobs = (data.jobs || data.jobs_results || []).slice(0, 5).map(j => ({
+      title: j.title || '',
+      company: j.company || j.employer || '',
+      location: j.location || j.job_location || '',
+      salary: j.salary || j.extracted_salary || '',
+      type: j.type || j.job_type || '',
+      description: j.description || j.snippet || '',
+      link: j.link || j.job_link || '',
+    }));
+    return jobs.length ? jobs : null;
+  } catch (err) {
+    console.error('[SerpAPI Jobs]', err.message);
+    return null;
+  }
+}
+
+// ─── SerpAPI: Google News ───────────────────────────────────────────────────
+async function searchGoogleNews(query) {
+  const apiKey = process.env.SERPAPI_API_KEY;
+  if (!apiKey) return null;
+  try {
+    const params = new URLSearchParams({ api_key: apiKey, engine: 'google_news', q: query, hl: 'tr', gl: 'TR' });
+    const res = await fetch(`https://serpapi.com/search?${params}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const articles = (data.news_results || []).slice(0, 6).map(n => ({
+      title: n.title || '',
+      source: n.source || n.publisher || '',
+      date: n.date || n.published_at || '',
+      snippet: n.snippet || n.description || '',
+      image: n.thumbnail || n.image || '',
+      link: n.link || n.article_link || '',
+    }));
+    return articles.length ? articles : null;
+  } catch (err) {
+    console.error('[SerpAPI News]', err.message);
+    return null;
+  }
+}
+
+// ─── SerpAPI: Google Events ─────────────────────────────────────────────────
+async function searchGoogleEvents(query) {
+  const apiKey = process.env.SERPAPI_API_KEY;
+  if (!apiKey) return null;
+  try {
+    const params = new URLSearchParams({ api_key: apiKey, engine: 'google_events', q: query, hl: 'tr', gl: 'TR' });
+    const res = await fetch(`https://serpapi.com/search?${params}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const events = (data.events || data.events_results || []).slice(0, 5).map(e => ({
+      title: e.title || '',
+      date: e.date || e.when || '',
+      venue: e.venue || e.location || '',
+      description: e.description || e.snippet || '',
+      image: e.image || e.thumbnail || '',
+      link: e.link || e.event_link || '',
+    }));
+    return events.length ? events : null;
+  } catch (err) {
+    console.error('[SerpAPI Events]', err.message);
+    return null;
+  }
+}
+
+// ─── SerpAPI: Google Trends ─────────────────────────────────────────────────
+async function searchGoogleTrends(query) {
+  const apiKey = process.env.SERPAPI_API_KEY;
+  if (!apiKey) return null;
+  try {
+    const params = new URLSearchParams({ api_key: apiKey, engine: 'google_trends', q: query, hl: 'tr', gl: 'TR' });
+    const res = await fetch(`https://serpapi.com/search?${params}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const trending = (data.trending_searches || data.related_queries || []).slice(0, 8).map(t => ({
+      title: t.title || t.query || '',
+      traffic: t.traffic || t.search_volume || '',
+      link: t.link || '',
+    }));
+    return trending.length ? trending : null;
+  } catch (err) {
+    console.error('[SerpAPI Trends]', err.message);
+    return null;
+  }
+}
+
+// ─── SerpAPI: YouTube Search ────────────────────────────────────────────────
+async function searchYouTubeVideosSerpAPI(query) {
+  const apiKey = process.env.SERPAPI_API_KEY;
+  if (!apiKey) return null;
+  try {
+    const params = new URLSearchParams({ api_key: apiKey, engine: 'youtube', search_query: query, hl: 'tr', gl: 'TR' });
+    const res = await fetch(`https://serpapi.com/search?${params}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const videos = (data.video_results || []).slice(0, 5).map(v => ({
+      title: v.title || '',
+      channel: v.channel?.name || v.channel || '',
+      views: v.views || v.view_count || '',
+      duration: v.duration || v.length || '',
+      published: v.published_date || v.date || '',
+      thumbnail: v.thumbnail?.static || v.thumbnail || '',
+      link: v.link || v.video_link || '',
+    }));
+    return videos.length ? videos : null;
+  } catch (err) {
+    console.error('[SerpAPI YouTube]', err.message);
+    return null;
+  }
+}
+
+// ─── Weather (wttr.in - free, no key) ───────────────────────────────────────
+async function searchWeather(query) {
+  try {
+    const location = query.replace(/hava durumu|weather|nasıl|kaç derece/gi, '').trim() || 'Istanbul';
+    const res = await fetch(`https://wttr.in/${encodeURIComponent(location)}?format=j1`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const current = data.current_condition?.[0];
+    if (!current) return null;
+    return {
+      location: data.nearest_area?.[0]?.areaName?.[0]?.value || location,
+      country: data.nearest_area?.[0]?.country?.[0]?.value || '',
+      temp: current.temp_C || '',
+      feelsLike: current.FeelsLikeC || '',
+      condition: current.weatherDesc?.[0]?.value || '',
+      humidity: current.humidity || '',
+      windSpeed: current.windspeedKmph || '',
+      windDir: current.winddir16Point || '',
+      visibility: current.visibility || '',
+    };
+  } catch (err) {
+    console.error('[Weather]', err.message);
+    return null;
+  }
+}
+
+// ─── SerpAPI: Recipes ───────────────────────────────────────────────────────
+async function searchRecipes(query) {
+  const apiKey = process.env.SERPAPI_API_KEY;
+  if (!apiKey) return null;
+  try {
+    const params = new URLSearchParams({ api_key: apiKey, engine: 'recipes', q: query, hl: 'tr', gl: 'TR' });
+    const res = await fetch(`https://serpapi.com/search?${params}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const recipes = (data.recipes || []).slice(0, 5).map(r => ({
+      title: r.title || '',
+      ingredients: r.ingredients_count || '',
+      time: r.cooking_time || r.total_time || '',
+      rating: r.rating || '',
+      image: r.image || r.thumbnail || '',
+      link: r.link || r.recipe_link || '',
+    }));
+    return recipes.length ? recipes : null;
+  } catch (err) {
+    console.error('[SerpAPI Recipes]', err.message);
+    return null;
+  }
+}
+
+// ─── SerpAPI: Currency Converter ────────────────────────────────────────────
+async function searchCurrencyConversion(query) {
+  const apiKey = process.env.SERPAPI_API_KEY;
+  if (!apiKey) return null;
+  try {
+    const params = new URLSearchParams({ api_key: apiKey, engine: 'google_finance', q: query, hl: 'tr', gl: 'TR' });
+    const res = await fetch(`https://serpapi.com/search?${params}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const conversions = (data.currency_conversions || []).slice(0, 3).map(c => ({
+      from: c.from || '',
+      to: c.to || '',
+      rate: c.rate || c.exchange_rate || '',
+      change: c.change || '',
+    }));
+    if (!conversions.length && data.summary?.exchange_rate) {
+      return [{ from: 'USD', to: 'TRY', rate: data.summary.exchange_rate, change: data.summary.change || '' }];
+    }
+    return conversions.length ? conversions : null;
+  } catch (err) {
+    console.error('[SerpAPI Currency]', err.message);
     return null;
   }
 }
@@ -1496,7 +1883,7 @@ export default async function handler(req, res) {
           const fullUrl = `https://www.youtube.com/watch?v=${ytVideoId}`;
           const [ytVideoDetailsResult, transcriptResult] = await Promise.allSettled([
             getYouTubeVideoDetails(ytVideoId),
-            transcribeYouTubeViaAssemblyAI(fullUrl),
+            transcribeYouTubeViaSerpAPI(ytVideoId),
           ]);
 
           const ytVideoDetails = ytVideoDetailsResult.status === 'fulfilled' ? ytVideoDetailsResult.value : null;
@@ -1518,13 +1905,28 @@ export default async function handler(req, res) {
       }
     }
 
-    // --- Additional tool triggers: YouTube suggestions / generate Excel / create Slides / Drive / Gmail / Calendar / Maps ---
+    // --- Additional tool triggers: YouTube suggestions / generate Excel / create Slides / Drive / Gmail / Calendar / Maps / SerpAPI tools ---
     let generated_files = [];
     let youtube_suggestions = null;
     let youtube_search_query = null;
     let calendar_events = [];
     let maps_result = null;
     let gmail_result = null;
+    let amazon_products = null;
+    let google_scholar_articles = null;
+    let google_finance_data = null;
+    let google_travel_destinations = null;
+    let instagram_profile_data = null;
+    let shopping_results = null;
+    let flights_results = null;
+    let jobs_results = null;
+    let news_results = null;
+    let events_results = null;
+    let trends_results = null;
+    let youtube_search_results = null;
+    let weather_data = null;
+    let recipes_results = null;
+    let currency_data = null;
 
     try {
       const msgLower = (message || '').toLowerCase();
@@ -1534,7 +1936,22 @@ export default async function handler(req, res) {
       const wantsDrive = /drive|google drive|dosya yükle|drive'a kaydet|google drive/.test(msgLower);
       const wantsGmail = /mail gönder|e-?posta gönder|gmail gönder|mail at|email gönder/.test(msgLower);
       const wantsCalendar = /takvim|calendar|plan yap|planlama|haftalık plan|aylık plan|yıllık plan/.test(msgLower);
-      const wantsMaps = /harita|maps|mesafe|uzak|gitmek istiyorum|nereye gitsem|bunu bul|yol tarifi/.test(msgLower);
+      const wantsMaps = /harita|maps|mesafe|uzak|gitmek istiyorum|nereye gitsem|bunu bul|yol tarifi|en yakın/.test(msgLower);
+      const wantsAmazon = /amazon|ürün ara|ürün bul|alışveriş|satın al|en iyi ürün|çok satan|fiyat ara/i.test(msgLower);
+      const wantsScholar = /makale|akademik|araştırma|tez|bilimsel yayın|scholar|üniversite ödev|literatür/i.test(msgLower);
+      const wantsFinance = /hisse|borsa|finans|hisseleri|yatırım|yükselen|düşen|BİST|endeks|hangi hisse/i.test(msgLower);
+      const wantsTravel = /tatil|seyahat|gezi|oteller|uçak bileti|turlar|yolculuk|keşfet/i.test(msgLower);
+      const wantsInstagram = /instagram|insta profili|instagram hesabı|ig profil/i.test(msgLower);
+      const wantsShopping = /alışveriş|shopping|en ucuz|fiyat karşılaştır|fiyat ara|nerede satılıyor/i.test(msgLower);
+      const wantsFlights = /uçak bileti|ucuş|flight|nereden nereye|bilet ara|sefer/i.test(msgLower);
+      const wantsJobs = /iş ilanı|iş ara|iş bul|kariyer|iş başvurusu|çalışmak istiyorum|iş fırsatı/i.test(msgLower);
+      const wantsNews = /haber|son dakika|gündem|güncel haber|bugün ne oldu/i.test(msgLower);
+      const wantsEvents = /etkinlik|konser|festival|sergi|tiyatro|bu hafta sonu|aktivite/i.test(msgLower);
+      const wantsTrends = /trend|gündemdeki|popüler|çok aranan|trend konular|gündem ne/i.test(msgLower);
+      const wantsYouTubeSearch = /video ara|youtube'da ara|youtubeda izle|videoları/i.test(msgLower);
+      const wantsWeather = /hava durumu|hava nasıl|kaç derece|yağmur yağacak mı|sıcaklık/i.test(msgLower);
+      const wantsRecipes = /yemek tarifi|tarif|nasıl yapılır|yemek nasıl|pişirme/i.test(msgLower);
+      const wantsCurrency = /döviz|kur|dolar ne kadar|euro ne kadar|sterlin|çevir|parite|exchange/i.test(msgLower);
       const wantsOCRExcel = attachments && attachments.some(at => at.type === 'image') && /excel|tablo|liste|isim|numara|numaraları/.test(msgLower);
 
       if (wantsYouTube) {
@@ -1737,26 +2154,178 @@ export default async function handler(req, res) {
         }
       }
 
-      if (wantsMaps && GOOGLE_MAPS_API_KEY) {
+      if (wantsMaps) {
         try {
-          // Extract category from message
-          const categoryMatch = message.match(/(?:en yakın|yakınındaki|bul|ara)[:\s]*(.+?)(?:\s+(?:nerede|konum|lokasyon)|$)/i);
-          const category = categoryMatch ? categoryMatch[1].trim() : 'restaurant';
-          
-          // Use IP-based location or default to a major city
-          const location = countryCode === 'TR' ? 'Istanbul, Turkey' : 
-                          countryCode === 'US' ? 'New York, NY' : 
-                          'Istanbul, Turkey';
-          
-          maps_result = await search_nearby_places(category, location);
-          if (maps_result && maps_result.places && maps_result.places.length > 0) {
-            maps_result.category = category;
-            maps_result.searchLocation = location;
-            tool_notes.push(`Google Maps üzerinde ${category} için ${maps_result.places.length} sonuç buldum.`);
+          const queryMatch = message.match(/(?:en yakın|yakınındaki|bul|ara|nerede|search)[:\s]*(.+?)(?:\s+(?:nerede|konum|lokasyon)|$)/i);
+          const searchQuery = queryMatch ? queryMatch[1].trim() : message;
+          maps_result = await searchGoogleMaps(searchQuery);
+          if (maps_result) {
+            tool_notes.push(`📍 ${maps_result.places.length} yer buldum. Detaylar harita kartlarında.`);
+          } else {
+            tool_notes.push('Harita sonucu bulunamadı.');
           }
         } catch (e) {
           console.error('Maps search error', e);
         }
+      }
+
+      if (wantsAmazon) {
+        try {
+          const query = message.replace(/amazon|ürün ara|ürün bul|alışveriş|satın al|en iyi|çok satan|fiyat ara/gi, '').trim() || message;
+          amazon_products = await searchAmazonProducts(query);
+          if (amazon_products) {
+            tool_notes.push(`🛒 Amazon'da "${query}" için ${amazon_products.length} ürün buldum.`);
+          } else {
+            tool_notes.push('Amazon ürün sonucu bulunamadı.');
+          }
+        } catch (e) {
+          console.error('Amazon search error', e);
+        }
+      }
+
+      if (wantsScholar) {
+        try {
+          const query = message.replace(/makale|akademik|araştırma|tez|scholar/gi, '').trim() || message;
+          google_scholar_articles = await searchGoogleScholar(query);
+          if (google_scholar_articles) {
+            tool_notes.push(`📚 Google Scholar'da "${query}" için ${google_scholar_articles.length} makale buldum.`);
+          } else {
+            tool_notes.push('Akademik makale bulunamadı.');
+          }
+        } catch (e) {
+          console.error('Scholar search error', e);
+        }
+      }
+
+      if (wantsFinance) {
+        try {
+          const query = message.replace(/hisse|borsa|finans|yatırım|yükselen|düşen/gi, '').trim() || 'BIST 100';
+          google_finance_data = await searchGoogleFinance(query);
+          if (google_finance_data) {
+            tool_notes.push(`📈 Borsa verileri alındı: ${google_finance_data.gainers.length} yükselen, ${google_finance_data.losers.length} düşen hisse.`);
+          } else {
+            tool_notes.push('Finans verisi alınamadı.');
+          }
+        } catch (e) {
+          console.error('Finance search error', e);
+        }
+      }
+
+      if (wantsTravel) {
+        try {
+          const query = message.replace(/tatil|seyahat|gezi|uçak bileti|turlar|keşfet/gi, '').trim() || 'Türkiye tatil';
+          google_travel_destinations = await searchGoogleTravel(query);
+          if (google_travel_destinations) {
+            tool_notes.push(`✈️ "${query}" için ${google_travel_destinations.length} destinasyon önerisi hazır.`);
+          } else {
+            tool_notes.push('Seyahat önerisi bulunamadı.');
+          }
+        } catch (e) {
+          console.error('Travel search error', e);
+        }
+      }
+
+      if (wantsInstagram) {
+        try {
+          const query = message.replace(/instagram|insta|ig profil|profil/gi, '').trim() || message;
+          instagram_profile_data = await searchInstagramProfile(query);
+          if (instagram_profile_data) {
+            tool_notes.push(`📸 Instagram profili bulundu: @${instagram_profile_data.profile.username}`);
+          } else {
+            tool_notes.push('Instagram profili bulunamadı.');
+          }
+        } catch (e) {
+          console.error('Instagram search error', e);
+        }
+      }
+
+      if (wantsShopping) {
+        try {
+          const query = message.replace(/alışveriş|shopping|en ucuz|fiyat ara/gi, '').trim() || message;
+          shopping_results = await searchGoogleShopping(query);
+          if (shopping_results) tool_notes.push(`🛍️ "${query}" için ${shopping_results.length} ürün buldum.`);
+          else tool_notes.push('Alışveriş sonucu bulunamadı.');
+        } catch (e) { console.error('Shopping error', e); }
+      }
+
+      if (wantsFlights) {
+        try {
+          const query = message.replace(/uçak bileti|ucuş|bilet ara/gi, '').trim() || message;
+          flights_results = await searchGoogleFlights(query);
+          if (flights_results) tool_notes.push(`✈️ ${flights_results.length} uçuş seçeneği buldum.`);
+          else tool_notes.push('Uçuş bulunamadı.');
+        } catch (e) { console.error('Flights error', e); }
+      }
+
+      if (wantsJobs) {
+        try {
+          const query = message.replace(/iş ilanı|iş ara|iş bul|kariyer/gi, '').trim() || message;
+          jobs_results = await searchGoogleJobs(query);
+          if (jobs_results) tool_notes.push(`💼 "${query}" için ${jobs_results.length} iş ilanı buldum.`);
+          else tool_notes.push('İş ilanı bulunamadı.');
+        } catch (e) { console.error('Jobs error', e); }
+      }
+
+      if (wantsNews) {
+        try {
+          const query = message.replace(/haber|son dakika|gündem/gi, '').trim() || message;
+          news_results = await searchGoogleNews(query);
+          if (news_results) tool_notes.push(`📰 "${query}" için ${news_results.length} haber buldum.`);
+          else tool_notes.push('Haber bulunamadı.');
+        } catch (e) { console.error('News error', e); }
+      }
+
+      if (wantsEvents) {
+        try {
+          const query = message.replace(/etkinlik|konser|festival|aktivite/gi, '').trim() || message;
+          events_results = await searchGoogleEvents(query);
+          if (events_results) tool_notes.push(`🎟️ "${query}" için ${events_results.length} etkinlik buldum.`);
+          else tool_notes.push('Etkinlik bulunamadı.');
+        } catch (e) { console.error('Events error', e); }
+      }
+
+      if (wantsTrends) {
+        try {
+          const query = message.replace(/trend|gündem|popüler/gi, '').trim() || message;
+          trends_results = await searchGoogleTrends(query);
+          if (trends_results) tool_notes.push(`📈 Gündemdeki trendler alındı.`);
+          else tool_notes.push('Trend bulunamadı.');
+        } catch (e) { console.error('Trends error', e); }
+      }
+
+      if (wantsYouTubeSearch) {
+        try {
+          const query = message.replace(/video ara|youtube'da ara/gi, '').trim() || message;
+          youtube_search_results = await searchYouTubeVideosSerpAPI(query);
+          if (youtube_search_results) tool_notes.push(`📺 "${query}" için ${youtube_search_results.length} video buldum.`);
+          else tool_notes.push('Video bulunamadı.');
+        } catch (e) { console.error('YouTube Search error', e); }
+      }
+
+      if (wantsWeather) {
+        try {
+          weather_data = await searchWeather(message);
+          if (weather_data) tool_notes.push(`🌤️ ${weather_data.location}: ${weather_data.temp}°C, ${weather_data.condition}`);
+          else tool_notes.push('Hava durumu alınamadı.');
+        } catch (e) { console.error('Weather error', e); }
+      }
+
+      if (wantsRecipes) {
+        try {
+          const query = message.replace(/yemek tarifi|tarif|nasıl yapılır/gi, '').trim() || message;
+          recipes_results = await searchRecipes(query);
+          if (recipes_results) tool_notes.push(`🍳 "${query}" için ${recipes_results.length} tarif buldum.`);
+          else tool_notes.push('Tarif bulunamadı.');
+        } catch (e) { console.error('Recipes error', e); }
+      }
+
+      if (wantsCurrency) {
+        try {
+          const query = message.replace(/döviz|kur|çevir|parite/gi, '').trim() || 'USD TRY';
+          currency_data = await searchCurrencyConversion(query);
+          if (currency_data) tool_notes.push(`💱 Döviz kuru bilgisi alındı.`);
+          else tool_notes.push('Döviz kuru alınamadı.');
+        } catch (e) { console.error('Currency error', e); }
       }
     } catch (e) {
       console.error('Tool triggers error', e);
@@ -2435,6 +3004,21 @@ export default async function handler(req, res) {
       calendar_events,
       gmail_result,
       maps_result,
+      amazon_products,
+      google_scholar_articles,
+      google_finance_data,
+      google_travel_destinations,
+      instagram_profile_data,
+      shopping_results,
+      flights_results,
+      jobs_results,
+      news_results,
+      events_results,
+      trends_results,
+      youtube_search_results,
+      weather_data,
+      recipes_results,
+      currency_data,
       tool_results: toolResults,
       video_notes: videoAttachments && videoAttachments.length > 0
         ? videoAttachments.map(v => ({ 
