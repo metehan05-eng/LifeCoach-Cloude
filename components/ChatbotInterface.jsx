@@ -17,6 +17,11 @@ import LevelUpCelebration from './chat/LevelUpCelebration';
 import styles from './ChatbotInterface.module.css';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { getQuickAction } from '@/lib/quick-actions';
+import LoadingScreen from '@/components/ui/LoadingScreen';
+import { SifuPandaPanel } from '@/components/mascot';
+import { useVoiceChat } from '@/hooks/useVoiceChat';
+import { detectEmotionFromText } from '@/lib/voice/sifu-emotion';
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
@@ -59,8 +64,25 @@ export default function ChatbotInterface() {
   const [showVision, setShowVision] = useState(false);
   const [showLootBox, setShowLootBox] = useState(false);
   const [levelUpData, setLevelUpData] = useState(null);
+  const [sifuEmotion, setSifuEmotion] = useState('idle');
+
+  const sendMessageRef = useRef(null);
+  const speakResponseRef = useRef(() => {});
+
+  const voice = useVoiceChat({
+    onTranscript: (text) => sendMessageRef.current?.(text),
+    onEmotionChange: setSifuEmotion,
+    isMobile,
+  });
+
+  speakResponseRef.current = voice.speakResponse;
 
   useEffect(() => setIsMounted(true), []);
+
+  useEffect(() => {
+    if (voice.isSpeaking || voice.isRecording) return;
+    if (isLoading || isTyping) setSifuEmotion('thoughtful');
+  }, [isLoading, isTyping, voice.isSpeaking, voice.isRecording]);
 
   useEffect(() => {
     if (!isMounted) return;
@@ -178,7 +200,7 @@ export default function ChatbotInterface() {
     });
   }, [activeSessionId, session]);
 
-  const sendMessage = useCallback(async (text, attachments = []) => {
+  const sendMessage = useCallback(async (text, attachments = [], options = {}) => {
     if ((!text.trim() && attachments.length === 0) || isLoading) return;
     setError(null);
     const attachmentPreviews = attachments.map(a => ({
@@ -192,7 +214,12 @@ export default function ChatbotInterface() {
     if (!currentSessionExists) {
       const realId = Date.now();
       targetSessionId = realId;
-      const newSession = { id: realId, title: text ? text.slice(0, 42) : (attachments[0]?.name || 'Yeni Sohbet'), messages: [userMsg], createdAt: new Date() };
+      const newSession = {
+        id: realId,
+        title: options.sessionTitle || (text ? text.slice(0, 42) : (attachments[0]?.name || 'Yeni Sohbet')),
+        messages: [userMsg],
+        createdAt: new Date(),
+      };
       setSessions(prev => [newSession, ...prev]);
       setActiveSessionId(realId);
     } else {
@@ -226,7 +253,8 @@ export default function ChatbotInterface() {
           chatId: activeChatId, sessionId: targetSessionId,
           email: session?.user?.email,
           deepSearch: deepSearch,
-          goal_planning_mode: goalPlanningMode
+          goal_planning_mode: options.goal_planning_mode ?? goalPlanningMode,
+          quick_action: options.quick_action || null,
         }),
       });
 
@@ -255,6 +283,7 @@ export default function ChatbotInterface() {
         }));
         if (data.gamification.leveledUp) {
           setLevelUpData({ oldLevel: data.gamification.oldLevel, newLevel: data.gamification.newLevel });
+          setSifuEmotion('happy');
           setTimeout(() => setLevelUpData(null), 4000);
         }
       }
@@ -304,6 +333,13 @@ export default function ChatbotInterface() {
 
       if (deepSearch) setDeepSearch(false);
       if (goalPlanningMode) setGoalPlanningMode(false);
+
+      const emotion = detectEmotionFromText(aiText);
+      if (!data.gamification?.leveledUp) setSifuEmotion(emotion);
+      speakResponseRef.current?.(aiText);
+      if (emotion === 'happy' && !data.gamification?.leveledUp) {
+        setTimeout(() => setSifuEmotion((prev) => (prev === 'happy' ? 'idle' : prev)), 3000);
+      }
     } catch (err) {
       setError("Hata oldu daha sonra tekrar deneyin");
     } finally {
@@ -311,34 +347,41 @@ export default function ChatbotInterface() {
       setIsTyping(false);
       setStreamText('');
     }
-  }, [activeSessionId, sessions, isMounted, userStats, session, isLoading, activeChatId]);
+  }, [activeSessionId, sessions, isMounted, userStats, session, isLoading, activeChatId, deepSearch, goalPlanningMode, messages]);
+
+  sendMessageRef.current = sendMessage;
+
+  const voiceInputProps = {
+    onVoiceStart: voice.startRecording,
+    onVoiceStop: voice.stopRecording,
+    isRecording: voice.isRecording,
+    voiceEnabled: voice.voiceEnabled,
+  };
+
+  const showAppLoading = !isMounted || status === 'loading';
 
   const handleConvertToProject = useCallback(() => {
     if (!activeSession || activeSession.messages.length === 0) return;
     alert(`📁 "${activeSession.title}" projesi başarıyla oluşturuldu! \nArtık "Projelerim" sekmesinden takip edebilirsin.`);
   }, [activeSession]);
 
-  const handleQuickAction = useCallback((text) => {
+  const handleQuickAction = useCallback((actionId) => {
     if (isLoading) return;
-    sendMessage(text);
-  }, [sendMessage, isLoading]);
+    const action = getQuickAction(actionId);
+    if (!action) return;
+
+    if (isMobile) setSidebarOpen(false);
+    setInputValue(action.prompt);
+    if (action.modes?.goal_planning_mode) setGoalPlanningMode(true);
+
+    sendMessage(action.prompt, [], { ...action.modes, sessionTitle: action.label });
+  }, [sendMessage, isLoading, isMobile]);
 
   const toggleSidebar = () => setSidebarOpen(p => !p);
 
-  if (!isMounted) {
-    return (
-      <div style={{
-        width: '100vw', height: '100vh',
-        background: '#08081a',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>
-        <div style={{ color: 'rgba(124,58,237,0.5)', fontSize: '14px' }}>Yükleniyor...</div>
-      </div>
-    );
-  }
-
   return (
     <div className={styles.root}>
+      <LoadingScreen isLoading={showAppLoading} />
       <div className={styles.orb1} />
       <div className={styles.orb2} />
 
@@ -428,6 +471,20 @@ export default function ChatbotInterface() {
           />
 
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
+            <SifuPandaPanel
+              emotion={sifuEmotion}
+              isMobile={isMobile}
+              isRecording={voice.isRecording}
+              isSpeaking={voice.isSpeaking}
+              voiceEnabled={voice.voiceEnabled}
+              voiceOverlayOpen={voice.voiceOverlayOpen}
+              interimText={voice.interimText}
+              onMicPress={voice.startRecording}
+              onMicRelease={voice.stopRecording}
+              onToggleVoice={voice.toggleVoiceMode}
+              onCloseOverlay={() => voice.setVoiceOverlayOpen(false)}
+            />
+
             {showProjects ? (
               <ProjectHub user={session?.user} onClose={() => setShowProjects(false)} />
             ) : (
@@ -451,6 +508,7 @@ export default function ChatbotInterface() {
                       isLoading={isLoading}
                       centered={false}
                       isMobile={isMobile}
+                      {...voiceInputProps}
                     />
                   </>
                 ) : (
@@ -461,6 +519,7 @@ export default function ChatbotInterface() {
                     onSend={sendMessage}
                     isLoading={isLoading}
                     onQuickAction={handleQuickAction}
+                    {...voiceInputProps}
                   />
                 )}
               </>

@@ -2,6 +2,16 @@
 
 import React, { useRef, useEffect, useState } from "react";
 
+function MicIcon({ active }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+      <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+      <line x1="12" y1="19" x2="12" y2="22" />
+    </svg>
+  );
+}
+
 export default function ChatInput({
   value,
   onChange,
@@ -10,6 +20,10 @@ export default function ChatInput({
   centered = false,
   isMobile = false,
   minimal = false,
+  onVoiceStart,
+  onVoiceStop,
+  isRecording = false,
+  voiceEnabled = false,
 }) {
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -182,6 +196,33 @@ export default function ChatInput({
           rows={1}
           className="max-h-40 min-h-[22px] flex-1 resize-none border-none bg-transparent px-1 py-2 text-sm font-medium tracking-tight text-han-text outline-none [caret-color:#a78bfa] placeholder:text-white/25 md:text-[15px]"
         />
+
+        {onVoiceStart && (
+          <button
+            type="button"
+            onMouseDown={onVoiceStart}
+            onMouseUp={onVoiceStop}
+            onTouchStart={(e) => {
+              e.preventDefault();
+              onVoiceStart();
+            }}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              onVoiceStop?.();
+            }}
+            className={`${btnSize} flex shrink-0 items-center justify-center rounded-xl border transition-all ${
+              isRecording
+                ? "border-red-400/40 bg-red-500/20 text-red-300 shadow-[0_0_16px_rgba(239,68,68,0.3)]"
+                : voiceEnabled
+                  ? "border-han-gold/25 bg-han-gold/10 text-han-gold hover:border-han-gold/40"
+                  : "border-white/[0.05] bg-white/[0.04] text-white/40 hover:border-han-purple/20 hover:bg-han-purple/10 hover:text-han-purple-light"
+            }`}
+            title="Basılı tut — konuş"
+            aria-label="Mikrofon"
+          >
+            <MicIcon active={isRecording} />
+          </button>
+        )}
 
         <button
           type="button"

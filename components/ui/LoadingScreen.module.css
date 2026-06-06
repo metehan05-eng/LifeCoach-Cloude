@@ -1,0 +1,159 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0b0d17;
+  transition: opacity 0.5s ease;
+  pointer-events: all;
+}
+
+.overlayVisible {
+  opacity: 1;
+}
+
+.overlayHidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.nebulaWrap {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nebula {
+  position: absolute;
+  width: min(90vw, 520px);
+  height: min(90vw, 520px);
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    rgba(124, 58, 237, 0.22),
+    rgba(59, 130, 246, 0.14),
+    rgba(34, 211, 238, 0.18),
+    rgba(124, 58, 237, 0.22)
+  );
+  filter: blur(48px);
+  animation: spinSlow 18s linear infinite;
+}
+
+.nebulaInner {
+  position: absolute;
+  width: min(70vw, 380px);
+  height: min(70vw, 380px);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(99, 102, 241, 0.2) 0%,
+    rgba(124, 58, 237, 0.08) 45%,
+    transparent 70%
+  );
+  filter: blur(32px);
+  animation: spinSlow 24s linear infinite reverse;
+}
+
+.center {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px;
+}
+
+.lightning {
+  animation: lightningPulse 1.8s ease-in-out infinite;
+  filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.9));
+}
+
+.lcLetters {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  font-family: var(--font-space), "Space Grotesk", system-ui, sans-serif;
+  font-weight: 800;
+  font-size: clamp(3rem, 12vw, 4.5rem);
+  letter-spacing: -0.06em;
+  line-height: 1;
+  background: linear-gradient(135deg, #a78bfa 0%, #6366f1 45%, #22d3ee 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 24px rgba(124, 58, 237, 0.55))
+    drop-shadow(0 0 48px rgba(99, 102, 241, 0.25));
+}
+
+.subtitle {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(167, 139, 250, 0.45);
+}
+
+.dots {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(124, 58, 237, 0.5);
+  animation: dotBounce 1.4s ease-in-out infinite;
+}
+
+.dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes spinSlow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes lightningPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.7))
+      brightness(1);
+  }
+  50% {
+    transform: scale(1.15);
+    filter: drop-shadow(0 0 18px rgba(251, 191, 36, 1))
+      drop-shadow(0 0 32px rgba(245, 158, 11, 0.6))
+      brightness(1.35);
+  }
+}
+
+@keyframes dotBounce {
+  0%,
+  80%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.35;
+  }
+  40% {
+    transform: translateY(-6px);
+    opacity: 1;
+  }
+}

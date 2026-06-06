@@ -1,17 +1,17 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
-  "/chat/page": "app/chat/page.js",
-  "/hancode/page": "app/hancode/page.js",
-  "/login/page": "app/login/page.js",
   "/favicon.ico/route": "app/favicon.ico/route.js",
-  "/page": "app/page.js",
+  "/chat/page": "app/chat/page.js",
   "/interactive/page": "app/interactive/page.js",
   "/signup/page": "app/signup/page.js",
+  "/login/page": "app/login/page.js",
+  "/hancode/page": "app/hancode/page.js",
+  "/page": "app/page.js",
   "/user/login/page": "app/user/login/page.js",
   "/app/page": "app/app/page.js",
   "/app/datasources/page": "app/app/datasources/page.js",
-  "/app/chatbots/page": "app/app/chatbots/page.js",
-  "/app/chatbots/[chatbotId]/page": "app/app/chatbots/[chatbotId]/page.js",
   "/app/prompt-templates/page": "app/app/prompt-templates/page.js",
+  "/app/chatbots/[chatbotId]/page": "app/app/chatbots/[chatbotId]/page.js",
+  "/app/chatbots/page": "app/app/chatbots/page.js",
   "/app/social/page": "app/app/social/page.js"
 }

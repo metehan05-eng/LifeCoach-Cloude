@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useRef } from 'react';
 import ClientOnly from '../ClientOnly';
+import { LCLogo } from '@/components/brand';
 
 /* ── Markdown formatter ── */
 function extractYouTubeVideoId(input) {
@@ -340,12 +341,9 @@ const GoalCard = ({ data, onQuickAction }) => {
 /* ── Typing dots indicator ── */
 const TypingIndicator = () => (
   <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', padding: '4px 0', maxWidth: '760px', margin: '0 auto', width: '100%' }}>
-    <div style={{
-      width: '34px', height: '34px', borderRadius: '50%', flexShrink: 0,
-      background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: '15px', boxShadow: '0 2px 12px rgba(99,102,241,0.35)',
-    }}>⚡</div>
+    <div style={{ flexShrink: 0 }}>
+      <LCLogo variant="icon" size={34} />
+    </div>
     <div style={{
       padding: '12px 16px', borderRadius: '4px 18px 18px 18px',
       background: 'transparent',
@@ -775,14 +773,9 @@ function MessageBubble({ message, isStream, onQuickAction }) {
       animation: 'fadeInUp 0.4s ease-out both',
       maxWidth: '760px', margin: '0 auto', width: '100%',
     }}>
-      <div style={{
-        width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0,
-        background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: '16px', 
-        boxShadow: '0 4px 16px rgba(99,102,241,0.25)',
-        marginTop: '2px',
-      }}>⚡</div>
+      <div style={{ flexShrink: 0, marginTop: '2px' }}>
+        <LCLogo variant="icon" size={36} />
+      </div>
  
       <div style={{ flex: 1, minWidth: 0 }}>
         {/* Name row */}

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { IconBolt } from "./icons";
+import { LCLogo } from "@/components/brand";
 
 export default function CTASection() {
   return (
@@ -8,8 +8,8 @@ export default function CTASection() {
         <div className="pointer-events-none absolute left-1/2 top-1/2 h-72 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full bg-han-purple/10 blur-3xl" />
 
         <div className="relative">
-          <div className="mx-auto mb-6 flex h-[72px] w-[72px] items-center justify-center rounded-2xl bg-gradient-to-br from-han-purple to-han-indigo shadow-glow">
-            <IconBolt className="h-8 w-8 text-white" />
+          <div className="mx-auto mb-6">
+            <LCLogo variant="chat" size={72} />
           </div>
 
           <h2 className="font-display mb-4 text-3xl font-extrabold tracking-tight text-han-text md:text-5xl">

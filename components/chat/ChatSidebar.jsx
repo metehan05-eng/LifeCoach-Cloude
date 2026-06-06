@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import GamificationPanel from "./ui/GamificationPanel";
 import UserProfileCard from "./ui/UserProfileCard";
+import { LCLogo } from "@/components/brand";
 
 const groupByDate = (sessions) => {
   const today = new Date();
@@ -24,12 +25,6 @@ const groupByDate = (sessions) => {
 const PlusIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
     <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-  </svg>
-);
-
-const BoltIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
   </svg>
 );
 
@@ -83,15 +78,7 @@ export default function ChatSidebar({
       >
         {/* Logo + New Chat */}
         <div className="flex flex-col gap-2.5 border-b border-han-purple/[0.06] px-4 pb-3 pt-5">
-          <div className="flex items-center gap-2.5 px-0.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-han-purple to-han-indigo shadow-[0_0_20px_rgba(124,58,237,0.5)]">
-              <BoltIcon />
-            </div>
-            <div>
-              <div className="text-[15px] font-bold tracking-tight text-han-text">LifeCoach AI</div>
-              <div className="text-[10px] font-semibold tracking-wide text-han-purple/70">HAN 4.2 ULTRA CORE</div>
-            </div>
-          </div>
+          <LCLogo variant="full" size={36} />
 
           <button
             type="button"

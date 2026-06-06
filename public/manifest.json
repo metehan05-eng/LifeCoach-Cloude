@@ -7,7 +7,7 @@
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui", "browser"],
   "background_color": "#030712",
-  "theme_color": "#0F766E",
+  "theme_color": "#7c3aed",
   "launch_handler": {
     "client_mode": "focus-existing"
   },
@@ -19,7 +19,13 @@
       "src": "/lifecoach-favicon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/lifecoach-logo-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
     },
     {
       "src": "/lifecoach-logo-192.png",

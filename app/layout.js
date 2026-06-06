@@ -22,8 +22,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="tr" className={`${inter.variable} ${spaceGrotesk.variable}`} suppressHydrationWarning>
       <head>
-        <meta name="theme-color" content="#030308" />
+        <meta name="theme-color" content="#060618" />
         <link rel="icon" href="/lifecoach-favicon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/lifecoach-logo-icon.svg" />
       </head>
       <body style={{ background: '#030308' }} suppressHydrationWarning>
         <Providers>{children}</Providers>

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
-import { IconBolt } from "./icons";
+import { LCLogo } from "@/components/brand";
 
 function UserNav({ isMobile }) {
   const { data: session } = useSession();
@@ -76,19 +76,7 @@ export default function Navbar({ mounted }) {
         className={`fixed inset-x-0 top-0 z-50 flex h-16 items-center justify-between px-6 transition-all duration-300 ${navBg}`}
         style={{ opacity: mounted ? 1 : 0 }}
       >
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-han-purple to-han-indigo shadow-[0_0_16px_rgba(124,58,237,0.35)]">
-            <IconBolt className="h-4 w-4 text-white" />
-          </div>
-          <div>
-            <div className="text-[15px] font-bold tracking-tight text-han-text">
-              LifeCoach <span className="text-violet-300">AI</span>
-            </div>
-            <div className="text-[8px] font-semibold uppercase tracking-widest text-han-purple/60">
-              DeepSeek Altyapısı
-            </div>
-          </div>
-        </div>
+        <LCLogo variant="full" size={36} />
 
         <div className="hidden items-center gap-7 md:flex">
           <a href="#features" className="lp-nav-link">Özellikler</a>
