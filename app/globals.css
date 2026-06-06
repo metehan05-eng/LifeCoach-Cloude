@@ -1,3 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .han-glass {
+    @apply bg-white/[0.03] backdrop-blur-glass border border-white/[0.08];
+  }
+  .han-glass-card {
+    @apply bg-han-purple/[0.06] backdrop-blur-xl border border-han-purple/15 rounded-2xl;
+  }
+  .han-input-box {
+    @apply flex items-end gap-2 rounded-2xl border border-han-purple/10 bg-han-surface/80 backdrop-blur-xl p-1.5 transition-all duration-300;
+  }
+  .han-input-box:focus-within {
+    @apply border-han-purple/40 shadow-[0_0_32px_rgba(124,58,237,0.12)];
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar-overlay {
+    display: block !important;
+  }
+}
+
+/* ── Landing Page ── */
+@layer components {
+  .lp-nav-link {
+    @apply text-sm font-medium text-han-muted no-underline transition-colors hover:text-violet-300;
+  }
+  .lp-btn-primary {
+    @apply relative overflow-hidden rounded-xl border-none bg-gradient-to-r from-han-purple to-han-indigo font-bold text-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_48px_rgba(124,58,237,0.4)];
+  }
+  .lp-btn-ghost {
+    @apply rounded-xl border border-han-purple/25 bg-transparent font-semibold text-violet-300 transition-all duration-200 hover:border-han-purple/40 hover:bg-han-purple/10;
+  }
+}
+
 :root {
   /* Core Colors */
   --bg-deep: #060618;

@@ -4,6 +4,7 @@ import ChatSidebar from './chat/ChatSidebar';
 import ChatMessages from './chat/ChatMessages';
 import ChatInput from './chat/ChatInput';
 import ChatHeader from './chat/ChatHeader';
+import WelcomeScreen from './chat/ui/WelcomeScreen';
 import WaffleStudio from './chat/WaffleStudio';
 import Leaderboard from './chat/Leaderboard';
 import AutomationWorkbench from './chat/AutomationWorkbench';
@@ -450,144 +451,17 @@ export default function ChatbotInterface() {
                       isLoading={isLoading}
                       centered={false}
                       isMobile={isMobile}
-                      onToggleVision={() => setShowVision(p => !p)}
-                      deepSearch={deepSearch}
-                      onToggleDeepSearch={() => setDeepSearch(p => !p)}
-                      goalPlanningMode={goalPlanningMode}
-                      onToggleGoalPlanning={() => setGoalPlanningMode(p => !p)}
                     />
                   </>
                 ) : (
-                  /* ── WELCOME SCREEN ── */
-                  <div style={{
-                    flex: 1,
-                    display: 'flex', flexDirection: 'column',
-                    alignItems: 'center', justifyContent: 'center',
-                    padding: isMobile ? '20px 16px 16px' : '40px 24px',
-                    gap: isMobile ? '24px' : '36px',
-                    overflowY: 'auto',
-                  }}>
-                    {/* Logo + Title */}
-                    <div style={{
-                      textAlign: 'center',
-                      animation: 'wn-fadeIn 0.8s ease-out',
-                    }}>
-                      <div style={{
-                        width: isMobile ? '64px' : '80px',
-                        height: isMobile ? '64px' : '80px',
-                        borderRadius: '24px',
-                        margin: '0 auto 20px',
-                        background: 'linear-gradient(135deg, #7c3aed, #6366f1, #8b5cf6)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: isMobile ? '28px' : '36px',
-                        boxShadow: '0 0 60px rgba(124,58,237,0.5), 0 0 120px rgba(99,102,241,0.2)',
-                        animation: 'wn-float 6s ease-in-out infinite',
-                      }}>
-                        <svg width={isMobile ? '28' : '36'} height={isMobile ? '28' : '36'} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-                        </svg>
-                      </div>
-                      <h2 style={{
-                        fontSize: isMobile ? '22px' : 'clamp(24px,3vw,32px)',
-                        fontWeight: 800,
-                        background: 'linear-gradient(135deg, #a78bfa, #c4b5fd, #818cf8)',
-                        WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text', marginBottom: '10px',
-                        letterSpacing: '-0.03em',
-                      }}>
-                        Merhaba! Ben HAN AI
-                      </h2>
-                      <p style={{
-                        color: 'rgba(160,160,200,0.55)',
-                        fontSize: isMobile ? '13px' : '15px',
-                        lineHeight: 1.7,
-                        maxWidth: '480px',
-                      }}>
-                        Hedeflerine ulaşmana, kararlar vermene ve potansiyelini keşfetmene yardım etmek için buradayım.
-                      </p>
-                    </div>
-
-                    {/* 4 Quick Action Cards in 2x2 Grid */}
-                    <div style={{
-                      display: 'grid',
-                      gridTemplateColumns: '1fr 1fr',
-                      gap: isMobile ? '12px' : '14px',
-                      width: '100%',
-                      maxWidth: '580px',
-                    }}>
-                      {[
-                        { icon: '🎯', label: 'Hedef Planla', desc: 'SMART hedef belirleme', color: '#7c3aed' },
-                        { icon: '⚡', label: 'Üretkenlik Sistemi', desc: 'Deep work yöntemleri', color: '#f59e0b' },
-                        { icon: '🚀', label: 'Startup Yol Haritası', desc: 'Fikirden MVP\'ye', color: '#06b6d4' },
-                        { icon: '🧠', label: 'Karar Analizi', desc: 'Mantıklı seçimler', color: '#8b5cf6' },
-                      ].map((card, i) => (
-                        <button key={i}
-                          onClick={() => handleQuickAction(card.label)}
-                          style={{
-                            padding: isMobile ? '18px 14px' : '22px 18px',
-                            borderRadius: '18px',
-                            background: 'rgba(12,12,40,0.6)',
-                            backdropFilter: 'blur(12px)',
-                            border: '1px solid rgba(124,58,237,0.12)',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'flex-start',
-                            gap: '10px',
-                            transition: 'all 0.3s cubic-bezier(0.4,0,0.2,1)',
-                            boxShadow: '0 2px 12px rgba(0,0,0,0.2)',
-                            textAlign: 'left',
-                            animation: `wn-slideUp 0.6s ease-out ${0.1 + i * 0.1}s both`,
-                          }}
-                          onMouseEnter={e => {
-                            e.currentTarget.style.transform = 'translateY(-3px)';
-                            e.currentTarget.style.background = 'rgba(20,20,50,0.8)';
-                            e.currentTarget.style.borderColor = `rgba(124,58,237,0.3)`;
-                            e.currentTarget.style.boxShadow = `0 8px 32px rgba(124,58,237,0.15)`;
-                          }}
-                          onMouseLeave={e => {
-                            e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.background = 'rgba(12,12,40,0.6)';
-                            e.currentTarget.style.borderColor = 'rgba(124,58,237,0.12)';
-                            e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.2)';
-                          }}
-                        >
-                          <span style={{
-                            width: '40px', height: '40px', borderRadius: '12px',
-                            background: `linear-gradient(135deg, ${card.color}22, ${card.color}11)`,
-                            border: `1px solid ${card.color}33`,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: '20px',
-                          }}>{card.icon}</span>
-                          <div>
-                            <div style={{ fontSize: isMobile ? '13px' : '14px', fontWeight: 700, color: '#e0e0ff', marginBottom: '2px' }}>
-                              {card.label}
-                            </div>
-                            <div style={{ fontSize: '11px', color: 'rgba(160,160,200,0.45)' }}>
-                              {card.desc}
-                            </div>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-
-                    {/* Centered Input */}
-                    <div style={{ width: '100%', maxWidth: '640px' }}>
-                      <ChatInput
-                        value={inputValue}
-                        onChange={setInputValue}
-                        onSend={sendMessage}
-                        isLoading={isLoading}
-                        centered={true}
-                        isMobile={isMobile}
-                        onToggleVision={() => setShowVision(p => !p)}
-                        deepSearch={deepSearch}
-                        onToggleDeepSearch={() => setDeepSearch(p => !p)}
-                        goalPlanningMode={goalPlanningMode}
-                        onToggleGoalPlanning={() => setGoalPlanningMode(p => !p)}
-                      />
-                    </div>
-                  </div>
+                  <WelcomeScreen
+                    isMobile={isMobile}
+                    inputValue={inputValue}
+                    onInputChange={setInputValue}
+                    onSend={sendMessage}
+                    isLoading={isLoading}
+                    onQuickAction={handleQuickAction}
+                  />
                 )}
               </>
             )}
@@ -595,20 +469,6 @@ export default function ChatbotInterface() {
         </div>
       </div>
 
-      <style>{`
-        @keyframes wn-float {
-          0%,100% { transform: translateY(0); }
-          50% { transform: translateY(-10px); }
-        }
-        @keyframes wn-fadeIn {
-          from { opacity: 0; transform: translateY(16px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes wn-slideUp {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
     </div>
   );
 }
