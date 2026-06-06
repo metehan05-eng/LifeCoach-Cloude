@@ -15,46 +15,45 @@ export default function ChatHeader({ onToggleSidebar, sidebarOpen, sessionTitle,
       alignItems: 'center',
       padding: '0 16px',
       gap: '12px',
-      background: 'rgba(6,6,14,0.92)',
+      background: 'rgba(6,6,18,0.9)',
       backdropFilter: 'blur(32px)',
       WebkitBackdropFilter: 'blur(32px)',
-      borderBottom: '1px solid rgba(99,102,241,0.09)',
+      borderBottom: '1px solid rgba(124,58,237,0.06)',
       flexShrink: 0,
       position: 'relative',
       zIndex: 20,
     }}>
-      {/* Hamburger / sidebar toggle */}
+      {/* Hamburger */}
       <button
         onClick={onToggleSidebar}
         title={sidebarOpen ? 'Sidebar gizle' : 'Sidebar göster'}
         style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          width: '36px', height: '36px', borderRadius: '10px',
-          background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.18)',
-          color: '#a5b4fc', cursor: 'pointer', flexShrink: 0,
+          width: '34px', height: '34px', borderRadius: '10px',
+          background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.15)',
+          color: '#a78bfa', cursor: 'pointer', flexShrink: 0,
           transition: 'all 0.2s ease',
         }}
-        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(99,102,241,0.22)'; }}
-        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(99,102,241,0.1)'; }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.18)'; }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.08)'; }}
       >
-        {/* Hamburger icon lines */}
-        <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+        <svg width="15" height="15" viewBox="0 0 20 20" fill="none" aria-hidden="true">
           {mounted && sidebarOpen && !isMobile ? (
             <>
-              <line x1="4" y1="4" x2="16" y2="16" stroke="#a5b4fc" strokeWidth="2" strokeLinecap="round" />
-              <line x1="16" y1="4" x2="4" y2="16" stroke="#a5b4fc" strokeWidth="2" strokeLinecap="round" />
+              <line x1="4" y1="4" x2="16" y2="16" stroke="#a78bfa" strokeWidth="2" strokeLinecap="round" />
+              <line x1="16" y1="4" x2="4" y2="16" stroke="#a78bfa" strokeWidth="2" strokeLinecap="round" />
             </>
           ) : (
             <>
-              <line x1="3" y1="5" x2="17" y2="5" stroke="#a5b4fc" strokeWidth="1.8" strokeLinecap="round" />
-              <line x1="3" y1="10" x2="17" y2="10" stroke="#a5b4fc" strokeWidth="1.8" strokeLinecap="round" />
-              <line x1="3" y1="15" x2="17" y2="15" stroke="#a5b4fc" strokeWidth="1.8" strokeLinecap="round" />
+              <line x1="3" y1="5" x2="17" y2="5" stroke="#a78bfa" strokeWidth="1.8" strokeLinecap="round" />
+              <line x1="3" y1="10" x2="17" y2="10" stroke="#a78bfa" strokeWidth="1.8" strokeLinecap="round" />
+              <line x1="3" y1="15" x2="17" y2="15" stroke="#a78bfa" strokeWidth="1.8" strokeLinecap="round" />
             </>
           )}
         </svg>
       </button>
 
-      {/* Session title */}
+      {/* Title */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{
           fontSize: isMobile ? '13px' : '14px',
@@ -69,19 +68,19 @@ export default function ChatHeader({ onToggleSidebar, sidebarOpen, sessionTitle,
             background: '#10b981', boxShadow: '0 0 5px rgba(16,185,129,0.8)',
             animation: 'hdr-pulse 2.5s ease-in-out infinite',
           }} />
-          <span style={{ fontSize: '10.5px', color: 'rgba(160,160,192,0.55)', fontWeight: 500 }}>
+          <span style={{ fontSize: '10px', color: 'rgba(160,160,200,0.45)', fontWeight: 500 }}>
             {isMobile ? 'Çevrimiçi' : 'HAN 4.2 Ultra Core · Çevrimiçi'}
           </span>
         </div>
       </div>
 
-      {/* Model badge — hidden on mobile to save space */}
+      {/* Model badge */}
       {!isMobile && (
         <div style={{
-          padding: '5px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: 600,
-          background: 'linear-gradient(135deg, rgba(99,102,241,0.18), rgba(139,92,246,0.12))',
-          border: '1px solid rgba(99,102,241,0.22)',
-          color: '#a5b4fc', whiteSpace: 'nowrap',
+          padding: '4px 12px', borderRadius: '20px', fontSize: '10.5px', fontWeight: 600,
+          background: 'linear-gradient(135deg, rgba(124,58,237,0.15), rgba(99,102,241,0.1))',
+          border: '1px solid rgba(124,58,237,0.2)',
+          color: '#a78bfa', whiteSpace: 'nowrap',
         }}>
           HAN 4.2 Ultra Core
         </div>
@@ -92,54 +91,48 @@ export default function ChatHeader({ onToggleSidebar, sidebarOpen, sessionTitle,
         onClick={() => onConvertToProject && onConvertToProject()}
         style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          width: '34px', height: '34px', borderRadius: '10px',
-          background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)',
-          color: '#818cf8', cursor: 'pointer',
+          width: '32px', height: '32px', borderRadius: '8px',
+          background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.15)',
+          color: '#a78bfa', cursor: 'pointer',
           transition: 'all 0.2s ease',
-          fontSize: '15px', flexShrink: 0,
+          fontSize: '14px', flexShrink: 0,
         }}
-        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(99,102,241,0.2)'; e.currentTarget.style.color = '#fff'; }}
-        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(99,102,241,0.1)'; e.currentTarget.style.color = '#818cf8'; }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.18)'; e.currentTarget.style.color = '#c4b5fd'; }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.08)'; e.currentTarget.style.color = '#a78bfa'; }}
         title="Bu Sohbeti Projeye Dönüştür"
-      >
-        📁
-      </button>
+      >📁</button>
 
       {/* HAN Code */}
       <button
         onClick={() => setShowComingSoon(true)}
         style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          width: '34px', height: '34px', borderRadius: '10px',
-          background: 'rgba(139,92,246,0.15)', border: '1px solid rgba(139,92,246,0.3)',
+          width: '32px', height: '32px', borderRadius: '8px',
+          background: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.25)',
           color: '#c4b5fd', cursor: 'pointer',
           transition: 'all 0.2s ease',
-          fontSize: '15px', flexShrink: 0,
+          fontSize: '14px', flexShrink: 0,
         }}
-        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(139,92,246,0.25)'; e.currentTarget.style.color = '#fff'; }}
-        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(139,92,246,0.15)'; e.currentTarget.style.color = '#c4b5fd'; }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(139,92,246,0.22)'; e.currentTarget.style.color = '#e0e0ff'; }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(139,92,246,0.12)'; e.currentTarget.style.color = '#c4b5fd'; }}
         title="HAN Code IDE"
-      >
-        ⚔️
-      </button>
+      >⚔️</button>
 
       {/* Settings */}
       <button
         onClick={() => onOpenSettings && onOpenSettings()}
         style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          width: '34px', height: '34px', borderRadius: '10px',
-          background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)',
-          color: '#808098', cursor: 'pointer',
+          width: '32px', height: '32px', borderRadius: '8px',
+          background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
+          color: 'rgba(160,160,200,0.5)', cursor: 'pointer',
           transition: 'all 0.2s ease',
-          fontSize: '15px', flexShrink: 0,
+          fontSize: '14px', flexShrink: 0,
         }}
-        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#e0e0ff'; }}
-        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = '#808098'; }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = '#e0e0ff'; }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.color = 'rgba(160,160,200,0.5)'; }}
         title="Ayarlar"
-      >
-        ⚙
-      </button>
+      >⚙</button>
 
       <style>{`
         @keyframes hdr-pulse {
@@ -148,76 +141,46 @@ export default function ChatHeader({ onToggleSidebar, sidebarOpen, sessionTitle,
         }
       `}</style>
 
-      {/* Coming Soon Modal */}
       {showComingSoon && (
-        <div 
+        <div
+          onClick={() => setShowComingSoon(false)}
           style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
             background: 'rgba(0,0,0,0.7)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
             zIndex: 1000,
           }}
-          onClick={() => setShowComingSoon(false)}
         >
-          <div 
+          <div
+            onClick={e => e.stopPropagation()}
             style={{
-              background: 'linear-gradient(135deg, rgba(139,92,246,0.15), rgba(59,130,246,0.15))',
-              border: '1px solid rgba(139,92,246,0.3)',
-              borderRadius: '16px',
-              padding: '32px',
-              maxWidth: '400px',
-              width: '90%',
-              textAlign: 'center',
+              background: 'linear-gradient(135deg, rgba(124,58,237,0.15), rgba(99,102,241,0.1))',
+              border: '1px solid rgba(124,58,237,0.25)',
+              borderRadius: '16px', padding: '32px',
+              maxWidth: '400px', width: '90%', textAlign: 'center',
               backdropFilter: 'blur(20px)',
             }}
-            onClick={e => e.stopPropagation()}
           >
             <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚔️</div>
-            <h2 style={{ 
-              color: '#fff', 
-              fontSize: '24px', 
-              fontWeight: 700, 
-              marginBottom: '12px',
-              background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
+            <h2 style={{
+              color: '#fff', fontSize: '24px', fontWeight: 700, marginBottom: '12px',
+              background: 'linear-gradient(135deg, #7c3aed, #6366f1)',
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
             }}>
               Coming Soon
             </h2>
-            <h3 style={{ 
-              color: '#c4b5fd', 
-              fontSize: '20px', 
-              fontWeight: 600, 
-              marginBottom: '16px' 
-            }}>
+            <h3 style={{ color: '#c4b5fd', fontSize: '20px', fontWeight: 600, marginBottom: '16px' }}>
               Han Code
             </h3>
-            <p style={{ 
-              color: 'rgba(200,200,220,0.8)', 
-              fontSize: '14px', 
-              lineHeight: 1.6,
-              marginBottom: '24px' 
-            }}>
+            <p style={{ color: 'rgba(200,200,220,0.8)', fontSize: '14px', lineHeight: 1.6, marginBottom: '24px' }}>
               Elite AI Software Engineer. Mobil, web, desktop, backend - her şeyi yapabilir. Emergent Labs tarzında görsel IDE ile yazılım oluştur ve göster.
             </p>
             <button
               onClick={() => setShowComingSoon(false)}
               style={{
-                background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)',
-                color: '#fff',
-                border: 'none',
-                padding: '12px 32px',
-                borderRadius: '10px',
-                fontSize: '14px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
+                background: 'linear-gradient(135deg, #7c3aed, #6366f1)',
+                color: '#fff', border: 'none', padding: '12px 32px',
+                borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer',
               }}
               onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05)'; }}
               onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}

@@ -1,7 +1,7 @@
 .root {
   position: fixed;
   inset: 0;
-  background: linear-gradient(135deg, #0a0a0a 0%, #111111 100%);
+  background: linear-gradient(135deg, #060618 0%, #0c0c28 50%, #08081a 100%);
   overflow: hidden;
   font-family: 'Geist', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
@@ -12,11 +12,11 @@
   left: -200px;
   width: 500px;
   height: 500px;
-  background: radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(124,58,237,0.10) 0%, transparent 70%);
   border-radius: 50%;
   pointer-events: none;
   animation: float 8s ease-in-out infinite;
-  filter: blur(40px);
+  filter: blur(60px);
 }
 
 .orb2 {
@@ -25,11 +25,11 @@
   right: -150px;
   width: 450px;
   height: 450px;
-  background: radial-gradient(circle, rgba(139,92,246,0.10) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 70%);
   border-radius: 50%;
   pointer-events: none;
   animation: float 10s ease-in-out infinite reverse;
-  filter: blur(40px);
+  filter: blur(60px);
 }
 
 .layout {
@@ -46,18 +46,7 @@
   flex-direction: column;
   min-width: 0;
   overflow: hidden;
-  border-left: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-/* Mobile sidebar overlay */
-.sidebarOverlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  z-index: 45;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  border-left: 1px solid rgba(124, 58, 237, 0.06);
 }
 
 @keyframes float {
@@ -66,54 +55,21 @@
 }
 
 @keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes slideInLeft {
-  from {
-    opacity: 0;
-    transform: translateX(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
 @keyframes slideOutLeft {
-  from {
-    opacity: 1;
-    transform: translateX(0);
-  }
-  to {
-    opacity: 0;
-    transform: translateX(-20px);
-  }
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(-20px); }
 }
 
-@keyframes inputFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* ── Mobile breakpoint: ≤ 768px ── */
 @media (max-width: 768px) {
-  .sidebarOverlay {
-    display: block;
-  }
   .orb1 { width: 280px; height: 280px; }
   .orb2 { width: 240px; height: 240px; }
 }

@@ -1,29 +1,29 @@
 :root {
   /* Core Colors */
-  --bg-deep: #030308;
-  --bg-surface: #0c0c18;
-  --bg-elevated: #12121f;
-  --bg-card: #16162a;
-  --bg-hover: #1e1e35;
+  --bg-deep: #060618;
+  --bg-surface: #0c0c28;
+  --bg-elevated: #12123a;
+  --bg-card: #181845;
+  --bg-hover: #222255;
 
   /* Brand Gradient */
-  --brand-from: #6366f1;
-  --brand-mid: #8b5cf6;
+  --brand-from: #7c3aed;
+  --brand-mid: #6366f1;
   --brand-to: #06b6d4;
 
   /* Text */
   --text-primary: #f0f0ff;
-  --text-secondary: #a0a0c0;
-  --text-muted: #5a5a80;
+  --text-secondary: #b0b0d0;
+  --text-muted: #6a6a90;
 
   /* Borders */
-  --border-subtle: rgba(99, 102, 241, 0.12);
-  --border-glow: rgba(99, 102, 241, 0.4);
+  --border-subtle: rgba(124, 58, 237, 0.12);
+  --border-glow: rgba(124, 58, 237, 0.4);
 
   /* Glow Colors */
-  --glow-primary: rgba(99, 102, 241, 0.25);
+  --glow-primary: rgba(124, 58, 237, 0.25);
   --glow-accent: rgba(6, 182, 212, 0.2);
-  --glow-purple: rgba(139, 92, 246, 0.3);
+  --glow-purple: rgba(124, 58, 237, 0.3);
 
   /* Status */
   --success: #10b981;
@@ -56,11 +56,11 @@ body {
 /* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.3); border-radius: 100px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.6); }
+::-webkit-scrollbar-thumb { background: rgba(124, 58, 237, 0.3); border-radius: 100px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(124, 58, 237, 0.6); }
 
 /* ── Selection ── */
-::selection { background: rgba(99, 102, 241, 0.35); color: white; }
+::selection { background: rgba(124, 58, 237, 0.35); color: white; }
 
 /* ── Animations ── */
 @keyframes float {
@@ -169,7 +169,7 @@ body {
 .animate-scale-in { animation: scale-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
 
 .gradient-text {
-  background: linear-gradient(135deg, #6366f1, #8b5cf6, #06b6d4);
+  background: linear-gradient(135deg, #7c3aed, #a78bfa, #6366f1);
   background-size: 200% 200%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -178,23 +178,23 @@ body {
 }
 
 .glass {
-  background: rgba(22, 22, 42, 0.6);
+  background: rgba(22, 22, 50, 0.6);
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   border: 1px solid var(--border-subtle);
 }
 
 .glass-strong {
-  background: rgba(18, 18, 31, 0.85);
+  background: rgba(18, 18, 45, 0.85);
   backdrop-filter: blur(40px) saturate(200%);
   -webkit-backdrop-filter: blur(40px) saturate(200%);
-  border: 1px solid rgba(99, 102, 241, 0.18);
+  border: 1px solid rgba(124, 58, 237, 0.18);
 }
 
 .glow-btn {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: linear-gradient(135deg, #7c3aed, #6366f1);
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -202,13 +202,13 @@ body {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+  background: linear-gradient(135deg, #a78bfa, #6366f1);
   opacity: 0;
   transition: opacity 0.3s;
 }
 
 .glow-btn:hover::before { opacity: 1; }
-.glow-btn:hover { transform: translateY(-2px) scale(1.02); box-shadow: 0 20px 60px rgba(99, 102, 241, 0.5); }
+.glow-btn:hover { transform: translateY(-2px) scale(1.02); box-shadow: 0 20px 60px rgba(124, 58, 237, 0.5); }
 .glow-btn:active { transform: translateY(0) scale(0.98); }
 
 /* ── Code Blocks ── */
@@ -219,7 +219,7 @@ pre, code {
 
 /* ── Focus Styles ── */
 :focus-visible {
-  outline: 2px solid rgba(99, 102, 241, 0.6);
+  outline: 2px solid rgba(124, 58, 237, 0.6);
   outline-offset: 2px;
   border-radius: 6px;
 }
