@@ -19,7 +19,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { getQuickAction } from '@/lib/quick-actions';
 import LoadingScreen from '@/components/ui/LoadingScreen';
-import { SifuPandaPanel } from '@/components/mascot';
+import { SifuPandaPanel, SifuPanda } from '@/components/mascot';
 import { useVoiceChat } from '@/hooks/useVoiceChat';
 import { detectEmotionFromText } from '@/lib/voice/sifu-emotion';
 
@@ -63,6 +63,7 @@ export default function ChatbotInterface() {
   const [showPremium, setShowPremium] = useState(false);
   const [showVision, setShowVision] = useState(false);
   const [showLootBox, setShowLootBox] = useState(false);
+  const [showSifuPanda, setShowSifuPanda] = useState(false);
   const [levelUpData, setLevelUpData] = useState(null);
   const [sifuEmotion, setSifuEmotion] = useState('idle');
 
@@ -173,6 +174,7 @@ export default function ChatbotInterface() {
     const tempId = `temp-${timestamp}`;
     setActiveSessionId(tempId);
     setActiveChatId(null);
+    setShowSifuPanda(false);
     setError(null);
     if (isMobile) setSidebarOpen(false);
     return { id: tempId, timestamp };
@@ -448,7 +450,9 @@ export default function ChatbotInterface() {
               else if (id === 'automation') setShowAutomation(true);
               else if (id === 'projects') setShowProjects(true);
               else if (id === 'lootbox') setShowLootBox(true);
-              else { setActiveSessionId(id); setActiveChatId(id); setShowProjects(false); }
+              else if (id === 'sifu-panda') { setShowSifuPanda(true); setActiveSessionId(null); }
+              else if (id === 'waffle') { setShowSifuPanda(false); setActiveSessionId('waffle'); }
+              else { setActiveSessionId(id); setActiveChatId(id); setShowProjects(false); setShowSifuPanda(false); }
               if (isMobile) setSidebarOpen(false);
             }}
             onNewSession={createNewSession}
@@ -464,7 +468,7 @@ export default function ChatbotInterface() {
           <ChatHeader
             onToggleSidebar={toggleSidebar}
             sidebarOpen={sidebarOpen}
-            sessionTitle={activeSessionId === 'waffle' ? '🧇 Waffle Studio' : activeSession?.title}
+            sessionTitle={activeSessionId === 'waffle' ? '🧇 Waffle Studio' : showSifuPanda ? '🎙️ Sifu Panda' : activeSession?.title}
             isMobile={isMobile}
             onConvertToProject={handleConvertToProject}
             onOpenSettings={() => setShowSettings(true)}
@@ -487,6 +491,70 @@ export default function ChatbotInterface() {
 
             {showProjects ? (
               <ProjectHub user={session?.user} onClose={() => setShowProjects(false)} />
+            ) : showSifuPanda ? (
+              <div className="flex flex-1 flex-col items-center justify-center gap-6 px-4">
+                <div className="h-40 w-40 rounded-full bg-gradient-to-br from-emerald-500/20 to-teal-600/10 p-4 shadow-[0_0_64px_rgba(16,185,129,0.2)]">
+                  <SifuPanda emotion={sifuEmotion} size={128} />
+                </div>
+                <h2 className="text-2xl font-bold text-white">Sifu Panda</h2>
+                <p className="mt-1 text-sm text-white/40">Basılı tut ve konuş — DeepSeek zekasıyla yanıtlasın</p>
+
+                {voice.interimText && (
+                  <div className="max-w-md rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-3 text-center text-sm italic text-white/60 backdrop-blur-xl">
+                    &ldquo;{voice.interimText}&rdquo;
+                  </div>
+                )}
+
+                <div className="flex items-center gap-4">
+                  <button
+                    type="button"
+                    onMouseDown={voice.startRecording}
+                    onMouseUp={voice.stopRecording}
+                    onTouchStart={(e) => { e.preventDefault(); voice.startRecording(); }}
+                    onTouchEnd={(e) => { e.preventDefault(); voice.stopRecording(); }}
+                    className={`flex h-20 w-20 items-center justify-center rounded-full border-2 transition-all ${
+                      voice.isRecording
+                        ? 'scale-110 border-red-400/50 bg-red-500/20 shadow-[0_0_48px_rgba(239,68,68,0.3)]'
+                        : 'border-emerald-500/40 bg-emerald-500/10 shadow-[0_0_32px_rgba(16,185,129,0.15)] hover:border-emerald-500/60 hover:bg-emerald-500/15'
+                    }`}
+                    aria-label="Mikrofon"
+                  >
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                      className={voice.isRecording ? 'text-red-300' : 'text-emerald-300'}
+                    >
+                      <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                      <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                      <line x1="12" y1="19" x2="12" y2="22" />
+                    </svg>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={voice.toggleVoiceMode}
+                    className={`flex h-12 w-12 items-center justify-center rounded-full border text-lg transition-all ${
+                      voice.voiceEnabled
+                        ? 'border-han-gold/30 bg-han-gold/15 text-han-gold'
+                        : 'border-white/10 bg-white/5 text-white/40'
+                    }`}
+                    title={voice.voiceEnabled ? 'Sesli yanıt açık' : 'Sesli yanıt kapalı'}
+                    aria-label="Sesli yanıt"
+                  >
+                    🔊
+                  </button>
+                </div>
+
+                {voice.isSpeaking && (
+                  <div className="text-sm text-emerald-400/60 animate-pulse">Sifu Panda konuşuyor...</div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setShowSifuPanda(false)}
+                  className="mt-4 rounded-xl border border-white/10 px-5 py-2 text-xs font-semibold text-white/40 transition-all hover:border-white/20 hover:text-white/60"
+                >
+                  Sohbete Dön
+                </button>
+              </div>
             ) : (
               <>
                 {activeSessionId === 'waffle' ? (
