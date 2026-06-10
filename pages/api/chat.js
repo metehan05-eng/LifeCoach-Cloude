@@ -1,6 +1,4 @@
 import { createClient } from '@supabase/supabase-js';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { HfInference } from '@huggingface/inference';
 import OpenAI from 'openai';
 import pdf from 'pdf-parse';
 import mammoth from 'mammoth'; 
@@ -20,9 +18,6 @@ const prisma = new PrismaClient({
     },
   },
 });
-const HF_TOKEN = process.env.HF_TOKEN;
-const HF_PROVIDER = process.env.HF_PROVIDER || 'auto';
-const hf = HF_TOKEN ? new HfInference(HF_TOKEN) : null;
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
 // CONCURRENCY LOCK: Simple in-memory lock to prevent overlapping chat requests per session
@@ -1310,143 +1305,6 @@ async function createGooglePresentation(title = 'New Presentation') {
   }
 }
 
-// --- HUGGING FACE: Intent-based open-model routing ---
-const HF_MODEL_CATALOG = {
-  general: process.env.HF_MODEL_GENERAL || 'cohere-for-ai/c4ai-aya-expanse-8b',
-  generalAlt: 'meta-llama/Llama-3.1-8B-Instruct',
-  coding: process.env.HF_MODEL_CODING || 'Qwen/Qwen2.5-Coder-7B-Instruct',
-  codingAlt: 'meta-llama/Llama-3.1-8B-Instruct',
-  vision: process.env.HF_MODEL_VISION || 'xtuner/llava-llama-3-8b-v1_1',
-  visionAlt: 'google/paligemma-3b-pt-448',
-  tools: process.env.HF_MODEL_TOOLS || 'meta-llama/Llama-3.1-8B-Instruct',
-};
-
-const HF_VISION_MODELS = new Set([
-  HF_MODEL_CATALOG.vision,
-  HF_MODEL_CATALOG.visionAlt,
-  'xtuner/llava-llama-3-8b-v1_1',
-  'google/paligemma-3b-pt-448',
-]);
-
-function selectHFModelByIntent(message, options = {}) {
-  const { hasImages = false } = options;
-  if (!message || typeof message !== 'string') {
-    return HF_MODEL_CATALOG.general;
-  }
-
-  const msgLower = message.toLowerCase().trim();
-
-  const visionKeywords = /\b(resim|görsel|görüntü|foto|fotoğraf|ocr|metin oku|image|picture|photo|screenshot|ekran görüntüsü|analyze image|görüntü analiz|multimodal)\b/i;
-  if (hasImages || visionKeywords.test(msgLower)) {
-    console.log(`[HF Router] 🖼️ Vision/OCR intent → ${HF_MODEL_CATALOG.vision}`);
-    return HF_MODEL_CATALOG.vision;
-  }
-
-  const codingKeywords = /\b(kod|programlama|script|code|programming|developer|javascript|python|function|class|api|debug|fix bug|hata düzelt|yazılım|software|backend|frontend|database|sql|query|algorithm|algoritma|typescript|react|vue|angular|node|express|django|flask|java|c\+\+|c#|php|git|github|docker|kubernetes)\b/i;
-  if (codingKeywords.test(msgLower)) {
-    console.log(`[HF Router] 🎯 Coding intent → ${HF_MODEL_CATALOG.coding}`);
-    return HF_MODEL_CATALOG.coding;
-  }
-
-  const googleKeywords = /\b(harita|konum|takvim|calendar|gmail|excel|drive|slides|docs|sheet|google|maps|email gönder|mail at|dosya yükle|sunum oluştur|presentation|spreadsheet|tablo|event|etkinlik|reminder|hatırlatıcı|appointment|randevu|schedule|planlama|location|yer|navigasyon|nearby|yakınındaki|upload|download)\b/i;
-  if (googleKeywords.test(msgLower)) {
-    console.log(`[HF Router] 🔧 Google tools intent → ${HF_MODEL_CATALOG.tools}`);
-    return HF_MODEL_CATALOG.tools;
-  }
-
-  console.log(`[HF Router] 💬 General/multilingual intent → ${HF_MODEL_CATALOG.general}`);
-  return HF_MODEL_CATALOG.general;
-}
-
-function isHFVisionModel(model) {
-  return HF_VISION_MODELS.has(model) || /llava|paligemma|vlm|vision/i.test(model || '');
-}
-
-function buildHfChatMessages(systemPrompt, userMessages, imageBase64List = []) {
-  const messages = [{ role: 'system', content: systemPrompt }];
-  const normalized = (userMessages || []).filter(m => m && m.role !== 'system');
-
-  for (let i = 0; i < normalized.length; i++) {
-    const msg = normalized[i];
-    const isLastUser = msg.role === 'user' && i === normalized.length - 1;
-    const attachImages = isLastUser && imageBase64List.length > 0;
-
-    if (attachImages) {
-      const text = typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content);
-      messages.push({
-        role: 'user',
-        content: [
-          { type: 'text', text },
-          ...imageBase64List.map(img => ({
-            type: 'image_url',
-            image_url: { url: img.startsWith('data:') ? img : `data:image/jpeg;base64,${img}` },
-          })),
-        ],
-      });
-    } else if (msg.role === 'assistant') {
-      messages.push({ role: 'assistant', content: typeof msg.content === 'string' ? msg.content : String(msg.content) });
-    } else if (msg.role === 'user') {
-      messages.push({ role: 'user', content: typeof msg.content === 'string' ? msg.content : String(msg.content) });
-    }
-  }
-
-  return messages;
-}
-
-async function callHuggingFaceAPI(systemPrompt, userMessages, model, options = {}) {
-  if (!hf) throw new Error('HF_TOKEN ayarlı değil.');
-  const maxTokens = options.maxTokens || 4096;
-  const imageBase64List = options.images || [];
-  const useVisionFormat = options.forceVision || (imageBase64List.length > 0 && isHFVisionModel(model));
-  const messages = buildHfChatMessages(systemPrompt, userMessages, useVisionFormat ? imageBase64List : []);
-
-  const requestBase = {
-    model,
-    max_tokens: maxTokens,
-    temperature: 0.85,
-    top_p: 0.9,
-    repetition_penalty: 1.15,
-  };
-  if (HF_PROVIDER && HF_PROVIDER !== 'auto') {
-    requestBase.provider = HF_PROVIDER;
-  }
-
-  try {
-    const completion = await hf.chatCompletion({
-      ...requestBase,
-      messages,
-    });
-    const content = completion?.choices?.[0]?.message?.content?.trim();
-    if (content) return content;
-  } catch (chatErr) {
-    console.warn(`[HF] chatCompletion failed for ${model}:`, chatErr.message);
-  }
-
-  const promptParts = messages.map(m => {
-    if (m.role === 'system') return `System: ${m.content}`;
-    if (m.role === 'assistant') return `Assistant: ${m.content}`;
-    const userText = Array.isArray(m.content)
-      ? m.content.filter(p => p.type === 'text').map(p => p.text).join('\n')
-      : m.content;
-    return `User: ${userText}`;
-  });
-  const textResult = await hf.textGeneration({
-    model,
-    inputs: promptParts.join('\n\n') + '\n\nAssistant:',
-    parameters: {
-      max_new_tokens: maxTokens,
-      temperature: 0.85,
-      top_p: 0.9,
-      return_full_text: false,
-      repetition_penalty: 1.15,
-    },
-    ...(HF_PROVIDER && HF_PROVIDER !== 'auto' ? { provider: HF_PROVIDER } : {}),
-  });
-  const generated = (textResult?.generated_text || '').trim();
-  if (!generated) throw new Error('Hugging Face boş yanıt döndürdü.');
-  return generated;
-}
-
 function extractToolCallFromText(text) {
   if (!text || typeof text !== 'string') return null;
   const toolCallMatch = text.match(/\{[\s\S]*?"tool"\s*:\s*"[^"]+"[\s\S]*?\}/);
@@ -1509,78 +1367,9 @@ async function processAIResponseTools(aiResponse, options = {}) {
   let processedResponse = aiResponse.replace(rawJson, '').trim();
   const toolNotes = TOOL_NOTES_MAP[toolCall.tool] ? [TOOL_NOTES_MAP[toolCall.tool]] : [];
 
-  if (options.refineWithHF && hf && options.hfModel && options.userMessages) {
-    try {
-      const refinementPrompt = `${options.systemPrompt}\n\n--- TOOL EXECUTION RESULT ---\nTool: ${toolCall.tool}\nResult: ${JSON.stringify(toolResult)}\n\nIncorporate this result naturally into your reply. Do not output raw JSON unless another tool is required.`;
-      const refined = await callHuggingFaceAPI(
-        refinementPrompt,
-        [
-          ...options.userMessages,
-          { role: 'assistant', content: processedResponse || 'Tool executed.' },
-          { role: 'user', content: 'Integrate the tool result above into a helpful final answer for the user.' },
-        ],
-        options.hfModel,
-        { images: options.images, maxTokens: options.maxTokens }
-      );
-      if (refined) processedResponse = refined;
-    } catch (refineErr) {
-      console.warn('[HF Tool Refine] Failed:', refineErr.message);
-      processedResponse += `\n\n${TOOL_NOTES_MAP[toolCall.tool] || ''}\n${JSON.stringify(toolResult)}`;
-    }
-  }
+  processedResponse += `\n\n${TOOL_NOTES_MAP[toolCall.tool] || ''}\n${JSON.stringify(toolResult)}`;
 
   return { processedResponse, toolResults, toolNotes };
-}
-
-// --- DYNAMIC MODEL ROUTING: Intent-based Model Selection (Qwen DashScope) ---
-function selectQwenModelByIntent(message) {
-  if (!message || typeof message !== 'string') return 'qwen-flash';
-
-  const msgLower = message.toLowerCase().trim();
-
-  // Coding/Programming intent → Use qwen-coder-plus
-  const codingKeywords = /\b(kod|programlama|script|code|programming|developer|javascript|python|function|class|api|debug|fix bug|hata düzelt|yazılım|software|backend|frontend|database|sql|query|algorithm|algoritma|variable|değişken|loop|döngü|array|dizi|object|nesne|json|xml|html|css|react|vue|angular|node|express|django|flask|spring|java|c\+\+|c#|php|ruby|go|rust|swift|kotlin|typescript|git|github|gitlab|deployment|deploy|docker|kubernetes|aws|azure|gcp)\b/i;
-  if (codingKeywords.test(msgLower)) {
-    console.log(`[Model Router] 🎯 Coding intent detected → qwen-coder-plus`);
-    return 'qwen-coder-plus';
-  }
-
-  // Google Integration intent → Use qwen-plus (function calling capability)
-  const googleKeywords = /\b(harita|konum|takvim|calendar|gmail|excel|drive|slides|docs|sheet|google|maps|email gönder|mail at|dosya yükle|sunum oluştur|presentation|spreadsheet|tablo|grafik|chart|event|etkinlik|reminder|hatırlatıcı|appointment|randevu|schedule|planlama|location|yer|navigasyon|route|yol tarifi|nearby|yakınındaki|upload|download|export|import)\b/i;
-  if (googleKeywords.test(msgLower)) {
-    console.log(`[Model Router] 🎯 Google integration intent detected → qwen-plus`);
-    return 'qwen-plus';
-  }
-
-  // Default → Use qwen-flash (fastest and cheapest for general chat)
-  console.log(`[Model Router] 💬 General chat intent detected → qwen-flash`);
-  return 'qwen-flash';
-}
-
-// --- Qwen DashScope Service (Singapore Region) ---
-async function callQwenDashScope(systemPrompt, userMessages, model = 'qwen-flash', maxTokens = 4096) {
-  const apiKey = process.env.DASHSCOPE_API_KEY;
-  if (!apiKey) throw new Error('DASHSCOPE_API_KEY ayarlı değil.');
-  
-  const dashMessages = [{ role: 'system', content: systemPrompt }];
-  for (const msg of userMessages) {
-    if (msg.role === 'user') dashMessages.push({ role: 'user', content: msg.content });
-    else if (msg.role === 'assistant') dashMessages.push({ role: 'assistant', content: msg.content });
-  }
-
-  // Singapore region endpoint (dashscope-intl.aliyuncs.com routes to SG data center)
-  const response = await fetch('https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/text-generation/generation', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-    body: JSON.stringify({ model, input: { messages: dashMessages }, parameters: { result_format: 'message', temperature: 0.75, top_p: 0.9, max_tokens: maxTokens } }),
-    signal: AbortSignal.timeout(30000)
-  });
-
-  if (!response.ok) throw new Error(`Qwen API Error: ${response.status}`);
-  const data = await response.json();
-  const content = data?.output?.choices?.[0]?.message?.content?.trim();
-  if (!content) throw new Error('Qwen boş yanıt döndürdü.');
-  return content;
 }
 
 // --- SUPABASE HAZIRLIĞI ---
@@ -2397,33 +2186,10 @@ export default async function handler(req, res) {
       }
     }
 
-    // 10. MODEL FALLBACK CHAIN - Sadece Groq modelleri
-    const GROQ_MODEL_CHAIN = [
-      "llama-3.3-70b-versatile",  // En güçlü model
-      "llama-3.1-8b-instant",     // Hızlı, düşük gecikme
-      "mixtral-8x7b-32768"        // Alternatif
-    ];
-    // API key sadece environment variable'dan alınır - hardcoded yok
-    const groqKey = process.env.GROQ_API_KEY;
-    const geminiKey = process.env.GEMINI_API_KEY;  // Son çare yedek için
+    // DeepSeek tek model — hepsi bu
     const deepseekKey = process.env.DEEPSEEK_API_KEY;
-    const openrouterKey = process.env.OPENROUTER_API_KEY;
-    const dashscopeKey = process.env.DASHSCOPE_API_KEY;
+    const DEEPSEEK_MODEL_CHAIN = ['deepseek-chat', 'deepseek-coder'];
 
-    // OpenRouter Model Zinciri - En İyi Free Modeller (Sırayla Dene)
-    const OPENROUTER_MODEL_CHAIN = (process.env.OPENROUTER_MODELS || 
-      'google/gemma-3-27b-it:free|google/gemma-4-31b-it:free|meta-llama/openrouter/free|' +
-      'openai/gpt-oss-120b:free|openai/gpt-oss-20b:free|meta-llama/llama-3.3-70b-instruct:free|' +
-      'liquid/lfm-2.5-1.2b-thinking:free|liquid/lfm-2.5-1.2b-instruct:free'
-    ).split('|');
-
-    // Deepseek Model Zinciri (Sırayla Dene) - Free Tier
-    const DEEPSEEK_MODEL_CHAIN = [
-      'deepseek-chat',
-      'deepseek-coder'
-    ];
-
-    // SISTEM PROMPT (Arama bağlamı varsa ekle)
     let youtubeContextInjection = '';
     if (youtube_suggestions?.length) {
       youtubeContextInjection = `\n\n--- YOUTUBE ÖNERİLERİ ---\nKullanıcı video istedi. Sistem "${youtube_search_query}" için ${youtube_suggestions.length} gerçek YouTube videosu buldu (kartlar otomatik gösterilecek).\nVideolar:\n${youtube_suggestions.map((v, i) => `${i + 1}. ${v.title} — ${v.channel}`).join('\n')}\nYanıtında bu videolara kısa atıf yap; kartların altında zaten görünecekler.`;
@@ -2444,24 +2210,12 @@ export default async function handler(req, res) {
 ${LEGACY_TOOL_JSON_FORMAT}`,
     });
 
-    // DYNAMIC MODEL ROUTING: Hugging Face (primary) + Qwen (fallback)
     const hasImages = imagesForVision && imagesForVision.length > 0;
-    const selectedHFModel = selectHFModelByIntent(message || '', { hasImages });
-    const selectedQwenModel = selectQwenModelByIntent(message || '');
 
-    // Fallback model chain if dynamic selection fails (environment override)
-    const QWEN_MODEL_CHAIN = process.env.QWEN_MODELS ? process.env.QWEN_MODELS.split('|') : [selectedQwenModel];
-    const HF_MODEL_CHAIN = process.env.HF_MODELS
-      ? process.env.HF_MODELS.split('|').map(m => m.trim()).filter(Boolean)
-      : [selectedHFModel, HF_MODEL_CATALOG.generalAlt, HF_MODEL_CATALOG.codingAlt];
-
-    // STRICT AWAIT FLOW: Build messages array from DATABASE history
-    // This ensures full context is maintained across sessions and devices
     const messages = [
       { role: "system", content: systemPrompt }
     ];
 
-    // Add historical messages from DATABASE (persisted, cross-device)
     if (dbHistory && dbHistory.length > 0) {
       for (const m of dbHistory) {
         messages.push({
@@ -2471,7 +2225,6 @@ ${LEGACY_TOOL_JSON_FORMAT}`,
       }
     }
 
-    // PAYLOAD DIRECT INJECTION: Append file/video context to current message
     if (extractedText) {
       finalUserContent += `\n\nEkli Dosya İçerikleri:\n${extractedText}`;
     }
@@ -2479,7 +2232,6 @@ ${LEGACY_TOOL_JSON_FORMAT}`,
       finalUserContent += `\n${youtubeVideoContext}`;
     }
 
-    // Check if the last message in DB is the same as current message to avoid duplication
     const lastDbMessage = dbHistory.length > 0 ? dbHistory[dbHistory.length - 1] : null;
     const isDuplicate = lastDbMessage && 
                         lastDbMessage.role === 'user' && 
@@ -2504,44 +2256,6 @@ ${LEGACY_TOOL_JSON_FORMAT}`,
 
     console.log('[BACKEND DEBUG] Messages array:', messages.length, 'messages for chat:', activeChatId);
 
-    // ── OpenRouter API Çağrısı (Model Zinciri) ──
-    async function tryOpenRouterModel(modelName) {
-      if (!openrouterKey) throw new Error("OPENROUTER_API_KEY ayarlı değil.");
-      
-      const client = new OpenAI({ 
-        apiKey: openrouterKey.trim(), 
-        baseURL: "https://openrouter.ai/api/v1",
-        defaultHeaders: {
-          "HTTP-Referer": "https://lifecoach.ai",
-          "X-Title": "LifeCoach AI"
-        }
-      });
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
-
-      try {
-        const completion = await client.chat.completions.create({
-          model: modelName,
-          messages: messages,
-          temperature: 0.7,
-          max_tokens: 4096,
-          frequency_penalty: 0.5,
-          presence_penalty: 0.3,
-          stream: false
-        }, { signal: controller.signal });
-
-        clearTimeout(timeoutId);
-
-        const content = completion.choices?.[0]?.message?.content?.trim();
-        if (!content) throw new Error("OpenRouter boş yanıt döndürdü.");
-        return content;
-      } catch (err) {
-        clearTimeout(timeoutId);
-        throw err;
-      }
-    }
-
-    // ── Deepseek API Çağrısı (Function Calling + Model Zinciri) ──
     async function tryDeepseekModel(modelName) {
       if (!deepseekKey) throw new Error("DEEPSEEK_API_KEY ayarlı değil.");
 
@@ -2575,252 +2289,27 @@ ${LEGACY_TOOL_JSON_FORMAT}`,
       }
     }
 
-    // ── Groq API Çağrısı (Belirli Model) ──
-    async function tryGroqModel(modelName) {
-      const client = new OpenAI({ apiKey: groqKey, baseURL: "https://api.groq.com/openai/v1" });
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 25000); // 25s timeout
-
-      try {
-        const completion = await client.chat.completions.create({
-          model: modelName,
-          messages: messages,
-          temperature: 0.7,
-          max_tokens: 4096,
-          frequency_penalty: 0.5,
-          presence_penalty: 0.3,
-          stream: false
-        }, { signal: controller.signal });
-
-        clearTimeout(timeoutId);
-
-        const content = completion.choices?.[0]?.message?.content;
-        if (!content) throw new Error("Model boş yanıt döndürdü.");
-        return content;
-      } catch (err) {
-        clearTimeout(timeoutId);
-        throw err;
-      }
-    }
-
-    // ── Gemini API Son Çare Yedek ──
-    async function tryGeminiFallback() {
-      if (!geminiKey) throw new Error("GEMINI_API_KEY ayarlı değil.");
-
-      const { GoogleGenerativeAI } = await import('@google/generative-ai');
-      const genAI = new GoogleGenerativeAI(geminiKey.trim());
-
-      // Gemini için history'yi düzelt (system mesajını ayır)
-      const geminiHistory = (dbHistory || []).map(m => ({
-        role: m.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: typeof m.content === 'string' ? m.content : String(m.content || "") }]
-      }));
-
-      const geminiModel = genAI.getGenerativeModel({
-        model: "gemini-1.5-flash",
-        generationConfig: { maxOutputTokens: 4096, temperature: 0.5 },
-        systemInstruction: { parts: [{ text: systemPrompt }] }
-      }, { apiVersion: 'v1' });
-
-      const contents = [
-        ...geminiHistory,
-        { role: 'user', parts: [{ text: finalUserContent }] }
-      ];
-
-      const result = await geminiModel.generateContent({ contents });
-      const text = result.response.text();
-      if (!text) throw new Error("Gemini boş yanıt döndürdü.");
-      return text;
-    }
-
-    // ── ANA YEDEKLEME MANTIĞI ──
     let aiResponse = null;
     let usedModel = null;
     let lastError = null;
-    const hfHistoryMessages = (dbHistory || []).filter(m => m.role !== 'system');
 
-    // KATMAN 0: Hugging Face Inference API (açık kaynak, intent-based)
-    if (hf) {
-      for (const modelName of HF_MODEL_CHAIN) {
-        try {
-          console.log(`[AI-Fallback] 🤗 Hugging Face deneniyor: ${modelName}`);
-          aiResponse = await callHuggingFaceAPI(
-            systemPrompt,
-            [
-              ...hfHistoryMessages,
-              { role: 'user', content: finalUserContent },
-            ],
-            modelName,
-            {
-              images: imagesForVision,
-              forceVision: hasImages && isHFVisionModel(modelName),
-              maxTokens: 4096,
-            }
-          );
-          usedModel = `hf/${modelName}`;
-          console.log(`[AI-Fallback] ✅ Hugging Face ${modelName} başarılı`);
-          break;
-        } catch (err) {
-          console.warn(`[AI-Fallback] ❌ Hugging Face ${modelName} başarısız: ${err.message}`);
-          lastError = err;
-        }
-      }
-    } else {
-      console.warn('[AI-Fallback] ⚠️ HF_TOKEN tanımlı değil, DeepSeek zincirine geçiliyor...');
-    }
-
-    // KATMAN 1: DeepSeek (ASIL MODEL)
-    if (!aiResponse && deepseekKey) {
+    if (deepseekKey) {
       for (const modelName of DEEPSEEK_MODEL_CHAIN) {
         try {
-          console.log(`[AI-Fallback] 🚀 DeepSeek deneniyor: ${modelName}`);
+          console.log(`[AI] 🚀 DeepSeek deneniyor: ${modelName}`);
           aiResponse = await tryDeepseekModel(modelName);
           usedModel = `deepseek/${modelName}`;
-          console.log(`[AI-Fallback] ✅ DeepSeek ${modelName} başarılı`);
+          console.log(`[AI] ✅ DeepSeek ${modelName} başarılı`);
           break;
         } catch (err) {
-          console.warn(`[AI-Fallback] ❌ DeepSeek ${modelName} başarısız: ${err.message}`);
-          lastError = err;
-
-          const isRecoverable = 
-            err.message?.includes('rate_limit') ||
-            err.message?.includes('quota') ||
-            err.message?.includes('context_length') ||
-            err.message?.includes('model_not_found') ||
-            err.message?.includes('boş yanıt') ||
-            err.message?.includes('deprecated') ||
-            err.name === 'AbortError' ||
-            err.status === 429 ||
-            err.status === 503 ||
-            err.status === 404;
-
-          const isFatal = err.status === 401 || err.status === 403;
-          if (isFatal) {
-            console.warn(`[AI-Fallback] ⚠️ DeepSeek kimlik doğrulama hatası, Qwen'e geçiliyor...`);
-            break;
-          }
-
-          if (!isRecoverable) {
-            console.warn(`[AI-Fallback] ⚠️ ${modelName} beklenmedik hata, sonraki modeli deniyorum...`);
-          }
-        }
-      }
-    } else if (!aiResponse) {
-      console.warn(`[AI-Fallback] ⚠️ DEEPSEEK_API_KEY tanımlı değil, Qwen'e geçiliyor...`);
-    }
-
-    // KATMAN 2: Qwen DashScope (Yedek)
-    if (!aiResponse && dashscopeKey) {
-      for (const modelName of QWEN_MODEL_CHAIN) {
-        try {
-          console.log(`[AI-Fallback] 🚀 Qwen DashScope deneniyor: ${modelName}`);
-          aiResponse = await callQwenDashScope(systemPrompt, (dbHistory || []).filter(m => m.role !== 'system'), modelName, 4096);
-          usedModel = `qwen/${modelName}`;
-          console.log(`[AI-Fallback] ✅ Qwen ${modelName} başarılı`);
-          break;
-        } catch (err) {
-          console.warn(`[AI-Fallback] ❌ Qwen ${modelName} başarısız: ${err.message}`);
+          console.warn(`[AI] ❌ DeepSeek ${modelName} başarısız: ${err.message}`);
           lastError = err;
         }
       }
     }
 
-    // KATMAN 3: OpenRouter (Yedek)
     if (!aiResponse) {
-      if (openrouterKey) {
-        for (const modelName of OPENROUTER_MODEL_CHAIN) {
-          try {
-            console.log(`[AI-Fallback] 🚀 OpenRouter deneniyor: ${modelName}`);
-            aiResponse = await tryOpenRouterModel(modelName);
-            usedModel = `openrouter/${modelName}`;
-
-            console.log(`[AI-Fallback] ✅ OpenRouter ${modelName} başarılı`);
-            break;
-          } catch (err) {
-            console.warn(`[AI-Fallback] ❌ OpenRouter ${modelName} başarısız: ${err.message}`);
-            lastError = err;
-
-            const isRecoverable = 
-              err.message?.includes('rate_limit') ||
-              err.message?.includes('quota') ||
-              err.message?.includes('context_length') ||
-              err.message?.includes('model_not_found') ||
-              err.message?.includes('boş yanıt') ||
-              err.name === 'AbortError' ||
-              err.status === 429 ||
-              err.status === 503 ||
-              err.status === 404;
-
-            const isFatal = err.status === 401 || err.status === 403;
-            if (isFatal) {
-              console.warn(`[AI-Fallback] ⚠️ OpenRouter kimlik doğrulama hatası, Groq'a geçiliyor...`);
-              break;
-            }
-
-            if (!isRecoverable) {
-              console.warn(`[AI-Fallback] ⚠️ ${modelName} beklenmedik hata, sonraki modeli deniyorum...`);
-            }
-          }
-        }
-      } else {
-        console.warn(`[AI-Fallback] ⚠️ OPENROUTER_API_KEY tanımlı değil, Groq'a geçiliyor...`);
-      }
-    }
-
-    // KATMAN 4: Groq (Son çare yedek)
-    if (!aiResponse) {
-      if (groqKey) {
-        for (const modelName of GROQ_MODEL_CHAIN) {
-          try {
-            console.log(`[AI-Fallback] 🚀 Groq deneniyor: ${modelName}`);
-            aiResponse = await tryGroqModel(modelName);
-            usedModel = `groq/${modelName}`;
-            console.log(`[AI-Fallback] ✅ Groq ${modelName} başarılı`);
-            break;
-          } catch (err) {
-            console.warn(`[AI-Fallback] ❌ Groq ${modelName} başarısız: ${err.message}`);
-            lastError = err;
-
-            const isRecoverable = 
-              err.message?.includes('rate_limit') ||
-              err.message?.includes('quota') ||
-              err.message?.includes('context_length') ||
-              err.message?.includes('model_not_found') ||
-              err.message?.includes('boş yanıt') ||
-              err.name === 'AbortError' ||
-              err.status === 429 ||
-              err.status === 503 ||
-              err.status === 404;
-
-            const isFatal = err.status === 401 || err.status === 403;
-            if (isFatal) break;
-
-            if (!isRecoverable) {
-              console.warn(`[AI-Fallback] ⚠️ ${modelName} beklenmedik hata, sonraki modeli deniyorum...`);
-            }
-          }
-        }
-      } else {
-        console.warn(`[AI-Fallback] ⚠️ GROQ_API_KEY tanımlı değil, Gemini'ye geçiliyor...`);
-      }
-    }
-
-    // KATMAN 4: Gemini Son Çare
-    if (!aiResponse && geminiKey) {
-      try {
-        console.log(`[AI-Fallback] 🔄 Gemini yedeklemesi başlatılıyor... (Groq hata: ${lastError?.message})`);
-        aiResponse = await tryGeminiFallback();
-        usedModel = "gemini-1.5-flash";
-        console.log(`[AI-Fallback] ✅ Gemini başarılı.`);
-      } catch (geminiErr) {
-        console.error(`[AI-Fallback] ❌ Gemini de başarısız: ${geminiErr.message}`);
-        lastError = geminiErr;
-      }
-    }
-
-    // Tüm modeller başarısız
-    if (!aiResponse) {
-      console.error("[AI-Fallback] 💥 Tüm modeller başarısız oldu.");
+      console.error("[AI] 💥 DeepSeek kullanılamıyor.");
       return res.status(503).json({
         error: "AI_UNAVAILABLE",
         message: "Yapay zeka servislerine şu an ulaşılamıyor. Lütfen birkaç saniye sonra tekrar deneyin.",
@@ -2828,23 +2317,11 @@ ${LEGACY_TOOL_JSON_FORMAT}`,
       });
     }
 
-    // Process tool calls (JSON) — execute Google tools & feed results back to HF when available
     let toolResults = [];
     let processedResponse = aiResponse;
-    const activeHfModel = usedModel?.startsWith('hf/') ? usedModel.replace('hf/', '') : selectedHFModel;
 
     try {
-      const toolOutcome = await processAIResponseTools(aiResponse, {
-        refineWithHF: Boolean(hf),
-        hfModel: activeHfModel,
-        systemPrompt,
-        userMessages: [
-          ...hfHistoryMessages,
-          { role: 'user', content: finalUserContent },
-        ],
-        images: imagesForVision,
-        maxTokens: 4096,
-      });
+      const toolOutcome = await processAIResponseTools(aiResponse, {});
       processedResponse = toolOutcome.processedResponse;
       toolResults = toolOutcome.toolResults;
       if (toolOutcome.toolNotes?.length) {
