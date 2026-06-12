@@ -7,6 +7,8 @@ import { authOptions } from "@/pages/api/auth/[...nextauth]";
 import { prismaClient } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
+export const dynamic = 'force-dynamic';
+
 const XP_PER_LEVEL = 100;
 
 export async function POST(request) {

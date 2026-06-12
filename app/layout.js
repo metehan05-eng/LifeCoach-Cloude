@@ -1,7 +1,6 @@
 import { Inter, Space_Grotesk } from "next/font/google";
-import { Analytics } from "@vercel/analytics/react";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import Providers from "./providers";
+import VercelInsights from "./VercelInsights";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap", preload: false });
@@ -28,8 +27,7 @@ export default function RootLayout({ children }) {
       </head>
       <body style={{ background: '#030308' }} suppressHydrationWarning>
         <Providers>{children}</Providers>
-        <Analytics />
-        <SpeedInsights />
+        <VercelInsights />
       </body>
     </html>
   );
