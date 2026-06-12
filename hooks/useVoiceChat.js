@@ -8,7 +8,7 @@ export function useVoiceChat({ onTranscript, onEmotionChange, isMobile = false }
   const [isRecording, setIsRecording] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [voiceOverlayOpen, setVoiceOverlayOpen] = useState(false);
-  const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [interimText, setInterimText] = useState("");
   const voiceRef = useRef(null);
 

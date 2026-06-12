@@ -546,20 +546,6 @@ export default function ChatbotInterface() {
                       <line x1="12" y1="19" x2="12" y2="22" />
                     </svg>
                   </button>
-
-                  <button
-                    type="button"
-                    onClick={voice.toggleVoiceMode}
-                    className={`flex h-12 w-12 items-center justify-center rounded-full border text-lg transition-all ${
-                      voice.voiceEnabled
-                        ? 'border-han-gold/30 bg-han-gold/15 text-han-gold'
-                        : 'border-white/10 bg-white/5 text-white/40'
-                    }`}
-                    title={voice.voiceEnabled ? 'Sesli yanıt açık' : 'Sesli yanıt kapalı'}
-                    aria-label="Sesli yanıt"
-                  >
-                    🔊
-                  </button>
                 </div>
 
                 {voice.isSpeaking && (

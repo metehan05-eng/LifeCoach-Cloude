@@ -3,9 +3,9 @@
     "id": 65110,
     "files": [
       "static/css/a5c57d07f741db43.css",
-      "static/chunks/605-5998fdbe95e4503f.js",
+      "static/chunks/605-e88f353b2a3bd442.js",
       "static/chunks/2666-f95ae460bfd5b3bd.js",
-      "static/chunks/5110.fc511e4f9bfa92bf.js"
+      "static/chunks/5110.abae87218d553f1b.js"
     ]
   },
   "node_modules/@aws-sdk/util-user-agent-browser/dist-es/createUserAgentStringParsingProvider.js -> bowser": {
