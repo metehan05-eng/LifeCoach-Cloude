@@ -23,6 +23,13 @@ import { SifuPandaPanel, SifuPanda } from '@/components/mascot';
 import { useVoiceChat } from '@/hooks/useVoiceChat';
 import { detectEmotionFromText } from '@/lib/voice/sifu-emotion';
 
+// Life OS Views
+import DashboardView from './modules/DashboardView';
+import TargetsView from './modules/TargetsView';
+import ProductivityView from './modules/ProductivityView';
+import StartupView from './modules/StartupView';
+import DecisionsView from './modules/DecisionsView';
+
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
   const [isClient, setIsClient] = useState(false);
@@ -66,6 +73,30 @@ export default function ChatbotInterface() {
   const [showSifuPanda, setShowSifuPanda] = useState(false);
   const [levelUpData, setLevelUpData] = useState(null);
   const [sifuEmotion, setSifuEmotion] = useState('idle');
+
+  // Life OS View States
+  const [activeView, setActiveView] = useState('chat');
+  const [viewRecordId, setViewRecordId] = useState(null);
+
+  const handleSelectView = useCallback((view, sessionId = null, recordId = null) => {
+    setShowProjects(false);
+    setShowSifuPanda(false);
+    if (view === 'chat') {
+      if (sessionId) {
+        setActiveSessionId(sessionId);
+        setActiveChatId(sessionId);
+      }
+      setActiveView('chat');
+    } else {
+      setActiveView(view);
+      setActiveSessionId(view);
+      if (recordId) {
+        setViewRecordId(recordId);
+      } else {
+        setViewRecordId(null);
+      }
+    }
+  }, []);
 
   const sendMessageRef = useRef(null);
   const speakResponseRef = useRef(() => {});
@@ -450,9 +481,20 @@ export default function ChatbotInterface() {
               else if (id === 'automation') setShowAutomation(true);
               else if (id === 'projects') setShowProjects(true);
               else if (id === 'lootbox') setShowLootBox(true);
-              else if (id === 'sifu-panda') { setShowSifuPanda(true); setActiveSessionId(null); }
-              else if (id === 'waffle') { setShowSifuPanda(false); setActiveSessionId('waffle'); }
-              else { setActiveSessionId(id); setActiveChatId(id); setShowProjects(false); setShowSifuPanda(false); }
+              else if (id === 'sifu-panda') { setShowSifuPanda(true); setActiveSessionId(null); setActiveView('chat'); }
+              else if (id === 'waffle') { setShowSifuPanda(false); setActiveSessionId('waffle'); setActiveView('chat'); }
+              else if (id === 'dashboard') { handleSelectView('dashboard'); }
+              else if (id === 'targets') { handleSelectView('targets'); }
+              else if (id === 'productivity') { handleSelectView('productivity'); }
+              else if (id === 'startup') { handleSelectView('startup'); }
+              else if (id === 'decisions') { handleSelectView('decisions'); }
+              else {
+                setActiveSessionId(id);
+                setActiveChatId(id);
+                setShowProjects(false);
+                setShowSifuPanda(false);
+                setActiveView('chat');
+              }
               if (isMobile) setSidebarOpen(false);
             }}
             onNewSession={createNewSession}
@@ -557,7 +599,17 @@ export default function ChatbotInterface() {
               </div>
             ) : (
               <>
-                {activeSessionId === 'waffle' ? (
+                {activeView === 'dashboard' ? (
+                  <DashboardView onSelectView={handleSelectView} userEmail={session?.user?.email} />
+                ) : activeView === 'targets' ? (
+                  <TargetsView onSelectView={handleSelectView} userEmail={session?.user?.email} initialRecordId={viewRecordId} />
+                ) : activeView === 'productivity' ? (
+                  <ProductivityView onSelectView={handleSelectView} userEmail={session?.user?.email} initialRecordId={viewRecordId} />
+                ) : activeView === 'startup' ? (
+                  <StartupView onSelectView={handleSelectView} userEmail={session?.user?.email} initialRecordId={viewRecordId} />
+                ) : activeView === 'decisions' ? (
+                  <DecisionsView onSelectView={handleSelectView} userEmail={session?.user?.email} initialRecordId={viewRecordId} />
+                ) : activeSessionId === 'waffle' ? (
                   <WaffleStudio isMobile={isMobile} />
                 ) : hasMessages ? (
                   <>

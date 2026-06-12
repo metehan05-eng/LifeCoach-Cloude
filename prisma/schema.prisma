@@ -63,7 +63,14 @@ model User {
   GrowthDNA               GrowthDNA?
   StressLogs              StressLog[]
   GroupMemberships        GroupMember[]
+  // HAN 4.2 Ultra Core Modules
+  ModuleChatHistories     ModuleChatHistory[]
+  Targets                 Target[]
+  Productivities          Productivity[]
+  Startups                Startup[]
+  Decisions               Decision[]
 }
+
 
 model GrowthDNA {
   id          String   @id @default(cuid())
@@ -442,3 +449,105 @@ model StressLog {
   timestamp       DateTime @default(now())
   @@index([userId, timestamp])
 }
+
+// ─── HAN 4.2 Ultra Core – 4 Modül ───────────────────────────────────────────
+
+/// Sohbet geçmişi – tüm modüller bu tabloya bağlıdır (session_id bağlantısı)
+model ModuleChatHistory {
+  id         String        @id @default(cuid())
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  sessionId  String        @unique @default(cuid())
+  moduleType String        // "target" | "productivity" | "startup" | "decision"
+  messages   Json          // [{role: "user"|"assistant", content: "...", createdAt: "..."}]
+  summary    String?       @db.Text
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  // İlişkiler
+  Target      Target[]
+  Productivity Productivity[]
+  Startup     Startup[]
+  Decision    Decision[]
+
+  @@index([userId, moduleType])
+}
+
+/// 🎯 Hedef Planla – Günde 1 hedef kısıtlaması (@@unique userId+date)
+model Target {
+  id            String            @id @default(cuid())
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  chatHistory   ModuleChatHistory? @relation(fields: [chatHistoryId], references: [id])
+  chatHistoryId String?
+  targetText    String            @db.Text
+  microSteps    Json              // [{id, text, completed, xpReward}]
+  youtubeVideos Json?             // [{videoId, title, thumbnail, url}]
+  targetDate    DateTime          @default(now())
+  status        String            @default("aktif") // aktif | tamamlandı | beklemede
+  xpEarned      Int               @default(0)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  // Günlük benzersizlik: aynı kullanıcı aynı günde 1 hedef
+  @@unique([userId, targetDate])
+  @@index([userId, status])
+}
+
+/// ⚡ Üretkenlik Sistemi Kur
+model Productivity {
+  id             String            @id @default(cuid())
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String
+  chatHistory    ModuleChatHistory? @relation(fields: [chatHistoryId], references: [id])
+  chatHistoryId  String?
+  peakHours      String            // "09:00-12:00" gibi
+  focusHours     Int               // günde kaç saat
+  techniques     String[]          // ["Pomodoro", "Zaman Bloklama"]
+  weeklySchedule Json              // [{day, blocks: [{start, end, task, type}]}]
+  routines       Json?             // [{title, time, description}]
+  status         String            @default("aktif") // aktif | tamamlandı | beklemede
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  @@index([userId, status])
+}
+
+/// 🚀 Startup Yol Haritası
+model Startup {
+  id              String            @id @default(cuid())
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          String
+  chatHistory     ModuleChatHistory? @relation(fields: [chatHistoryId], references: [id])
+  chatHistoryId   String?
+  ideaDescription String            @db.Text
+  mvpSteps        Json              // [{phase, title, tasks, duration, tools}]
+  techStack       Json?             // {frontend, backend, database, deployment}
+  marketAnalysis  Json?             // {tam, sam, som, competitors, advantages}
+  currentPhase    Int               @default(0)
+  status          String            @default("aktif") // aktif | tamamlandı | beklemede
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([userId, status])
+}
+
+/// ⚖️ Karar Analizi
+model Decision {
+  id                String            @id @default(cuid())
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId            String
+  chatHistory       ModuleChatHistory? @relation(fields: [chatHistoryId], references: [id])
+  chatHistoryId     String?
+  dilemma           String            @db.Text
+  proConAnalysis    Json              // {pros: [{text, weight}], cons: [{text, weight}]}
+  riskMatrix        Json?             // [{risk, probability, impact, mitigation}]
+  timelineScenarios Json?             // {threeMonth, sixMonth, twelveMonth} senaryolar
+  chosenOption      String?
+  status            String            @default("aktif") // aktif | tamamlandı | beklemede
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  @@index([userId, status])
+}
+

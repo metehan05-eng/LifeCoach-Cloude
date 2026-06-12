@@ -118,6 +118,39 @@ export default function ChatSidebar({
           </button>
         </div>
 
+        {/* Life OS Modülleri */}
+        <div className="flex flex-col gap-1 border-b border-han-purple/[0.06] px-4 py-2.5">
+          <div className="px-2 py-1 text-[9px] font-bold uppercase tracking-widest text-violet-400/80">
+            Life OS Modülleri
+          </div>
+          <div className="grid grid-cols-1 gap-1">
+            {[
+              { id: "dashboard", label: "Dashboard", emoji: "🏠" },
+              { id: "targets", label: "Hedef Planla", emoji: "🎯" },
+              { id: "productivity", label: "Üretkenlik Sistemi", emoji: "⚡" },
+              { id: "startup", label: "Startup Yol Haritası", emoji: "🚀" },
+              { id: "decisions", label: "Karar Analizi", emoji: "⚖️" },
+            ].map(mod => {
+              const isSelected = activeSessionId === mod.id;
+              return (
+                <button
+                  key={mod.id}
+                  type="button"
+                  onClick={() => onSelectSession(mod.id)}
+                  className={`flex w-full items-center gap-2.5 rounded-xl border px-3 py-2 text-[12px] font-semibold transition-all ${
+                    isSelected
+                      ? "border-violet-500/30 bg-violet-600/15 text-violet-200 shadow-[0_0_12px_rgba(124,58,237,0.1)]"
+                      : "border-transparent text-white/60 hover:bg-white/[0.03] hover:text-white/95"
+                  }`}
+                >
+                  <span className="text-sm shrink-0">{mod.emoji}</span>
+                  <span className="truncate">{mod.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Tabs */}
         <div className="mb-1.5 flex border-b border-han-purple/[0.06]">
           <button
