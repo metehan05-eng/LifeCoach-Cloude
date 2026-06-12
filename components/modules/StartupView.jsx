@@ -80,24 +80,15 @@ export default function StartupView({ onSelectView, userEmail, initialSessionId,
   }
 
   return (
-    <div className="startup-view flex-1 overflow-y-auto px-6 py-6 scrollbar-thin bg-[#0d0e15] text-white">
-      {/* Back to Dashboard */}
-      <div className="flex items-center justify-between mb-6">
-        <button
-          onClick={() => onSelectView("dashboard")}
-          className="text-xs font-semibold text-violet-400 hover:text-violet-300 flex items-center gap-1.5 transition-colors"
-        >
-          ← Dashboard'a Dön
-        </button>
-        {activeRoadmap && (
-          <button
-            onClick={handleReset}
-            className="text-xs font-semibold text-white/40 hover:text-white transition-colors"
-          >
-            Yeni Fikir Planla
-          </button>
-        )}
-      </div>
+    <div className="startup-view relative flex-1 overflow-y-auto px-6 py-6 scrollbar-thin bg-[#0d0e15] text-white">
+      {/* Close */}
+      <button
+        onClick={() => onSelectView("chat")}
+        className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-xl bg-white/[0.03] border border-white/10 text-white/40 hover:text-white hover:bg-white/10 transition-all text-lg"
+        aria-label="Kapat"
+      >
+        ✕
+      </button>
 
       <div className="max-w-4xl mx-auto">
         {/* Header */}
@@ -163,6 +154,12 @@ export default function StartupView({ onSelectView, userEmail, initialSessionId,
                     className="text-[11px] font-semibold px-4 py-2 bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 rounded-xl transition-all border border-cyan-500/20 flex items-center gap-1.5"
                   >
                     💬 Yol Haritasını Detaylandır / Panda ile Konuş
+                  </button>
+                  <button
+                    onClick={handleReset}
+                    className="text-[11px] font-semibold px-3 py-2 bg-white/5 hover:bg-white/10 text-white/50 hover:text-white rounded-xl transition-all"
+                  >
+                    Yeni Fikir Planla
                   </button>
                 </div>
               )}

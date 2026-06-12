@@ -23,12 +23,7 @@ import { SifuPandaPanel, SifuPanda } from '@/components/mascot';
 import { useVoiceChat } from '@/hooks/useVoiceChat';
 import { detectEmotionFromText } from '@/lib/voice/sifu-emotion';
 
-// Life OS Views
-import DashboardView from './modules/DashboardView';
-import TargetsView from './modules/TargetsView';
-import ProductivityView from './modules/ProductivityView';
-import StartupView from './modules/StartupView';
-import DecisionsView from './modules/DecisionsView';
+// (WelcomeScreen handles Life OS module views internally)
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
@@ -483,11 +478,6 @@ export default function ChatbotInterface() {
               else if (id === 'lootbox') setShowLootBox(true);
               else if (id === 'sifu-panda') { setShowSifuPanda(true); setActiveSessionId(null); setActiveView('chat'); }
               else if (id === 'waffle') { setShowSifuPanda(false); setActiveSessionId('waffle'); setActiveView('chat'); }
-              else if (id === 'dashboard') { handleSelectView('dashboard'); }
-              else if (id === 'targets') { handleSelectView('targets'); }
-              else if (id === 'productivity') { handleSelectView('productivity'); }
-              else if (id === 'startup') { handleSelectView('startup'); }
-              else if (id === 'decisions') { handleSelectView('decisions'); }
               else {
                 setActiveSessionId(id);
                 setActiveChatId(id);
@@ -597,53 +587,39 @@ export default function ChatbotInterface() {
                   Sohbete Dön
                 </button>
               </div>
-            ) : (
+            ) : activeSessionId === 'waffle' ? (
+              <WaffleStudio isMobile={isMobile} />
+            ) : hasMessages ? (
               <>
-                {activeView === 'dashboard' ? (
-                  <DashboardView onSelectView={handleSelectView} userEmail={session?.user?.email} />
-                ) : activeView === 'targets' ? (
-                  <TargetsView onSelectView={handleSelectView} userEmail={session?.user?.email} initialRecordId={viewRecordId} />
-                ) : activeView === 'productivity' ? (
-                  <ProductivityView onSelectView={handleSelectView} userEmail={session?.user?.email} initialRecordId={viewRecordId} />
-                ) : activeView === 'startup' ? (
-                  <StartupView onSelectView={handleSelectView} userEmail={session?.user?.email} initialRecordId={viewRecordId} />
-                ) : activeView === 'decisions' ? (
-                  <DecisionsView onSelectView={handleSelectView} userEmail={session?.user?.email} initialRecordId={viewRecordId} />
-                ) : activeSessionId === 'waffle' ? (
-                  <WaffleStudio isMobile={isMobile} />
-                ) : hasMessages ? (
-                  <>
-                    <ChatMessages
-                      messages={messages}
-                      isTyping={isTyping}
-                      streamText={streamText}
-                      error={error}
-                      isMobile={isMobile}
-                      onQuickAction={handleQuickAction}
-                    />
-                    <ChatInput
-                      value={inputValue}
-                      onChange={setInputValue}
-                      onSend={sendMessage}
-                      isLoading={isLoading}
-                      centered={false}
-                      isMobile={isMobile}
-                      {...voiceInputProps}
-                    />
-                  </>
-                ) : (
-                  <WelcomeScreen
-                    isMobile={isMobile}
-                    inputValue={inputValue}
-                    onInputChange={setInputValue}
-                    onSend={sendMessage}
-                    isLoading={isLoading}
-                    onQuickAction={handleQuickAction}
-                    onSelectView={handleSelectView}
-                    {...voiceInputProps}
-                  />
-                )}
+                <ChatMessages
+                  messages={messages}
+                  isTyping={isTyping}
+                  streamText={streamText}
+                  error={error}
+                  isMobile={isMobile}
+                  onQuickAction={handleQuickAction}
+                />
+                <ChatInput
+                  value={inputValue}
+                onInputChange={setInputValue}
+                  onSend={sendMessage}
+                  isLoading={isLoading}
+                  centered={false}
+                  isMobile={isMobile}
+                  {...voiceInputProps}
+                />
               </>
+            ) : (
+              <WelcomeScreen
+                isMobile={isMobile}
+                inputValue={inputValue}
+                onInputChange={setInputValue}
+                onSend={sendMessage}
+                isLoading={isLoading}
+                onSelectView={handleSelectView}
+                userEmail={session?.user?.email}
+                {...voiceInputProps}
+              />
             )}
           </div>
         </div>

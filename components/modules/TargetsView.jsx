@@ -119,25 +119,15 @@ export default function TargetsView({ onSelectView, userEmail, initialSessionId,
   }
 
   return (
-    <div className="targets-view flex-1 overflow-y-auto px-6 py-6 scrollbar-thin bg-[#0d0e15] text-white">
-      {/* Back to Dashboard */}
-      <div className="flex items-center justify-between mb-6">
-        <button
-          onClick={() => onSelectView("dashboard")}
-          className="text-xs font-semibold text-violet-400 hover:text-violet-300 flex items-center gap-1.5 transition-colors"
-        >
-          ← Dashboard'a Dön
-        </button>
-        {activeTarget && (
-          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-            activeTarget.status === 'tamamlandı'
-              ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-              : 'bg-violet-500/15 text-violet-400 border border-violet-500/30'
-          }`}>
-            {activeTarget.status === 'tamamlandı' ? 'Tamamlandı' : 'Aktif'}
-          </span>
-        )}
-      </div>
+    <div className="targets-view relative flex-1 overflow-y-auto px-6 py-6 scrollbar-thin bg-[#0d0e15] text-white">
+      {/* Close */}
+      <button
+        onClick={() => onSelectView("chat")}
+        className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-xl bg-white/[0.03] border border-white/10 text-white/40 hover:text-white hover:bg-white/10 transition-all text-lg"
+        aria-label="Kapat"
+      >
+        ✕
+      </button>
 
       <div className="max-w-2xl mx-auto">
         {/* Header */}
@@ -194,6 +184,15 @@ export default function TargetsView({ onSelectView, userEmail, initialSessionId,
             {/* Target Card */}
             <div className="bg-gradient-to-br from-violet-900/10 to-indigo-950/15 border border-violet-500/15 rounded-2xl p-6 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-violet-600/5 rounded-full filter blur-xl pointer-events-none" />
+              {activeTarget && (
+                <span className={`absolute top-3 right-3 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                  activeTarget.status === 'tamamlandı'
+                    ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                    : 'bg-violet-500/15 text-violet-400 border border-violet-500/30'
+                }`}>
+                  {activeTarget.status === 'tamamlandı' ? 'Tamamlandı' : 'Aktif'}
+                </span>
+              )}
               <h3 className="text-[10px] font-bold uppercase tracking-wider text-violet-400">Günün Hedefi</h3>
               <p className="text-base font-bold text-white mt-1 leading-relaxed">{activeTarget.targetText}</p>
               

@@ -1,9 +1,14 @@
 "use client";
-
+import { useState } from "react";
 import ChatInput from "../ChatInput";
 import { QUICK_ACTIONS } from "@/lib/quick-actions";
 import { LCLogo } from "@/components/brand";
 import DashboardList from "@/components/modules/DashboardList";
+import ModuleHistorySection from "@/components/modules/ModuleHistorySection";
+import TargetsView from "@/components/modules/TargetsView";
+import ProductivityView from "@/components/modules/ProductivityView";
+import StartupView from "@/components/modules/StartupView";
+import DecisionsView from "@/components/modules/DecisionsView";
 
 const CARD_ICONS = {
   goal_plan: (
@@ -38,21 +43,73 @@ const CARD_ACCENTS = {
   decision: "text-han-purple-light border-han-purple-light/30 bg-han-purple-light/10",
 };
 
+const MODULE_MAP = {
+  goal_plan: "targets",
+  productivity: "productivity",
+  startup: "startup",
+  decision: "decisions",
+};
+
 export default function WelcomeScreen({
   isMobile,
   inputValue,
   onInputChange,
   onSend,
   isLoading,
-  onQuickAction,
   onVoiceStart,
   onVoiceStop,
   isRecording,
   voiceEnabled,
   onSelectView,
+  userEmail,
 }) {
+  const [activeModule, setActiveModule] = useState(null);
+
+  const handleModuleClose = (view, sessionId, recordId) => {
+    setActiveModule(null);
+    if (view !== "chat" || sessionId) {
+      onSelectView(view, sessionId, recordId);
+    }
+  };
+
+  if (activeModule === "targets") {
+    return (
+      <TargetsView
+        onSelectView={handleModuleClose}
+        userEmail={userEmail}
+      />
+    );
+  }
+
+  if (activeModule === "productivity") {
+    return (
+      <ProductivityView
+        onSelectView={handleModuleClose}
+        userEmail={userEmail}
+      />
+    );
+  }
+
+  if (activeModule === "startup") {
+    return (
+      <StartupView
+        onSelectView={handleModuleClose}
+        userEmail={userEmail}
+      />
+    );
+  }
+
+  if (activeModule === "decisions") {
+    return (
+      <DecisionsView
+        onSelectView={handleModuleClose}
+        userEmail={userEmail}
+      />
+    );
+  }
+
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-6 overflow-y-auto px-4 py-6 sm:gap-8 sm:py-8 md:gap-10 md:px-6 md:py-10">
+    <div className="flex flex-1 flex-col items-center justify-start gap-6 overflow-y-auto px-4 py-6 sm:gap-8 sm:py-8 md:gap-10 md:px-6 md:py-10">
       <div className="animate-fade-in text-center">
         <div className="animate-float mx-auto drop-shadow-[0_0_48px_rgba(124,58,237,0.4)]">
           <LCLogo variant="chat" size={isMobile ? 64 : 80} />
@@ -92,8 +149,10 @@ export default function WelcomeScreen({
           <button
             key={card.id}
             type="button"
-            disabled={isLoading}
-            onClick={() => onQuickAction(card.id)}
+            onClick={() => {
+              const moduleId = MODULE_MAP[card.id];
+              if (moduleId) setActiveModule(moduleId);
+            }}
             className="animate-slide-up group flex min-h-[88px] flex-col items-start gap-2.5 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-3.5 text-left backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 hover:border-han-purple/25 hover:bg-white/[0.05] hover:shadow-[0_8px_32px_rgba(124,58,237,0.12)] disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-[96px] sm:gap-3 sm:p-4 md:p-5"
             style={{ animationDelay: `${0.15 + i * 0.07}s` }}
           >
@@ -107,7 +166,18 @@ export default function WelcomeScreen({
         ))}
       </div>
 
-      <DashboardList onSelectView={onSelectView} />
+      <DashboardList onSelectView={(view, sessionId, recordId) => {
+        if (view === "chat") {
+          onSelectView(view, sessionId, recordId);
+        } else {
+          const moduleId = view === "target" ? "targets" : view === "startup" ? "startup" : view === "decision" ? "decisions" : view === "productivity" ? "productivity" : view;
+          setActiveModule(moduleId);
+        }
+      }} />
+
+      <ModuleHistorySection onSelectView={(view, sessionId, recordId) => {
+        setActiveModule(view);
+      }} />
     </div>
   );
 }
