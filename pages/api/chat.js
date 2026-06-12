@@ -1526,6 +1526,17 @@ export default async function handler(req, res) {
       } catch (e) { console.error("User fetch error:", e); }
     }
 
+    let userBio = "";
+    if (userId) {
+      try {
+        const prefs = await prisma.userPreference.findUnique({
+          where: { userId },
+          select: { userBio: true },
+        });
+        userBio = prefs?.userBio || "";
+      } catch (e) { /* ignore */ }
+    }
+
     // --- SUBSCRIPTION LIMIT CHECK ---
     if (userId && userStats.plan === 'FREE' && userStats.usageCount >= userStats.usageLimit) {
       return res.status(403).json({
@@ -2087,6 +2098,7 @@ export default async function handler(req, res) {
     let systemInstruction = `## Bu oturumdaki kullanıcı
 - İsim: ${userName}
 - Seviye: ${userStats.level} | XP: ${userStats.xp}/100 | Streak: ${userStats.streak} gün
+${userBio ? `\n## Kullanıcı kendini şöyle tanıtıyor\n${userBio}\n` : ''}
 
 ## Oturum kuralları
 1. LifeCoach kimliğini koru: yakın dost + yaşam koçu; soğuk "asistan" moduna geçme.

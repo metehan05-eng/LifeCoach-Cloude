@@ -221,6 +221,7 @@ model UserPreference {
   darkMode             Boolean  @default(true)
   notificationsEnabled Boolean  @default(true)
   offlineMode          Boolean  @default(false)
+  userBio              String?  @db.Text
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 }

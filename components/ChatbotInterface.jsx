@@ -19,7 +19,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { getQuickAction } from '@/lib/quick-actions';
 import LoadingScreen from '@/components/ui/LoadingScreen';
-import { SifuPandaPanel, SifuPanda } from '@/components/mascot';
+import { SifuPanda } from '@/components/mascot';
 import { useVoiceChat } from '@/hooks/useVoiceChat';
 import { detectEmotionFromText } from '@/lib/voice/sifu-emotion';
 
@@ -507,19 +507,6 @@ export default function ChatbotInterface() {
           />
 
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
-            <SifuPandaPanel
-              emotion={sifuEmotion}
-              isMobile={isMobile}
-              isRecording={voice.isRecording}
-              isSpeaking={voice.isSpeaking}
-              voiceEnabled={voice.voiceEnabled}
-              voiceOverlayOpen={voice.voiceOverlayOpen}
-              interimText={voice.interimText}
-              onMicPress={voice.startRecording}
-              onMicRelease={voice.stopRecording}
-              onToggleVoice={voice.toggleVoiceMode}
-              onCloseOverlay={() => voice.setVoiceOverlayOpen(false)}
-            />
 
             {showProjects ? (
               <ProjectHub user={session?.user} onClose={() => setShowProjects(false)} />

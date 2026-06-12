@@ -1,14 +1,20 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import styles from './SettingsModal.module.css';
 
 export default function SettingsModal({ onClose, user, dna }) {
   const router = useRouter();
+  const { data: session } = useSession();
   const [activeTab, setActiveTab] = useState('general');
+  const [userBio, setUserBio] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [loaded, setLoaded] = useState(false);
 
   const tabs = [
     { id: 'general', label: 'Genel', icon: '⚙️' },
+    { id: 'aboutme', label: 'Beni Tanı', icon: '📝' },
     { id: 'account', label: 'Hesap', icon: '👤' },
     { id: 'dna', label: 'Life DNA', icon: '🧬' },
     { id: 'capabilities', label: 'Capabilities', icon: '⚡' },
@@ -18,6 +24,26 @@ export default function SettingsModal({ onClose, user, dna }) {
     { id: 'billing', label: 'Üyelik & Plan', icon: '💳' },
   ];
 
+  useEffect(() => {
+    if (loaded) return;
+    fetch('/api/user/bio')
+      .then(r => r.json())
+      .then(d => { setUserBio(d.userBio || ''); setLoaded(true); })
+      .catch(() => setLoaded(true));
+  }, [loaded]);
+
+  const handleSaveBio = async () => {
+    setSaving(true);
+    try {
+      await fetch('/api/user/bio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userBio }),
+      });
+    } catch (e) { /* ignore */ }
+    setSaving(false);
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case 'general':
@@ -25,7 +51,7 @@ export default function SettingsModal({ onClose, user, dna }) {
           <div className={styles.section}>
             <h3>Profil Ayarları</h3>
             <div className={styles.field}>
-              <label>Paltform adı (AI sana nasıl hitap etsin?)</label>
+              <label>Platform adı (AI sana nasıl hitap etsin?)</label>
               <input type="text" defaultValue={user?.name || 'Metehan'} />
             </div>
             <div className={styles.field}>
@@ -38,6 +64,35 @@ export default function SettingsModal({ onClose, user, dna }) {
             </div>
           </div>
         );
+
+      case 'aboutme':
+        return (
+          <div className={styles.section}>
+            <h3>Beni Tanı</h3>
+            <div className={styles.bioHint}>
+              <span>💡</span>
+              <div>
+                AI'ya kendini tanıt — hedeflerin, alışkanlıkların, zorlukların veya sana nasıl yaklaşmasını istediğin hakkında bir şeyler yaz. Bu bilgiler her sohbette sana özel daha doğru yanıtlar almanı sağlar.
+              </div>
+            </div>
+            <div className={styles.field}>
+              <label>AI'ya kendini tanıt</label>
+              <textarea
+                value={userBio}
+                onChange={e => setUserBio(e.target.value)}
+                placeholder={`Örnek:\n- 25 yaşında bir girişimciyim\n- Sabah 6'da kalkıp koşuyorum\n- En büyük zorluğum odaklanmak\n- Biraz sert ve direkt olmanı tercih ederim`}
+              />
+            </div>
+            <button
+              className={styles.saveBtn}
+              onClick={handleSaveBio}
+              disabled={saving}
+            >
+              {saving ? 'Kaydediliyor...' : 'Kaydet'}
+            </button>
+          </div>
+        );
+
       case 'dna':
         return (
           <div className={styles.section}>
@@ -63,6 +118,7 @@ export default function SettingsModal({ onClose, user, dna }) {
             </div>
           </div>
         );
+
       case 'capabilities':
         return (
           <div className={styles.section}>
@@ -90,6 +146,7 @@ export default function SettingsModal({ onClose, user, dna }) {
             </div>
           </div>
         );
+
       case 'connectors':
         return (
           <div className={styles.section}>
@@ -112,6 +169,7 @@ export default function SettingsModal({ onClose, user, dna }) {
             </div>
           </div>
         );
+
       case 'hancode':
         return (
           <div className={styles.section}>
@@ -121,7 +179,7 @@ export default function SettingsModal({ onClose, user, dna }) {
                   <h4>HAN Code ⚔️</h4>
                 </div>
                 <p>Elite AI Software Engineer. Mobil, web, desktop, backend - her şeyi yapabilir. Emergent Labs tarzında görsel IDE ile yazılım oluştur ve göster.</p>
-                <button 
+                <button
                   className={styles.upgradeBtn}
                   onClick={() => {
                     onClose();
@@ -165,6 +223,7 @@ export default function SettingsModal({ onClose, user, dna }) {
              </div>
           </div>
         );
+
       case 'account':
         return (
           <div className={styles.section}>
@@ -173,7 +232,7 @@ export default function SettingsModal({ onClose, user, dna }) {
               <label>Email Adresi</label>
               <input type="text" disabled defaultValue={user?.email || 'Mevcut Değil'} />
             </div>
-            
+
             <div style={{ marginTop: '32px' }} className={styles.upgradeCard}>
                <div className={styles.cardHeader}>
                  <span className={styles.badge} style={{ background: '#10b981', color: '#fff' }}>Viral Büyüme</span>
@@ -183,13 +242,13 @@ export default function SettingsModal({ onClose, user, dna }) {
                  LifeCoach AI'nın sınırlarını arkadaşlarınla paylaş. Senin davet linkinle kayıt olan her kullanıcı için 500 XP kazanıp seviye atla!
                </p>
                <div style={{ display: 'flex', gap: '8px' }}>
-                 <input 
-                    type="text" 
-                    readOnly 
-                    value={`https://han-ai.dev/invite/${user?.name?.toLowerCase() || 'link'}`} 
-                    style={{ flex: 1, padding: '10px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }} 
+                 <input
+                    type="text"
+                    readOnly
+                    value={`https://han-ai.dev/invite/${user?.name?.toLowerCase() || 'link'}`}
+                    style={{ flex: 1, padding: '10px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }}
                  />
-                 <button 
+                 <button
                     onClick={(e) => { navigator.clipboard.writeText(`https://han-ai.dev/invite/${user?.name?.toLowerCase() || 'link'}`); e.target.innerText = 'Kopyalandı!'; setTimeout(()=>e.target.innerText='Kopyala', 2000); }}
                     style={{ background: '#8b5cf6', color: '#fff', border: 'none', padding: '0 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
                  >
@@ -199,6 +258,7 @@ export default function SettingsModal({ onClose, user, dna }) {
             </div>
           </div>
         );
+
       case 'billing':
         return (
           <div className={styles.section}>
@@ -213,7 +273,7 @@ export default function SettingsModal({ onClose, user, dna }) {
                    <li>Proje ve Otomasyon merkezine tam erişim</li>
                    <li>HAN 4.2 Ultra Core (Groq LPU) önceliği</li>
                 </ul>
-                <button 
+                <button
                   onClick={() => window.open('https://lemonsqueezy.com', '_blank')}
                   className={styles.upgradeBtn} style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#fff', width: '100%' }}>
                   Aboneliği Başlat ($9.90/ay)
@@ -221,6 +281,7 @@ export default function SettingsModal({ onClose, user, dna }) {
              </div>
           </div>
         );
+
       default:
         return <div className={styles.empty}>Bu özellik yakında aktif olacak.</div>;
     }
@@ -229,10 +290,9 @@ export default function SettingsModal({ onClose, user, dna }) {
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={e => e.stopPropagation()}>
-        <div className={styles.sidebar}>
-          <div className={styles.sidebarHeader}>Ayarlar</div>
+        <div className={styles.topTabs}>
           {tabs.map(tab => (
-            <button 
+            <button
               key={tab.id}
               className={`${styles.tabBtn} ${activeTab === tab.id ? styles.activeTab : ''}`}
               onClick={() => setActiveTab(tab.id)}
@@ -241,12 +301,10 @@ export default function SettingsModal({ onClose, user, dna }) {
               {tab.label}
             </button>
           ))}
-          <div className={styles.sidebarFooter}>
-            <button onClick={onClose} className={styles.closeBtn}>Kapat</button>
-          </div>
         </div>
         <div className={styles.content}>
           {renderContent()}
+          <button onClick={onClose} className={styles.closeBtn}>Kapat</button>
         </div>
       </div>
     </div>
