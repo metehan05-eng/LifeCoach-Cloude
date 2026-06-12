@@ -639,6 +639,7 @@ export default function ChatbotInterface() {
                     onSend={sendMessage}
                     isLoading={isLoading}
                     onQuickAction={handleQuickAction}
+                    onSelectView={handleSelectView}
                     {...voiceInputProps}
                   />
                 )}

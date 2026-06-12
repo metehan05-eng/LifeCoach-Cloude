@@ -3,6 +3,7 @@
 import ChatInput from "../ChatInput";
 import { QUICK_ACTIONS } from "@/lib/quick-actions";
 import { LCLogo } from "@/components/brand";
+import DashboardList from "@/components/modules/DashboardList";
 
 const CARD_ICONS = {
   goal_plan: (
@@ -48,6 +49,7 @@ export default function WelcomeScreen({
   onVoiceStop,
   isRecording,
   voiceEnabled,
+  onSelectView,
 }) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-6 overflow-y-auto px-4 py-6 sm:gap-8 sm:py-8 md:gap-10 md:px-6 md:py-10">
@@ -104,6 +106,8 @@ export default function WelcomeScreen({
           </button>
         ))}
       </div>
+
+      <DashboardList onSelectView={onSelectView} />
     </div>
   );
 }
