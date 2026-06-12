@@ -26,6 +26,26 @@ import { OAuth2Client } from 'google-auth-library';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { spawn } from 'child_process';
 import fs from 'fs';
+import {
+  saveMemory, getMemories, getRelevantMemories, getMemorySummary
+} from '../lib/life-memory.js';
+import {
+  calculateLifeScore, getLatestLifeScore, getLifeScoreTrend, getLifeScoreHistory
+} from '../lib/life-score.js';
+import {
+  saveToSecondBrain, searchSecondBrain, getSecondBrainEntry,
+  updateSecondBrainEntry, deleteSecondBrainEntry,
+  getSecondBrainCategories, generateSecondBrainSummary
+} from '../lib/second-brain.js';
+import {
+  COACHES, saveCoachSession, getCoachHistory, getCoachSummary
+} from '../lib/coach-crew.js';
+import {
+  saveTaskChain, getTaskChains, updateTaskStatus, generateTaskChain
+} from '../lib/task-chain.js';
+import { simulateFuture, getSimulations } from '../lib/future-simulator.js';
+import { generateCheckIn, saveCheckInLog, getCheckInHistory } from '../lib/check-in.js';
+import { getImagesForText } from '../lib/pexels.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -1183,9 +1203,32 @@ LONG-TERM MEMORY ENGINE:
 If the user shares personal, permanent, or important information about themselves (e.g., goals, health, job, fears, habits, likes/dislikes), you MUST save it to your long-term memory.
 To do this, add a JSON block at the VERY END of your response:
 \`\`\`json-memory
-{ "memory_update": "Kullanıcı bilgisayar mühendisliği öğrencisi ve sabah erken uyanmakta zorlanıyor." }
+{ "memory_update": "Kullanıcı bilgisayar mühendisliği öğrencisi ve sabah erken uyanmakta zorlanıyor.", "category": "education", "importance": 7, "tags": ["üniversite", "uyku"] }
 \`\`\`
 Use this ONLY for new and important information that a Life Coach should remember for future sessions.
+Available categories: "goal", "health", "career", "finance", "education", "social", "idea", "habit", "preference", "general"
+Importance: 1-10 scale
+
+LIFE SCORE SYSTEM:
+Kullanıcının 5 alandaki (Sağlık, Kariyer, Finans, Eğitim, Sosyal Hayat) yaşam puanlarını takip et. 
+Her alan 0-100 arası puanlanır. Kullanıcı bir alanla ilgili konuştuğunda, o alandaki puanın durumunu ve trendini belirtebilirsin.
+Örnek: "Finans puanın son 30 günde düştü, buna odaklanman iyi olur."
+
+FUTURE SIMULATOR:
+Kullanıcı "X ay boyunca Y yaparsam ne olur?" gibi sorular sorduğunda, mevcut durumuna göre gerçekçi tahminler yap.
+Örnek: "6 ay boyunca İngilizce çalışırsam ne olur?" -> "Mevcut çalışma hızına göre B1 seviyesine yaklaşabilirsin."
+
+TASK CHAIN (GÖREV ZİNCİRİ):
+Kullanıcı büyük bir hedef söylediğinde (örn. "şirket kurmak istiyorum"), otomatik olarak adım adım görev zinciri çıkar.
+Şirket kurma, dil öğrenme, kariyer değişikliği, finansal planlama, sağlık hedefleri için hazır şablonlar kullan.
+
+SECOND BRAIN (İKİNCİ BEYİN):
+Kullanıcı fikirlerini, notlarını, hedeflerini paylaştığında bunları Second Brain sistemine kaydet.
+Böylece kullanıcı daha sonra "Geçen ayki e-ticaret fikrim neydi?" diye sorduğunda cevap verebilirsin.
+
+COACH CREW (KOÇ KADROSU):
+4 farklı uzman koç mevcut: Girişimci Koç, Finans Koçu, Kariyer Koçu, Üretkenlik Koçu.
+Kullanıcı belirli bir alanda derinlemesine destek istediğinde, ilgili koça yönlendir.
 
 ---
 
@@ -1640,13 +1683,44 @@ ${localizationInjection}`;
                     if (parsedMemory.memory_update) {
                         const timestamp = new Date().toLocaleDateString('tr-TR');
                         dbUser.memory = (dbUser.memory || "") + `\n- [${timestamp}]: ${parsedMemory.memory_update}`;
+                        // Life Memory sistemine de kaydet
+                        const userId = req.user?.id || 'anonymous';
+                        saveMemory(userId, parsedMemory.memory_update, {
+                            category: parsedMemory.category,
+                            importance: parsedMemory.importance || 7,
+                            source: 'chat',
+                            tags: parsedMemory.tags || [],
+                            metadata: { originalMessage: message }
+                        }).catch(e => console.warn('LifeMemory save error:', e));
+                        // Second Brain'e de kaydet (fikir veya not içerikliyse)
+                        if (parsedMemory.category === 'idea' || parsedMemory.category === 'goal') {
+                            saveToSecondBrain(userId, {
+                                type: parsedMemory.category === 'idea' ? 'idea' : 'goal',
+                                title: parsedMemory.memory_update.slice(0, 80),
+                                content: parsedMemory.memory_update,
+                                category: parsedMemory.category,
+                                tags: parsedMemory.tags || [],
+                                source: 'chat',
+                            }).catch(e => console.warn('SecondBrain save error:', e));
+                        }
                     }
                 } catch (e) {
                     console.error("Memory parse error:", e);
                 }
             }
-            // Sadece block olan kısmı sil, gizli kalsın
             finalAiResponse = finalAiResponse.replace(/```json-memory\n[\s\S]*?\n```/g, '').trim();
+        }
+
+        // Kullanıcı mesajını da Life Memory'e otomatik kaydet (önemli bilgi içeriyorsa)
+        if (req.user && message && message.length > 20) {
+            const userId = req.user?.id || 'anonymous';
+            const importantKeywords = ['hedef', 'istemek', 'olmak', 'yapmak', 'öğrenmek', 'kilo', 'iş', 'para',
+                'yatırım', 'kariyer', 'sağlık', 'eğitim', 'proje', 'fikir', 'startup'];
+            const lowerMessage = message.toLowerCase();
+            const isImportant = importantKeywords.some(kw => lowerMessage.includes(kw));
+            if (isImportant) {
+                saveMemory(userId, message, { source: 'chat' }).catch(e => console.warn('Auto memory save error:', e));
+            }
         }
 
         // Action (json-action) bloklarını işle
@@ -1716,13 +1790,34 @@ ${localizationInjection}`;
             }
         }
 
+        // Pexels görsel kartları - AI yanıtındaki konuya göre otomatik görsel getir
+        let pexelsImages = null;
+        if (process.env.PEXELS_API_KEY && finalAiResponse && finalAiResponse.length > 50) {
+            try {
+                const pexelsResult = await getImagesForText(finalAiResponse + ' ' + (message || ''), 2);
+                if (pexelsResult.success && pexelsResult.images.length > 0) {
+                    pexelsImages = pexelsResult.images.map(img => ({
+                        id: img.id,
+                        src: img.src,
+                        photographer: img.photographer,
+                        alt: img.alt,
+                        topic: img.topic,
+                        url: img.url,
+                    }));
+                    console.log(`[Pexels] ${pexelsImages.length} görsel bulundu`);
+                }
+            } catch (pErr) {
+                console.warn('[Pexels] Görsel getirme hatası:', pErr.message);
+            }
+        }
+
         return res.json({
             response: finalAiResponse,
-            // Eğer yeni bir oturum oluşturulduysa, ID'sini ön yüze gönder
             sessionId: newSessionId,
-            model: usedModel, // Çalışan modelin adını gönder
-            trigger: triggerData, // Tetikleyici verisini gönder
-            action: actionData // Dosya aksiyon verisini gönder
+            model: usedModel,
+            trigger: triggerData,
+            action: actionData,
+            pexelsImages, // Konuyla alakalı otomatik görsel kartları
         });
 
     } catch (error) {
@@ -4620,6 +4715,355 @@ Return ONLY the final prompt text. No explanations, no quotes, just the prompt.`
         // Fallback: return original prompt with quality enhancers
         const fallback = (req.body.prompt || '') + ', cinematic lighting, masterpiece, highly detailed, 8k, sharp focus';
         res.json({ success: false, enhancedPrompt: fallback });
+    }
+});
+
+// ─── YENİ ÖZELLİK API'LERİ ───────────────────────────────────────────────
+
+// === 1. LIFE MEMORY API ===
+app.post('/api/memory/save', optionalAuth, async (req, res) => {
+    try {
+        const { text, category, source, tags } = req.body;
+        const userId = req.user?.id || req.body.userId || 'anonymous';
+        if (!text) return res.status(400).json({ error: 'Metin gerekli' });
+
+        const memory = await saveMemory(userId, text, { category, source, tags });
+        res.json({ success: true, memory });
+    } catch (err) {
+        console.error('Memory save error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/memory/list', optionalAuth, async (req, res) => {
+    try {
+        const userId = req.user?.id || req.query.userId || 'anonymous';
+        const memories = await getMemories(userId, {
+            category: req.query.category,
+            limit: parseInt(req.query.limit) || 50,
+            search: req.query.search,
+        });
+        res.json({ success: true, memories });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/memory/summary', optionalAuth, async (req, res) => {
+    try {
+        const userId = req.user?.id || req.query.userId || 'anonymous';
+        const summary = await getMemorySummary(userId);
+        res.json({ success: true, summary });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/memory/relevant', optionalAuth, async (req, res) => {
+    try {
+        const userId = req.user?.id || req.query.userId || 'anonymous';
+        const { context } = req.query;
+        if (!context) return res.status(400).json({ error: 'context parametresi gerekli' });
+        const memories = await getRelevantMemories(userId, context);
+        res.json({ success: true, memories });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// === 2. LIFE SCORE API ===
+app.post('/api/lifescore/calculate', optionalAuth, async (req, res) => {
+    try {
+        const userId = req.user?.id || req.body.userId || 'anonymous';
+        const score = await calculateLifeScore(userId);
+        res.json({ success: true, score });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/lifescore/latest', optionalAuth, async (req, res) => {
+    try {
+        const userId = req.user?.id || req.query.userId || 'anonymous';
+        const score = await getLatestLifeScore(userId);
+        res.json({ success: true, score });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/lifescore/trend', optionalAuth, async (req, res) => {
+    try {
+        const userId = req.user?.id || req.query.userId || 'anonymous';
+        const trend = await getLifeScoreTrend(userId);
+        res.json({ success: true, trend });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/lifescore/history', optionalAuth, async (req, res) => {
+    try {
+        const userId = req.user?.id || req.query.userId || 'anonymous';
+        const days = parseInt(req.query.days) || 30;
+        const history = await getLifeScoreHistory(userId, days);
+        res.json({ success: true, history });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// === 3. SECOND BRAIN API ===
+app.post('/api/secondbrain/save', optionalAuth, async (req, res) => {
+    try {
+        const userId = req.user?.id || req.body.userId || 'anonymous';
+        const entry = await saveToSecondBrain(userId, req.body);
+        res.json({ success: true, entry });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/secondbrain/search', optionalAuth, async (req, res) => {
+    try {
+        const userId = req.user?.id || req.query.userId || 'anonymous';
+        const entries = await searchSecondBrain(userId, req.query.q, {
+            type: req.query.type,
+            category: req.query.category,
+            limit: parseInt(req.query.limit) || 20,
+        });
+        res.json({ success: true, entries });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/secondbrain/entry/:id', optionalAuth, async (req, res) => {
+    try {
+        const userId = req.user?.id || req.query.userId || 'anonymous';
+        const entry = await getSecondBrainEntry(userId, req.params.id);
+        if (!entry) return res.status(404).json({ error: 'Entry bulunamadı' });
+        res.json({ success: true, entry });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/secondbrain/entry/:id', optionalAuth, async (req, res) => {
+    try {
+        const userId = req.user?.id || req.body.userId || 'anonymous';
+        const entry = await updateSecondBrainEntry(userId, req.params.id, req.body);
+        if (!entry) return res.status(404).json({ error: 'Entry bulunamadı' });
+        res.json({ success: true, entry });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/secondbrain/entry/:id', optionalAuth, async (req, res) => {
+    try {
+        const userId = req.user?.id || req.query.userId || 'anonymous';
+        await deleteSecondBrainEntry(userId, req.params.id);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/secondbrain/categories', optionalAuth, async (req, res) => {
+    try {
+        const userId = req.user?.id || req.query.userId || 'anonymous';
+        const categories = await getSecondBrainCategories(userId);
+        res.json({ success: true, categories });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/secondbrain/summary', optionalAuth, async (req, res) => {
+    try {
+        const userId = req.user?.id || req.query.userId || 'anonymous';
+        const summary = await generateSecondBrainSummary(userId);
+        res.json({ success: true, summary });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// === 4. COACH CREW API ===
+app.get('/api/coaches/list', (req, res) => {
+    const coachList = Object.entries(COACHES).map(([id, coach]) => ({
+        id,
+        name: coach.name,
+        emoji: coach.emoji,
+        title: coach.title,
+        description: coach.description,
+        specialties: coach.specialties,
+    }));
+    res.json({ success: true, coaches: coachList });
+});
+
+app.post('/api/coaches/chat', optionalAuth, async (req, res) => {
+    try {
+        const { coachType, message, context } = req.body;
+        const userId = req.user?.id || req.body.userId || 'anonymous';
+
+        const coach = COACHES[coachType];
+        if (!coach) return res.status(400).json({ error: 'Geçersiz koç tipi' });
+
+        const systemPrompt = coach.systemPrompt + `\n\nKullanıcı mesajı: ${message}\n\nKullanıcı geçmişi: ${context || 'Yok'}`;
+
+        let aiResponse;
+        if (genAI) {
+            try {
+                const result = await callGemini(message, [], systemPrompt);
+                aiResponse = result.text;
+            } catch (e) {
+                if (OPENROUTER_API_KEY) {
+                    const orResult = await callOpenRouter(
+                        [{ role: 'user', content: message }],
+                        OPENROUTER_MODELS[0],
+                        systemPrompt
+                    );
+                    aiResponse = orResult.text;
+                } else {
+                    throw e;
+                }
+            }
+        } else {
+            aiResponse = 'AI yapılandırılmamış.';
+        }
+
+        const session = await saveCoachSession(userId, coachType, message, aiResponse, context);
+
+        res.json({ success: true, response: aiResponse, session });
+    } catch (err) {
+        console.error('Coach chat error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/coaches/history', optionalAuth, async (req, res) => {
+    try {
+        const userId = req.user?.id || req.query.userId || 'anonymous';
+        const sessions = await getCoachHistory(userId, req.query.coachType);
+        res.json({ success: true, sessions });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/coaches/summary', optionalAuth, async (req, res) => {
+    try {
+        const userId = req.user?.id || req.query.userId || 'anonymous';
+        const summary = await getCoachSummary(userId);
+        res.json({ success: true, summary });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// === 5. TASK CHAIN API ===
+app.post('/api/taskchain/generate', optionalAuth, async (req, res) => {
+    try {
+        const { text, goalTitle } = req.body;
+        const userId = req.user?.id || req.body.userId || 'anonymous';
+        if (!text) return res.status(400).json({ error: 'Hedef metni gerekli' });
+
+        const chain = await saveTaskChain(userId, text, goalTitle);
+        const generated = generateTaskChain(text);
+
+        res.json({ success: true, chain, template: generated });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/taskchain/list', optionalAuth, async (req, res) => {
+    try {
+        const userId = req.user?.id || req.query.userId || 'anonymous';
+        const chains = await getTaskChains(userId, req.query.status);
+        res.json({ success: true, chains });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/taskchain/update-task', optionalAuth, async (req, res) => {
+    try {
+        const { chainId, taskId, status } = req.body;
+        const userId = req.user?.id || req.body.userId || 'anonymous';
+        const chain = await updateTaskStatus(userId, chainId, taskId, status);
+        if (!chain) return res.status(404).json({ error: 'Zincir veya görev bulunamadı' });
+        res.json({ success: true, chain });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/taskchain/detect-type', (req, res) => {
+    const { text } = req.query;
+    if (!text) return res.status(400).json({ error: 'text parametresi gerekli' });
+
+    const goalType = detectGoalType(text);
+
+    const typeLabels = {
+        startup: 'Girişim/Şirket Kurma',
+        education: 'Eğitim/Öğrenme',
+        career: 'Kariyer',
+        finance: 'Finans',
+        health: 'Sağlık/Fitness',
+        custom: 'Özel Hedef',
+    };
+
+    res.json({ success: true, goalType, label: typeLabels[goalType] || 'Özel Hedef' });
+});
+
+// === 6. FUTURE SIMULATOR API ===
+app.post('/api/future/simulate', optionalAuth, async (req, res) => {
+    try {
+        const { scenario } = req.body;
+        const userId = req.user?.id || req.body.userId || 'anonymous';
+        if (!scenario) return res.status(400).json({ error: 'Senaryo metni gerekli' });
+
+        const simulation = await simulateFuture(userId, scenario);
+        res.json({ success: true, simulation });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/future/history', optionalAuth, async (req, res) => {
+    try {
+        const userId = req.user?.id || req.query.userId || 'anonymous';
+        const simulations = await getSimulations(userId);
+        res.json({ success: true, simulations });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// === 7. DAILY CHECK-IN API ===
+app.get('/api/checkin/generate', optionalAuth, async (req, res) => {
+    try {
+        const userId = req.user?.id || req.query.userId || 'anonymous';
+        const checkIn = await generateCheckIn(userId);
+        await saveCheckInLog(userId, checkIn);
+        res.json({ success: true, checkIn });
+    } catch (err) {
+        console.error('Check-in error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/checkin/history', optionalAuth, async (req, res) => {
+    try {
+        const userId = req.user?.id || req.query.userId || 'anonymous';
+        const days = parseInt(req.query.days) || 7;
+        const history = await getCheckInHistory(userId, days);
+        res.json({ success: true, history });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 

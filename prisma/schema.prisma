@@ -69,6 +69,12 @@ model User {
   Productivities          Productivity[]
   Startups                Startup[]
   Decisions               Decision[]
+  LifeMemories            LifeMemory[]
+  LifeScores              LifeScore[]
+  SecondBrainEntries      SecondBrainEntry[]
+  CoachSessions           CoachSession[]
+  TaskChains              TaskChain[]
+  FutureSimulations       FutureSimulation[]
 }
 
 
@@ -550,5 +556,128 @@ model Decision {
   updatedAt         DateTime          @updatedAt
 
   @@index([userId, status])
+}
+
+// ─── YAŞAM HAFIZASI (Life Memory) ─────────────────────────────────────────
+
+model LifeMemory {
+  id          String   @id @default(cuid())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  category    String   // "goal" | "health" | "career" | "finance" | "education" | "social" | "idea" | "habit" | "preference" | "general"
+  content     String   @db.Text
+  importance  Int      @default(5) // 1-10
+  tags        String[] // ["hedef", "sağlık", "kariyer", etc]
+  source      String   @default("chat") // "chat" | "manual" | "checkin" | "voice"
+  metadata    Json?
+  isActive    Boolean  @default(true)
+  expiresAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId, category])
+  @@index([userId, createdAt])
+  @@index([userId, tags])
+}
+
+// ─── YAŞAM PUANI (Life Score) ─────────────────────────────────────────────
+
+model LifeScore {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  health    Int      @default(50) // 0-100
+  career    Int      @default(50)
+  finance   Int      @default(50)
+  education Int      @default(50)
+  social    Int      @default(50)
+  overall   Int      @default(50)
+  summary   String?  @db.Text
+  recordedAt DateTime @default(now())
+
+  @@index([userId, recordedAt])
+  @@index([userId])
+}
+
+// ─── İKİNCİ BEYİN (Second Brain) ──────────────────────────────────────────
+
+model SecondBrainEntry {
+  id          String   @id @default(cuid())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  type        String   // "idea" | "note" | "goal" | "document" | "voice" | "link" | "bookmark" | "journal"
+  title       String
+  content     String   @db.Text
+  summary     String?  @db.Text
+  category    String?  // "fikir" | "not" | "proje" | "ders" | "kitap" | "kişisel"
+  tags        String[]
+  source      String?  // "chat" | "manual" | "voice" | "upload" | "checkin"
+  sourceUrl   String?
+  filePath    String?
+  isArchived  Boolean  @default(false)
+  isFavorite  Boolean  @default(false)
+  aiAnalysis  Json?    // AI'nin analizi, özeti, bağlantıları
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId, type])
+  @@index([userId, category])
+  @@index([userId, createdAt])
+  @@index([userId, tags])
+}
+
+// ─── KOÇ KADROSU (Coach Crew) ─────────────────────────────────────────────
+
+model CoachSession {
+  id          String   @id @default(cuid())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  coachType   String   // "entrepreneur" | "finance" | "career" | "productivity"
+  coachName   String   // "Girişimci Koç" | "Finans Koçu" | "Kariyer Koçu" | "Üretkenlik Koçu"
+  message     String   @db.Text
+  response    String   @db.Text
+  context     String?  @db.Text
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([userId, coachType])
+  @@index([userId, createdAt])
+}
+
+// ─── GÖREV ZİNCİRİ (Task Chain) ───────────────────────────────────────────
+
+model TaskChain {
+  id          String   @id @default(cuid())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  goalTitle   String   @db.Text
+  goalType    String   // "startup" | "education" | "career" | "finance" | "health" | "custom"
+  tasks       Json     // [{id, title, description, order, duration, dependsOn, status}]
+  status      String   @default("active") // "active" | "completed" | "paused"
+  progress    Int      @default(0)
+  totalTasks  Int      @default(0)
+  completedTasks Int   @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId, status])
+}
+
+// ─── GELECEK SİMÜLASYONU (Future Simulation) ──────────────────────────────
+
+model FutureSimulation {
+  id          String   @id @default(cuid())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  scenario    String   @db.Text     // "6 ay İngilizce çalışırsam ne olur?"
+  area        String   // "education" | "career" | "finance" | "health" | "social"
+  currentState Json    // mevcut durum verileri
+  prediction  String   @db.Text     // AI tahmini
+  confidence  Int      @default(70) // 0-100
+  milestones  Json?    // [{month, expectedProgress, description}]
+  createdAt   DateTime @default(now())
+
+  @@index([userId, createdAt])
 }
 
