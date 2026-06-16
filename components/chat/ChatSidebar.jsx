@@ -117,19 +117,6 @@ export default function ChatSidebar({
             <span className="ml-auto rounded-md bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-amber-400/80">AI Görsel</span>
           </button>
 
-          <button
-            type="button"
-            onClick={() => onSelectSession('lifeos')}
-            className="flex w-full items-center gap-2.5 rounded-xl border border-han-purple/[0.12] bg-gradient-to-br from-cyan-500/10 to-blue-600/5 px-3.5 py-2.5 text-[13px] font-semibold text-cyan-300 transition-all hover:border-cyan-500/30 hover:from-cyan-500/20 hover:to-blue-600/10 hover:text-cyan-200"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 2L2 7l10 5 10-5-10-5z" />
-              <path d="M2 17l10 5 10-5" />
-              <path d="M2 12l10 5 10-5" />
-            </svg>
-            LifeOS Hub
-            <span className="ml-auto rounded-md bg-cyan-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-cyan-400/80">Yeni</span>
-          </button>
         </div>
 
         {/* Tabs */}

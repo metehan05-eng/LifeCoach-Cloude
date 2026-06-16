@@ -22,8 +22,6 @@ import LoadingScreen from '@/components/ui/LoadingScreen';
 import { SifuPanda } from '@/components/mascot';
 import { useVoiceChat } from '@/hooks/useVoiceChat';
 import { detectEmotionFromText } from '@/lib/voice/sifu-emotion';
-import LifeOSHub from '@/components/LifeOSHub';
-
 // (WelcomeScreen handles Life OS module views internally)
 
 function useIsMobile() {
@@ -67,7 +65,6 @@ export default function ChatbotInterface() {
   const [showVision, setShowVision] = useState(false);
   const [showLootBox, setShowLootBox] = useState(false);
   const [showSifuPanda, setShowSifuPanda] = useState(false);
-  const [showLifeOS, setShowLifeOS] = useState(false);
   const [levelUpData, setLevelUpData] = useState(null);
   const [sifuEmotion, setSifuEmotion] = useState('idle');
 
@@ -481,7 +478,6 @@ export default function ChatbotInterface() {
               else if (id === 'lootbox') setShowLootBox(true);
               else if (id === 'sifu-panda') { setShowSifuPanda(true); setActiveSessionId(null); setActiveView('chat'); }
               else if (id === 'waffle') { setShowSifuPanda(false); setActiveSessionId('waffle'); setActiveView('chat'); }
-              else if (id === 'lifeos') { setShowLifeOS(true); setActiveSessionId(null); setActiveView('chat'); }
               else {
                 setActiveSessionId(id);
                 setActiveChatId(id);
@@ -564,8 +560,6 @@ export default function ChatbotInterface() {
                   Sohbete Dön
                 </button>
               </div>
-            ) : showLifeOS ? (
-              <LifeOSHub />
             ) : activeSessionId === 'waffle' ? (
               <WaffleStudio isMobile={isMobile} />
             ) : hasMessages ? (
