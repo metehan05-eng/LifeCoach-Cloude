@@ -24,8 +24,13 @@ export default function RootLayout({ children }) {
         <meta name="theme-color" content="#060618" />
         <link rel="icon" href="/lifecoach-favicon.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/lifecoach-logo-icon.svg" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('han-theme');if(!t&&window.matchMedia('(prefers-color-scheme:light)').matches)t='light';if(!t)t='dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`,
+          }}
+        />
       </head>
-      <body style={{ background: '#030308' }} suppressHydrationWarning>
+      <body style={{ background: 'var(--bg-deep)' }} suppressHydrationWarning>
         <Providers>{children}</Providers>
         <VercelInsights />
       </body>

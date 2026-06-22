@@ -74,14 +74,19 @@ export default function HANVision({ onSnapshot, onClose }) {
   };
 
   return (
-    <div style={{
-      position: 'fixed', top: '20px', right: '20px', 
-      width: '240px', height: '320px', 
-      borderRadius: '20px', overflow: 'hidden',
-      background: '#000', border: '2px solid rgba(99,102,241,0.5)',
-      boxShadow: '0 0 30px rgba(99,102,241,0.3)', zIndex: 9999,
-      display: 'flex', flexDirection: 'column'
-    }}>
+    <div
+      className="fixed z-[9999] flex flex-col overflow-hidden shadow-2xl"
+      style={{
+        top: 'max(12px, env(safe-area-inset-top))',
+        right: 'max(12px, env(safe-area-inset-right))',
+        width: 'min(280px, calc(100vw - 24px))',
+        height: 'min(380px, calc(100vh - 120px))',
+        borderRadius: '20px',
+        background: '#000',
+        border: '2px solid rgba(99,102,241,0.5)',
+        boxShadow: '0 0 30px rgba(99,102,241,0.3)',
+      }}
+    >
       {/* Üst Bar */}
       <div style={{
         background: 'rgba(0,0,0,0.8)', padding: '8px 12px',

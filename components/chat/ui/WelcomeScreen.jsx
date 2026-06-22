@@ -36,11 +36,11 @@ const CARD_ICONS = {
   ),
 };
 
-const CARD_ACCENTS = {
-  goal_plan: "text-han-purple border-han-purple/30 bg-han-purple/10",
-  productivity: "text-han-blue border-han-blue/30 bg-han-blue/10",
-  startup: "text-cyan-400 border-cyan-400/30 bg-cyan-400/10",
-  decision: "text-han-purple-light border-han-purple-light/30 bg-han-purple-light/10",
+const CARD_COLORS = {
+  goal_plan: { icon: "text-violet-600", bg: "bg-violet-500/10", border: "border-violet-500/20" },
+  productivity: { icon: "text-blue-600", bg: "bg-blue-500/10", border: "border-blue-500/20" },
+  startup: { icon: "text-cyan-600", bg: "bg-cyan-500/10", border: "border-cyan-500/20" },
+  decision: { icon: "text-purple-600", bg: "bg-purple-500/10", border: "border-purple-500/20" },
 };
 
 const MODULE_MAP = {
@@ -56,10 +56,10 @@ export default function WelcomeScreen({
   onInputChange,
   onSend,
   isLoading,
-  onVoiceStart,
-  onVoiceStop,
+  onVoiceToggle,
   isRecording,
-  voiceEnabled,
+  interimText,
+  onQuickAction,
   onSelectView,
   userEmail,
 }) {
@@ -73,59 +73,36 @@ export default function WelcomeScreen({
   };
 
   if (activeModule === "targets") {
-    return (
-      <TargetsView
-        onSelectView={handleModuleClose}
-        userEmail={userEmail}
-      />
-    );
+    return <TargetsView onSelectView={handleModuleClose} userEmail={userEmail} />;
   }
-
   if (activeModule === "productivity") {
-    return (
-      <ProductivityView
-        onSelectView={handleModuleClose}
-        userEmail={userEmail}
-      />
-    );
+    return <ProductivityView onSelectView={handleModuleClose} userEmail={userEmail} />;
   }
-
   if (activeModule === "startup") {
-    return (
-      <StartupView
-        onSelectView={handleModuleClose}
-        userEmail={userEmail}
-      />
-    );
+    return <StartupView onSelectView={handleModuleClose} userEmail={userEmail} />;
   }
-
   if (activeModule === "decisions") {
-    return (
-      <DecisionsView
-        onSelectView={handleModuleClose}
-        userEmail={userEmail}
-      />
-    );
+    return <DecisionsView onSelectView={handleModuleClose} userEmail={userEmail} />;
   }
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-start gap-6 overflow-y-auto px-4 py-6 sm:gap-8 sm:py-8 md:gap-10 md:px-6 md:py-10">
-      <div className="animate-fade-in text-center">
-        <div className="animate-float mx-auto drop-shadow-[0_0_48px_rgba(124,58,237,0.4)]">
-          <LCLogo variant="chat" size={isMobile ? 64 : 80} />
+    <div className="flex flex-1 flex-col items-center justify-center gap-5 overflow-y-auto px-3 py-6 sm:gap-7 sm:px-4 sm:py-8 md:gap-8 md:px-6">
+      <div className="animate-fade-in w-full max-w-2xl text-center">
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-lg sm:h-16 sm:w-16">
+          <LCLogo variant="icon" size={isMobile ? 28 : 32} />
         </div>
-        <h1 className="font-display mb-2.5 text-2xl font-extrabold tracking-tight text-han-text md:text-3xl">
-          Merhaba! Ben{" "}
-          <span className="bg-gradient-to-r from-han-purple-light via-violet-300 to-han-indigo bg-clip-text text-transparent">
-            HAN AI
-          </span>
+        <h1
+          className="mb-2 text-xl font-semibold tracking-tight sm:text-2xl md:text-[28px]"
+          style={{ color: "var(--text-primary)" }}
+        >
+          Nasıl yardımcı olabilirim?
         </h1>
-        <p className="mx-auto max-w-md text-sm leading-relaxed text-han-muted md:text-[15px]">
-          Hedeflerine ulaşmana, kararlar vermene ve büyümana yardım etmek için buradayım.
+        <p className="mx-auto max-w-md text-sm leading-relaxed sm:text-[15px]" style={{ color: "var(--text-muted)" }}>
+          Hedeflerine ulaşmana, kararlar vermene ve büyümene yardım etmek için buradayım.
         </p>
       </div>
 
-      <div className="animate-slide-up w-full max-w-2xl" style={{ animationDelay: "0.1s" }}>
+      <div className="animate-slide-up w-full max-w-2xl" style={{ animationDelay: "0.08s" }}>
         <ChatInput
           value={inputValue}
           onChange={onInputChange}
@@ -134,50 +111,68 @@ export default function WelcomeScreen({
           centered
           isMobile={isMobile}
           minimal
-          onVoiceStart={onVoiceStart}
-          onVoiceStop={onVoiceStop}
+          onVoiceToggle={onVoiceToggle}
           isRecording={isRecording}
-          voiceEnabled={voiceEnabled}
+          interimText={interimText}
+          voiceMode="stt"
         />
-        <p className="mt-2 text-center text-[10px] text-white/20">
-          Kişisel verilerini paylaşmaktan kaçın. HAN AI hata yapabilir.
-        </p>
       </div>
 
-      <div className="grid w-full max-w-3xl grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-4">
-        {QUICK_ACTIONS.map((card, i) => (
-          <button
-            key={card.id}
-            type="button"
-            onClick={() => {
-              const moduleId = MODULE_MAP[card.id];
-              if (moduleId) setActiveModule(moduleId);
-            }}
-            className="animate-slide-up group flex min-h-[88px] flex-col items-start gap-2.5 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-3.5 text-left backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 hover:border-han-purple/25 hover:bg-white/[0.05] hover:shadow-[0_8px_32px_rgba(124,58,237,0.12)] disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-[96px] sm:gap-3 sm:p-4 md:p-5"
-            style={{ animationDelay: `${0.15 + i * 0.07}s` }}
-          >
-            <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border sm:h-10 sm:w-10 ${CARD_ACCENTS[card.id]}`}>
-              {CARD_ICONS[card.id]}
-            </span>
-            <span className="text-xs font-semibold leading-snug text-han-text group-hover:text-white sm:text-[13px] md:text-sm">
-              {card.label}
-            </span>
-          </button>
-        ))}
+      <div className="grid w-full max-w-2xl grid-cols-2 gap-2 sm:gap-2.5 md:grid-cols-4">
+        {QUICK_ACTIONS.map((card, i) => {
+          const colors = CARD_COLORS[card.id];
+          return (
+            <button
+              key={card.id}
+              type="button"
+              onClick={() => onQuickAction?.(card.id)}
+              disabled={isLoading}
+              className="animate-slide-up group flex min-h-[76px] flex-col items-start gap-2 rounded-2xl border p-3 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-[84px] sm:gap-2.5 sm:p-3.5"
+              style={{
+                borderColor: "var(--border-subtle)",
+                background: "var(--bg-card)",
+                animationDelay: `${0.12 + i * 0.06}s`,
+              }}
+            >
+              <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border sm:h-9 sm:w-9 ${colors.bg} ${colors.border} ${colors.icon}`}>
+                {CARD_ICONS[card.id]}
+              </span>
+              <span
+                className="text-xs font-medium leading-snug sm:text-[13px]"
+                style={{ color: "var(--text-primary)" }}
+              >
+                {card.label}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
-      <DashboardList onSelectView={(view, sessionId, recordId) => {
-        if (view === "chat") {
-          onSelectView(view, sessionId, recordId);
-        } else {
-          const moduleId = view === "target" ? "targets" : view === "startup" ? "startup" : view === "decision" ? "decisions" : view === "productivity" ? "productivity" : view;
-          setActiveModule(moduleId);
-        }
-      }} />
+      <DashboardList
+        onSelectView={(view, sessionId, recordId) => {
+          if (view === "chat") {
+            onSelectView(view, sessionId, recordId);
+          } else {
+            const moduleId =
+              view === "target"
+                ? "targets"
+                : view === "startup"
+                  ? "startup"
+                  : view === "decision"
+                    ? "decisions"
+                    : view === "productivity"
+                      ? "productivity"
+                      : view;
+            setActiveModule(moduleId);
+          }
+        }}
+      />
 
-      <ModuleHistorySection onSelectView={(view, sessionId, recordId) => {
-        setActiveModule(view);
-      }} />
+      <ModuleHistorySection
+        onSelectView={(view) => {
+          setActiveModule(view);
+        }}
+      />
     </div>
   );
 }

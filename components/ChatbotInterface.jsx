@@ -21,6 +21,7 @@ import { getQuickAction } from '@/lib/quick-actions';
 import LoadingScreen from '@/components/ui/LoadingScreen';
 import { SifuPanda } from '@/components/mascot';
 import { useVoiceChat } from '@/hooks/useVoiceChat';
+import { useSpeechToText } from '@/hooks/useSpeechToText';
 import { detectEmotionFromText } from '@/lib/voice/sifu-emotion';
 // (WelcomeScreen handles Life OS module views internally)
 
@@ -94,6 +95,17 @@ export default function ChatbotInterface() {
 
   const sendMessageRef = useRef(null);
   const speakResponseRef = useRef(() => {});
+  const showSifuPandaRef = useRef(false);
+
+  useEffect(() => {
+    showSifuPandaRef.current = showSifuPanda;
+  }, [showSifuPanda]);
+
+  const speechToText = useSpeechToText({
+    onTranscript: (text) => {
+      setInputValue((prev) => (prev ? `${prev} ${text}` : text));
+    },
+  });
 
   const voice = useVoiceChat({
     onTranscript: (text) => sendMessageRef.current?.(text),
@@ -364,7 +376,9 @@ export default function ChatbotInterface() {
 
       const emotion = detectEmotionFromText(aiText);
       if (!data.gamification?.leveledUp) setSifuEmotion(emotion);
-      speakResponseRef.current?.(aiText);
+      if (showSifuPandaRef.current) {
+        speakResponseRef.current?.(aiText);
+      }
       if (emotion === 'happy' && !data.gamification?.leveledUp) {
         setTimeout(() => setSifuEmotion((prev) => (prev === 'happy' ? 'idle' : prev)), 3000);
       }
@@ -379,19 +393,14 @@ export default function ChatbotInterface() {
 
   sendMessageRef.current = sendMessage;
 
-  const voiceInputProps = {
-    onVoiceStart: voice.startRecording,
-    onVoiceStop: voice.stopRecording,
-    isRecording: voice.isRecording,
-    voiceEnabled: voice.voiceEnabled,
+  const sttInputProps = {
+    onVoiceToggle: speechToText.toggleListening,
+    isRecording: speechToText.isListening,
+    interimText: speechToText.interimText,
+    voiceMode: 'stt',
   };
 
   const showAppLoading = !isMounted || status === 'loading';
-
-  const handleConvertToProject = useCallback(() => {
-    if (!activeSession || activeSession.messages.length === 0) return;
-    alert(`📁 "${activeSession.title}" projesi başarıyla oluşturuldu! \nArtık "Projelerim" sekmesinden takip edebilirsin.`);
-  }, [activeSession]);
 
   const handleQuickAction = useCallback((actionId) => {
     if (isLoading) return;
@@ -502,8 +511,8 @@ export default function ChatbotInterface() {
             sidebarOpen={sidebarOpen}
             sessionTitle={activeSessionId === 'waffle' ? '🧇 Waffle Studio' : showSifuPanda ? '🎙️ Sifu Panda' : activeSession?.title}
             isMobile={isMobile}
-            onConvertToProject={handleConvertToProject}
             onOpenSettings={() => setShowSettings(true)}
+            onOpenVision={() => setShowVision(true)}
           />
 
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
@@ -511,15 +520,36 @@ export default function ChatbotInterface() {
             {showProjects ? (
               <ProjectHub user={session?.user} onClose={() => setShowProjects(false)} />
             ) : showSifuPanda ? (
-              <div className="flex flex-1 flex-col items-center justify-center gap-6 px-4">
-                <div className="h-40 w-40 rounded-full bg-gradient-to-br from-emerald-500/20 to-teal-600/10 p-4 shadow-[0_0_64px_rgba(16,185,129,0.2)]">
-                  <SifuPanda emotion={sifuEmotion} size={128} />
+              <div className="flex flex-1 flex-col items-center justify-center gap-5 px-4 py-6 sm:gap-6">
+                <div className="relative">
+                  <div className="absolute inset-0 rounded-full bg-emerald-500/10 blur-3xl" />
+                  <div className="relative rounded-full bg-gradient-to-br from-emerald-500/15 to-teal-600/10 p-6 shadow-[0_0_64px_rgba(16,185,129,0.15)] sm:p-8">
+                    <SifuPanda
+                      emotion={sifuEmotion}
+                      size={isMobile ? 120 : 160}
+                      isSpeaking={voice.isSpeaking}
+                      isListening={voice.isRecording}
+                    />
+                  </div>
                 </div>
-                <h2 className="text-2xl font-bold text-white">Sifu Panda</h2>
-                <p className="mt-1 text-sm text-white/40">Basılı tut ve konuş — DeepSeek zekasıyla yanıtlasın</p>
+                <div className="text-center">
+                  <h2 className="text-xl font-bold sm:text-2xl" style={{ color: "var(--text-primary)" }}>
+                    Sifu Panda
+                  </h2>
+                  <p className="mt-1 text-sm" style={{ color: "var(--text-muted)" }}>
+                    Basılı tut ve konuş — sesli yanıt al
+                  </p>
+                </div>
 
                 {voice.interimText && (
-                  <div className="max-w-md rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-3 text-center text-sm italic text-white/60 backdrop-blur-xl">
+                  <div
+                    className="max-w-md rounded-2xl border px-5 py-3 text-center text-sm italic backdrop-blur-xl"
+                    style={{
+                      borderColor: "var(--border-subtle)",
+                      background: "var(--bg-elevated)",
+                      color: "var(--text-secondary)",
+                    }}
+                  >
                     &ldquo;{voice.interimText}&rdquo;
                   </div>
                 )}
@@ -529,17 +559,18 @@ export default function ChatbotInterface() {
                     type="button"
                     onMouseDown={voice.startRecording}
                     onMouseUp={voice.stopRecording}
+                    onMouseLeave={voice.isRecording ? voice.stopRecording : undefined}
                     onTouchStart={(e) => { e.preventDefault(); voice.startRecording(); }}
                     onTouchEnd={(e) => { e.preventDefault(); voice.stopRecording(); }}
-                    className={`flex h-20 w-20 items-center justify-center rounded-full border-2 transition-all ${
+                    className={`flex h-[72px] w-[72px] items-center justify-center rounded-full border-2 transition-all sm:h-20 sm:w-20 ${
                       voice.isRecording
                         ? 'scale-110 border-red-400/50 bg-red-500/20 shadow-[0_0_48px_rgba(239,68,68,0.3)]'
                         : 'border-emerald-500/40 bg-emerald-500/10 shadow-[0_0_32px_rgba(16,185,129,0.15)] hover:border-emerald-500/60 hover:bg-emerald-500/15'
                     }`}
-                    aria-label="Mikrofon"
+                    aria-label="Mikrofon — basılı tut"
                   >
                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                      className={voice.isRecording ? 'text-red-300' : 'text-emerald-300'}
+                      className={voice.isRecording ? 'text-red-400' : 'text-emerald-400'}
                     >
                       <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
                       <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
@@ -549,13 +580,17 @@ export default function ChatbotInterface() {
                 </div>
 
                 {voice.isSpeaking && (
-                  <div className="text-sm text-emerald-400/60 animate-pulse">Sifu Panda konuşuyor...</div>
+                  <div className="animate-pulse text-sm text-emerald-500/70">Sifu Panda konuşuyor...</div>
                 )}
 
                 <button
                   type="button"
                   onClick={() => setShowSifuPanda(false)}
-                  className="mt-4 rounded-xl border border-white/10 px-5 py-2 text-xs font-semibold text-white/40 transition-all hover:border-white/20 hover:text-white/60"
+                  className="mt-2 rounded-xl border px-5 py-2 text-xs font-semibold transition-all hover:opacity-80"
+                  style={{
+                    borderColor: "var(--border-subtle)",
+                    color: "var(--text-muted)",
+                  }}
                 >
                   Sohbete Dön
                 </button>
@@ -574,12 +609,12 @@ export default function ChatbotInterface() {
                 />
                 <ChatInput
                   value={inputValue}
-                onInputChange={setInputValue}
+                  onChange={setInputValue}
                   onSend={sendMessage}
                   isLoading={isLoading}
                   centered={false}
                   isMobile={isMobile}
-                  {...voiceInputProps}
+                  {...sttInputProps}
                 />
               </>
             ) : (
@@ -589,9 +624,10 @@ export default function ChatbotInterface() {
                 onInputChange={setInputValue}
                 onSend={sendMessage}
                 isLoading={isLoading}
+                onQuickAction={handleQuickAction}
                 onSelectView={handleSelectView}
                 userEmail={session?.user?.email}
-                {...voiceInputProps}
+                {...sttInputProps}
               />
             )}
           </div>

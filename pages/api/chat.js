@@ -8,6 +8,7 @@ import { google } from 'googleapis';
 import { PrismaClient } from '@prisma/client';
 import { buildLifeCoachSystemPrompt, LEGACY_TOOL_JSON_FORMAT } from '@/lib/lifecoach-system-prompt';
 import { runDeepSeekWithTools } from '@/lib/deepseek-tools';
+import { getQwenConfig } from '../../lib/qwen-api.js';
 
 // Prisma: append ?pgbouncer=true for Vercel serverless (transaction mode = 1 conn per query)
 const dbUrl = process.env.DATABASE_URL || '';
@@ -2198,9 +2199,15 @@ ${userBio ? `\n## Kullanıcı kendini şöyle tanıtıyor\n${userBio}\n` : ''}
       }
     }
 
-    // DeepSeek tek model — hepsi bu
-    const deepseekKey = process.env.DEEPSEEK_API_KEY;
-    const DEEPSEEK_MODEL_CHAIN = ['deepseek-chat', 'deepseek-coder'];
+    // Qwen model chain
+    const qwenConfig = getQwenConfig();
+    const QWEN_MODEL_CHAIN = [
+      qwenConfig.model,
+      'qwen-plus',
+      'qwen-turbo',
+      'qwen/qwen-2.5-72b-instruct',
+      'qwen/qwen-2.5-72b-instruct:free'
+    ].filter((m, i, self) => m && self.indexOf(m) === i);
 
     let youtubeContextInjection = '';
     if (youtube_suggestions?.length) {
@@ -2268,12 +2275,29 @@ ${LEGACY_TOOL_JSON_FORMAT}`,
 
     console.log('[BACKEND DEBUG] Messages array:', messages.length, 'messages for chat:', activeChatId);
 
-    async function tryDeepseekModel(modelName) {
-      if (!deepseekKey) throw new Error("DEEPSEEK_API_KEY ayarlı değil.");
+    async function tryQwenModel(modelName) {
+      const qwenConfig = getQwenConfig();
+      let apiKey = qwenConfig.apiKey;
+      let baseURL = qwenConfig.baseURL;
+
+      // Smart fallback to OpenRouter free models if no key was configured
+      if (qwenConfig.provider === 'mock') {
+        const openrouterKey = process.env.OPENROUTER_API_KEY;
+        if (openrouterKey && openrouterKey.trim() !== "" && !openrouterKey.includes("YourOpenRouterKeyHere")) {
+          apiKey = openrouterKey.trim();
+          baseURL = "https://openrouter.ai/api/v1";
+        } else {
+          throw new Error("Qwen API anahtarı ayarlanmamış. Lütfen .env.local dosyasında DASHSCOPE_API_KEY veya OPENROUTER_API_KEY tanımlayın.");
+        }
+      }
 
       const client = new OpenAI({
-        apiKey: deepseekKey.trim(),
-        baseURL: "https://api.deepseek.com/v1",
+        apiKey: apiKey,
+        baseURL: baseURL,
+        defaultHeaders: baseURL.includes("openrouter.ai") ? {
+          "HTTP-Referer": "https://han-ai.dev/",
+          "X-Title": "Life Coach AI"
+        } : {}
       });
 
       const controller = new AbortController();
@@ -2291,12 +2315,12 @@ ${LEGACY_TOOL_JSON_FORMAT}`,
 
         const content = result.content?.trim();
         if (!content && !result.usedTools) {
-          throw new Error("Deepseek boş yanıt döndürdü.");
+          throw new Error("Qwen boş yanıt döndürdü.");
         }
         return content || "İşlemin tamamlandı. Sonuçları yukarıda özetledim.";
       } catch (err) {
         clearTimeout(timeoutId);
-        if (err.name === 'AbortError') throw new Error("DeepSeek zaman aşımı");
+        if (err.name === 'AbortError') throw new Error("Qwen zaman aşımı");
         throw err;
       }
     }
@@ -2305,26 +2329,24 @@ ${LEGACY_TOOL_JSON_FORMAT}`,
     let usedModel = null;
     let lastError = null;
 
-    if (deepseekKey) {
-      for (const modelName of DEEPSEEK_MODEL_CHAIN) {
-        try {
-          console.log(`[AI] 🚀 DeepSeek deneniyor: ${modelName}`);
-          aiResponse = await tryDeepseekModel(modelName);
-          usedModel = `deepseek/${modelName}`;
-          console.log(`[AI] ✅ DeepSeek ${modelName} başarılı`);
-          break;
-        } catch (err) {
-          console.warn(`[AI] ❌ DeepSeek ${modelName} başarısız: ${err.message}`);
-          lastError = err;
-        }
+    for (const modelName of QWEN_MODEL_CHAIN) {
+      try {
+        console.log(`[AI] 🚀 Qwen deneniyor: ${modelName}`);
+        aiResponse = await tryQwenModel(modelName);
+        usedModel = `qwen/${modelName}`;
+        console.log(`[AI] ✅ Qwen ${modelName} başarılı`);
+        break;
+      } catch (err) {
+        console.warn(`[AI] ❌ Qwen ${modelName} başarısız: ${err.message}`);
+        lastError = err;
       }
     }
 
     if (!aiResponse) {
-      console.error("[AI] 💥 DeepSeek kullanılamıyor.");
+      console.error("[AI] 💥 Qwen kullanılamıyor.");
       return res.status(503).json({
         error: "AI_UNAVAILABLE",
-        message: "Yapay zeka servislerine şu an ulaşılamıyor. Lütfen birkaç saniye sonra tekrar deneyin.",
+        message: "Qwen modeline şu an ulaşılamıyor. Lütfen .env.local dosyasında DASHSCOPE_API_KEY veya OPENROUTER_API_KEY tanımlandığından emin olun.",
         details: lastError?.message
       });
     }

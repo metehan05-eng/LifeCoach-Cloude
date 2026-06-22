@@ -20,10 +20,10 @@ export default function ChatInput({
   centered = false,
   isMobile = false,
   minimal = false,
-  onVoiceStart,
-  onVoiceStop,
+  onVoiceToggle,
   isRecording = false,
-  voiceEnabled = false,
+  voiceMode = "stt",
+  interimText = "",
 }) {
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -118,16 +118,17 @@ export default function ChatInput({
     }
   };
 
-  const btnSize = isMobile ? "h-[34px] w-[34px]" : "h-[38px] w-[38px]";
+  const btnSize = isMobile ? "h-[36px] w-[36px]" : "h-[40px] w-[40px]";
 
   return (
-    <div className={centered ? "w-full" : "shrink-0 px-4 pb-5 pt-0 md:px-5"}>
+    <div className={centered ? "w-full" : "shrink-0 px-3 pb-4 pt-0 sm:px-4 sm:pb-5 md:px-6"}>
       {attachments.length > 0 && (
-        <div className="mb-1.5 flex gap-2 overflow-x-auto">
+        <div className="mb-2 flex gap-2 overflow-x-auto">
           {attachments.map((at) => (
             <div
               key={at.id}
-              className="relative flex h-16 w-[90px] shrink-0 flex-col items-center justify-center overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.03]"
+              className="relative flex h-16 w-[90px] shrink-0 flex-col items-center justify-center overflow-hidden rounded-xl border"
+              style={{ borderColor: "var(--border-subtle)", background: "var(--bg-elevated)" }}
             >
               <button
                 type="button"
@@ -146,7 +147,7 @@ export default function ChatInput({
                   >
                     {getFileIcon(at.extension).icon}
                   </div>
-                  <div className="mt-0.5 w-[85%] truncate text-center text-[9px] text-white/70">
+                  <div className="mt-0.5 w-[85%] truncate text-center text-[9px]" style={{ color: "var(--text-muted)" }}>
                     {at.name}
                   </div>
                 </>
@@ -156,13 +157,16 @@ export default function ChatInput({
         </div>
       )}
 
-      <div
-        className={`han-input-box ${focused ? "border-han-purple/40 shadow-[0_0_32px_rgba(124,58,237,0.12)]" : ""}`}
-      >
+      <div className={`han-input-box ${focused ? "ring-1 ring-violet-500/20" : ""}`}>
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className={`${btnSize} flex shrink-0 items-center justify-center rounded-xl border border-white/[0.05] bg-white/[0.04] text-white/40 transition-colors hover:border-han-purple/20 hover:bg-han-purple/10 hover:text-han-purple-light`}
+          className={`${btnSize} flex shrink-0 items-center justify-center rounded-full border transition-colors`}
+          style={{
+            borderColor: "var(--border-subtle)",
+            background: "var(--bg-elevated)",
+            color: "var(--text-muted)",
+          }}
           title="Dosya Ekle"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -189,36 +193,38 @@ export default function ChatInput({
           onBlur={() => setFocused(false)}
           placeholder={
             centered
-              ? "HAN AI'ya bir şey sor veya dosya at..."
-              : "Bir şey sor..."
+              ? "Mesajını yaz veya dosya ekle..."
+              : "Mesaj yaz..."
           }
           disabled={isLoading}
           rows={1}
-          className="max-h-40 min-h-[22px] flex-1 resize-none border-none bg-transparent px-1 py-2 text-sm font-medium tracking-tight text-han-text outline-none [caret-color:#a78bfa] placeholder:text-white/25 md:text-[15px]"
+          className="max-h-40 min-h-[24px] flex-1 resize-none border-none bg-transparent px-1 py-2.5 text-sm font-normal tracking-tight outline-none md:text-[15px]"
+          style={{
+            color: "var(--text-primary)",
+            caretColor: "#7c3aed",
+          }}
         />
 
-        {onVoiceStart && (
+        {onVoiceToggle && voiceMode === "stt" && (
           <button
             type="button"
-            onMouseDown={onVoiceStart}
-            onMouseUp={onVoiceStop}
-            onTouchStart={(e) => {
-              e.preventDefault();
-              onVoiceStart();
-            }}
-            onTouchEnd={(e) => {
-              e.preventDefault();
-              onVoiceStop?.();
-            }}
-            className={`${btnSize} flex shrink-0 items-center justify-center rounded-xl border transition-all ${
+            onClick={onVoiceToggle}
+            className={`${btnSize} flex shrink-0 items-center justify-center rounded-full border transition-all ${
               isRecording
-                ? "border-red-400/40 bg-red-500/20 text-red-300 shadow-[0_0_16px_rgba(239,68,68,0.3)]"
-                : voiceEnabled
-                  ? "border-han-gold/25 bg-han-gold/10 text-han-gold hover:border-han-gold/40"
-                  : "border-white/[0.05] bg-white/[0.04] text-white/40 hover:border-han-purple/20 hover:bg-han-purple/10 hover:text-han-purple-light"
+                ? "border-red-400/40 bg-red-500/15 text-red-500 shadow-[0_0_16px_rgba(239,68,68,0.2)] animate-pulse"
+                : "hover:border-violet-500/30 hover:bg-violet-500/10 hover:text-violet-500"
             }`}
-            title="Basılı tut — konuş"
-            aria-label="Mikrofon"
+            style={
+              !isRecording
+                ? {
+                    borderColor: "var(--border-subtle)",
+                    background: "var(--bg-elevated)",
+                    color: "var(--text-muted)",
+                  }
+                : undefined
+            }
+            title={isRecording ? "Dinlemeyi durdur" : "Sesli yaz — konuşmayı metne çevir"}
+            aria-label="Sesli yaz"
           >
             <MicIcon active={isRecording} />
           </button>
@@ -228,21 +234,22 @@ export default function ChatInput({
           type="button"
           onClick={handleSend}
           disabled={!isReady}
-          className={`${btnSize} flex shrink-0 items-center justify-center rounded-xl border-none transition-all duration-300 ${
+          className={`${btnSize} flex shrink-0 items-center justify-center rounded-full border-none transition-all duration-200 ${
             isReady
-              ? "scale-100 bg-gradient-to-br from-han-purple to-han-indigo shadow-[0_0_16px_rgba(124,58,237,0.4)] hover:scale-105 hover:shadow-[0_0_24px_rgba(124,58,237,0.5)]"
-              : "scale-[0.85] cursor-not-allowed bg-han-purple/[0.06]"
+              ? "bg-gradient-to-br from-violet-600 to-indigo-600 shadow-md hover:scale-105 hover:shadow-lg"
+              : "cursor-not-allowed opacity-40"
           }`}
+          style={!isReady ? { background: "var(--bg-hover)" } : undefined}
         >
           {isLoading ? (
-            <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-violet-300/25 border-t-violet-300" />
+            <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/25 border-t-white" />
           ) : (
             <svg
-              width="15"
-              height="15"
+              width="16"
+              height="16"
               viewBox="0 0 24 24"
               fill="none"
-              stroke={isReady ? "white" : "rgba(124,58,237,0.3)"}
+              stroke={isReady ? "white" : "var(--text-muted)"}
               strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -254,9 +261,15 @@ export default function ChatInput({
         </button>
       </div>
 
+      {isRecording && interimText && (
+        <p className="mt-1.5 px-2 text-xs italic" style={{ color: "var(--text-muted)" }}>
+          Dinleniyor: &ldquo;{interimText}&rdquo;
+        </p>
+      )}
+
       {!isMobile && !centered && !minimal && (
-        <div className="mt-1.5 text-center text-[10px] text-white/20">
-          LifeCoach AI · HAN 4.2 Ultra Core
+        <div className="mt-2 text-center text-[10px]" style={{ color: "var(--text-muted)" }}>
+          HAN AI hata yapabilir. Kişisel verilerini paylaşmaktan kaçın.
         </div>
       )}
     </div>

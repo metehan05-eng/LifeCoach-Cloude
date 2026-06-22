@@ -1,27 +1,53 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useAppTheme } from "@/hooks/useAppTheme";
+
+function ThemeIcon({ theme }) {
+  if (theme === "light") {
+    return (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+      </svg>
+    );
+  }
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+    </svg>
+  );
+}
 
 export default function ChatHeader({
   onToggleSidebar,
   sidebarOpen,
   sessionTitle,
   isMobile,
-  onConvertToProject,
   onOpenSettings,
+  onOpenVision,
 }) {
-  const [showComingSoon, setShowComingSoon] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const { theme, toggleTheme, mounted: themeMounted } = useAppTheme();
 
   useEffect(() => setMounted(true), []);
 
+  const btnClass =
+    "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-colors";
+
   return (
-    <header className="relative z-20 flex h-14 shrink-0 items-center gap-3 border-b border-han-purple/[0.06] bg-[rgba(6,6,18,0.9)] px-4 backdrop-blur-[32px]">
+    <header
+      className="relative z-20 flex h-14 shrink-0 items-center gap-3 border-b px-4 backdrop-blur-[32px]"
+      style={{
+        borderColor: "var(--border-subtle)",
+        background: "var(--chat-header-bg)",
+      }}
+    >
       <button
         type="button"
         onClick={onToggleSidebar}
         title={sidebarOpen ? "Sidebar gizle" : "Sidebar göster"}
-        className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-xl border border-han-purple/15 bg-han-purple/[0.08] text-han-purple-light transition-colors hover:bg-han-purple/20"
+        className={`${btnClass} border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]`}
       >
         <svg width="15" height="15" viewBox="0 0 20 20" fill="none" aria-hidden="true">
           {mounted && sidebarOpen && !isMobile ? (
@@ -40,77 +66,58 @@ export default function ChatHeader({
       </button>
 
       <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-semibold text-han-text md:text-[14px]">
+        <div
+          className="truncate text-sm font-semibold md:text-[14px]"
+          style={{ color: "var(--text-primary)" }}
+        >
           {sessionTitle || "Yeni Sohbet"}
         </div>
         <div className="mt-0.5 flex items-center gap-1.5">
           <div className="h-[5px] w-[5px] animate-pulse-dot rounded-full bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.8)]" />
-          <span className="text-[10px] font-medium text-han-muted">
-            {isMobile ? "Çevrimiçi" : "HAN 4.2 Ultra Core · Çevrimiçi"}
+          <span className="text-[10px] font-medium" style={{ color: "var(--text-muted)" }}>
+            Çevrimiçi
           </span>
         </div>
       </div>
 
-      {!isMobile && (
-        <div className="whitespace-nowrap rounded-full border border-han-purple/20 bg-gradient-to-br from-han-purple/15 to-han-indigo/10 px-3 py-1 text-[10.5px] font-semibold text-han-purple-light">
-          HAN 4.2 Ultra Core
-        </div>
-      )}
-
-      <button
-        type="button"
-        onClick={() => onConvertToProject?.()}
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-han-purple/15 bg-han-purple/[0.08] text-sm text-han-purple-light transition-colors hover:bg-han-purple/20 hover:text-violet-200"
-        title="Bu Sohbeti Projeye Dönüştür"
-      >
-        📁
-      </button>
-
-      <button
-        type="button"
-        onClick={() => setShowComingSoon(true)}
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-violet-500/25 bg-violet-500/10 text-sm text-violet-300 transition-colors hover:bg-violet-500/20 hover:text-han-text"
-        title="HAN Code IDE"
-      >
-        ⚔️
-      </button>
-
-      <button
-        type="button"
-        onClick={() => onOpenSettings?.()}
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.06] bg-white/[0.03] text-sm text-han-muted transition-colors hover:bg-white/[0.06] hover:text-han-text"
-        title="Ayarlar"
-      >
-        ⚙
-      </button>
-
-      {showComingSoon && (
-        <div
-          className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/70"
-          onClick={() => setShowComingSoon(false)}
-        >
-          <div
-            className="w-[90%] max-w-sm rounded-2xl border border-han-purple/25 bg-gradient-to-br from-han-purple/15 to-han-indigo/10 p-8 text-center backdrop-blur-xl"
-            onClick={(e) => e.stopPropagation()}
+      <div className="flex items-center gap-1.5">
+        {onOpenVision && (
+          <button
+            type="button"
+            onClick={onOpenVision}
+            className={`${btnClass} border-indigo-500/25 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20`}
+            title="HAN Vision — Yüz Analizi"
           >
-            <div className="mb-4 text-5xl">⚔️</div>
-            <h2 className="mb-3 bg-gradient-to-r from-han-purple to-han-indigo bg-clip-text text-2xl font-bold text-transparent">
-              Coming Soon
-            </h2>
-            <h3 className="mb-4 text-xl font-semibold text-violet-300">Han Code</h3>
-            <p className="mb-6 text-sm leading-relaxed text-white/70">
-              Elite AI Software Engineer. Mobil, web, desktop, backend — her şeyi yapabilir.
-            </p>
-            <button
-              type="button"
-              onClick={() => setShowComingSoon(false)}
-              className="rounded-xl bg-gradient-to-r from-han-purple to-han-indigo px-8 py-3 text-sm font-semibold text-white transition-transform hover:scale-105"
-            >
-              Tamam
-            </button>
-          </div>
-        </div>
-      )}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+          </button>
+        )}
+
+        {themeMounted && (
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className={`${btnClass} border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]`}
+            title={theme === "dark" ? "Açık tema" : "Koyu tema"}
+          >
+            <ThemeIcon theme={theme} />
+          </button>
+        )}
+
+        <button
+          type="button"
+          onClick={() => onOpenSettings?.()}
+          className={`${btnClass} border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]`}
+          title="Ayarlar"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+        </button>
+      </div>
     </header>
   );
 }
