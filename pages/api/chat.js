@@ -681,7 +681,8 @@ async function extract_to_spreadsheet(file_id_or_text) {
 
 // Check if a string looks like a YouTube URL
 function isYouTubeUrl(input) {
-  return isYouTubeLink(input);
+  if (!input || typeof input !== 'string') return false;
+  return /(?:youtube\.com|youtu\.be|m\.youtube\.com|youtube\.com\/shorts)/i.test(input.trim());
 }
 
 // Extract YouTube video ID from any URL format or return video ID directly

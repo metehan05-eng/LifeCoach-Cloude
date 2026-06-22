@@ -1,6 +1,7 @@
 /**
  * GET /api/modules/dashboard  – Dashboard için aktif işlerin özet listesi
  * Tüm 4 modülden status="aktif" kayıtları döner
+ * Not: DB tabloları yoksa hata vermez, boş dizi döner
  */
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/pages/api/auth/[...nextauth]";
@@ -9,6 +10,16 @@ import { NextResponse } from "next/server";
 
 export const dynamic = 'force-dynamic';
 
+async function safeQuery(queryFn, fallback = []) {
+  try {
+    const result = await queryFn();
+    return result ?? fallback;
+  } catch (err) {
+    if (err?.code === 'P2021') return fallback;
+    throw err;
+  }
+}
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
@@ -16,36 +27,36 @@ export async function GET() {
 
     const userId = session.user.id;
 
-    // Paralel sorgular
+    // Paralel sorgular — tablo yoksa boş dizi/null döner
     const [targets, productivities, startups, decisions, user] = await Promise.all([
-      prismaClient.target.findMany({
+      safeQuery(() => prismaClient.target.findMany({
         where: { userId, status: "aktif" },
         orderBy: { createdAt: "desc" },
         take: 5,
         include: { chatHistory: { select: { sessionId: true } } },
-      }),
-      prismaClient.productivity.findMany({
+      })),
+      safeQuery(() => prismaClient.productivity.findMany({
         where: { userId, status: "aktif" },
         orderBy: { createdAt: "desc" },
         take: 3,
         include: { chatHistory: { select: { sessionId: true } } },
-      }),
-      prismaClient.startup.findMany({
+      })),
+      safeQuery(() => prismaClient.startup.findMany({
         where: { userId },
         orderBy: { createdAt: "desc" },
         take: 3,
         include: { chatHistory: { select: { sessionId: true } } },
-      }),
-      prismaClient.decision.findMany({
+      })),
+      safeQuery(() => prismaClient.decision.findMany({
         where: { userId },
         orderBy: { createdAt: "desc" },
         take: 5,
         include: { chatHistory: { select: { sessionId: true } } },
-      }),
-      prismaClient.user.findUnique({
+      })),
+      safeQuery(() => prismaClient.user.findUnique({
         where: { id: userId },
         select: { xp: true, level: true, totalXp: true, name: true, image: true },
-      }),
+      }), null),
     ]);
 
     // Hedefler için kalan gün hesapla
@@ -128,10 +139,10 @@ export async function GET() {
         decisions: enrichedDecisions,
       },
       stats: {
-        totalTargets: await prismaClient.target.count({ where: { userId } }),
-        completedTargets: await prismaClient.target.count({ where: { userId, status: "tamamlandı" } }),
-        totalStartups: await prismaClient.startup.count({ where: { userId } }),
-        totalDecisions: await prismaClient.decision.count({ where: { userId } }),
+        totalTargets: await safeQuery(() => prismaClient.target.count({ where: { userId } }), 0),
+        completedTargets: await safeQuery(() => prismaClient.target.count({ where: { userId, status: "tamamlandı" } }), 0),
+        totalStartups: await safeQuery(() => prismaClient.startup.count({ where: { userId } }), 0),
+        totalDecisions: await safeQuery(() => prismaClient.decision.count({ where: { userId } }), 0),
       },
     });
   } catch (err) {

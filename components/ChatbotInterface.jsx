@@ -12,6 +12,10 @@ import SettingsModal from './chat/SettingsModal';
 import ProjectHub from './chat/ProjectHub';
 import PremiumHub from './chat/PremiumHub';
 import HANVision from './chat/HANVision';
+import TargetsView from './modules/TargetsView';
+import StartupView from './modules/StartupView';
+import ProductivityView from './modules/ProductivityView';
+import DecisionsView from './modules/DecisionsView';
 import LootBox from './chat/LootBox';
 import LevelUpCelebration from './chat/LevelUpCelebration';
 import styles from './ChatbotInterface.module.css';
@@ -487,6 +491,9 @@ export default function ChatbotInterface() {
               else if (id === 'lootbox') setShowLootBox(true);
               else if (id === 'sifu-panda') { setShowSifuPanda(true); setActiveSessionId(null); setActiveView('chat'); }
               else if (id === 'waffle') { setShowSifuPanda(false); setActiveSessionId('waffle'); setActiveView('chat'); }
+              else if (id === 'targets' || id === 'startup' || id === 'productivity' || id === 'decisions') {
+                handleSelectView(id);
+              }
               else {
                 setActiveSessionId(id);
                 setActiveChatId(id);
@@ -537,7 +544,7 @@ export default function ChatbotInterface() {
                     Sifu Panda
                   </h2>
                   <p className="mt-1 text-sm" style={{ color: "var(--text-muted)" }}>
-                    Basılı tut ve konuş — sesli yanıt al
+                    Mikrofon — konuşmak için tıkla
                   </p>
                 </div>
 
@@ -557,17 +564,13 @@ export default function ChatbotInterface() {
                 <div className="flex items-center gap-4">
                   <button
                     type="button"
-                    onMouseDown={voice.startRecording}
-                    onMouseUp={voice.stopRecording}
-                    onMouseLeave={voice.isRecording ? voice.stopRecording : undefined}
-                    onTouchStart={(e) => { e.preventDefault(); voice.startRecording(); }}
-                    onTouchEnd={(e) => { e.preventDefault(); voice.stopRecording(); }}
+                    onClick={() => voice.isRecording ? voice.stopRecording() : voice.startRecording()}
                     className={`flex h-[72px] w-[72px] items-center justify-center rounded-full border-2 transition-all sm:h-20 sm:w-20 ${
                       voice.isRecording
                         ? 'scale-110 border-red-400/50 bg-red-500/20 shadow-[0_0_48px_rgba(239,68,68,0.3)]'
                         : 'border-emerald-500/40 bg-emerald-500/10 shadow-[0_0_32px_rgba(16,185,129,0.15)] hover:border-emerald-500/60 hover:bg-emerald-500/15'
                     }`}
-                    aria-label="Mikrofon — basılı tut"
+                    aria-label={voice.isRecording ? 'Kaydı durdur' : 'Mikrofon'}
                   >
                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
                       className={voice.isRecording ? 'text-red-400' : 'text-emerald-400'}
@@ -595,6 +598,14 @@ export default function ChatbotInterface() {
                   Sohbete Dön
                 </button>
               </div>
+            ) : activeSessionId === 'targets' ? (
+              <TargetsView onSelectView={handleSelectView} userEmail={session?.user?.email} />
+            ) : activeSessionId === 'startup' ? (
+              <StartupView onSelectView={handleSelectView} userEmail={session?.user?.email} />
+            ) : activeSessionId === 'productivity' ? (
+              <ProductivityView onSelectView={handleSelectView} userEmail={session?.user?.email} />
+            ) : activeSessionId === 'decisions' ? (
+              <DecisionsView onSelectView={handleSelectView} userEmail={session?.user?.email} />
             ) : activeSessionId === 'waffle' ? (
               <WaffleStudio isMobile={isMobile} />
             ) : hasMessages ? (
