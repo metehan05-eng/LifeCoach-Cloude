@@ -217,7 +217,7 @@ Before writing code for any non-trivial project:
 // ============================================================
 // QWEN DASHSCOPE (Singapore Region - Primary)
 // ============================================================
-async function callQwenDashScope(systemPrompt, userMessages, model = 'qwen-plus', maxTokens = 8192) {
+async function callQwenDashScope(systemPrompt, userMessages, model = 'qwen3.7-plus', maxTokens = 8192) {
   const apiKey = process.env.DASHSCOPE_API_KEY;
   if (!apiKey) throw new Error('DASHSCOPE_API_KEY ayarlı değil.');
 
@@ -263,7 +263,7 @@ async function callQwenDashScope(systemPrompt, userMessages, model = 'qwen-plus'
 // ============================================================
 // MODEL CHAINS (Qwen as Primary)
 // ============================================================
-const QWEN_MODEL_CHAIN = (process.env.QWEN_MODELS || 'qwen-plus|qwen-turbo|qwen-flash').split('|');
+const QWEN_MODEL_CHAIN = (process.env.QWEN_API_MODELS || 'qwen3.7-plus|qwen-plus|qwen-flash').split('|');
 
 const OPENROUTER_MODEL_CHAIN = (process.env.OPENROUTER_CODE_MODELS ||
   'google/gemma-3-27b-it:free|meta-llama/llama-3.3-70b-instruct:free|' +

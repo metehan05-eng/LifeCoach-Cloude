@@ -2199,12 +2199,15 @@ ${userBio ? `\n## Kullanıcı kendini şöyle tanıtıyor\n${userBio}\n` : ''}
       }
     }
 
-    // Qwen model chain
+    // Qwen model chain — öncelik qwen3.7-plus
     const qwenConfig = getQwenConfig();
+    const envModels = (process.env.QWEN_API_MODELS || '').split('|').filter(Boolean);
     const QWEN_MODEL_CHAIN = [
+      ...envModels,
       qwenConfig.model,
+      'qwen3.7-plus',
       'qwen-plus',
-      'qwen-turbo',
+      'qwen-flash',
       'qwen/qwen-2.5-72b-instruct',
       'qwen/qwen-2.5-72b-instruct:free'
     ].filter((m, i, self) => m && self.indexOf(m) === i);
