@@ -9,6 +9,7 @@ import { PrismaClient } from '@prisma/client';
 import { buildLifeCoachSystemPrompt, LEGACY_TOOL_JSON_FORMAT } from '@/lib/lifecoach-system-prompt';
 import { runDeepSeekWithTools } from '@/lib/deepseek-tools';
 import { getQwenConfig } from '../../lib/qwen-api.js';
+import { detectYouTubeVideoIntent } from '../../lib/youtube-search.js';
 
 // Prisma: append ?pgbouncer=true for Vercel serverless (transaction mode = 1 conn per query)
 const dbUrl = process.env.DATABASE_URL || '';
@@ -2233,7 +2234,14 @@ ${userBio ? `\n## Kullanıcı kendini şöyle tanıtıyor\n${userBio}\n` : ''}
 ${LEGACY_TOOL_JSON_FORMAT}`,
     });
 
-    const hasImages = imagesForVision && imagesForVision.length > 0;
+    // Qwen modelleri (qwen3.7-plus) görsel girdi desteklemez.
+    // Görsel varsa kaldır ve kullanıcıyı bilgilendir.
+    let hasImages = imagesForVision && imagesForVision.length > 0;
+    if (hasImages) {
+      tool_notes.push('Görsel analizi şu an desteklenmiyor. Sadece metin mesajınız işlendi.');
+      imagesForVision = [];
+      hasImages = false;
+    }
 
     const messages = [
       { role: "system", content: systemPrompt }

@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { isPrismaError } from '@/lib/prisma';
 import { rewardForAction, applyXpAndLevel } from '../../../lib/gamification';
 
 const dbUrl = process.env.DATABASE_URL || '';
@@ -75,6 +76,13 @@ export default async function handler(req, res) {
 
     return res.status(405).json({ error: 'Method not allowed' });
   } catch (error) {
+    if (isPrismaError(error)) {
+      return res.status(200).json({
+        xp: 0, level: 1, totalXp: 0, han_coins: 0,
+        isPremium: false, plan: 'FREE', currentStreak: 0, maxStreak: 0,
+        inventory: [],
+      });
+    }
     console.error('[Gamification] Error:', error);
     return res.status(500).json({ error: error.message });
   }

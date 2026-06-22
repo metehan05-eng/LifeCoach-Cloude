@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { isPrismaError } from '@/lib/prisma';
 
 const dbUrl = process.env.DATABASE_URL || '';
 const prisma = new PrismaClient({
@@ -64,6 +65,12 @@ export default async function handler(req, res) {
 
     return res.status(405).json({ error: 'Method not allowed' });
   } catch (error) {
+    if (isPrismaError(error)) {
+      if (method === 'GET') return res.status(200).json([]);
+      if (method === 'POST') return res.status(200).json({ id: null, title: null });
+      if (method === 'DELETE') return res.status(200).json({ success: true });
+      return res.status(200).json({});
+    }
     console.error('[Chat History] Error:', error);
     return res.status(500).json({ error: error.message });
   }

@@ -4,7 +4,7 @@
  */
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/pages/api/auth/[...nextauth]";
-import { prismaClient } from "@/lib/prisma";
+import { prismaClient, isPrismaError } from "@/lib/prisma";
 import { generateStartupRoadmap } from "@/lib/modules-ai";
 import { NextResponse } from "next/server";
 
@@ -24,6 +24,7 @@ export async function GET(request) {
 
     return NextResponse.json({ records });
   } catch (err) {
+    if (isPrismaError(err)) return NextResponse.json({ records: [] });
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
@@ -129,6 +130,7 @@ export async function POST(request) {
 
     return NextResponse.json({ record, aiResult, sessionId: chatHistory.sessionId });
   } catch (err) {
+    if (isPrismaError(err)) return NextResponse.json({ record: null, aiResult: null, sessionId: null });
     console.error("[POST /api/modules/startup]", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }

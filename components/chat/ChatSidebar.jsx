@@ -119,53 +119,6 @@ export default function ChatSidebar({
 
         </div>
 
-        {/* Module Navigation */}
-        <div className="flex flex-col gap-1 border-b border-han-purple/[0.06] px-3 pb-2 pt-1.5">
-          <span className="px-1 pb-0.5 text-[10px] font-semibold uppercase tracking-widest text-han-muted/50">
-            Modüller
-          </span>
-          <button
-            type="button"
-            onClick={() => onSelectSession('targets')}
-            className="flex w-full items-center gap-2.5 rounded-xl border border-transparent px-3.5 py-2 text-[13px] font-medium text-han-text/80 transition-all hover:border-han-purple/20 hover:bg-han-purple/10 hover:text-han-text"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-rose-400">
-              <circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" />
-            </svg>
-            Hedeflerim
-          </button>
-          <button
-            type="button"
-            onClick={() => onSelectSession('startup')}
-            className="flex w-full items-center gap-2.5 rounded-xl border border-transparent px-3.5 py-2 text-[13px] font-medium text-han-text/80 transition-all hover:border-han-purple/20 hover:bg-han-purple/10 hover:text-han-text"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-400">
-              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-            </svg>
-            Startup
-          </button>
-          <button
-            type="button"
-            onClick={() => onSelectSession('productivity')}
-            className="flex w-full items-center gap-2.5 rounded-xl border border-transparent px-3.5 py-2 text-[13px] font-medium text-han-text/80 transition-all hover:border-han-purple/20 hover:bg-han-purple/10 hover:text-han-text"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-400">
-              <path d="M12 20V10" /><path d="M18 20V4" /><path d="M6 20v-4" />
-            </svg>
-            Verimlilik
-          </button>
-          <button
-            type="button"
-            onClick={() => onSelectSession('decisions')}
-            className="flex w-full items-center gap-2.5 rounded-xl border border-transparent px-3.5 py-2 text-[13px] font-medium text-han-text/80 transition-all hover:border-han-purple/20 hover:bg-han-purple/10 hover:text-han-text"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-400">
-              <path d="M9 18l6-6-6-6" />
-            </svg>
-            Kararlar
-          </button>
-        </div>
-
         {/* Tabs */}
         <div className="mb-1.5 flex border-b border-han-purple/[0.06]">
           <button

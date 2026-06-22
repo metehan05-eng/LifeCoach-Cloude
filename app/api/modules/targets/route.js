@@ -4,7 +4,7 @@
  */
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/pages/api/auth/[...nextauth]";
-import { prismaClient } from "@/lib/prisma";
+import { prismaClient, isPrismaError } from "@/lib/prisma";
 import { generateTargetPlan, getMockTargetPlan } from "@/lib/modules-ai";
 import { NextResponse } from "next/server";
 
@@ -51,6 +51,9 @@ export async function GET(request) {
       todayTarget: todayTarget || null,
     });
   } catch (err) {
+    if (isPrismaError(err)) {
+      return NextResponse.json({ targets: [], hasTodayTarget: false, todayTarget: null });
+    }
     console.error("[GET /api/modules/targets]", err);
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
   }
@@ -137,6 +140,9 @@ export async function POST(request) {
       sessionId: chatHistory.sessionId,
     });
   } catch (err) {
+    if (isPrismaError(err)) {
+      return NextResponse.json({ target: null, aiResult: null, sessionId: null });
+    }
     console.error("[POST /api/modules/targets]", err);
     return NextResponse.json({ error: "Sunucu hatası: " + err.message }, { status: 500 });
   }

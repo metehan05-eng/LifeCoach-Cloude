@@ -5,7 +5,7 @@
  */
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/pages/api/auth/[...nextauth]";
-import { prismaClient } from "@/lib/prisma";
+import { prismaClient, isPrismaError } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
 export const dynamic = 'force-dynamic';
@@ -15,7 +15,7 @@ async function safeQuery(queryFn, fallback = []) {
     const result = await queryFn();
     return result ?? fallback;
   } catch (err) {
-    if (err?.code === 'P2021') return fallback;
+    if (isPrismaError(err)) return fallback;
     throw err;
   }
 }

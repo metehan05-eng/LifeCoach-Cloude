@@ -125,7 +125,11 @@ export default function WelcomeScreen({
             <button
               key={card.id}
               type="button"
-              onClick={() => onQuickAction?.(card.id)}
+               onClick={() => {
+                  const moduleId = MODULE_MAP[card.id];
+                  if (moduleId) setActiveModule(moduleId);
+                  else onQuickAction?.(card.id);
+                }}
               disabled={isLoading}
               className="animate-slide-up group flex min-h-[76px] flex-col items-start gap-2 rounded-2xl border p-3 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-[84px] sm:gap-2.5 sm:p-3.5"
               style={{
