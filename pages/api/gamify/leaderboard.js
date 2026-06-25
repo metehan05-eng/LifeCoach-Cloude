@@ -1,6 +1,4 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prismaClient as prisma } from '@/lib/prisma';
 
 const COUNTRIES = [
   '🇹🇷 TR', '🇺🇸 US', '🇩🇪 DE', '🇯🇵 JP', '🇬🇧 UK', '🇫🇷 FR', '🇰🇷 KR', '🇧🇷 BR', '🇨🇦 CA', '🇮🇹 IT',

@@ -5,22 +5,12 @@ import mammoth from 'mammoth';
 import * as xlsx from 'xlsx';
 import { JWT } from 'google-auth-library';
 import { google } from 'googleapis';
-import { PrismaClient } from '@prisma/client';
 import { buildLifeCoachSystemPrompt, LEGACY_TOOL_JSON_FORMAT } from '@/lib/lifecoach-system-prompt';
 import { runDeepSeekWithTools } from '@/lib/deepseek-tools';
 import { getQwenConfig } from '../../lib/qwen-api.js';
 import { detectYouTubeVideoIntent } from '../../lib/youtube-search.js';
 import { generateChatTitle } from '../../lib/chat-title.js';
-
-// Prisma: append ?pgbouncer=true for Vercel serverless (transaction mode = 1 conn per query)
-const dbUrl = process.env.DATABASE_URL || '';
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: dbUrl.includes('pgbouncer') ? dbUrl : dbUrl + (dbUrl.includes('?') ? '&' : '?') + 'pgbouncer=true&connection_limit=1&pool_timeout=5',
-    },
-  },
-});
+import { prismaClient as prisma } from '@/lib/prisma';
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
 // CONCURRENCY LOCK: Simple in-memory lock to prevent overlapping chat requests per session
@@ -2537,5 +2527,7 @@ ${LEGACY_TOOL_JSON_FORMAT}`,
     if (resolveLock) {
       resolveLock();
     }
+    // SERVERLESS: Bağlantıyı hemen havuza geri bırak
+    await prisma.$disconnect().catch(() => {});
   }
 }

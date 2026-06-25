@@ -1,14 +1,4 @@
-import { PrismaClient } from '@prisma/client';
-import { isPrismaError } from '@/lib/prisma';
-
-const dbUrl = process.env.DATABASE_URL || '';
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: dbUrl.includes('pgbouncer') ? dbUrl : dbUrl + (dbUrl.includes('?') ? '&' : '?') + 'pgbouncer=true&connection_limit=1&pool_timeout=5',
-    },
-  },
-});
+import { prismaClient as prisma, isPrismaError } from '@/lib/prisma';
 
 export default async function handler(req, res) {
   const { method } = req;
@@ -73,5 +63,7 @@ export default async function handler(req, res) {
     }
     console.error('[Chat History] Error:', error);
     return res.status(500).json({ error: error.message });
+  } finally {
+    await prisma.$disconnect().catch(() => {});
   }
 }

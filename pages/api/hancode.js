@@ -1,7 +1,5 @@
 import OpenAI from 'openai';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prismaClient as prisma } from '@/lib/prisma';
 
 // ============================================================
 // HAN CODE — SYSTEM PROMPT
@@ -624,5 +622,7 @@ ${codeContext ? `\n## Attached Files\n${codeContext}` : ''}
   } catch (error) {
     console.error('[HAN-Code] Sistem Hatası:', error);
     return res.status(500).json({ error: 'Sistem Hatası', details: error.message });
+  } finally {
+    await prisma.$disconnect().catch(() => {});
   }
 }

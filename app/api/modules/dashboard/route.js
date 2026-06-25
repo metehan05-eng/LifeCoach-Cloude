@@ -148,5 +148,7 @@ export async function GET() {
   } catch (err) {
     console.error("[GET /api/modules/dashboard]", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
+  } finally {
+    await prismaClient.$disconnect().catch(() => {});
   }
 }

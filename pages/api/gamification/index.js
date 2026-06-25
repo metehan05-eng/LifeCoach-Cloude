@@ -1,15 +1,5 @@
-import { PrismaClient } from '@prisma/client';
-import { isPrismaError } from '@/lib/prisma';
+import { prismaClient as prisma, isPrismaError } from '@/lib/prisma';
 import { rewardForAction, applyXpAndLevel } from '../../../lib/gamification';
-
-const dbUrl = process.env.DATABASE_URL || '';
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: dbUrl.includes('pgbouncer') ? dbUrl : dbUrl + (dbUrl.includes('?') ? '&' : '?') + 'pgbouncer=true&connection_limit=1&pool_timeout=5',
-    },
-  },
-});
 
 export default async function handler(req, res) {
   const { method } = req;
@@ -85,5 +75,7 @@ export default async function handler(req, res) {
     }
     console.error('[Gamification] Error:', error);
     return res.status(500).json({ error: error.message });
+  } finally {
+    await prisma.$disconnect().catch(() => {});
   }
 }

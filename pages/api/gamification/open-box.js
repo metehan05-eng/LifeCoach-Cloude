@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import { prismaClient as prisma } from '@/lib/prisma';
 import { rollLootBox } from '../../../lib/gamification';
-
-const prisma = new PrismaClient();
 
 const BOX_PRICE = {
   standard: 200,
@@ -89,5 +87,7 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error('[LootBox] Error:', error);
     return res.status(500).json({ error: error.message });
+  } finally {
+    await prisma.$disconnect().catch(() => {});
   }
 }
