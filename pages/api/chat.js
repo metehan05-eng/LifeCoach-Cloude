@@ -10,6 +10,7 @@ import { buildLifeCoachSystemPrompt, LEGACY_TOOL_JSON_FORMAT } from '@/lib/lifec
 import { runDeepSeekWithTools } from '@/lib/deepseek-tools';
 import { getQwenConfig } from '../../lib/qwen-api.js';
 import { detectYouTubeVideoIntent } from '../../lib/youtube-search.js';
+import { generateChatTitle } from '../../lib/chat-title.js';
 
 // Prisma: append ?pgbouncer=true for Vercel serverless (transaction mode = 1 conn per query)
 const dbUrl = process.env.DATABASE_URL || '';
@@ -2429,12 +2430,14 @@ ${LEGACY_TOOL_JSON_FORMAT}`,
             },
           },
         });
-        // Update chat title with first meaningful message
+        // AI ile sohbet başlığı oluştur / güncelle
         const msgCount = await prisma.chatMessage.count({ where: { chatId: activeChatId } });
-        if (msgCount <= 2) {
+        let generatedTitle = null;
+        if (msgCount <= 2 || msgCount % 5 === 0) {
+          generatedTitle = await generateChatTitle(message, cleanReply, dbHistory);
           await prisma.chat.update({
             where: { id: activeChatId },
-            data: { title: message ? message.slice(0, 80) : 'Yeni Sohbet' },
+            data: generatedTitle ? { title: generatedTitle } : { updatedAt: new Date() },
           });
         } else {
           await prisma.chat.update({
@@ -2483,6 +2486,7 @@ ${LEGACY_TOOL_JSON_FORMAT}`,
     return res.status(200).json({
       reply: cleanReply,
       chatId: activeChatId,
+      title: generatedTitle,
       automation_data,
       sources: searchSources,
       searched: searchSources.length > 0,

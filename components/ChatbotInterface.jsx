@@ -359,7 +359,7 @@ export default function ChatbotInterface() {
 
       setSessions(prev => prev.map(s =>
         s.id === targetSessionId || s.id === finalSessionId
-          ? { ...s, messages: [...s.messages, {
+          ? { ...s, title: data.title || s.title, messages: [...s.messages, {
               role: 'assistant', content: aiText, id: Date.now(),
               sources: aiSources, files: generatedFiles,
               youtube_suggestions: youtubeSuggestions,
