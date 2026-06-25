@@ -288,6 +288,8 @@ export default function ChatbotInterface() {
         }
       }));
 
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 28000);
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -299,7 +301,9 @@ export default function ChatbotInterface() {
           goal_planning_mode: options.goal_planning_mode ?? goalPlanningMode,
           quick_action: options.quick_action || null,
         }),
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
 
       const data = await res.json();
 
@@ -309,6 +313,9 @@ export default function ChatbotInterface() {
           setStreamText('');
           setSessions(prev => prev.map(s => s.id === targetSessionId ? { ...s, messages: s.messages.filter(m => m.id !== Date.now()) } : s));
           throw new Error(data.message);
+        }
+        if (data.error === "AI_UNAVAILABLE") {
+          throw new Error('Yapay zeka modeli şu an kullanılamıyor. Lütfen .env.local dosyasında DASHSCOPE_API_KEY veya OPENROUTER_API_KEY tanımlayın.');
         }
         throw new Error(data.details || data.error || 'Sunucu hatası');
       }
@@ -387,7 +394,11 @@ export default function ChatbotInterface() {
         setTimeout(() => setSifuEmotion((prev) => (prev === 'happy' ? 'idle' : prev)), 3000);
       }
     } catch (err) {
-      setError("Hata oldu daha sonra tekrar deneyin");
+      if (err.name === 'AbortError') {
+        setError('Yanıt çok uzun sürdü, lütfen tekrar dene. (Zaman aşımı)');
+      } else {
+        setError(err.message || 'Hata oldu daha sonra tekrar deneyin');
+      }
     } finally {
       setIsLoading(false);
       setIsTyping(false);
