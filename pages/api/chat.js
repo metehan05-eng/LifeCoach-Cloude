@@ -2406,6 +2406,7 @@ ${LEGACY_TOOL_JSON_FORMAT}`,
     }
 
     // Save AI response to database and update chat title
+    let generatedTitle = null;
     if (userId && activeChatId) {
       try {
         await prisma.chatMessage.create({
@@ -2422,7 +2423,6 @@ ${LEGACY_TOOL_JSON_FORMAT}`,
         });
         // AI ile sohbet başlığı oluştur / güncelle
         const msgCount = await prisma.chatMessage.count({ where: { chatId: activeChatId } });
-        let generatedTitle = null;
         if (msgCount <= 2 || msgCount % 5 === 0) {
           generatedTitle = await generateChatTitle(message, cleanReply, dbHistory);
           await prisma.chat.update({
