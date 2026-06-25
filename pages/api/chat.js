@@ -2201,15 +2201,16 @@ ${userBio ? `\n## Kullanıcı kendini şöyle tanıtıyor\n${userBio}\n` : ''}
       }
     }
 
-    // Qwen model chain — öncelik qwen3.7-plus
+    // Qwen model chain — hızlı modeller önce denenir, yavaş modeller fallback
     const qwenConfig = getQwenConfig();
     const envModels = (process.env.QWEN_API_MODELS || '').split('|').filter(Boolean);
     const QWEN_MODEL_CHAIN = [
       ...envModels,
+      'qwen-turbo',
+      'qwen-flash',
+      'qwen-plus',
       qwenConfig.model,
       'qwen3.7-plus',
-      'qwen-plus',
-      'qwen-flash',
       'qwen/qwen-2.5-72b-instruct',
       'qwen/qwen-2.5-72b-instruct:free'
     ].filter((m, i, self) => m && self.indexOf(m) === i);
@@ -2313,7 +2314,7 @@ ${LEGACY_TOOL_JSON_FORMAT}`,
       });
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 20000);
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
 
       try {
         const result = await runDeepSeekWithTools({
