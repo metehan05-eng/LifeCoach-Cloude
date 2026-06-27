@@ -763,7 +763,7 @@ const CalendarEventsCard = ({ calendarEvents }) => {
 };
 
 /* ── Single message bubble ── */
-function MessageBubble({ message, isStream, onQuickAction }) {
+function MessageBubble({ message, isStream, onQuickAction, onViewTarget }) {
   const isUser = message.role === 'user';
  
   if (isUser) {
@@ -1032,13 +1032,44 @@ function MessageBubble({ message, isStream, onQuickAction }) {
           <CalendarEventsCard calendarEvents={message.calendar_events} />
         )}
 
+        {/* Goal Plan View Button — AI hedeflerden bahsettiğinde göster */}
+        {onViewTarget && !isUser && (() => {
+          const content = message.content || '';
+          const mentionsGoal = /hedef|plan|adım|aşama|haftalık|akış şeması/i.test(content);
+          if (!mentionsGoal) return null;
+          return (
+            <div style={{ marginTop: '12px' }}>
+              <button
+                onClick={() => onViewTarget()}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '6px',
+                  padding: '8px 14px', borderRadius: '10px',
+                  background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.25)',
+                  color: '#c4b5fd', fontSize: '12px', fontWeight: 600,
+                  cursor: 'pointer', transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = 'rgba(139,92,246,0.2)';
+                  e.currentTarget.style.borderColor = 'rgba(139,92,246,0.4)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = 'rgba(139,92,246,0.1)';
+                  e.currentTarget.style.borderColor = 'rgba(139,92,246,0.25)';
+                }}
+              >
+                <span>🎯</span> Hedef Planını Görüntüle
+              </button>
+            </div>
+          );
+        })()}
+
       </div>
     </div>
   );
 }
 
 /* ── Main export ── */
-export default function ChatMessages({ messages, isTyping, streamText, error, isMobile = false, onQuickAction }) {
+export default function ChatMessages({ messages, isTyping, streamText, error, isMobile = false, onQuickAction, onViewTarget }) {
   const bottomRef = useRef(null);
  
   useEffect(() => {
@@ -1053,11 +1084,11 @@ export default function ChatMessages({ messages, isTyping, streamText, error, is
       scrollbarWidth: 'thin', scrollbarColor: 'rgba(99,102,241,0.15) transparent',
     }}>
       {messages.map(msg => (
-        <MessageBubble key={msg.id} message={msg} onQuickAction={onQuickAction} />
+        <MessageBubble key={msg.id} message={msg} onQuickAction={onQuickAction} onViewTarget={onViewTarget} />
       ))}
  
       {isTyping && streamText && (
-        <MessageBubble message={{ role: 'assistant', content: streamText, id: 'stream' }} isStream onQuickAction={onQuickAction} />
+        <MessageBubble message={{ role: 'assistant', content: streamText, id: 'stream' }} isStream onQuickAction={onQuickAction} onViewTarget={onViewTarget} />
       )}
 
       {isTyping && !streamText && <TypingIndicator />}

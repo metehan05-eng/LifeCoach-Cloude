@@ -35,23 +35,18 @@ export async function GET() {
         take: 5,
         include: { chatHistory: { select: { sessionId: true } } },
       })),
-      safeQuery(() => prismaClient.productivity.findMany({
-        where: { userId, status: "aktif" },
-        orderBy: { createdAt: "desc" },
-        take: 3,
-        include: { chatHistory: { select: { sessionId: true } } },
-      })),
-      safeQuery(() => prismaClient.startup.findMany({
+      safeQuery(() => prismaClient.productivitySystem.findUnique({
+        where: { userId },
+      }), null),
+      safeQuery(() => prismaClient.startupRoadmap.findMany({
         where: { userId },
         orderBy: { createdAt: "desc" },
         take: 3,
-        include: { chatHistory: { select: { sessionId: true } } },
       })),
-      safeQuery(() => prismaClient.decision.findMany({
+      safeQuery(() => prismaClient.decisionAnalysis.findMany({
         where: { userId },
         orderBy: { createdAt: "desc" },
         take: 5,
-        include: { chatHistory: { select: { sessionId: true } } },
       })),
       safeQuery(() => prismaClient.user.findUnique({
         where: { id: userId },
@@ -64,7 +59,8 @@ export async function GET() {
       const targetDate = new Date(t.targetDate);
       const today = new Date();
       const diffDays = Math.ceil((targetDate - today) / (1000 * 60 * 60 * 24));
-      const steps = Array.isArray(t.microSteps) ? t.microSteps : [];
+      const planData = (t.microSteps && typeof t.microSteps === 'object' && !Array.isArray(t.microSteps)) ? t.microSteps : null;
+      const steps = planData?.steps || (Array.isArray(t.microSteps) ? t.microSteps : []);
       const completedSteps = steps.filter((s) => s.completed).length;
       const progress = steps.length > 0 ? Math.round((completedSteps / steps.length) * 100) : 0;
 
@@ -83,35 +79,24 @@ export async function GET() {
     });
 
     const enrichedStartups = startups.map((s) => {
-      const steps = Array.isArray(s.mvpSteps) ? s.mvpSteps : [];
+      const phases = Array.isArray(s.mvpPhases) ? s.mvpPhases : [];
+      const valueProp = s.analysis?.valueProp || s.idea?.substring(0, 60) || "";
       return {
         id: s.id,
         type: "startup",
-        title: s.ideaDescription?.substring(0, 60) + "...",
-        subtitle: `Aşama ${s.currentPhase + 1}/${steps.length}: ${steps[s.currentPhase]?.title || "Başlangıç"}`,
-        progress: steps.length > 0 ? Math.round(((s.currentPhase) / steps.length) * 100) : 0,
-        status: s.status,
-        sessionId: s.chatHistory?.sessionId,
+        title: valueProp.substring(0, 60) + (valueProp.length > 60 ? "..." : ""),
+        subtitle: `${phases.length} faz • ${phases.reduce((acc, p) => acc + (p.tasks?.length || 0), 0)} görev`,
         createdAt: s.createdAt,
       };
     });
 
-    const enrichedDecisions = decisions.map((d) => {
-      const procon = d.proConAnalysis || {};
-      const chosen = d.chosenOption
-        ? procon[`option${d.chosenOption}`]?.label || `Seçenek ${d.chosenOption}`
-        : null;
-      return {
-        id: d.id,
-        type: "decision",
-        title: d.dilemma?.substring(0, 60) + (d.dilemma?.length > 60 ? "..." : ""),
-        subtitle: chosen ? `${chosen} seçildi` : "Analiz tamamlandı",
-        status: d.status,
-        sessionId: d.chatHistory?.sessionId,
-        createdAt: d.createdAt,
-        chosenOption: d.chosenOption,
-      };
-    });
+    const enrichedDecisions = decisions.map((d) => ({
+      id: d.id,
+      type: "decision",
+      title: d.dilemma?.substring(0, 60) + (d.dilemma?.length > 60 ? "..." : ""),
+      subtitle: d.optionA && d.optionB ? `${d.optionA} ↔ ${d.optionB}` : "Analiz tamamlandı",
+      createdAt: d.createdAt,
+    }));
 
     // XP hesapla (level başına 100 XP)
     const xpForNextLevel = 100;
@@ -126,23 +111,22 @@ export async function GET() {
       },
       activeItems: {
         targets: enrichedTargets,
-        productivities: productivities.map((p) => ({
-          id: p.id,
+        productivities: productivities ? [{
+          id: productivities.id,
           type: "productivity",
-          title: `Üretkenlik Sistemi – ${p.peakHours}`,
-          subtitle: `${p.techniques?.join(", ") || "Özel sistem"}`,
-          status: p.status,
-          sessionId: p.chatHistory?.sessionId,
-          createdAt: p.createdAt,
-        })),
+          title: `Üretkenlik Sistemi – ${productivities.peakHours}`,
+          subtitle: `${productivities.selectedMethods?.join(", ") || "Özel sistem"}`,
+          status: "aktif",
+          createdAt: productivities.createdAt,
+        }] : [],
         startups: enrichedStartups,
         decisions: enrichedDecisions,
       },
       stats: {
         totalTargets: await safeQuery(() => prismaClient.target.count({ where: { userId } }), 0),
         completedTargets: await safeQuery(() => prismaClient.target.count({ where: { userId, status: "tamamlandı" } }), 0),
-        totalStartups: await safeQuery(() => prismaClient.startup.count({ where: { userId } }), 0),
-        totalDecisions: await safeQuery(() => prismaClient.decision.count({ where: { userId } }), 0),
+        totalStartups: await safeQuery(() => prismaClient.startupRoadmap.count({ where: { userId } }), 0),
+        totalDecisions: await safeQuery(() => prismaClient.decisionAnalysis.count({ where: { userId } }), 0),
       },
     });
   } catch (err) {

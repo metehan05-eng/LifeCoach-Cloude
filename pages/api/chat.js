@@ -1531,6 +1531,31 @@ export default async function handler(req, res) {
       } catch (e) { /* ignore */ }
     }
 
+    // ── KULLANICININ HEDEFLERİNİ ÇEK VE CONTEXT'E EKLE ──
+    let targetContext = '';
+    if (userId) {
+      try {
+        const userTargets = await prisma.target.findMany({
+          where: { userId, status: { not: 'tamamlandı' } },
+          orderBy: { createdAt: 'desc' },
+          take: 3,
+          select: { id: true, targetText: true, microSteps: true, status: true, xpEarned: true },
+        });
+        if (userTargets.length > 0) {
+          targetContext = '\n\n## Kullanıcının Kayıtlı Aktif Hedefleri (sistem tarafından otomatik yüklendi)\n';
+          userTargets.forEach((t, i) => {
+            const plan = (t.microSteps && typeof t.microSteps === 'object' && !Array.isArray(t.microSteps)) ? t.microSteps : null;
+            const steps = plan?.steps || [];
+            const doneSteps = steps.filter(s => s.completed).length;
+            targetContext += `\nHedef ${i + 1}: "${t.targetText}" (${t.status}, ${doneSteps}/${steps.length} adım tamamlandı)`;
+            if (plan?.weeklyPlans?.length) {
+              targetContext += `\n  Haftalık plan: ${plan.weeklyPlans.map(w => `${w.weekNumber}: ${w.focus}`).join(', ')}`;
+            }
+          });
+        }
+      } catch (e) { console.error("[Target context error]", e); }
+    }
+
     // --- SUBSCRIPTION LIMIT CHECK ---
     if (userId && userStats.plan === 'FREE' && userStats.usageCount >= userStats.usageLimit) {
       return res.status(403).json({
@@ -2213,7 +2238,7 @@ ${userBio ? `\n## Kullanıcı kendini şöyle tanıtıyor\n${userBio}\n` : ''}
 
     const systemPrompt = buildLifeCoachSystemPrompt({
       quickAction: quick_action,
-      userContext: `${systemInstruction}${localizationInjection}`,
+      userContext: `${systemInstruction}${localizationInjection}${targetContext}`,
       extraContext: `${searchContextInjection}${youtubeContextInjection}
 
 ## Aktif yetenekler (arka planda çalışır, kullanıcıya gösterilmez)

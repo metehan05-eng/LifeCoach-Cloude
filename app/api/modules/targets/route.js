@@ -98,12 +98,12 @@ export async function POST(request) {
     }
     // ──────────────────────────────────────────────────────────
 
-    // DeepSeek ile mikro adımlar üret
+    // AI ile hedef analizi ve akış şeması üret
     let aiResult;
     try {
       aiResult = await generateTargetPlan({ targetText });
     } catch (aiErr) {
-      console.warn("DeepSeek hatası, mock kullanılıyor:", aiErr.message);
+      console.warn("Qwen hatası, mock kullanılıyor:", aiErr.message);
       aiResult = getMockTargetPlan(targetText);
     }
 
@@ -126,7 +126,7 @@ export async function POST(request) {
         userId: session.user.id,
         chatHistoryId: chatHistory.id,
         targetText: targetText.trim(),
-        microSteps: aiResult.microSteps || [],
+        microSteps: aiResult, // { summary, steps, weeklyPlans }
         youtubeVideos: [],
         targetDate: new Date(),
         status: "aktif",

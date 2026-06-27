@@ -1,7 +1,3 @@
-/**
- * GET /api/modules/startup   – Startup yol haritalarını listele
- * POST /api/modules/startup  – Yeni startup analizi oluştur
- */
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/pages/api/auth/[...nextauth]";
 import { prismaClient, isPrismaError } from "@/lib/prisma";
@@ -10,16 +6,15 @@ import { NextResponse } from "next/server";
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) return NextResponse.json({ error: "Yetkisiz" }, { status: 401 });
 
-    const records = await prismaClient.startup.findMany({
+    const records = await prismaClient.startupRoadmap.findMany({
       where: { userId: session.user.id },
       orderBy: { createdAt: "desc" },
-      take: 10,
-      include: { chatHistory: { select: { sessionId: true } } },
+      take: 20,
     });
 
     return NextResponse.json({ records });
@@ -45,92 +40,53 @@ export async function POST(request) {
     try {
       aiResult = await generateStartupRoadmap({ ideaDescription });
     } catch {
-      // Mock veri
       aiResult = {
-        mvpSteps: [
+        analysis: {
+          valueProp: `${ideaDescription.substring(0, 60)}... — kullanıcıların temel ihtiyacını AI destekli bir yaklaşımla çözen yenilikçi bir platform.`,
+          targetAudience: "18-40 yaş arası, teknolojiye meraklı, Türkiye'deki girişimci ve dijital profesyoneller.",
+          techStack: ["Next.js / React", "Node.js / Express", "PostgreSQL + Prisma", "Vercel + Railway", "Tailwind CSS"],
+        },
+        mvpPhases: [
           {
-            phase: 1,
-            title: "Problem Doğrulama",
-            duration: "2 Hafta",
-            tasks: ["10 potansiyel müşteri ile görüşme", "Problem-çözüm uyumu analizi", "Rakip analizi"],
-            tools: ["Notion", "Google Forms", "Calendly"],
-            milestone: "Gerçek bir problemin varlığı doğrulandı",
+            phase: "Faz 1: MVP Çekirdeği",
+            title: "Temel Özelliklerin İnşası",
+            tasks: ["Kullanıcı girişi ve profil yönetimi", "Ana işlevsellik (CRUD) API", "Frontend arayüz entegrasyonu", "Temel test ve hata düzeltme"],
           },
           {
-            phase: 2,
-            title: "MVP Tasarımı",
-            duration: "3 Hafta",
-            tasks: ["Figma prototipi oluştur", "Ana özellik listesini belirle", "UI/UX tasarımını tamamla"],
-            tools: ["Figma", "Miro", "Notion"],
-            milestone: "Kullanıcı testine hazır prototip",
+            phase: "Faz 2: Kullanıcı Deneyimi",
+            title: "UX İyileştirmeleri ve İlk Kullanıcı Testi",
+            tasks: ["Kullanıcı arayüzü iyileştirmeleri", "Beta kullanıcı grubu davet sistemi", "Geri bildirim toplama mekanizması"],
           },
           {
-            phase: 3,
-            title: "MVP Geliştirme",
-            duration: "6 Hafta",
-            tasks: ["Backend API geliştirme", "Frontend implementasyon", "Database tasarımı"],
-            tools: ["Next.js", "PostgreSQL", "Vercel"],
-            milestone: "Çalışan MVP canlıya alındı",
-          },
-          {
-            phase: 4,
-            title: "İlk Kullanıcılar",
-            duration: "4 Hafta",
-            tasks: ["Beta kullanıcı grubu oluştur", "Geri bildirim topla", "Hızlı iterasyon yap"],
-            tools: ["Intercom", "Hotjar", "Mixpanel"],
-            milestone: "50 aktif beta kullanıcı",
+            phase: "Faz 3: Büyüme ve Optimizasyon",
+            title: "Performans, Güvenlik ve Ölçekleme",
+            tasks: ["Performans optimizasyonu", "Güvenlik denetimi ve iyileştirme", "İlk pazarlama kampanyası"],
           },
         ],
-        techStack: {
-          frontend: "Next.js 14 / React",
-          backend: "Node.js / Express",
-          database: "PostgreSQL + Prisma",
-          deployment: "Vercel + Railway",
-          extras: ["Supabase Auth", "Stripe", "SendGrid"],
+        leanCanvas: {
+          problems: ["Mevcut çözümlerin karmaşık ve pahalı olması", "Hedef kitlenin özel ihtiyaçlarını karşılayan ürün eksikliği", "Geleneksel yöntemlerin verimsizliği"],
+          solutions: ["AI destekli otomasyon ile süreçleri basitleştirme", "Kullanıcı dostu arayüz ile öğrenme eğrisini azaltma", "Esnek fiyatlandırma ile her bütçeye uygunluk"],
+          revenues: ["Freemium modeli — temel özellikler ücretsiz", "Premium abonelik — ileri düzey özellikler", "Kurumsal lisans — takım ve şirket planları"],
+          costs: ["Sunucu ve bulut altyapı maliyetleri", "Geliştirici ve tasarımcı maaşları", "Pazarlama ve reklam bütçesi", "Yasal ve muhasebe giderleri"],
         },
-        marketAnalysis: {
-          tam: "₺2.5 Milyar (Türkiye dijital eğitim pazarı)",
-          sam: "₺450 Milyon (B2C segment)",
-          som: "₺15 Milyon (ilk 2 yıl)",
-          competitors: [
-            { name: "Mevcut Rakip A", strength: "Geniş kullanıcı tabanı", weakness: "Kötü UX" },
-            { name: "Mevcut Rakip B", strength: "Güçlü marka", weakness: "Yüksek fiyat" },
-          ],
-          advantages: ["AI destekli kişiselleştirme", "Türkçe içerik", "Oyunlaştırma"],
-          targetAudience: "18-35 yaş, Türkiye'deki genç profesyoneller ve girişimciler",
-        },
-        summary: `${ideaDescription.substring(0, 60)}... için 4 aşamalı MVP yol haritası oluşturuldu.`,
       };
     }
 
-    const chatHistory = await prismaClient.moduleChatHistory.create({
+    const { analysis, mvpPhases, leanCanvas } = aiResult;
+
+    const record = await prismaClient.startupRoadmap.create({
       data: {
         userId: session.user.id,
-        moduleType: "startup",
-        messages: [
-          { role: "user", content: ideaDescription, createdAt: new Date().toISOString() },
-          { role: "assistant", content: JSON.stringify(aiResult), createdAt: new Date().toISOString() },
-        ],
-        summary: `Startup: ${ideaDescription.substring(0, 60)}`,
+        idea: ideaDescription.trim(),
+        analysis: analysis || {},
+        mvpPhases: mvpPhases || [],
+        leanCanvas: leanCanvas || {},
       },
     });
 
-    const record = await prismaClient.startup.create({
-      data: {
-        userId: session.user.id,
-        chatHistoryId: chatHistory.id,
-        ideaDescription: ideaDescription.trim(),
-        mvpSteps: aiResult.mvpSteps || [],
-        techStack: aiResult.techStack || {},
-        marketAnalysis: aiResult.marketAnalysis || {},
-        currentPhase: 0,
-        status: "aktif",
-      },
-    });
-
-    return NextResponse.json({ record, aiResult, sessionId: chatHistory.sessionId });
+    return NextResponse.json({ record, aiResult });
   } catch (err) {
-    if (isPrismaError(err)) return NextResponse.json({ record: null, aiResult: null, sessionId: null });
+    if (isPrismaError(err)) return NextResponse.json({ record: null });
     console.error("[POST /api/modules/startup]", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }

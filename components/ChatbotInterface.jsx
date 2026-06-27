@@ -77,6 +77,12 @@ export default function ChatbotInterface() {
   const [activeView, setActiveView] = useState('chat');
   const [viewRecordId, setViewRecordId] = useState(null);
 
+  const handleViewTarget = useCallback((targetId) => {
+    setActiveView('targets');
+    setViewRecordId(targetId);
+    setActiveSessionId('targets');
+  }, []);
+
   const handleSelectView = useCallback((view, sessionId = null, recordId = null) => {
     setShowProjects(false);
     setShowSifuPanda(false);
@@ -610,7 +616,7 @@ export default function ChatbotInterface() {
                 </button>
               </div>
             ) : activeSessionId === 'targets' ? (
-              <TargetsView onSelectView={handleSelectView} userEmail={session?.user?.email} />
+              <TargetsView onSelectView={handleSelectView} userEmail={session?.user?.email} initialRecordId={viewRecordId} />
             ) : activeSessionId === 'startup' ? (
               <StartupView onSelectView={handleSelectView} userEmail={session?.user?.email} />
             ) : activeSessionId === 'productivity' ? (
@@ -628,6 +634,7 @@ export default function ChatbotInterface() {
                   error={error}
                   isMobile={isMobile}
                   onQuickAction={handleQuickAction}
+                  onViewTarget={handleViewTarget}
                 />
                 <ChatInput
                   value={inputValue}
@@ -649,6 +656,7 @@ export default function ChatbotInterface() {
                 onQuickAction={handleQuickAction}
                 onSelectView={handleSelectView}
                 userEmail={session?.user?.email}
+                onViewTarget={handleViewTarget}
                 {...sttInputProps}
               />
             )}

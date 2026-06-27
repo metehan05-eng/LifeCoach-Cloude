@@ -67,8 +67,11 @@ model User {
   ModuleChatHistories     ModuleChatHistory[]
   Targets                 Target[]
   Productivities          Productivity[]
+  ProductivitySystem      ProductivitySystem?
   Startups                Startup[]
+  StartupRoadmaps         StartupRoadmap[]
   Decisions               Decision[]
+  DecisionAnalyses        DecisionAnalysis[]
   LifeMemories            LifeMemory[]
   LifeScores              LifeScore[]
   SecondBrainEntries      SecondBrainEntry[]
@@ -488,7 +491,7 @@ model Target {
   chatHistory   ModuleChatHistory? @relation(fields: [chatHistoryId], references: [id])
   chatHistoryId String?
   targetText    String            @db.Text
-  microSteps    Json              // [{id, text, completed, xpReward}]
+  microSteps    Json              // { summary, steps: [{order, title, description, completed}], weeklyPlans }
   youtubeVideos Json?             // [{videoId, title, thumbnail, url}]
   targetDate    DateTime          @default(now())
   status        String            @default("aktif") // aktif | tamamlandı | beklemede
@@ -499,6 +502,21 @@ model Target {
   // Günlük benzersizlik: aynı kullanıcı aynı günde 1 hedef
   @@unique([userId, targetDate])
   @@index([userId, status])
+}
+
+/// ⚡ Üretkenlik Sistemim — yeni AI tabanlı yapı
+model ProductivitySystem {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  peakHours       String
+  focusHours      Int
+  selectedMethods String[]
+  routines        Json     // { morning: [], afternoon: [], evening: [] }
+  timeBlocks      Json     // [{ time: "08:00 - 09:00", label: "...", type: "focus"|"break"|"routine" }]
+  rules           Json     // [ "Kural 1", "Kural 2" ]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 /// ⚡ Üretkenlik Sistemi Kur
@@ -539,6 +557,20 @@ model Startup {
   @@index([userId, status])
 }
 
+/// 🚀 Startup Yol Haritası – AI tabanlı dinamik girişim analizi
+model StartupRoadmap {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  idea      String   @db.Text
+  analysis  Json     // { valueProp, targetAudience, techStack: [...] }
+  mvpPhases Json     // [{ phase: "Faz 1", title: "...", tasks: ["...","..."] }]
+  leanCanvas Json    // { problems: [], solutions: [], revenues: [], costs: [] }
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
 /// ⚖️ Karar Analizi
 model Decision {
   id                String            @id @default(cuid())
@@ -556,6 +588,20 @@ model Decision {
   updatedAt         DateTime          @updatedAt
 
   @@index([userId, status])
+}
+
+/// ⚖️ Karar Analizi – Yeni AI tabanlı yapı (optionA, optionB, prosCons, simulation, riskScores, coachVerdict)
+model DecisionAnalysis {
+  id           String   @id @default(uuid())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String
+  dilemma      String   @db.Text
+  optionA      String
+  optionB      String
+  analysisData Json     // { prosCons: {...}, simulation: {...}, riskScores: {...}, coachVerdict: "..." }
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
 }
 
 // ─── YAŞAM HAFIZASI (Life Memory) ─────────────────────────────────────────
