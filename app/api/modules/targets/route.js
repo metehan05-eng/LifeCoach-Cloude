@@ -140,10 +140,11 @@ export async function POST(request) {
       sessionId: chatHistory.sessionId,
     });
   } catch (err) {
+    const errCode = err?.code || err?.name || '';
+    console.error("[POST /api/modules/targets]", errCode, err.message);
     if (isPrismaError(err)) {
-      return NextResponse.json({ error: "Veritabanı hatası" }, { status: 500 });
+      return NextResponse.json({ error: "Veritabanı bağlantı hatası (" + errCode + "). Lütfen sayfayı yenileyip tekrar dene." }, { status: 500 });
     }
-    console.error("[POST /api/modules/targets]", err);
-    return NextResponse.json({ error: "Sunucu hatası: " + err.message }, { status: 500 });
+    return NextResponse.json({ error: err.message || "Bilinmeyen hata" }, { status: 500 });
   }
 }
