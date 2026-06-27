@@ -142,6 +142,9 @@ export async function POST(request) {
   } catch (err) {
     const errCode = err?.code || err?.name || '';
     console.error("[POST /api/modules/targets]", errCode, err.message);
+    if (errCode === 'P2021') {
+      return NextResponse.json({ error: "Veritabanı tabloları oluşturulmamış. Lütfen 'npx prisma db push' komutunu çalıştır." }, { status: 500 });
+    }
     if (isPrismaError(err)) {
       return NextResponse.json({ error: "Veritabanı bağlantı hatası (" + errCode + "). Lütfen sayfayı yenileyip tekrar dene." }, { status: 500 });
     }
