@@ -643,6 +643,7 @@ export default function ChatbotInterface() {
                   isLoading={isLoading}
                   centered={false}
                   isMobile={isMobile}
+                  onSelectView={handleSelectView}
                   {...sttInputProps}
                 />
               </>
