@@ -141,7 +141,7 @@ export async function POST(request) {
     });
   } catch (err) {
     if (isPrismaError(err)) {
-      return NextResponse.json({ target: null, aiResult: null, sessionId: null });
+      return NextResponse.json({ error: "Veritabanı hatası" }, { status: 500 });
     }
     console.error("[POST /api/modules/targets]", err);
     return NextResponse.json({ error: "Sunucu hatası: " + err.message }, { status: 500 });

@@ -192,12 +192,14 @@ export default function TargetsView({ onSelectView, userEmail, initialSessionId,
         body: JSON.stringify({ targetText }),
       });
       const data = await res.json();
-      if (res.ok) {
+      if (res.ok && data.target) {
         setActiveTarget(data.target);
         setSelectedTargetId(data.target.id);
         setTargetText("");
         setShowNewForm(false);
         setTargets(prev => [data.target, ...prev]);
+      } else if (res.ok && !data.target) {
+        setError("Hedef oluşturuldu ancak yüklenemedi. Lütfen sayfayı yenileyin.");
       } else {
         if (data.code === "DAILY_LIMIT_REACHED") {
           setError("Bugün zaten bir hedef belirledin! Her gün yalnızca 1 hedef oluşturabilirsin.");
