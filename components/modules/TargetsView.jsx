@@ -1,6 +1,5 @@
 "use client";
 import { useState, useEffect } from "react";
-import YouTubeCarousel from "./YouTubeCarousel";
 
 function PlanSummary({ data }) {
   if (!data?.summary) return null;
@@ -413,7 +412,6 @@ export default function TargetsView({ onSelectView, userEmail, initialSessionId,
                 </div>
               )}
 
-              <YouTubeCarousel searchQuery={activeTarget.targetText} />
             </div>
           )}
         </div>
