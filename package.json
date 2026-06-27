@@ -7,7 +7,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && prisma db push --accept-data-loss && next build",
+    "build": "prisma generate && (test -n \"$DATABASE_URL\" && prisma db push --accept-data-loss || true) && next build",
     "start:next": "next start",
     "start": "node index.js",
     "lint": "next lint",
