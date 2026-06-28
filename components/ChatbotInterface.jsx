@@ -351,12 +351,18 @@ export default function ChatbotInterface() {
       const youtubeSearchQuery = data.youtube_search_query || null;
       const videoNotes = data.video_notes || [];
 
-      let displayed = '';
+      // Adaptive typewriter: reveal words in chunks so long replies don't keep
+      // the user waiting. Chunk size and delay scale with the response length to
+      // cap the total animation time (~1.5s) and reduce re-render churn.
       const words = aiText.split(' ');
-      for (let i = 0; i < words.length; i++) {
-        displayed += (i === 0 ? '' : ' ') + words[i];
+      const chunkSize = words.length > 120 ? 6 : words.length > 40 ? 3 : 1;
+      const delay = words.length > 120 ? 12 : 16;
+      let displayed = '';
+      for (let i = 0; i < words.length; i += chunkSize) {
+        const slice = words.slice(i, i + chunkSize).join(' ');
+        displayed += (i === 0 ? '' : ' ') + slice;
         setStreamText(displayed);
-        await new Promise(r => setTimeout(r, 16));
+        await new Promise(r => setTimeout(r, delay));
       }
 
       setStreamText('');
@@ -494,7 +500,7 @@ export default function ChatbotInterface() {
       <div className={styles.layout}>
         {/* Sidebar */}
         <div style={isMobile ? {
-          position: 'fixed', top: 0, left: 0, height: '100vh', zIndex: 50,
+          position: 'fixed', top: 0, left: 0, height: '100dvh', zIndex: 50,
           transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
           transition: 'transform 0.32s cubic-bezier(0.4,0,0.2,1)',
         } : {}}>

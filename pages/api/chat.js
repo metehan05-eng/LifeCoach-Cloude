@@ -1,4 +1,3 @@
-import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 import pdf from 'pdf-parse';
 import mammoth from 'mammoth'; 
@@ -11,6 +10,8 @@ import { getQwenConfig } from '../../lib/qwen-api.js';
 import { detectYouTubeVideoIntent } from '../../lib/youtube-search.js';
 import { generateChatTitle } from '../../lib/chat-title.js';
 import { prismaClient as prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from './auth/[...nextauth]';
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
 // CONCURRENCY LOCK: Simple in-memory lock to prevent overlapping chat requests per session
@@ -35,6 +36,23 @@ function parseGoogleServiceAccount() {
     console.error('[Google] Service account JSON parse error', err);
     return null;
   }
+}
+
+/**
+ * Sanitize user-controlled text before it is interpolated into the system prompt.
+ * Neutralizes prompt-injection attempts (fake section headers / instruction
+ * overrides) and caps length so a malicious bio cannot hijack the assistant.
+ */
+function sanitizeForPrompt(text, maxLen = 600) {
+  if (!text || typeof text !== 'string') return '';
+  return text
+    // Strip markdown-style section headers that mimic system sections.
+    .replace(/^[ \t]*#{1,6}[ \t].*$/gm, (m) => m.replace(/#/g, ''))
+    // Neutralize common instruction-override phrasing.
+    .replace(/\b(system prompt|ignore (?:all|previous|above)|sistem prompt|önceki talimatlar|oturum kuralları|you are now|artık sensin|act as)\b/gi, '[filtered]')
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '')
+    .trim()
+    .slice(0, maxLen);
 }
 
 async function getGoogleAccessToken(scopes, subject) {
@@ -501,7 +519,7 @@ async function upload_to_drive(file_content, file_name, mime_type) {
       `--${boundary}`,
       'Content-Type: application/json; charset=UTF-8',
       '',
-      JSON.stringify({ name: file_name, mimeType, parents: [folderId] }),
+      JSON.stringify({ name: file_name, mimeType: mime_type, parents: [folderId] }),
       `--${boundary}`,
       `Content-Type: ${mime_type}`,
       'Content-Transfer-Encoding: base64',
@@ -584,17 +602,27 @@ async function getOrCreateLifeCoachFolder() {
 // --- GOOGLE SHEETS & OCR ---
 async function extract_to_spreadsheet(file_id_or_text) {
   try {
-    // Check if input is base64 image or plain text
-    const isBase64 = /^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}=)?$/.test(file_id_or_text);
-    
+    const input = typeof file_id_or_text === 'string' ? file_id_or_text : '';
+
+    // Detect a base64 image vs. plain spreadsheet text. Real image payloads have
+    // no whitespace/newlines and are long; tabular text from the model contains
+    // tabs or newlines. A `data:` URI prefix is a definitive image signal.
+    const dataUriMatch = /^data:image\/[a-zA-Z+]+;base64,(.+)$/.exec(input.trim());
+    const stripped = dataUriMatch ? dataUriMatch[1] : input.trim();
+    const hasWhitespace = /[\s]/.test(stripped);
+    const looksBase64 = !hasWhitespace
+      && stripped.length > 200
+      && /^[A-Za-z0-9+/]+={0,2}$/.test(stripped);
+    const isImage = !!dataUriMatch || looksBase64;
+
     let extractedText = '';
-    
-    if (isBase64 && file_id_or_text.length > 100) { // Likely an image
+
+    if (isImage) {
       // Use Google Vision API for OCR
-      extractedText = await extractTextFromImage(file_id_or_text);
+      extractedText = await extractTextFromImage(stripped);
     } else {
       // Plain text
-      extractedText = file_id_or_text;
+      extractedText = input;
     }
     
     if (!extractedText || extractedText.trim() === '') {
@@ -643,7 +671,7 @@ async function extract_to_spreadsheet(file_id_or_text) {
     const spreadsheetId = createData.spreadsheetId;
     
     // Write data to spreadsheet
-    const writeResp = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/A1:valueInputOption?valueInputOption=RAW`, {
+    const writeResp = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Sheet1!A1?valueInputOption=RAW`, {
       method: 'PUT',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -1189,15 +1217,17 @@ async function transcribeVideoWithWhisper(videoBase64) {
     console.warn('[Video Transcription] OPENAI_API_KEY not set, skipping Whisper transcription');
     return null;
   }
+  let tmpFile = null;
+  let fs = null;
   try {
     const openai = new OpenAI({ apiKey: openaiKey });
     // Convert base64 -> buffer, write to temp file, then create File object for Whisper
     const buffer = Buffer.from(videoBase64, 'base64');
 
-    const fs = await import('fs');
+    fs = await import('fs');
     const path = await import('path');
     const os = await import('os');
-    const tmpFile = path.join(os.tmpdir(), `lifecoach-video-${Date.now()}.mp4`);
+    tmpFile = path.join(os.tmpdir(), `lifecoach-video-${Date.now()}.mp4`);
     fs.writeFileSync(tmpFile, buffer);
 
     const transcription = await openai.audio.transcriptions.create({
@@ -1208,13 +1238,16 @@ async function transcribeVideoWithWhisper(videoBase64) {
     });
 
     fs.unlinkSync(tmpFile);
+    tmpFile = null;
     const fullText = transcription || '';
     console.log('Çekilen Transkript Metni:', fullText);
     return fullText;
   } catch (err) {
     console.error('[Video Transcription] Error:', err.message);
-    // Cleanup temp file if it exists
-    try { const fs = require('fs'); const tmpFile = `/tmp/lifecoach-video-${Date.now()}.mp4`; if (fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile); } catch (_) {}
+    // Cleanup the exact temp file created above (if any) on error.
+    try {
+      if (tmpFile && fs && fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile);
+    } catch (_) {}
     return null;
   }
 }
@@ -1258,44 +1291,6 @@ function createExcelBufferFromData(dataArray2D = [['No data']]) {
   } catch (err) {
     console.error('[Excel] generation error', err);
     return null;
-  }
-}
-
-// --- Minimal Google Slides creator (requires service account JSON in env) ---
-async function createGooglePresentation(title = 'New Presentation') {
-  if (!GOOGLE_SERVICE_ACCOUNT) throw new Error('GOOGLE_SERVICE_ACCOUNT env not set');
-  try {
-    const key = JSON.parse(GOOGLE_SERVICE_ACCOUNT);
-    const client = new JWT({
-      email: key.client_email,
-      key: key.private_key,
-      scopes: GOOGLE_SLIDES_SCOPES
-    });
-    await client.authorize();
-    let token = client.credentials?.access_token;
-    if (!token) {
-      const at = await client.getAccessToken();
-      token = (at && (at.token || at)) || null;
-    }
-    if (!token) throw new Error('Could not obtain Google access token');
-
-    const resp = await fetch('https://slides.googleapis.com/v1/presentations', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title })
-    });
-    if (!resp.ok) {
-      const txt = await resp.text();
-      throw new Error('Slides API error: ' + txt);
-    }
-    const data = await resp.json();
-    return {
-      presentationId: data.presentationId,
-      presentationUrl: `https://docs.google.com/presentation/d/${data.presentationId}/edit`
-    };
-  } catch (err) {
-    console.error('[GoogleSlides] error', err);
-    throw err;
   }
 }
 
@@ -1367,20 +1362,30 @@ async function processAIResponseTools(aiResponse, options = {}) {
 }
 
 // --- SUPABASE HAZIRLIĞI ---
-const supabase = createClient(
-  process.env.SUPABASE_URL || "",
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || ""
-);
-
 // Master system prompt: lib/lifecoach-system-prompt.js → buildLifeCoachSystemPrompt()
 
 export default async function handler(req, res) {
+  // AUTH: Resolve the authenticated user from the server session.
+  // The client-supplied `email` is NEVER trusted for identity — it is overridden
+  // by the session email to prevent account spoofing and tool abuse.
+  let sessionEmail = null;
+  try {
+    const session = await getServerSession(req, res, authOptions);
+    sessionEmail = session?.user?.email || null;
+  } catch (authErr) {
+    console.error('[Chat] Session resolve error', authErr);
+  }
+
   // Handle GET requests for stats (used by frontend for XP/level/streak updates)
   if (req.method === 'GET') {
     // Check if just_stats=true parameter is present
     if (req.query.just_stats === 'true') {
-      // Extract email or sessionId from query or headers
-      const { email, sessionId } = req.query;
+      if (!sessionEmail) {
+        return res.status(401).json({ error: 'UNAUTHENTICATED' });
+      }
+      // Identity comes from the session, not from the query string.
+      const email = sessionEmail;
+      const { sessionId } = req.query;
       
       // Get user stats similar to POST handler
       let userId = null;
@@ -1429,7 +1434,14 @@ export default async function handler(req, res) {
   // Handle POST requests (existing logic)
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { message, history, email, sessionId, chatId, mode, userLanguage, attachments, deepSearch, quick_action } = req.body;
+  // AUTH: Require an authenticated session for POST. Identity is taken from the
+  // session — the client-supplied `email` field is ignored to prevent spoofing.
+  if (!sessionEmail) {
+    return res.status(401).json({ error: 'UNAUTHENTICATED', message: 'Oturum açmanız gerekiyor.' });
+  }
+
+  const { message, history, sessionId, chatId, mode, userLanguage, attachments, deepSearch, quick_action } = req.body;
+  const email = sessionEmail;
   const countryCode = req.headers['x-vercel-ip-country'] || 'Unknown';
 
   // GUARD: Boş mesajları doğrudan kes — model gereksiz yere tetiklenmesin
@@ -1521,26 +1533,29 @@ export default async function handler(req, res) {
     }
 
     let userBio = "";
-    if (userId) {
-      try {
-        const prefs = await prisma.userPreference.findUnique({
-          where: { userId },
-          select: { userBio: true },
-        });
-        userBio = prefs?.userBio || "";
-      } catch (e) { /* ignore */ }
-    }
-
     // ── KULLANICININ HEDEFLERİNİ ÇEK VE CONTEXT'E EKLE ──
     let targetContext = '';
     if (userId) {
-      try {
-        const userTargets = await prisma.target.findMany({
+      // Preferences and active targets are independent — fetch them in parallel.
+      const [prefsResult, targetsResult] = await Promise.allSettled([
+        prisma.userPreference.findUnique({
+          where: { userId },
+          select: { userBio: true },
+        }),
+        prisma.target.findMany({
           where: { userId, status: { not: 'tamamlandı' } },
           orderBy: { createdAt: 'desc' },
           take: 3,
           select: { id: true, targetText: true, microSteps: true, status: true, xpEarned: true },
-        });
+        }),
+      ]);
+
+      if (prefsResult.status === 'fulfilled') {
+        userBio = prefsResult.value?.userBio || "";
+      }
+
+      if (targetsResult.status === 'fulfilled') {
+        const userTargets = targetsResult.value || [];
         if (userTargets.length > 0) {
           targetContext = '\n\n## Kullanıcının Kayıtlı Aktif Hedefleri (sistem tarafından otomatik yüklendi)\n';
           userTargets.forEach((t, i) => {
@@ -1553,7 +1568,7 @@ export default async function handler(req, res) {
             }
           });
         }
-      } catch (e) { console.error("[Target context error]", e); }
+      }
     }
 
     // --- SUBSCRIPTION LIMIT CHECK ---
@@ -1562,6 +1577,11 @@ export default async function handler(req, res) {
         error: "LIMIT_REACHED",
         message: "Günlük mesaj limitine ulaştın. Sınırsız erişim ve daha güçlü modeller için Premium'a geç!"
       });
+    }
+
+    // EĞER SADECE STATS İSTENDİYSE BURADA DUR (mesaj DB'ye yazılmadan önce)
+    if (req.query.just_stats === 'true') {
+      return res.status(200).json({ stats: userStats });
     }
 
     // ==========================================
@@ -1605,11 +1625,6 @@ export default async function handler(req, res) {
           },
         },
       });
-    }
-
-    // EĞER SADECE STATS İSTENDİYSE BURADA DUR
-    if (req.query.just_stats === 'true') {
-      return res.status(200).json({ stats: userStats });
     }
 
     // 2. DOSYA İŞLEME (PDF, DOCX, XLSX, MP4Video)
@@ -1713,11 +1728,11 @@ export default async function handler(req, res) {
     try {
       const msgLower = (message || '').toLowerCase();
       const wantsYouTube = detectYouTubeVideoIntent(message || '');
-      const wantsExcel = quick_action === 'productivity' || /excel oluştur|excel dosya|xlsx oluştur|excel dosyası|tablo oluştur|tablo|listele|üretkenlik tablosu|bütçe/.test(msgLower);
+      const wantsExcel = quick_action === 'productivity' || /excel oluştur|excel dosya|xlsx oluştur|excel dosyası|tablo oluştur|tablo (?:halinde|olarak) (?:ver|hazırla|yap)|excel(?:'?e| olarak)|üretkenlik tablosu|bütçe tablosu|spreadsheet/.test(msgLower);
       const wantsSlides = quick_action === 'startup' || /slide oluştur|sunum oluştur|sunum hazırla|presentation oluştur|presentation|yol haritası|startup/.test(msgLower);
       const wantsDrive = /drive|google drive|dosya yükle|drive'a kaydet|google drive/.test(msgLower);
       const wantsGmail = /mail gönder|e-?posta gönder|gmail gönder|mail at|email gönder/.test(msgLower);
-      const wantsCalendar = quick_action === 'goal_plan' || quick_action === 'decision' || req.body.goal_planning_mode || /takvim|calendar|plan yap|planlama|haftalık plan|aylık plan|yıllık plan|hedef plan/.test(msgLower);
+      const wantsCalendar = quick_action === 'goal_plan' || req.body.goal_planning_mode || /takvim|calendar|plan yap|planlama|haftalık plan|aylık plan|yıllık plan|hedef plan/.test(msgLower);
       const wantsMaps = /harita|maps|mesafe|uzak|gitmek istiyorum|nereye gitsem|bunu bul|yol tarifi|en yakın/.test(msgLower);
       const wantsAmazon = /amazon|ürün ara|ürün bul|alışveriş|satın al|en iyi ürün|çok satan|fiyat ara/i.test(msgLower);
       const wantsScholar = /makale|akademik|araştırma|tez|bilimsel yayın|scholar|üniversite ödev|literatür/i.test(msgLower);
@@ -1860,10 +1875,18 @@ export default async function handler(req, res) {
           const emailMatch = message.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
           const subjectMatch = message.match(/(?:konu|subject)[:\-]\s*([^\n]+)/i);
           const bodyMatch = message.match(/(?:mesaj|message)[:\-]\s*([\s\S]+)/i);
-          const to = emailMatch?.[0];
-          const subject = subjectMatch?.[1]?.trim() || 'LifeCoach AI Gönderisi';
-          const body = bodyMatch?.[1]?.trim() || message.replace(emailMatch?.[0] || '', '').trim();
-          if (to) {
+          // SECURITY: Only allow sending to the authenticated user's own address.
+          // The service account must never be used as an open relay to arbitrary
+          // recipients found in user text. If no recipient is given, default to self.
+          const requestedTo = emailMatch?.[0]?.toLowerCase() || null;
+          const ownerEmail = (email || '').toLowerCase();
+          const to = (!requestedTo || requestedTo === ownerEmail) ? ownerEmail : null;
+          const subject = (subjectMatch?.[1]?.trim() || 'LifeCoach AI Gönderisi').substring(0, 200);
+          const rawBody = bodyMatch?.[1]?.trim() || message.replace(emailMatch?.[0] || '', '').trim();
+          const body = rawBody.substring(0, 5000);
+          if (requestedTo && requestedTo !== ownerEmail) {
+            tool_notes.push('Güvenlik nedeniyle yalnızca kendi e-posta adresinize gönderim yapabilirim.');
+          } else if (to) {
             const gmailResponse = await sendGmailMessage(to, subject, body);
             gmail_result = gmailResponse;
             tool_notes.push(`E-posta ${to} adresine gönderildi.`);
@@ -1880,6 +1903,8 @@ export default async function handler(req, res) {
           const now = new Date();
           let events = [];
           const timezone = 'Europe/Istanbul';
+          // Cap the raw message that gets written into calendar descriptions.
+          const safeDescription = (message || '').substring(0, 1500);
           
           // Goal planning mode - create structured weekly plan
           if (req.body.goal_planning_mode) {
@@ -1893,7 +1918,7 @@ export default async function handler(req, res) {
               
               events.push({
                 summary: `${goalTitle} - Gün ${i + 1}`,
-                description: `${goalTitle} için ${i + 1}. gün hedefleri ve aktiviteleri.\n\nDetaylı plan: ${message}`,
+                description: `${goalTitle} için ${i + 1}. gün hedefleri ve aktiviteleri.\n\nDetaylı plan: ${safeDescription}`,
                 start: { dateTime: eventDate.toISOString(), timeZone: timezone },
                 end: { dateTime: new Date(eventDate.getTime() + 60 * 60 * 1000).toISOString(), timeZone: timezone },
                 recurrence: i === 0 ? ['RRULE:FREQ=DAILY;COUNT=7'] : undefined
@@ -1903,7 +1928,7 @@ export default async function handler(req, res) {
             const start = new Date(now.getFullYear() + 1, 0, 2, 10, 0, 0);
             events.push({
               summary: 'Yıllık planlama oturumu',
-              description: message,
+              description: safeDescription,
               start: { dateTime: start.toISOString(), timeZone: timezone },
               end: { dateTime: new Date(start.getTime() + 60 * 60 * 1000).toISOString(), timeZone: timezone }
             });
@@ -1911,7 +1936,7 @@ export default async function handler(req, res) {
             const start = new Date(now.getFullYear(), now.getMonth() + 1, 3, 10, 0, 0);
             events.push({
               summary: 'Aylık hedef kontrolü',
-              description: message,
+              description: safeDescription,
               start: { dateTime: start.toISOString(), timeZone: timezone },
               end: { dateTime: new Date(start.getTime() + 60 * 60 * 1000).toISOString(), timeZone: timezone }
             });
@@ -1919,8 +1944,8 @@ export default async function handler(req, res) {
             const first = new Date(now.getTime() + 24 * 60 * 60 * 1000);
             first.setHours(18, 0, 0, 0);
             events = [
-              { summary: 'Haftalık planlama', description: message, start: { dateTime: first.toISOString(), timeZone: timezone }, end: { dateTime: new Date(first.getTime() + 60 * 60 * 1000).toISOString(), timeZone: timezone } },
-              { summary: 'Gelişim hedeflerini gözden geçirme', description: message, start: { dateTime: new Date(first.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString(), timeZone: timezone }, end: { dateTime: new Date(first.getTime() + 2 * 24 * 60 * 60 * 1000 + 60 * 60 * 1000).toISOString(), timeZone: timezone } }
+              { summary: 'Haftalık planlama', description: safeDescription, start: { dateTime: first.toISOString(), timeZone: timezone }, end: { dateTime: new Date(first.getTime() + 60 * 60 * 1000).toISOString(), timeZone: timezone } },
+              { summary: 'Gelişim hedeflerini gözden geçirme', description: safeDescription, start: { dateTime: new Date(first.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString(), timeZone: timezone }, end: { dateTime: new Date(first.getTime() + 2 * 24 * 60 * 60 * 1000 + 60 * 60 * 1000).toISOString(), timeZone: timezone } }
             ];
           }
           
@@ -2114,10 +2139,13 @@ export default async function handler(req, res) {
     }
 
     // 4. SISTEM PROMPT HAZIRLA
+    // User-controlled fields are sanitized to prevent prompt injection.
+    const safeUserName = sanitizeForPrompt(userName, 80) || 'Gezgin';
+    const safeUserBio = sanitizeForPrompt(userBio, 600);
     let systemInstruction = `## Bu oturumdaki kullanıcı
-- İsim: ${userName}
+- İsim: ${safeUserName}
 - Seviye: ${userStats.level} | XP: ${userStats.xp}/100 | Streak: ${userStats.streak} gün
-${userBio ? `\n## Kullanıcı kendini şöyle tanıtıyor\n${userBio}\n` : ''}
+${safeUserBio ? `\n## Kullanıcı kendini şöyle tanıtıyor\n${safeUserBio}\n` : ''}
 
 ## Oturum kuralları
 1. LifeCoach kimliğini koru: yakın dost + yaşam koçu; soğuk "asistan" moduna geçme.
@@ -2150,7 +2178,7 @@ ${userBio ? `\n## Kullanıcı kendini şöyle tanıtıyor\n${userBio}\n` : ''}
     if (req.body && req.body.show_gamification) {
       gamificationInjection = `\n--- GAMIFICATION STATUS ---\nLevel: ${userStats.level}\nXP: ${userStats.xp}/100\nStreak: ${userStats.streak} Days\nAI NOTE: Inform user about their progress and motivate them to level up. E.g.: "Completing this task will get you to Level ${userStats.level + 1}!"`;
     }
-    const localizationInjection = `\n\n--- CONTEXT ---\nUser: ${userName}\nLocation: ${countryCode}\nLanguage: ${detectedLang}${gamificationInjection}`;
+    const localizationInjection = `\n\n--- CONTEXT ---\nUser: ${safeUserName}\nLocation: ${countryCode}\nLanguage: ${detectedLang}${gamificationInjection}`;
 
     // ==========================================
     // WEB SEARCH ENGINE (DuckDuckGo - Fast & Accurate)
@@ -2330,7 +2358,7 @@ ${LEGACY_TOOL_JSON_FORMAT}`,
       });
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 6000);
+      const timeoutId = setTimeout(() => controller.abort(), 25000);
 
       try {
         const result = await runDeepSeekWithTools({
@@ -2338,6 +2366,7 @@ ${LEGACY_TOOL_JSON_FORMAT}`,
           modelName,
           messages,
           executeToolCall: executeModelToolCall,
+          signal: controller.signal,
         });
 
         clearTimeout(timeoutId);
@@ -2471,12 +2500,12 @@ ${LEGACY_TOOL_JSON_FORMAT}`,
     let gamification = {};
     if (userId) {
       try {
-        const { rewardForAction, applyXpAndLevel } = require('../../lib/gamification');
+        const { rewardForAction, applyXpAndLevel } = await import('../../lib/gamification');
         const userRecord = await prisma.user.findUnique({ where: { id: userId } });
         if (userRecord) {
           const reward = rewardForAction('message_sent', userRecord.isPremium);
           const levelResult = applyXpAndLevel(userRecord, reward.xp);
-          await prisma.user.update({
+          const updated = await prisma.user.update({
             where: { id: userId },
             data: {
               xp: levelResult.newTotalXp,
@@ -2484,6 +2513,7 @@ ${LEGACY_TOOL_JSON_FORMAT}`,
               totalXp: levelResult.newTotalXp,
               han_coins: { increment: reward.coins },
             },
+            select: { han_coins: true },
           });
           gamification = {
             xp_gained: reward.xp,
@@ -2492,7 +2522,7 @@ ${LEGACY_TOOL_JSON_FORMAT}`,
             oldLevel: levelResult.oldLevel,
             newLevel: levelResult.newLevel,
             totalXp: levelResult.newTotalXp,
-            han_coins: (await prisma.user.findUnique({ where: { id: userId }, select: { han_coins: true } })).han_coins,
+            han_coins: updated.han_coins,
           };
         }
       } catch (e) { console.error('[Gamification] Reward error:', e); }
@@ -2552,7 +2582,8 @@ ${LEGACY_TOOL_JSON_FORMAT}`,
     if (resolveLock) {
       resolveLock();
     }
-    // SERVERLESS: Bağlantıyı hemen havuza geri bırak
-    await prisma.$disconnect().catch(() => {});
+    // NOTE: Do NOT $disconnect() here. The Prisma client is a module-level
+    // singleton (see lib/prisma.js) reused across invocations; disconnecting on
+    // every request destroys the connection and breaks the next request.
   }
 }

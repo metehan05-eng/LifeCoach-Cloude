@@ -132,17 +132,33 @@ export default function WaffleStudio({ isMobile }) {
   };
 
   const handleDownload = async (item) => {
+    const ext = item.mediaType === 'video' ? 'mp4' : 'png';
+    const fileName = `waffle-studio-${Date.now()}.${ext}`;
+    const triggerDownload = (href, revoke) => {
+      const link = document.createElement('a');
+      link.href = href;
+      link.download = fileName;
+      link.rel = 'noopener';
+      // Some browsers (notably Firefox) ignore .click() on a detached node.
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      if (revoke) URL.revokeObjectURL(href);
+    };
+
     try {
+      // data: URLs (HF base64 output) can be downloaded directly without a fetch.
+      if (typeof item.url === 'string' && item.url.startsWith('data:')) {
+        triggerDownload(item.url, false);
+        return;
+      }
       const response = await fetch(item.url);
       const blob = await response.blob();
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      const ext = item.mediaType === 'video' ? 'mp4' : 'png';
-      link.download = `waffle-studio-${Date.now()}.${ext}`;
-      link.click();
-      URL.revokeObjectURL(link.href);
+      triggerDownload(URL.createObjectURL(blob), true);
     } catch (e) {
-      window.open(item.url, '_blank');
+      // Cross-origin or CSP failure (e.g. Pollinations URL) — open in a new tab
+      // so the user can still save manually.
+      window.open(item.url, '_blank', 'noopener');
     }
   };
 

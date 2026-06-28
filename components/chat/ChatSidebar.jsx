@@ -50,8 +50,8 @@ export default function ChatSidebar({
   if (!mounted || !groups) {
     return (
       <aside
-        className={`h-screen shrink-0 overflow-hidden bg-han-surface transition-all duration-300 ${
-          isOpen ? "w-[280px] min-w-[280px]" : "w-0 min-w-0"
+        className={`h-app shrink-0 overflow-hidden bg-han-surface transition-all duration-300 ${
+          isOpen ? "w-[85vw] min-w-[260px] max-w-[300px] md:w-[280px] md:min-w-[280px] md:max-w-none" : "w-0 min-w-0"
         }`}
       >
         {isOpen && (
@@ -72,13 +72,25 @@ export default function ChatSidebar({
       )}
 
       <aside
-        className={`relative z-50 flex h-screen shrink-0 flex-col overflow-hidden border-r border-han-purple/10 bg-gradient-to-b from-[rgba(8,8,26,0.98)] to-[rgba(12,12,36,0.96)] backdrop-blur-[40px] transition-all duration-300 ${
-          isOpen ? "w-[280px] min-w-[280px]" : "w-0 min-w-0"
+        className={`h-app safe-pt relative z-50 flex shrink-0 flex-col overflow-hidden border-r border-han-purple/10 bg-gradient-to-b from-[rgba(8,8,26,0.98)] to-[rgba(12,12,36,0.96)] backdrop-blur-[40px] transition-all duration-300 ${
+          isOpen ? "w-[85vw] min-w-[260px] max-w-[300px] md:w-[280px] md:min-w-[280px] md:max-w-none" : "w-0 min-w-0"
         }`}
       >
         {/* Logo + New Chat */}
         <div className="flex flex-col gap-2.5 border-b border-han-purple/[0.06] px-4 pb-3 pt-5">
-          <LCLogo variant="full" size={36} />
+          <div className="flex items-center justify-between">
+            <LCLogo variant="full" size={36} />
+            <button
+              type="button"
+              onClick={onToggle}
+              aria-label="Menüyü kapat"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-han-purple/15 bg-white/[0.03] text-white/60 transition-colors hover:text-white md:hidden"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
 
           <button
             type="button"

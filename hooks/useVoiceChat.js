@@ -21,6 +21,10 @@ export function useVoiceChat({ onTranscript, onEmotionChange, isMobile = false }
     const voice = voiceRef.current;
     if (!voice) return;
 
+    // Stop any ongoing TTS so the mic doesn't capture Sifu's own voice.
+    voice.stopSpeaking();
+    setIsSpeaking(false);
+
     setInterimText("");
     setIsRecording(true);
     onEmotionChange?.("thoughtful");

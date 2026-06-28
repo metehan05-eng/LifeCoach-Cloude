@@ -152,10 +152,13 @@ export default function ChatInput({
     }
   };
 
-  const btnSize = isMobile ? "h-[36px] w-[36px]" : "h-[40px] w-[40px]";
+  const btnSize = isMobile ? "h-[40px] w-[40px]" : "h-[40px] w-[40px]";
 
   return (
-    <div className={centered ? "w-full" : "shrink-0 px-3 pb-4 pt-0 sm:px-4 sm:pb-5 md:px-6"}>
+    <div
+      className={centered ? "w-full" : "shrink-0 px-3 pb-4 pt-0 sm:px-4 sm:pb-5 md:px-6"}
+      style={centered ? undefined : { paddingBottom: "calc(1rem + var(--safe-bottom, 0px))" }}
+    >
       {attachments.length > 0 && (
         <div className="mb-2 flex gap-2 overflow-x-auto">
           {attachments.map((at) => (

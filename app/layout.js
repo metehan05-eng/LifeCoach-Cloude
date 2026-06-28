@@ -10,6 +10,11 @@ export const metadata = {
   title: "LifeCoach AI – HAN 4.2 Ultra Core",
   description: "Yapay Zeka Destekli Kişisel Yaşam Koçunuz. Hedeflerine ulaş, potansiyelini keşfet.",
   keywords: "yapay zeka, life coach, AI, hedef, üretkenlik, HAN AI",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "LifeCoach AI",
+  },
   openGraph: {
     title: "LifeCoach AI",
     description: "Seni anlayan yeni nesil yaşam koçu",
@@ -17,11 +22,24 @@ export const metadata = {
   },
 };
 
+// Mobil + çentikli cihaz desteği: viewport-fit=cover safe-area env() değerlerini etkinleştirir.
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#060618" },
+    { media: "(prefers-color-scheme: light)", color: "#f8f9fc" },
+  ],
+};
+
 export default function RootLayout({ children }) {
   return (
     <html lang="tr" className={`${inter.variable} ${spaceGrotesk.variable}`} suppressHydrationWarning>
       <head>
-        <meta name="theme-color" content="#060618" />
+        <meta name="mobile-web-app-capable" content="yes" />
         <link rel="icon" href="/lifecoach-favicon.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/lifecoach-logo-icon.svg" />
         <script

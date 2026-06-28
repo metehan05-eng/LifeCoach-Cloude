@@ -33,11 +33,11 @@ export default function ChatHeader({
   useEffect(() => setMounted(true), []);
 
   const btnClass =
-    "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-colors";
+    "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-colors md:h-8 md:w-8";
 
   return (
     <header
-      className="relative z-20 flex h-14 shrink-0 items-center gap-3 border-b px-4 backdrop-blur-[32px]"
+      className="safe-pt safe-px relative z-20 flex min-h-14 shrink-0 items-center gap-3 border-b px-3 backdrop-blur-[32px] sm:px-4"
       style={{
         borderColor: "var(--border-subtle)",
         background: "var(--chat-header-bg)",

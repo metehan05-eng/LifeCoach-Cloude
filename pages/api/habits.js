@@ -1,5 +1,7 @@
 import { getKVData, setKVData } from '../../lib/db.js';
 import jwt from 'jsonwebtoken';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from './auth/[...nextauth]';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'gizli-anahtar-degistir';
 
@@ -59,20 +61,21 @@ function calculateStreak(completions) {
 
 // GET /api/habits - Get all habits for user
 export default async function handler(req, res) {
-    // Get user ID from token OR session header OR generate one
+    // Resolve the user identity. Prefer the authenticated NextAuth session so
+    // every user is isolated to their own habit data. Fall back to a legacy JWT
+    // bearer token for older clients. Never use a shared anonymous bucket.
     let userId = null;
-    
-    // Try to get from token first
-    const user = authenticateToken(req);
-    if (user) {
-        userId = user.id;
+
+    const session = await getServerSession(req, res, authOptions);
+    if (session?.user?.id) {
+        userId = session.user.id;
     } else {
-        // For free users, use session ID from header or generate one
-        userId = req.headers['x-session-id'] || 'free-user';
+        const user = authenticateToken(req);
+        if (user?.id) userId = user.id;
     }
-    
+
     if (!userId) {
-        return res.status(400).json({ error: 'Kullanıcı ID belirlenemedi' });
+        return res.status(401).json({ error: 'Oturum gerekli. Lütfen giriş yapın.' });
     }
     
     // GET - Fetch habits

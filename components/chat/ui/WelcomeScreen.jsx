@@ -86,7 +86,7 @@ export default function WelcomeScreen({
   }
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-5 overflow-y-auto px-3 py-6 sm:gap-7 sm:px-4 sm:py-8 md:gap-8 md:px-6">
+    <div className="app-scroll flex flex-1 flex-col items-center justify-center gap-5 overflow-y-auto px-3 py-6 sm:gap-7 sm:px-4 sm:py-8 md:gap-8 md:px-6">
       <div className="animate-fade-in w-full max-w-2xl text-center">
         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-lg sm:h-16 sm:w-16">
           <LCLogo variant="icon" size={isMobile ? 28 : 32} />

@@ -1077,7 +1077,7 @@ export default function ChatMessages({ messages, isTyping, streamText, error, is
   }, [messages, isTyping, streamText]);
  
   return (
-    <div style={{
+    <div className="app-scroll" style={{
       flex: 1, overflowY: 'auto',
       padding: isMobile ? '16px 14px 12px' : '28px 24px 16px',
       display: 'flex', flexDirection: 'column', gap: isMobile ? '14px' : '20px',

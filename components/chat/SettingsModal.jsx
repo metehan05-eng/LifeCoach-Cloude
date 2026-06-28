@@ -2,15 +2,20 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { useAppTheme } from '@/hooks/useAppTheme';
 import styles from './SettingsModal.module.css';
 
 export default function SettingsModal({ onClose, user, dna }) {
   const router = useRouter();
   const { data: session } = useSession();
+  const { theme, setTheme, mounted } = useAppTheme();
   const [activeTab, setActiveTab] = useState('general');
   const [userBio, setUserBio] = useState('');
   const [saving, setSaving] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [displayName, setDisplayName] = useState('');
+  const [savingName, setSavingName] = useState(false);
+  const [nameSaved, setNameSaved] = useState(false);
 
   const tabs = [
     { id: 'general', label: 'Genel', icon: '⚙️' },
@@ -32,6 +37,31 @@ export default function SettingsModal({ onClose, user, dna }) {
       .catch(() => setLoaded(true));
   }, [loaded]);
 
+  useEffect(() => {
+    fetch('/api/user/profile')
+      .then(r => r.json())
+      .then(d => { if (d?.name) setDisplayName(d.name); })
+      .catch(() => {});
+  }, []);
+
+  const handleSaveName = async () => {
+    if (!displayName.trim() || savingName) return;
+    setSavingName(true);
+    setNameSaved(false);
+    try {
+      const res = await fetch('/api/user/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: displayName.trim() }),
+      });
+      if (res.ok) {
+        setNameSaved(true);
+        setTimeout(() => setNameSaved(false), 2000);
+      }
+    } catch (e) { /* ignore */ }
+    setSavingName(false);
+  };
+
   const handleSaveBio = async () => {
     setSaving(true);
     try {
@@ -52,14 +82,41 @@ export default function SettingsModal({ onClose, user, dna }) {
             <h3>Profil Ayarları</h3>
             <div className={styles.field}>
               <label>Platform adı (AI sana nasıl hitap etsin?)</label>
-              <input type="text" defaultValue={user?.name || 'Metehan'} />
+              <input
+                type="text"
+                value={displayName}
+                onChange={e => setDisplayName(e.target.value)}
+                placeholder={user?.name || 'Adın'}
+              />
+              <button
+                className={styles.saveBtn}
+                onClick={handleSaveName}
+                disabled={savingName || !displayName.trim()}
+                style={{ marginTop: '10px' }}
+              >
+                {savingName ? 'Kaydediliyor...' : nameSaved ? 'Kaydedildi ✓' : 'Kaydet'}
+              </button>
             </div>
             <div className={styles.field}>
               <label>Görünüm</label>
               <div className={styles.toggleGroup}>
-                <button className={styles.active}>Sistem</button>
-                <button>Koyu</button>
-                <button>Açık</button>
+                <button
+                  type="button"
+                  className={mounted && theme === 'dark' ? styles.active : ''}
+                  onClick={() => setTheme('dark')}
+                >Koyu</button>
+                <button
+                  type="button"
+                  className={mounted && theme === 'light' ? styles.active : ''}
+                  onClick={() => setTheme('light')}
+                >Açık</button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const sys = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+                    setTheme(sys);
+                  }}
+                >Sistem</button>
               </div>
             </div>
           </div>
