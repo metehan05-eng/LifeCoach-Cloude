@@ -58,22 +58,16 @@ export default function SifuPandaPanel({
           <div className="flex gap-1.5">
             <button
               type="button"
-              onMouseDown={onMicPress}
-              onMouseUp={onMicRelease}
-              onTouchStart={(e) => {
-                e.preventDefault();
-                onMicPress?.();
-              }}
-              onTouchEnd={(e) => {
-                e.preventDefault();
-                onMicRelease?.();
+              onClick={() => {
+                if (isRecording) onMicRelease?.();
+                else onMicPress?.();
               }}
               className={`flex h-9 w-9 items-center justify-center rounded-xl border transition-all ${
                 isRecording
                   ? "border-red-400/40 bg-red-500/20 text-red-300 shadow-[0_0_16px_rgba(239,68,68,0.3)]"
                   : "border-han-purple/20 bg-han-purple/10 text-violet-300 hover:border-han-purple/40 hover:bg-han-purple/20"
               }`}
-              title="Basılı tut — konuş"
+              title={isRecording ? "Durdur" : "Konuş"}
               aria-label="Mikrofon"
             >
               <MicIcon active={isRecording} />

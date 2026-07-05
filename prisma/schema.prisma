@@ -209,6 +209,18 @@ model ConversationMemory {
   @@index([userId])
 }
 
+model MessageEmbedding {
+  id        String   @id @default(uuid())
+  userId    String
+  chatId    String?
+  role      String
+  content   String   @db.Text
+  embedding String?  @db.Text
+  createdAt DateTime @default(now())
+  @@index([userId])
+  @@index([userId, createdAt])
+}
+
 model CoachingMode {
   id            String @id @default(cuid())
   name          String

@@ -117,9 +117,94 @@ export default function ChatbotInterface() {
     },
   });
 
+  const sendAudioMessage = useCallback(async (audioBase64, duration) => {
+    const now = Date.now();
+    const audioUserMsg = { role: 'user', content: '🎤 Ses kaydı', id: now, isAudio: true };
+    setMessages(prev => [...prev, audioUserMsg]);
+    setIsLoading(true);
+    setIsTyping(true);
+    setStreamText('');
+
+    const history = messages.map(m => ({ role: m.role, content: m.content }));
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 35000);
+      const res = await fetch('/api/chat-stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: '',
+          audio: audioBase64,
+          history,
+          chatId: activeChatId,
+          sessionId: activeSessionId,
+        }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      if (!res.ok) throw new Error('Stream bağlantısı hatası');
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let streamBuffer = '';
+      let aiFullText = '';
+
+      const processLine = (line) => {
+        if (!line.startsWith('data: ')) return;
+        const json = line.slice(6).trim();
+        if (!json || json === '[DONE]') return;
+        try {
+          const data = JSON.parse(json);
+          if (data.done) {
+            const aiMsg = { role: 'assistant', content: aiFullText || '...', id: Date.now() };
+            setMessages(prev => [...prev, aiMsg]);
+            setStreamText(aiFullText);
+            setIsLoading(false);
+            setIsTyping(false);
+            if (showSifuPandaRef.current) {
+              speakResponseRef.current?.(aiFullText);
+            }
+          } else if (data.content) {
+            aiFullText += data.content;
+            setStreamText(aiFullText);
+          } else if (data.flush && showSifuPandaRef.current) {
+            speakResponseRef.current?.(data.sentence);
+          } else if (data.error) {
+            throw new Error(data.error);
+          }
+        } catch (e) {
+          // skip parse errors for incomplete chunks
+        }
+      };
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        streamBuffer += decoder.decode(value, { stream: true });
+        const lines = streamBuffer.split('\n');
+        streamBuffer = lines.pop() || '';
+        for (const line of lines) {
+          processLine(line);
+        }
+      }
+
+      // Process remaining buffer
+      if (streamBuffer.trim()) processLine(streamBuffer);
+    } catch (err) {
+      setMessages(prev => prev.filter(m => m.id !== now));
+      setIsLoading(false);
+      setIsTyping(false);
+    }
+  }, [messages, activeChatId, activeSessionId, session, showSifuPandaRef]);
+
+  const sendAudioRef = useRef(null);
+  useEffect(() => { sendAudioRef.current = sendAudioMessage; }, [sendAudioMessage]);
+
   const voice = useVoiceChat({
     onTranscript: (text) => sendMessageRef.current?.(text),
     onEmotionChange: setSifuEmotion,
+    onAudio: (base64, duration) => sendAudioRef.current?.(base64, duration),
     isMobile,
   });
 
@@ -496,6 +581,10 @@ export default function ChatbotInterface() {
           }}
         />
       )}
+
+      {/* Sifu Panda + HAN Vision: Kamera entegrasyonu için */}
+      {/* Aktif: showSifuPanda true iken, voice + vision aynı anda çalışır */}
+      {/* visionFrame'leri chat-stream.js'e yollamak için periyodik yakala */}
 
       <div className={styles.layout}>
         {/* Sidebar */}

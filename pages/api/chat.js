@@ -7,6 +7,8 @@ import { google } from 'googleapis';
 import { buildLifeCoachSystemPrompt, LEGACY_TOOL_JSON_FORMAT } from '@/lib/lifecoach-system-prompt';
 import { runDeepSeekWithTools } from '@/lib/deepseek-tools';
 import { getQwenConfig } from '../../lib/qwen-api.js';
+import { processAudioWithQwen } from '../../lib/qwen-audio.js';
+import { findSimilarContext, storeEmbedding } from '../../lib/rag.js';
 import { detectYouTubeVideoIntent } from '../../lib/youtube-search.js';
 import { generateChatTitle } from '../../lib/chat-title.js';
 import { prismaClient as prisma } from '@/lib/prisma';
@@ -1440,7 +1442,7 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'UNAUTHENTICATED', message: 'Oturum açmanız gerekiyor.' });
   }
 
-  const { message, history, sessionId, chatId, mode, userLanguage, attachments, deepSearch, quick_action } = req.body;
+  const { message, history, sessionId, chatId, mode, userLanguage, attachments, deepSearch, quick_action, audio } = req.body;
   const email = sessionEmail;
   const countryCode = req.headers['x-vercel-ip-country'] || 'Unknown';
 
@@ -1619,12 +1621,11 @@ export default async function handler(req, res) {
           chatId: activeChatId,
           role: 'user',
           content: finalUserContent || message,
-          metadata: {
-            attachments: attachments?.length ? attachments.map(a => ({ name: a.name, type: a.type })) : null,
-            hasImages: hasImagesInAttachments,
-          },
         },
       });
+
+      // Store embedding for RAG (async, not awaited)
+      storeEmbedding(prisma, userId, finalUserContent || message, 'user', activeChatId).catch(() => {});
     }
 
     // 2. DOSYA İŞLEME (PDF, DOCX, XLSX, MP4Video)
@@ -2248,7 +2249,7 @@ ${safeUserBio ? `\n## Kullanıcı kendini şöyle tanıtıyor\n${safeUserBio}\n`
     // Qwen model chain — hızlı modeller önce denenir, yavaş modeller fallback
     const qwenConfig = getQwenConfig();
     const envModels = (process.env.QWEN_API_MODELS || '').split('|').filter(Boolean);
-    const QWEN_MODEL_CHAIN = [
+    let QWEN_MODEL_CHAIN = [
       ...envModels,
       'qwen-turbo',
       'qwen-flash',
@@ -2259,17 +2260,42 @@ ${safeUserBio ? `\n## Kullanıcı kendini şöyle tanıtıyor\n${safeUserBio}\n`
       'qwen/qwen-2.5-72b-instruct:free'
     ].filter((m, i, self) => m && self.indexOf(m) === i);
 
+    if (imagesForVision && imagesForVision.length > 0) {
+      QWEN_MODEL_CHAIN = [
+        'qwen-vl-plus',
+        'qwen/qwen-2.5-vl-72b-instruct',
+        'qwen/qwen-2.5-vl-72b-instruct:free',
+        'google/gemini-2.0-flash-exp:free',
+        ...QWEN_MODEL_CHAIN
+      ];
+    }
+
     let youtubeContextInjection = '';
     if (youtube_suggestions?.length) {
       youtubeContextInjection = `\n\n--- YOUTUBE ÖNERİLERİ ---\nKullanıcı video istedi. Sistem "${youtube_search_query}" için ${youtube_suggestions.length} gerçek YouTube videosu buldu (kartlar otomatik gösterilecek).\nVideolar:\n${youtube_suggestions.map((v, i) => `${i + 1}. ${v.title} — ${v.channel}`).join('\n')}\nYanıtında bu videolara kısa atıf yap; kartların altında zaten görünecekler.`;
     }
 
+    // RAG: Retrieve semantically similar past messages
+    let ragContext = '';
+    if (userId && message) {
+      try {
+        const similarMemories = await findSimilarContext(prisma, userId, message, 3);
+        if (similarMemories.length > 0) {
+          ragContext = `\n\n--- GEÇMİŞ KONUŞMALARDAN İLGİLİ ANILAR ---\n${similarMemories.map((m, i) => `${i + 1}. ${m}`).join('\n')}\n`;
+        }
+      } catch (e) {
+        // RAG fail silently
+      }
+    }
+
     const systemPrompt = buildLifeCoachSystemPrompt({
       quickAction: quick_action,
       userContext: `${systemInstruction}${localizationInjection}${targetContext}`,
-      extraContext: `${searchContextInjection}${youtubeContextInjection}
+      extraContext: `${ragContext}${searchContextInjection}${youtubeContextInjection}
 
 ## Aktif yetenekler (arka planda çalışır, kullanıcıya gösterilmez)
+- GÖRSEL ANALİZİ: JPG, PNG, WEBP gibi görselleri analiz eder, içeriğini açıklar ve yorumlar.
+- SES ANALİZİ (qwen-audio): Kullanıcının ses kaydını analiz eder, tonlama ve duygu çıkarımı yapar, her dili algılar ve o dilde yanıt verir.
 - DOSYA OKUMA: PDF, Word, Excel dosyalarının içeriğini otomatik okur, özetlersin.
 - VİDEO ANLAMA: MP4 veya YouTube videolarının transkriptini analiz eder.
 - YOUTUBE ÖNERİ: Video kartları otomatik gelir; kısaca hangisinin neden uygun olduğunu söyle.
@@ -2278,15 +2304,6 @@ ${safeUserBio ? `\n## Kullanıcı kendini şöyle tanıtıyor\n${safeUserBio}\n`
 - KOD ÇIKTISI: Tüm kodları markdown kod blokları içinde ver.
 ${LEGACY_TOOL_JSON_FORMAT}`,
     });
-
-    // Qwen modelleri (qwen3.7-plus) görsel girdi desteklemez.
-    // Görsel varsa kaldır ve kullanıcıyı bilgilendir.
-    let hasImages = imagesForVision && imagesForVision.length > 0;
-    if (hasImages) {
-      tool_notes.push('Görsel analizi şu an desteklenmiyor. Sadece metin mesajınız işlendi.');
-      imagesForVision = [];
-      hasImages = false;
-    }
 
     const messages = [
       { role: "system", content: systemPrompt }
@@ -2313,6 +2330,7 @@ ${LEGACY_TOOL_JSON_FORMAT}`,
                         lastDbMessage.role === 'user' && 
                         lastDbMessage.content === finalUserContent;
 
+    let hasImages = imagesForVision && imagesForVision.length > 0;
     if (!isDuplicate) {
       if (hasImages) {
         messages.push({
@@ -2387,6 +2405,30 @@ ${LEGACY_TOOL_JSON_FORMAT}`,
     let usedModel = null;
     let lastError = null;
 
+    // ---- AUDIO PROCESSING (Sifu Panda / qwen-audio) ----
+    if (audio && audio.length > 0) {
+      try {
+        console.log('[AUDIO] 🎤 qwen-audio işleniyor...');
+        const systemMsg = messages.find(m => m.role === 'system');
+        const historyMessages = messages.filter(m => m.role !== 'system');
+        const audioText = await processAudioWithQwen(audio, historyMessages, {
+          userText: message || '',
+          model: 'qwen2-audio',
+        });
+        if (audioText && audioText.trim()) {
+          aiResponse = audioText;
+          usedModel = 'qwen2-audio';
+          console.log('[AUDIO] ✅ qwen-audio başarılı');
+        } else {
+          throw new Error('qwen-audio boş yanıt');
+        }
+      } catch (audioErr) {
+        console.warn('[AUDIO] ❌ qwen-audio hatası:', audioErr.message);
+        tool_notes.push('Ses analizi qwen-audio ile yapılamadı, metin modeline düşüldü.');
+      }
+    }
+
+    if (!aiResponse) {
     for (const modelName of QWEN_MODEL_CHAIN) {
       try {
         console.log(`[AI] 🚀 Qwen deneniyor: ${modelName}`);
