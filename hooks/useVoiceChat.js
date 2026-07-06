@@ -24,13 +24,12 @@ export function useVoiceChat({ onTranscript, onEmotionChange, onAudio, isMobile 
   const silenceStartRef = useRef(0);
   const isAutoStoppingRef = useRef(false);
 
-  // Try to use ElevenLabs if API key is configured
+  // Try to use external TTS (Google/Edge/ElevenLabs) if configured
   useEffect(() => {
     const checkTTSProvider = async () => {
       try {
         const res = await fetch('/api/tts', { method: 'HEAD' });
-        // If 503, ElevenLabs not configured, use web-speech
-        const provider = res.ok ? 'elevenlabs' : 'web-speech';
+        const provider = res.ok ? 'external' : 'web-speech';
         voiceRef.current = getVoiceService({ lang: "tr-TR", provider });
       } catch {
         voiceRef.current = getVoiceService({ lang: "tr-TR" });
