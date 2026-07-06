@@ -2450,6 +2450,7 @@ ${LEGACY_TOOL_JSON_FORMAT}`,
         details: lastError?.message
       });
     }
+    }
 
     let toolResults = [];
     let processedResponse = aiResponse;
@@ -2570,6 +2571,7 @@ ${LEGACY_TOOL_JSON_FORMAT}`,
       } catch (e) { console.error('[Gamification] Reward error:', e); }
     }
 
+    try {
     return res.status(200).json({
       reply: cleanReply,
       chatId: activeChatId,
