@@ -176,6 +176,24 @@
       "static/chunks/1657-6aac962196225b54.js",
       "static/chunks/app/app/chatbots/loading-9f9e9d042202b2a7.js"
     ],
+    "/app/chatbots/page": [
+      "static/chunks/webpack-4e3103c82f23df71.js",
+      "static/chunks/fd9d1056-7d9cedf664f0ca24.js",
+      "static/chunks/2117-7310fd354e089d3c.js",
+      "static/chunks/main-app-8fb22e6de7b62cef.js",
+      "static/chunks/f8025e75-086be4655607e04c.js",
+      "static/chunks/1657-6aac962196225b54.js",
+      "static/chunks/605-e88f353b2a3bd442.js",
+      "static/chunks/1748-933135113297bcc6.js",
+      "static/chunks/8718-be0aa37a7a451551.js",
+      "static/chunks/7648-179576488dd59a74.js",
+      "static/chunks/5833-02997a6b7e6521fa.js",
+      "static/chunks/8744-fc776576634fa7a6.js",
+      "static/chunks/9070-515cb96dba5f6d06.js",
+      "static/chunks/4433-a8e8f81a4a1357a9.js",
+      "static/chunks/1528-99f3a5db7882be25.js",
+      "static/chunks/app/app/chatbots/page-66ec0f155a65b5e7.js"
+    ],
     "/app/datasources/page": [
       "static/chunks/webpack-4e3103c82f23df71.js",
       "static/chunks/fd9d1056-7d9cedf664f0ca24.js",
@@ -222,24 +240,6 @@
       "static/chunks/main-app-8fb22e6de7b62cef.js",
       "static/chunks/1657-6aac962196225b54.js",
       "static/chunks/app/app/prompt-templates/loading-41f8d28bfa856130.js"
-    ],
-    "/app/chatbots/page": [
-      "static/chunks/webpack-4e3103c82f23df71.js",
-      "static/chunks/fd9d1056-7d9cedf664f0ca24.js",
-      "static/chunks/2117-7310fd354e089d3c.js",
-      "static/chunks/main-app-8fb22e6de7b62cef.js",
-      "static/chunks/f8025e75-086be4655607e04c.js",
-      "static/chunks/1657-6aac962196225b54.js",
-      "static/chunks/605-e88f353b2a3bd442.js",
-      "static/chunks/1748-933135113297bcc6.js",
-      "static/chunks/8718-be0aa37a7a451551.js",
-      "static/chunks/7648-179576488dd59a74.js",
-      "static/chunks/5833-02997a6b7e6521fa.js",
-      "static/chunks/8744-fc776576634fa7a6.js",
-      "static/chunks/9070-515cb96dba5f6d06.js",
-      "static/chunks/4433-a8e8f81a4a1357a9.js",
-      "static/chunks/1528-99f3a5db7882be25.js",
-      "static/chunks/app/app/chatbots/page-66ec0f155a65b5e7.js"
     ],
     "/app/social/page": [
       "static/chunks/webpack-4e3103c82f23df71.js",
