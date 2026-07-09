@@ -117,10 +117,16 @@ export default function ChatbotInterface() {
     },
   });
 
+  const activeSession = sessions.find(s => s.id === activeSessionId);
+  const messages = activeSession?.messages || [];
+  const hasMessages = isMounted && (messages.length > 0 || isTyping);
+
   const sendAudioMessage = useCallback(async (audioBase64, duration) => {
     const now = Date.now();
     const audioUserMsg = { role: 'user', content: '🎤 Ses kaydı', id: now, isAudio: true };
-    setMessages(prev => [...prev, audioUserMsg]);
+    setSessions(prev => prev.map(s =>
+      s.id === activeSessionId ? { ...s, messages: [...s.messages, audioUserMsg] } : s
+    ));
     setIsLoading(true);
     setIsTyping(true);
     setStreamText('');
@@ -158,7 +164,9 @@ export default function ChatbotInterface() {
           const data = JSON.parse(json);
           if (data.done) {
             const aiMsg = { role: 'assistant', content: aiFullText || '...', id: Date.now() };
-            setMessages(prev => [...prev, aiMsg]);
+            setSessions(prev => prev.map(s =>
+              s.id === activeSessionId ? { ...s, messages: [...s.messages, aiMsg] } : s
+            ));
             setStreamText(aiFullText);
             setIsLoading(false);
             setIsTyping(false);
@@ -192,7 +200,9 @@ export default function ChatbotInterface() {
       // Process remaining buffer
       if (streamBuffer.trim()) processLine(streamBuffer);
     } catch (err) {
-      setMessages(prev => prev.filter(m => m.id !== now));
+      setSessions(prev => prev.map(s =>
+        s.id === activeSessionId ? { ...s, messages: s.messages.filter(m => m.id !== now) } : s
+      ));
       setIsLoading(false);
       setIsTyping(false);
     }
@@ -296,10 +306,6 @@ export default function ChatbotInterface() {
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/login');
   }, [status, router]);
-
-  const activeSession = sessions.find(s => s.id === activeSessionId);
-  const messages = activeSession?.messages || [];
-  const hasMessages = isMounted && (messages.length > 0 || isTyping);
 
   const createNewSession = useCallback(() => {
     const timestamp = Date.now();
