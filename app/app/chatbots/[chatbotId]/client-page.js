@@ -35,7 +35,7 @@ import {
   TbArrowLeft,
   TbApi,
 } from "react-icons/tb";
-import { useAsync } from "react-use";
+import useAsync from "react-use/lib/useAsync";
 import { useForm } from "react-hook-form";
 import { getChatbotById } from "@/lib/api";
 import Chat from "@/components/chat";

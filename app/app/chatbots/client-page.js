@@ -30,7 +30,7 @@ import {
   TbSparkles,
   TbSettings,
 } from "react-icons/tb";
-import { useAsync } from "react-use";
+import useAsync from "react-use/lib/useAsync";
 import { useForm } from "react-hook-form";
 import PageHeader from "@/components/page-header";
 import { useSidebar } from "@/lib/sidebar";

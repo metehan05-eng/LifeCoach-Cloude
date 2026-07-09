@@ -18,7 +18,8 @@ import {
   Icon,
   useDisclosure,
 } from "@chakra-ui/react";
-import { useAsync, useAsyncFn } from "react-use";
+import useAsync from "react-use/lib/useAsync";
+import useAsyncFn from "react-use/lib/useAsyncFn";
 import { getPrompTemplates, updateChatbotById } from "@/lib/api";
 import { TbChevronDown } from "react-icons/tb";
 
