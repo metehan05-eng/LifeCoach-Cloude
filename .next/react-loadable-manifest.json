@@ -4,8 +4,8 @@
     "files": [
       "static/css/e0ae885a80264f12.css",
       "static/chunks/605-e88f353b2a3bd442.js",
-      "static/chunks/2666-f95ae460bfd5b3bd.js",
-      "static/chunks/7481.f3ecf760993f0f28.js"
+      "static/chunks/2988-5588a5c96fc01b7b.js",
+      "static/chunks/7481.fff526357d40bb9a.js"
     ]
   },
   "node_modules/@aws-sdk/util-user-agent-browser/dist-es/createUserAgentStringParsingProvider.js -> bowser": {
