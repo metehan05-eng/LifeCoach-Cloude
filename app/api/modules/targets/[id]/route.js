@@ -6,6 +6,48 @@ import { authOptions } from "@/pages/api/auth/[...nextauth]";
 import { prismaClient } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
+export async function DELETE(request, { params }) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
+    }
+
+    const { id } = params;
+
+    const target = await prismaClient.target.findFirst({
+      where: { id, userId: session.user.id },
+      include: { chatHistory: true },
+    });
+
+    if (!target) {
+      return NextResponse.json({ error: "Hedef bulunamadı" }, { status: 404 });
+    }
+
+    // Sohbet geçmişini de temizle (başka hedef tarafından kullanılmıyorsa)
+    if (target.chatHistoryId) {
+      const otherTargets = await prismaClient.target.count({
+        where: {
+          chatHistoryId: target.chatHistoryId,
+          id: { not: id },
+        },
+      });
+      if (otherTargets === 0) {
+        await prismaClient.moduleChatHistory.delete({
+          where: { id: target.chatHistoryId },
+        });
+      }
+    }
+
+    await prismaClient.target.delete({ where: { id } });
+
+    return NextResponse.json({ success: true, message: "Hedef silindi" });
+  } catch (err) {
+    console.error("[DELETE /api/modules/targets/[id]]", err);
+    return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
+  }
+}
+
 export async function PATCH(request, { params }) {
   try {
     const session = await getServerSession(authOptions);
