@@ -79,11 +79,11 @@ export default function SettingsModal({ onClose, user, dna }) {
       case 'general':
         return (
           <div className={styles.section}>
-            <h3>Profil Ayarları</h3>
-            <div className={styles.field}>
-              <label>Platform adı (AI sana nasıl hitap etsin?)</label>
+            <div className={styles.fieldGroup}>
+              <label className={styles.fieldLabel}>Platform adı (AI sana nasıl hitap etsin?)</label>
               <input
                 type="text"
+                className={styles.fieldInput}
                 value={displayName}
                 onChange={e => setDisplayName(e.target.value)}
                 placeholder={user?.name || 'Adın'}
@@ -97,21 +97,22 @@ export default function SettingsModal({ onClose, user, dna }) {
                 {savingName ? 'Kaydediliyor...' : nameSaved ? 'Kaydedildi ✓' : 'Kaydet'}
               </button>
             </div>
-            <div className={styles.field}>
-              <label>Görünüm</label>
+            <div className={styles.fieldGroup}>
+              <label className={styles.fieldLabel}>Görünüm</label>
               <div className={styles.toggleGroup}>
                 <button
                   type="button"
-                  className={mounted && theme === 'dark' ? styles.active : ''}
+                  className={`${styles.toggleGroupBtn} ${mounted && theme === 'dark' ? styles.toggleGroupBtnActive : ''}`}
                   onClick={() => setTheme('dark')}
                 >Koyu</button>
                 <button
                   type="button"
-                  className={mounted && theme === 'light' ? styles.active : ''}
+                  className={`${styles.toggleGroupBtn} ${mounted && theme === 'light' ? styles.toggleGroupBtnActive : ''}`}
                   onClick={() => setTheme('light')}
                 >Açık</button>
                 <button
                   type="button"
+                  className={styles.toggleGroupBtn}
                   onClick={() => {
                     const sys = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
                     setTheme(sys);
@@ -125,16 +126,16 @@ export default function SettingsModal({ onClose, user, dna }) {
       case 'aboutme':
         return (
           <div className={styles.section}>
-            <h3>Beni Tanı</h3>
             <div className={styles.bioHint}>
               <span>💡</span>
               <div>
                 AI'ya kendini tanıt — hedeflerin, alışkanlıkların, zorlukların veya sana nasıl yaklaşmasını istediğin hakkında bir şeyler yaz. Bu bilgiler her sohbette sana özel daha doğru yanıtlar almanı sağlar.
               </div>
             </div>
-            <div className={styles.field}>
-              <label>AI'ya kendini tanıt</label>
+            <div className={styles.fieldGroup}>
+              <label className={styles.fieldLabel}>AI'ya kendini tanıt</label>
               <textarea
+                className={styles.fieldTextarea}
                 value={userBio}
                 onChange={e => setUserBio(e.target.value)}
                 placeholder={`Örnek:\n- 25 yaşında bir girişimciyim\n- Sabah 6'da kalkıp koşuyorum\n- En büyük zorluğum odaklanmak\n- Biraz sert ve direkt olmanı tercih ederim`}
@@ -153,24 +154,35 @@ export default function SettingsModal({ onClose, user, dna }) {
       case 'dna':
         return (
           <div className={styles.section}>
-            <h3>Gelişim DNA Analizi</h3>
-            <p>AI'nın senin konuşmalarından çıkardığı karakter analizi.</p>
+            <p className={styles.sectionDesc}>AI'nın senin konuşmalarından çıkardığı karakter analizi.</p>
             <div className={styles.dnaGrid}>
               <div className={styles.dnaStat}>
-                <span>Disiplin</span>
-                <div className={styles.bar}><div style={{width: `${dna?.discipline || 65}%`}}></div></div>
+                <div className={styles.dnaStatLabel}>
+                  <span>Disiplin</span>
+                  <span className={styles.dnaStatVal}>{dna?.discipline || 65}%</span>
+                </div>
+                <div className={styles.dnaBar}><div className={styles.dnaBarFill} style={{width: `${dna?.discipline || 65}%`}}></div></div>
               </div>
               <div className={styles.dnaStat}>
-                <span>Odak</span>
-                <div className={styles.bar}><div style={{width: `${dna?.focus || 80}%`}}></div></div>
+                <div className={styles.dnaStatLabel}>
+                  <span>Odak</span>
+                  <span className={styles.dnaStatVal}>{dna?.focus || 80}%</span>
+                </div>
+                <div className={styles.dnaBar}><div className={styles.dnaBarFill} style={{width: `${dna?.focus || 80}%`}}></div></div>
               </div>
               <div className={styles.dnaStat}>
-                <span>Dayanıklılık</span>
-                <div className={styles.bar}><div style={{width: `${dna?.resilience || 45}%`}}></div></div>
+                <div className={styles.dnaStatLabel}>
+                  <span>Dayanıklılık</span>
+                  <span className={styles.dnaStatVal}>{dna?.resilience || 45}%</span>
+                </div>
+                <div className={styles.dnaBar}><div className={styles.dnaBarFill} style={{width: `${dna?.resilience || 45}%`}}></div></div>
               </div>
               <div className={styles.dnaStat}>
-                <span>Vizyon</span>
-                <div className={styles.bar}><div style={{width: `${dna?.vision || 90}%`}}></div></div>
+                <div className={styles.dnaStatLabel}>
+                  <span>Vizyon</span>
+                  <span className={styles.dnaStatVal}>{dna?.vision || 90}%</span>
+                </div>
+                <div className={styles.dnaBar}><div className={styles.dnaBarFill} style={{width: `${dna?.vision || 90}%`}}></div></div>
               </div>
             </div>
           </div>
@@ -179,23 +191,23 @@ export default function SettingsModal({ onClose, user, dna }) {
       case 'capabilities':
         return (
           <div className={styles.section}>
-            <h3>Gelişmiş Yetenekler</h3>
+            <p className={styles.sectionDesc}>Uygulama yeteneklerini buradan yönetebilirsiniz.</p>
             <div className={styles.toggleRow}>
-              <div>
+              <div className={styles.toggleRowLeft}>
                 <strong>AI Hafızası (Memory)</strong>
                 <span>Konuşmalardan bağlam devşirir.</span>
               </div>
               <input type="checkbox" defaultChecked />
             </div>
             <div className={styles.toggleRow}>
-              <div>
+              <div className={styles.toggleRowLeft}>
                 <strong>Artifacts (Görselleştirme)</strong>
                 <span>Kod ve tasarımları yan pencerede gösterir.</span>
               </div>
               <input type="checkbox" defaultChecked />
             </div>
             <div className={styles.toggleRow}>
-              <div>
+              <div className={styles.toggleRowLeft}>
                 <strong>Kod Yürütme</strong>
                 <span>Python ve JS kodlarını sunucuda çalıştırır.</span>
               </div>
@@ -207,11 +219,11 @@ export default function SettingsModal({ onClose, user, dna }) {
       case 'connectors':
         return (
           <div className={styles.section}>
-            <h3>Bağlantılar (Connectors)</h3>
+            <p className={styles.sectionDesc}>Harici servis entegrasyonlarını buradan bağlayabilirsiniz.</p>
             <div className={styles.connectorList}>
               <div className={styles.connectorItem}>
                 <div className={styles.connectorInfo}>
-                  <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" width="24" />
+                  <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" width="24" height="24" alt="GitHub" />
                   <span>GitHub Integration</span>
                 </div>
                 <button className={styles.connBtn}>Bağla</button>
@@ -242,39 +254,45 @@ export default function SettingsModal({ onClose, user, dna }) {
                     onClose();
                     router.push('/hancode');
                   }}
-                  style={{
-                    background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)',
-                    border: 'none',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease'
-                  }}
                 >
                   🚀 HAN Code IDE'ye Git
                 </button>
              </div>
              <div className={styles.hancodeOptions}>
                 <div className={styles.toggleRow}>
-                  <span>✨ AI Powered Code Generation</span>
+                  <div className={styles.toggleRowLeft}>
+                    <span>✨ AI Powered Code Generation</span>
+                  </div>
                   <input type="checkbox" defaultChecked disabled />
                 </div>
                 <div className={styles.toggleRow}>
-                  <span>📱 Mobile Preview</span>
+                  <div className={styles.toggleRowLeft}>
+                    <span>📱 Mobile Preview</span>
+                  </div>
                   <input type="checkbox" defaultChecked disabled />
                 </div>
                 <div className={styles.toggleRow}>
-                  <span>🌐 Web Preview</span>
+                  <div className={styles.toggleRowLeft}>
+                    <span>🌐 Web Preview</span>
+                  </div>
                   <input type="checkbox" defaultChecked disabled />
                 </div>
                 <div className={styles.toggleRow}>
-                  <span>🖥️ Desktop Support</span>
+                  <div className={styles.toggleRowLeft}>
+                    <span>🖥️ Desktop Support</span>
+                  </div>
                   <input type="checkbox" defaultChecked disabled />
                 </div>
                 <div className={styles.toggleRow}>
-                  <span>🎮 Game Development</span>
+                  <div className={styles.toggleRowLeft}>
+                    <span>🎮 Game Development</span>
+                  </div>
                   <input type="checkbox" defaultChecked disabled />
                 </div>
                 <div className={styles.toggleRow}>
-                  <span>⚙️ Backend API</span>
+                  <div className={styles.toggleRowLeft}>
+                    <span>⚙️ Backend API</span>
+                  </div>
                   <input type="checkbox" defaultChecked disabled />
                 </div>
              </div>
@@ -284,30 +302,29 @@ export default function SettingsModal({ onClose, user, dna }) {
       case 'account':
         return (
           <div className={styles.section}>
-            <h3>Hesap Bilgileri</h3>
-            <div className={styles.field}>
-              <label>Email Adresi</label>
-              <input type="text" disabled defaultValue={user?.email || 'Mevcut Değil'} />
+            <div className={styles.fieldGroup}>
+              <label className={styles.fieldLabel}>Email Adresi</label>
+              <input type="text" className={styles.fieldInput} disabled defaultValue={user?.email || 'Mevcut Değil'} />
             </div>
 
-            <div style={{ marginTop: '32px' }} className={styles.upgradeCard}>
+            <div style={{ marginTop: '24px' }} className={styles.upgradeCard}>
                <div className={styles.cardHeader}>
                  <span className={styles.badge} style={{ background: '#10b981', color: '#fff' }}>Viral Büyüme</span>
                  <h4>Arkadaşını Davet Et, 500 XP Kazan! 🚀</h4>
                </div>
-               <p style={{ color: 'rgba(200,200,220,0.8)', fontSize: '14px', marginBottom: '16px' }}>
+               <p style={{ color: 'rgba(200,200,220,0.8)', fontSize: '13px', marginBottom: '14px' }}>
                  LifeCoach AI'nın sınırlarını arkadaşlarınla paylaş. Senin davet linkinle kayıt olan her kullanıcı için 500 XP kazanıp seviye atla!
                </p>
-               <div style={{ display: 'flex', gap: '8px' }}>
+               <div className={styles.inviteRow}>
                  <input
                     type="text"
                     readOnly
+                    className={styles.inviteInput}
                     value={`https://han-ai.dev/invite/${user?.name?.toLowerCase() || 'link'}`}
-                    style={{ flex: 1, padding: '10px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }}
                  />
                  <button
+                    className={styles.copyBtn}
                     onClick={(e) => { navigator.clipboard.writeText(`https://han-ai.dev/invite/${user?.name?.toLowerCase() || 'link'}`); e.target.innerText = 'Kopyalandı!'; setTimeout(()=>e.target.innerText='Kopyala', 2000); }}
-                    style={{ background: '#8b5cf6', color: '#fff', border: 'none', padding: '0 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
                  >
                     Kopyala
                  </button>
@@ -319,13 +336,12 @@ export default function SettingsModal({ onClose, user, dna }) {
       case 'billing':
         return (
           <div className={styles.section}>
-             <h3>Üyelik & Plan (Faturalandırma)</h3>
-             <div className={styles.upgradeCard} style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.1), rgba(217,119,6,0.1))', borderColor: 'rgba(245,158,11,0.2)' }}>
+             <div className={styles.upgradeCard} style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.08), rgba(217,119,6,0.06))', borderColor: 'rgba(245,158,11,0.2)' }}>
                 <div className={styles.cardHeader}>
                   <span className={styles.badge} style={{ background: '#f59e0b', color: '#fff' }}>Pro</span>
                   <h4 style={{ color: '#fff' }}>LifeCoach PRO'ya Geçiş Yap 👑</h4>
                 </div>
-                <ul style={{ color: 'rgba(200,200,220,0.8)', fontSize: '14px', lineHeight: 1.6, paddingLeft: '20px', marginBottom: '16px', marginTop: '12px' }}>
+                <ul style={{ color: 'rgba(200,200,220,0.8)', fontSize: '13px', lineHeight: 1.6, paddingLeft: '20px', marginBottom: '14px', marginTop: '12px' }}>
                    <li>Günlük kullanım limitini kaldır (Sınırsız)</li>
                    <li>Proje ve Otomasyon merkezine tam erişim</li>
                    <li>HAN 4.2 Ultra Core (Groq LPU) önceliği</li>
@@ -347,21 +363,32 @@ export default function SettingsModal({ onClose, user, dna }) {
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={e => e.stopPropagation()}>
-        <div className={styles.topTabs}>
+        {/* Sol Panel: Sekmeler */}
+        <div className={styles.sidebar}>
+          <div className={styles.sidebarHeader}>Ayarlar</div>
           {tabs.map(tab => (
             <button
               key={tab.id}
               className={`${styles.tabBtn} ${activeTab === tab.id ? styles.activeTab : ''}`}
               onClick={() => setActiveTab(tab.id)}
             >
-              <span>{tab.icon}</span>
+              <span className={styles.tabIcon}>{tab.icon}</span>
               {tab.label}
             </button>
           ))}
         </div>
+
+        {/* Sağ Panel: İçerik */}
         <div className={styles.content}>
-          {renderContent()}
-          <button onClick={onClose} className={styles.closeBtn}>Kapat</button>
+          <div className={styles.contentHeader}>
+            <h2 className={styles.contentTitle}>
+              {tabs.find(t => t.id === activeTab)?.label || 'Ayarlar'}
+            </h2>
+            <button onClick={onClose} className={styles.closeBtn} title="Kapat">✕</button>
+          </div>
+          <div className={styles.contentBody}>
+            {renderContent()}
+          </div>
         </div>
       </div>
     </div>

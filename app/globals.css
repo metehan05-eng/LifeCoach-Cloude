@@ -351,6 +351,74 @@ button, a, [role="button"] {
 .glow-btn:hover { transform: translateY(-2px) scale(1.02); box-shadow: 0 20px 60px rgba(124, 58, 237, 0.5); }
 .glow-btn:active { transform: translateY(0) scale(0.98); }
 
+/* ── Claude Redesign Pill Buttons ── */
+.lc-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 9999px;
+  border: 1px solid rgba(124, 58, 237, 0.15);
+  background: rgba(12, 12, 40, 0.5);
+  color: #c4b5fd;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.lc-pill-btn:hover:not(:disabled) {
+  transform: translateY(-1.5px);
+  border-color: rgba(124, 58, 237, 0.45);
+  background: rgba(124, 58, 237, 0.12);
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(124, 58, 237, 0.15), 0 0 12px rgba(124, 58, 237, 0.1);
+}
+
+.lc-pill-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.lc-pill-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.lc-pill-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #a78bfa;
+  transition: color 0.25s ease;
+}
+
+.lc-pill-btn:hover .lc-pill-icon {
+  color: #fff;
+}
+
+/* ── Profile settings click & animation ── */
+.lc-profile-card {
+  transition: all 0.25s ease;
+}
+
+.lc-profile-card:hover {
+  background: rgba(124, 58, 237, 0.08);
+  border-top-color: rgba(124, 58, 237, 0.2) !important;
+}
+
+.lc-profile-trigger {
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  outline: none;
+}
+
+.lc-profile-trigger:hover .lc-profile-settings-icon {
+  opacity: 0.8;
+  color: #c4b5fd;
+}
+
 /* ── Code Blocks ── */
 pre, code {
   font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;

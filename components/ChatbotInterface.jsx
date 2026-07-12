@@ -626,6 +626,7 @@ export default function ChatbotInterface() {
             isOpen={sidebarOpen}
             user={{...session?.user, ...userStats, han_coins: gamification.han_coins, isPremium: gamification.isPremium, totalXp: gamification.totalXp, level: gamification.level}}
             onToggle={toggleSidebar}
+            onOpenSettings={() => setShowSettings(true)}
           />
         </div>
 

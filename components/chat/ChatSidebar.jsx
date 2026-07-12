@@ -36,6 +36,7 @@ export default function ChatSidebar({
   isOpen,
   onToggle,
   user,
+  onOpenSettings,
 }) {
   const [hoveredId, setHoveredId] = useState(null);
   const [sidebarTab, setSidebarTab] = useState("chats");
@@ -228,7 +229,7 @@ export default function ChatSidebar({
         />
 
         {/* User Profile */}
-        <UserProfileCard user={user} />
+        <UserProfileCard user={user} onOpenSettings={onOpenSettings} />
       </aside>
     </>
   );
