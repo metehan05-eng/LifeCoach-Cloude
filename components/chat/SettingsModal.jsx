@@ -16,6 +16,8 @@ export default function SettingsModal({ onClose, user, dna }) {
   const [displayName, setDisplayName] = useState('');
   const [savingName, setSavingName] = useState(false);
   const [nameSaved, setNameSaved] = useState(false);
+  const [integrations, setIntegrations] = useState([]);
+  const [connecting, setConnecting] = useState(null);
 
   const tabs = [
     { id: 'general', label: 'Genel', icon: '⚙️' },
@@ -60,6 +62,27 @@ export default function SettingsModal({ onClose, user, dna }) {
       }
     } catch (e) { /* ignore */ }
     setSavingName(false);
+  };
+
+  useEffect(() => {
+    fetch('/api/integrations')
+      .then(r => r.json())
+      .then(d => { if (d.integrations) setIntegrations(d.integrations); })
+      .catch(() => {});
+  }, []);
+
+  const handleToggleIntegration = async (type, action) => {
+    setConnecting(type);
+    try {
+      const res = await fetch('/api/integrations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, action }),
+      });
+      const data = await res.json();
+      if (data.integrations) setIntegrations(data.integrations);
+    } catch (e) { /* ignore */ }
+    setConnecting(null);
   };
 
   const handleSaveBio = async () => {
@@ -221,20 +244,41 @@ export default function SettingsModal({ onClose, user, dna }) {
           <div className={styles.section}>
             <p className={styles.sectionDesc}>Harici servis entegrasyonlarını buradan bağlayabilirsiniz.</p>
             <div className={styles.connectorList}>
-              <div className={styles.connectorItem}>
-                <div className={styles.connectorInfo}>
-                  <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" width="24" height="24" alt="GitHub" />
-                  <span>GitHub Integration</span>
+              {integrations.length === 0 && (
+                <div className={styles.empty}>Entegrasyon yükleniyor...</div>
+              )}
+              {integrations.map((intg) => (
+                <div key={intg.type} className={styles.connectorItem}>
+                  <div className={styles.connectorInfo}>
+                    <div className={styles.gmailIcon}>M</div>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span>{intg.label}</span>
+                        {intg.connected && (
+                          <span className={styles.connectedBadge}>Bağlı</span>
+                        )}
+                        {!intg.available && (
+                          <span className={styles.unavailableBadge}>Yapılandırılmamış</span>
+                        )}
+                      </div>
+                      {intg.description && (
+                        <div className={styles.connectorDesc}>{intg.description}</div>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    className={intg.connected ? styles.connBtnDisconnect : styles.connBtn}
+                    onClick={() => handleToggleIntegration(intg.type, intg.connected ? 'disconnect' : 'connect')}
+                    disabled={connecting === intg.type || !intg.available}
+                  >
+                    {connecting === intg.type
+                      ? 'İşleniyor...'
+                      : intg.connected
+                        ? 'Bağlantıyı Kes'
+                        : 'Bağla'}
+                  </button>
                 </div>
-                <button className={styles.connBtn}>Bağla</button>
-              </div>
-              <div className={styles.connectorItem}>
-                <div className={styles.connectorInfo}>
-                   <div className={styles.gmailIcon}>M</div>
-                  <span>Gmail & Google Workspace</span>
-                </div>
-                <button className={styles.connBtn}>Bağla</button>
-              </div>
+              ))}
             </div>
           </div>
         );

@@ -515,8 +515,37 @@
   color: rgba(200, 190, 230, 0.8);
 }
 
+.connectorInfo > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .connectorInfo img {
   border-radius: 4px;
+}
+
+.connectedBadge {
+  font-size: 10px;
+  font-weight: 700;
+  color: #34d399;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.unavailableBadge {
+  font-size: 10px;
+  font-weight: 700;
+  color: #f87171;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.connectorDesc {
+  font-size: 11px;
+  color: rgba(200, 190, 230, 0.4);
+  margin-top: 2px;
+  line-height: 1.4;
 }
 
 .connBtn {
@@ -534,6 +563,30 @@
 .connBtn:hover {
   background: rgba(124, 58, 237, 0.2);
   border-color: rgba(124, 58, 237, 0.35);
+}
+
+.connBtnDisconnect {
+  padding: 7px 16px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  border-radius: 9px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.18s;
+}
+
+.connBtnDisconnect:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+.connBtn:disabled,
+.connBtnDisconnect:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .gmailIcon {

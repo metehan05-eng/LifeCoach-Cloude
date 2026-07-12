@@ -77,6 +77,7 @@ model User {
   CoachSessions           CoachSession[]
   TaskChains              TaskChain[]
   FutureSimulations       FutureSimulation[]
+  Canvases                Canvas[]
 }
 
 
@@ -719,6 +720,21 @@ model TaskChain {
   updatedAt   DateTime @updatedAt
 
   @@index([userId, status])
+}
+
+// ─── CANVAS (Split-Screen Düzenleyici) ─────────────────────────────────────
+
+model Canvas {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  title     String?
+  content   String   @db.Text
+  version   Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 // ─── GELECEK SİMÜLASYONU (Future Simulation) ──────────────────────────────

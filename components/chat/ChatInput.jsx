@@ -17,6 +17,9 @@ const MENU_ITEMS = [
   { id: "waffle", icon: "🎨", label: "Waffle Studio (Görsel Üret)" },
   { id: "target", icon: "🎯", label: "Hızlı Hedef Oluştur" },
   { id: "productivity", icon: "⚡", label: "Üretkenlik Sistemini Değiştir" },
+  { id: "learning", icon: "📚", label: "Öğrenme Rehberi" },
+  { id: "canvas", icon: "📝", label: "Canvas (Split Screen)" },
+  { id: "music", icon: "🎵", label: "Müzik Üret" },
 ];
 
 export default function ChatInput({
@@ -70,6 +73,12 @@ export default function ChatInput({
       onSelectView?.("chat", "targets");
     } else if (id === "productivity") {
       onSelectView?.("chat", "productivity");
+    } else if (id === "learning") {
+      onSelectView?.("learning-guide");
+    } else if (id === "canvas") {
+      onSelectView?.("canvas");
+    } else if (id === "music") {
+      onSelectView?.("music");
     }
   }, [onSelectView]);
 

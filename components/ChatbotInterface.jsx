@@ -16,6 +16,9 @@ import TargetsView from './modules/TargetsView';
 import StartupView from './modules/StartupView';
 import ProductivityView from './modules/ProductivityView';
 import DecisionsView from './modules/DecisionsView';
+import LearningGuideView from './modules/LearningGuideView';
+import CanvasView from './modules/CanvasView';
+import MusicView from './modules/MusicView';
 import LootBox from './chat/LootBox';
 import LevelUpCelebration from './chat/LevelUpCelebration';
 import styles from './ChatbotInterface.module.css';
@@ -725,6 +728,12 @@ export default function ChatbotInterface() {
               <ProductivityView onSelectView={handleSelectView} userEmail={session?.user?.email} />
             ) : activeSessionId === 'decisions' ? (
               <DecisionsView onSelectView={handleSelectView} userEmail={session?.user?.email} />
+            ) : activeSessionId === 'learning-guide' ? (
+              <LearningGuideView onSelectView={handleSelectView} />
+            ) : activeSessionId === 'canvas' ? (
+              <CanvasView onSelectView={handleSelectView} />
+            ) : activeSessionId === 'music' ? (
+              <MusicView onSelectView={handleSelectView} />
             ) : activeSessionId === 'waffle' ? (
               <WaffleStudio isMobile={isMobile} />
             ) : hasMessages ? (
