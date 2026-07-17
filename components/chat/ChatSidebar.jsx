@@ -73,19 +73,24 @@ export default function ChatSidebar({
       )}
 
       <aside
-        className={`h-app safe-pt relative z-50 flex shrink-0 flex-col overflow-hidden border-r border-han-purple/10 bg-gradient-to-b from-[rgba(8,8,26,0.98)] to-[rgba(12,12,36,0.96)] backdrop-blur-[40px] transition-all duration-300 ${
+        className={`h-app safe-pt relative z-50 flex shrink-0 flex-col overflow-hidden border-r transition-all duration-300 ${
           isOpen ? "w-[85vw] min-w-[260px] max-w-[300px] md:w-[280px] md:min-w-[280px] md:max-w-none" : "w-0 min-w-0"
         }`}
+        style={{
+          background: 'var(--chat-sidebar-bg)',
+          borderColor: 'var(--border-subtle)',
+        }}
       >
         {/* Logo + New Chat */}
-        <div className="flex flex-col gap-2.5 border-b border-han-purple/[0.06] px-4 pb-3 pt-5">
+        <div className="flex flex-col gap-2.5 px-4 pb-3 pt-5 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
           <div className="flex items-center justify-between">
             <LCLogo variant="full" size={36} />
             <button
               type="button"
               onClick={onToggle}
               aria-label="Menüyü kapat"
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-han-purple/15 bg-white/[0.03] text-white/60 transition-colors hover:text-white md:hidden"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-han-purple/15 transition-colors md:hidden"
+              style={{ background: 'var(--bg-elevated)', color: 'var(--text-secondary)' }}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                 <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -96,7 +101,7 @@ export default function ChatSidebar({
           <button
             type="button"
             onClick={onNewSession}
-            className="flex w-full items-center gap-2 rounded-xl border border-han-purple/30 bg-gradient-to-br from-han-purple/20 to-han-indigo/10 px-3.5 py-2.5 text-[13px] font-semibold text-violet-300 transition-all hover:border-han-purple/50 hover:from-han-purple/35 hover:to-han-indigo/20 hover:text-han-text"
+            className="lc-sidebar-btn-new flex w-full items-center gap-2 rounded-xl border border-han-purple/30 bg-gradient-to-br from-han-purple/20 to-han-indigo/10 px-3.5 py-2.5 text-[13px] font-semibold text-violet-300 transition-all hover:border-han-purple/50 hover:from-han-purple/35 hover:to-han-indigo/20 hover:text-han-text"
           >
             <PlusIcon />
             Yeni Sohbet
@@ -105,7 +110,7 @@ export default function ChatSidebar({
           <button
             type="button"
             onClick={() => onSelectSession('sifu-panda')}
-            className="flex w-full items-center gap-2.5 rounded-xl border border-han-purple/[0.12] bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 px-3.5 py-2.5 text-[13px] font-semibold text-emerald-300 transition-all hover:border-emerald-500/30 hover:from-emerald-500/20 hover:to-emerald-600/10 hover:text-emerald-200"
+            className="lc-sidebar-btn-sifu flex w-full items-center gap-2.5 rounded-xl border border-han-purple/[0.12] bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 px-3.5 py-2.5 text-[13px] font-semibold text-emerald-300 transition-all hover:border-emerald-500/30 hover:from-emerald-500/20 hover:to-emerald-600/10 hover:text-emerald-200"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
@@ -119,7 +124,7 @@ export default function ChatSidebar({
           <button
             type="button"
             onClick={() => onSelectSession('waffle')}
-            className="flex w-full items-center gap-2.5 rounded-xl border border-han-purple/[0.12] bg-gradient-to-br from-amber-500/10 to-amber-600/5 px-3.5 py-2.5 text-[13px] font-semibold text-amber-300 transition-all hover:border-amber-500/30 hover:from-amber-500/20 hover:to-amber-600/10 hover:text-amber-200"
+            className="lc-sidebar-btn-waffle flex w-full items-center gap-2.5 rounded-xl border border-han-purple/[0.12] bg-gradient-to-br from-amber-500/10 to-amber-600/5 px-3.5 py-2.5 text-[13px] font-semibold text-amber-300 transition-all hover:border-amber-500/30 hover:from-amber-500/20 hover:to-amber-600/10 hover:text-amber-200"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
@@ -132,8 +137,7 @@ export default function ChatSidebar({
 
         </div>
 
-        {/* Tabs */}
-        <div className="mb-1.5 flex border-b border-han-purple/[0.06]">
+          <div className="mb-1.5 flex border-b" style={{ borderColor: 'var(--border-subtle)' }}>
           <button
             type="button"
             onClick={() => {
@@ -142,9 +146,10 @@ export default function ChatSidebar({
             }}
             className={`flex-1 py-2.5 text-xs font-semibold transition-colors ${
               sidebarTab === "chats"
-                ? "border-b-2 border-han-purple text-han-text"
-                : "border-b-2 border-transparent text-han-muted"
+                ? "border-b-2 border-han-purple"
+                : "border-b-2 border-transparent"
             }`}
+            style={{ color: sidebarTab === "chats" ? 'var(--text-primary)' : 'var(--text-muted)' }}
           >
             Sohbetler
           </button>
@@ -156,9 +161,10 @@ export default function ChatSidebar({
             }}
             className={`flex-1 py-2.5 text-xs font-semibold transition-colors ${
               sidebarTab === "projects"
-                ? "border-b-2 border-han-blue text-han-text"
-                : "border-b-2 border-transparent text-han-muted"
+                ? "border-b-2 border-han-blue"
+                : "border-b-2 border-transparent"
             }`}
+            style={{ color: sidebarTab === "projects" ? 'var(--text-primary)' : 'var(--text-muted)' }}
           >
             Projelerim
           </button>
@@ -170,7 +176,7 @@ export default function ChatSidebar({
             Object.entries(groups).map(([label, items]) =>
               items.length === 0 ? null : (
                 <div key={label} className="mb-1.5">
-                  <div className="px-2 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white/30">
+                  <div className="px-2 py-1.5 text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
                     {label}
                   </div>
                   {items.map((session) => {
@@ -189,7 +195,7 @@ export default function ChatSidebar({
                           isActive
                             ? "border border-han-purple/25 bg-gradient-to-br from-han-purple/18 to-han-indigo/10"
                             : isHovered
-                              ? "border border-transparent bg-white/[0.03]"
+                              ? "border border-transparent bg-black/[0.03]"
                               : "border border-transparent"
                         }`}
                       >
@@ -198,13 +204,12 @@ export default function ChatSidebar({
                         </span>
                         <div className="min-w-0 flex-1">
                           <div
-                            className={`truncate text-xs font-semibold ${
-                              isActive ? "text-han-text" : "text-white/60"
-                            }`}
+                            className="truncate text-xs font-semibold"
+                            style={{ color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)' }}
                           >
                             {session.title}
                           </div>
-                          <div className="mt-0.5 text-[9.5px] text-white/30">
+                          <div className="mt-0.5 text-[9.5px]" style={{ color: 'var(--text-muted)' }}>
                             {session.messages.length} mesaj
                           </div>
                         </div>
@@ -215,7 +220,7 @@ export default function ChatSidebar({
               )
             )
           ) : (
-            <div className="px-2 py-4 text-center text-xs text-white/30">
+            <div className="px-2 py-4 text-center text-xs" style={{ color: 'var(--text-muted)' }}>
               Projelerin burada listelenecek
             </div>
           )}

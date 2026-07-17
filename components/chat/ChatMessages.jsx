@@ -125,7 +125,7 @@ const formatMarkdown = (text) => {
     const displayLang = lang ? lang.split(':')[0] : '';
     
     return `
-      <div style="background:rgba(13,13,20,0.9); border:1px solid rgba(99,102,241,0.25); border-radius:14px; margin:14px 0; overflow:hidden; box-shadow: 0 4px 24px rgba(99,102,241,0.08); backdrop-filter:blur(8px)">
+      <div class="md-code-block" style="background:rgba(13,13,20,0.9); border:1px solid rgba(99,102,241,0.25); border-radius:14px; margin:14px 0; overflow:hidden; box-shadow: 0 4px 24px rgba(99,102,241,0.08); backdrop-filter:blur(8px)">
         <div style="background:linear-gradient(90deg,rgba(99,102,241,0.08),rgba(139,92,246,0.05)); padding:10px 16px; border-bottom:1px solid rgba(99,102,241,0.15); display:flex; justify-content:space-between; align-items:center">
           <div style="display:flex; gap:6px">
             <span style="width:10px; height:10px; border-radius:50%; background:#ff5f56"></span>
@@ -142,28 +142,28 @@ const formatMarkdown = (text) => {
   });
 
   // Inline code
-  safe = safe.replace(/`([^`]+)`/g, '<code style="background:rgba(99,102,241,0.15);padding:3px 8px;border-radius:6px;font-size:12px;font-family:\'JetBrains Mono\',monospace;color:#a5b4fc;font-weight:500">$1</code>');
+  safe = safe.replace(/`([^`]+)`/g, '<code class="md-inline-code" style="background:rgba(99,102,241,0.15);padding:3px 8px;border-radius:6px;font-size:12px;font-family:\'JetBrains Mono\',monospace;color:#a5b4fc;font-weight:500">$1</code>');
   // Bold
-  safe = safe.replace(/\*\*(.*?)\*\*/g, '<strong style="font-weight:700;color:#e8e8ff;letter-spacing:-0.01em">$1</strong>');
+  safe = safe.replace(/\*\*(.*?)\*\*/g, '<strong class="md-bold" style="font-weight:700;letter-spacing:-0.01em">$1</strong>');
   // Italic
-  safe = safe.replace(/\*(.*?)\*/g, '<em style="font-style:italic;color:#c4b5fd">$1</em>');
+  safe = safe.replace(/\*(.*?)\*/g, '<em class="md-italic" style="font-style:italic;color:#c4b5fd">$1</em>');
   // H3
-  safe = safe.replace(/^### (.*$)/gm, '<h3 style="font-size:14px;font-weight:800;margin:14px 0 6px;color:#c4b5fd;letter-spacing:-0.02em">$1</h3>');
+  safe = safe.replace(/^### (.*$)/gm, '<h3 class="md-h3" style="font-size:14px;font-weight:800;margin:14px 0 6px;color:#c4b5fd;letter-spacing:-0.02em">$1</h3>');
   // H2
-  safe = safe.replace(/^## (.*$)/gm, '<h2 style="font-size:15px;font-weight:800;margin:16px 0 8px;color:#a5b4fc;letter-spacing:-0.02em">$1</h2>');
+  safe = safe.replace(/^## (.*$)/gm, '<h2 class="md-h2" style="font-size:15px;font-weight:800;margin:16px 0 8px;color:#a5b4fc;letter-spacing:-0.02em">$1</h2>');
   // H1
-  safe = safe.replace(/^# (.*$)/gm, '<h1 style="font-size:17px;font-weight:900;margin:18px 0 10px;color:#818cf8;letter-spacing:-0.03em">$1</h1>');
+  safe = safe.replace(/^# (.*$)/gm, '<h1 class="md-h1" style="font-size:17px;font-weight:900;margin:18px 0 10px;color:#818cf8;letter-spacing:-0.03em">$1</h1>');
   // Unordered list
   safe = safe.replace(/^[\*\-] (.*$)/gm,
-    '<div style="display:flex;gap:10px;margin:4px 0;align-items:flex-start"><span style="color:#6366f1;font-size:10px;margin-top:5px;flex-shrink:0">●</span><span>$1</span></div>'
+    '<div style="display:flex;gap:10px;margin:4px 0;align-items:flex-start"><span style="color:#6366f1;font-size:10px;margin-top:5px;flex-shrink:0">●</span><span class="md-list-text">$1</span></div>'
   );
   // Numbered list
   safe = safe.replace(/^\d+\. (.*$)/gm,
-    '<div style="display:flex;gap:10px;margin:4px 0;align-items:flex-start"><span style="color:#8b5cf6;font-weight:700;flex-shrink:0;font-size:11px;margin-top:3px">▸</span><span>$1</span></div>'
+    '<div style="display:flex;gap:10px;margin:4px 0;align-items:flex-start"><span style="color:#8b5cf6;font-weight:700;flex-shrink:0;font-size:11px;margin-top:3px">▸</span><span class="md-list-text">$1</span></div>'
   );
   
-  // Custom Advice Block detection — will wrap in a nice UI later but handle basic formatting here
-  safe = safe.replace(/💡 HAN Tavsiyesi:(.*$)/gm, '<div style="background:rgba(139,92,246,0.08); border-left:3px solid #8b5cf6; padding:12px 16px; border-radius:0 12px 12px 0; margin-top:16px; color:#c4b5fd"><span style="font-weight:800; color:#fff; display:block; margin-bottom:4px">💡 HAN Tavsiyesi</span>$1</div>');
+  // Custom Advice Block
+  safe = safe.replace(/💡 HAN Tavsiyesi:(.*$)/gm, '<div class="md-advice-block" style="background:rgba(139,92,246,0.08); border-left:3px solid #8b5cf6; padding:12px 16px; border-radius:0 12px 12px 0; margin-top:16px; color:#c4b5fd"><span style="font-weight:800; display:block; margin-bottom:4px">💡 HAN Tavsiyesi</span>$1</div>');
 
   // Line breaks
   safe = safe.replace(/\n\n/g, '<div style="height:10px"></div>');
@@ -775,7 +775,7 @@ function MessageBubble({ message, isStream, onQuickAction, onViewTarget }) {
         animation: 'fadeInUp 0.3s ease-out both',
         maxWidth: '760px', margin: '0 auto', width: '100%',
       }}>
-        <div style={{
+        <div className="chat-user-bubble" style={{
           maxWidth: 'min(70%, 520px)',
           background: 'linear-gradient(135deg, rgba(99,102,241,0.18), rgba(139,92,246,0.12))',
           border: '1px solid rgba(139,92,246,0.3)',
@@ -783,7 +783,7 @@ function MessageBubble({ message, isStream, onQuickAction, onViewTarget }) {
           padding: '11px 16px',
           fontSize: '14px', 
           lineHeight: 1.65, 
-          color: '#e0e0ff',
+          color: 'var(--text-primary)',
           backdropFilter: 'blur(12px)',
           boxShadow: '0 4px 12px rgba(99,102,241,0.1)',
           fontWeight: 500,
@@ -870,16 +870,17 @@ function MessageBubble({ message, isStream, onQuickAction, onViewTarget }) {
         {/* Content — HTML yalnızca client'ta (hydration #425 önlemi) */}
         <ClientOnly
           fallback={
-            <div style={{ fontSize: '14px', lineHeight: 1.75, color: '#d8d8f0', whiteSpace: 'pre-wrap' }}>
+            <div className="chat-ai-text" style={{ fontSize: '14px', lineHeight: 1.75, color: 'var(--text-primary)', whiteSpace: 'pre-wrap' }}>
               {(message.content || '').replace(/```json-action[\s\S]*?```/g, '').replace(/```json-memory[\s\S]*?```/g, '')}
             </div>
           }
         >
           <div
+            className="chat-ai-text"
             style={{
               fontSize: '14px',
               lineHeight: 1.75,
-              color: '#d8d8f0',
+              color: 'var(--text-primary)',
               letterSpacing: '-0.01em',
               fontWeight: 500,
             }}

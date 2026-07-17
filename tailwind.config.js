@@ -18,8 +18,8 @@ module.exports = {
           blue: "#3b82f6",
           gold: "#fbbf24",
           "gold-dark": "#f59e0b",
-          text: "#e0e0ff",
-          muted: "rgba(160, 160, 200, 0.55)",
+          text: "var(--text-primary)",
+          muted: "var(--text-muted)",
         },
       },
       fontFamily: {

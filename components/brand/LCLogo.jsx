@@ -136,10 +136,10 @@ export default function LCLogo({
           <LCMark />
         </svg>
         <div className="flex flex-col leading-tight">
-          <span className="text-[15px] font-bold tracking-tight text-[#e8eeff]">
-            LifeCoach <span className="text-violet-300">AI</span>
+          <span className="text-[15px] font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+            LifeCoach <span className="text-violet-500 dark:text-violet-300">AI</span>
           </span>
-          <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-violet-400/70">
+          <span className="text-[9px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--text-muted)' }}>
             HAN 4.2 Ultra Core
           </span>
         </div>
@@ -163,8 +163,8 @@ export default function LCLogo({
           <rect width="100" height="100" rx="24" fill="none" stroke="rgba(124,58,237,0.25)" strokeWidth="1" />
           <LCMark />
         </svg>
-        <span className="mt-4 text-lg font-semibold tracking-wide text-[#d4e4ff]">LifeCoach AI</span>
-        <span className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.2em] text-violet-400/60">
+        <span className="mt-4 text-lg font-semibold tracking-wide" style={{ color: 'var(--text-primary)' }}>LifeCoach AI</span>
+        <span className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.2em]" style={{ color: 'var(--text-muted)' }}>
           HAN 4.2 Ultra Core
         </span>
       </div>

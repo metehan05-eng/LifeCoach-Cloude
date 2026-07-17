@@ -25,18 +25,19 @@ export default function GamificationPanel({ user, onRanking, onOpenCrate }) {
   const xpInLevel = user?.totalXp ? user.totalXp % 100 : 0;
 
   return (
-    <div className="mx-3 mb-2.5 rounded-2xl border border-han-purple/15 bg-han-purple/[0.06] p-3.5 shadow-[0_4px_24px_rgba(124,58,237,0.06)] backdrop-blur-xl">
+    <div className="mx-3 mb-2.5 rounded-2xl border border-han-purple/15 p-3.5 shadow-[0_4px_24px_rgba(124,58,237,0.06)] backdrop-blur-xl"
+      style={{ background: 'var(--bg-elevated)' }}>
       <div className="mb-1.5 flex items-center justify-between">
         <div className="flex items-center gap-1.5 text-[11px] font-extrabold tracking-wide text-han-purple-light">
           <StarIcon />
           SEVİYE {level}
         </div>
-        <span className="text-[9.5px] font-semibold text-han-purple-light/50">
+        <span className="text-[9.5px] font-semibold" style={{ color: 'var(--text-muted)' }}>
           {xpInLevel}/100 XP
         </span>
       </div>
 
-      <div className="mb-3 h-1 w-full overflow-hidden rounded-full bg-white/[0.04]">
+      <div className="mb-3 h-1 w-full overflow-hidden rounded-full" style={{ background: 'var(--border-subtle)' }}>
         <div
           className="h-full rounded-full bg-gradient-to-r from-han-purple via-han-purple-light to-han-indigo shadow-[0_0_8px_rgba(124,58,237,0.4)] transition-all duration-500"
           style={{ width: `${xpInLevel}%` }}

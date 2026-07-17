@@ -1396,3 +1396,369 @@ pre, code {
   margin-top: 1px;
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   LIGHT THEME — Global Overrides
+   Chat mesajları, sidebar ve tüm bileşenler için kapsamlı düzeltmeler
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Body & Background ── */
+[data-theme="light"] body {
+  background: var(--bg-deep);
+  color: var(--text-primary);
+}
+
+/* ── Sidebar (ChatSidebar) ── */
+[data-theme="light"] aside {
+  background: linear-gradient(180deg, #ffffff 0%, #f8f9fc 100%) !important;
+  border-right-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Sidebar içindeki white/x opacity yazılar */
+[data-theme="light"] aside [class*="text-white"] {
+  color: var(--text-secondary) !important;
+}
+
+/* Sidebar grup başlıkları (Bugün, Dün, vb.) */
+[data-theme="light"] aside div[class*="text-white/30"],
+[data-theme="light"] aside div[class*="text-white/20"] {
+  color: rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Sohbet listesi öğeleri */
+[data-theme="light"] aside div[class*="text-white/60"] {
+  color: var(--text-secondary) !important;
+}
+
+/* Sidebar aktif session title */
+[data-theme="light"] aside div[class*="text-han-text"] {
+  color: var(--text-primary) !important;
+}
+
+/* Projeler boş mesaj */
+[data-theme="light"] aside p[class*="text-white/30"],
+[data-theme="light"] aside div.px-2.py-4 {
+  color: rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Sidebar active session bg */
+[data-theme="light"] aside div[class*="from-han-purple/18"] {
+  background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(99,102,241,0.06)) !important;
+  border-color: rgba(99, 102, 241, 0.2) !important;
+}
+
+/* Sidebar hover bg */
+[data-theme="light"] aside div[class*="bg-white/\[0.03\]"] {
+  background: rgba(0, 0, 0, 0.03) !important;
+}
+
+/* ── Chat Mesaj Alanı — AI mesaj metni ── */
+[data-theme="light"] .chat-ai-text,
+[data-theme="light"] .chat-ai-text * {
+  color: var(--text-primary) !important;
+}
+
+/* ── Module Cards (Light) ── */
+[data-theme="light"] .module-card {
+  background: rgba(0, 0, 0, 0.02) !important;
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+[data-theme="light"] .module-card:hover {
+  background: rgba(0, 0, 0, 0.04) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 0 16px rgba(99,102,241,0.08) !important;
+}
+[data-theme="light"] .module-card-title {
+  color: #111827 !important;
+}
+[data-theme="light"] .module-card-desc {
+  color: rgba(0, 0, 0, 0.5) !important;
+}
+[data-theme="light"] .module-card-arrow {
+  color: rgba(0, 0, 0, 0.2) !important;
+}
+[data-theme="light"] .module-card:hover .module-card-arrow {
+  color: #111827 !important;
+}
+[data-theme="light"] .module-card-emoji {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: rgba(0, 0, 0, 0.04) !important;
+}
+
+/* ── Active Work Items (Light) ── */
+[data-theme="light"] .active-work-item {
+  background: rgba(0, 0, 0, 0.02) !important;
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+[data-theme="light"] .active-work-item:hover {
+  background: rgba(0, 0, 0, 0.04) !important;
+  border-color: rgba(0, 0, 0, 0.09) !important;
+}
+[data-theme="light"] .active-work-title {
+  color: #111827 !important;
+}
+[data-theme="light"] .active-work-subtitle {
+  color: rgba(0, 0, 0, 0.4) !important;
+}
+[data-theme="light"] .active-work-progress-track {
+  background: rgba(0, 0, 0, 0.06) !important;
+}
+[data-theme="light"] .active-work-btn {
+  background: rgba(0, 0, 0, 0.04) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  color: #374151 !important;
+}
+
+/* ── Micro Step List (Light) ── */
+[data-theme="light"] .micro-step-summary {
+  color: rgba(0, 0, 0, 0.4) !important;
+}
+[data-theme="light"] .micro-step-item {
+  background: rgba(0, 0, 0, 0.02) !important;
+  border-color: rgba(0, 0, 0, 0.05) !important;
+}
+[data-theme="light"] .micro-step-item:hover {
+  background: rgba(0, 0, 0, 0.04) !important;
+}
+[data-theme="light"] .micro-step-text {
+  color: rgba(0, 0, 0, 0.9) !important;
+}
+[data-theme="light"] .micro-step-text-done {
+  color: rgba(0, 0, 0, 0.3) !important;
+}
+[data-theme="light"] .micro-step-time {
+  color: rgba(0, 0, 0, 0.35) !important;
+}
+[data-theme="light"] .micro-step-checkbox {
+  border-color: rgba(0, 0, 0, 0.2) !important;
+}
+
+/* ── XP Bar (Light) ── */
+[data-theme="light"] .xp-count {
+  color: rgba(0, 0, 0, 0.5) !important;
+}
+[data-theme="light"] .xp-separator {
+  color: rgba(0, 0, 0, 0.2) !important;
+}
+[data-theme="light"] .xp-track {
+  background: rgba(0, 0, 0, 0.06) !important;
+  border-color: rgba(0, 0, 0, 0.03) !important;
+}
+
+/* ── YouTube Cards (Light) ── */
+[data-theme="light"] .yt-card {
+  background: rgba(0, 0, 0, 0.02) !important;
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+[data-theme="light"] .yt-card:hover {
+  background: rgba(0, 0, 0, 0.04) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+[data-theme="light"] .yt-card-title {
+  color: rgba(0, 0, 0, 0.85) !important;
+}
+[data-theme="light"] .yt-card-meta,
+[data-theme="light"] .yt-channel {
+  color: rgba(0, 0, 0, 0.45) !important;
+}
+[data-theme="light"] .yt-carousel-title {
+  color: #111827 !important;
+}
+[data-theme="light"] .yt-carousel-query {
+  color: rgba(0, 0, 0, 0.35) !important;
+}
+
+/* ── Weekly Schedule (Light) ── */
+[data-theme="light"] .weekly-tab {
+  background: rgba(0, 0, 0, 0.02) !important;
+  border-color: rgba(0, 0, 0, 0.06) !important;
+  color: rgba(0, 0, 0, 0.5) !important;
+}
+[data-theme="light"] .weekly-tab:hover {
+  background: rgba(0, 0, 0, 0.05) !important;
+  color: #111827 !important;
+}
+[data-theme="light"] .weekly-tab-active {
+  background: rgba(99, 102, 241, 0.1) !important;
+  border-color: rgba(99, 102, 241, 0.25) !important;
+  color: #4f46e5 !important;
+}
+[data-theme="light"] .weekly-day-title {
+  color: rgba(0, 0, 0, 0.35) !important;
+}
+[data-theme="light"] .weekly-block-time,
+[data-theme="light"] .weekly-block-task {
+  color: #111827 !important;
+}
+[data-theme="light"] .weekly-empty {
+  color: rgba(0, 0, 0, 0.35) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+[data-theme="light"] .weekly-routines {
+  border-top-color: rgba(0, 0, 0, 0.06) !important;
+}
+[data-theme="light"] .weekly-routines-title,
+[data-theme="light"] .weekly-tips-title,
+[data-theme="light"] .weekly-routine-name {
+  color: #111827 !important;
+}
+[data-theme="light"] .weekly-routine-desc,
+[data-theme="light"] .weekly-tip-item {
+  color: rgba(0, 0, 0, 0.55) !important;
+}
+[data-theme="light"] .weekly-tips {
+  border-top-color: rgba(0, 0, 0, 0.06) !important;
+}
+[data-theme="light"] .weekly-routine-item {
+  background: rgba(0, 0, 0, 0.02) !important;
+  border-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+/* ── ProCon Cards (Light) ── */
+[data-theme="light"] .procon-card {
+  background: rgba(0, 0, 0, 0.02) !important;
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+[data-theme="light"] .procon-option-label {
+  color: rgba(0, 0, 0, 0.35) !important;
+}
+[data-theme="light"] .procon-option-title,
+[data-theme="light"] .procon-score-text,
+[data-theme="light"] .scenario-matrix-title,
+[data-theme="light"] .risk-matrix-title {
+  color: #111827 !important;
+}
+[data-theme="light"] .procon-item-text,
+[data-theme="light"] .scenario-desc-cell {
+  color: rgba(0, 0, 0, 0.65) !important;
+}
+[data-theme="light"] .procon-item-weight,
+[data-theme="light"] .risk-meta {
+  color: rgba(0, 0, 0, 0.45) !important;
+}
+[data-theme="light"] .procon-item-bar-track {
+  background: rgba(0, 0, 0, 0.06) !important;
+}
+
+/* ── Scenario & Risk (Light) ── */
+[data-theme="light"] .scenario-table {
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+[data-theme="light"] .scenario-row {
+  border-bottom-color: rgba(0, 0, 0, 0.06) !important;
+}
+[data-theme="light"] .scenario-header-row {
+  background: rgba(0, 0, 0, 0.03) !important;
+}
+[data-theme="light"] .scenario-time-cell,
+[data-theme="light"] .scenario-option-cell,
+[data-theme="light"] .scenario-desc-cell {
+  border-right-color: rgba(0, 0, 0, 0.06) !important;
+}
+[data-theme="light"] .risk-name {
+  color: #111827 !important;
+}
+[data-theme="light"] .risk-mitigation {
+  background: rgba(0, 0, 0, 0.04) !important;
+  color: rgba(0, 0, 0, 0.55) !important;
+}
+
+/* ── Glass / Backdrop Blur Elements (Light) ── */
+[data-theme="light"] .glass {
+  background: rgba(255, 255, 255, 0.7) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+[data-theme="light"] .glass-strong {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+/* ── Pill Buttons (Light) ── */
+[data-theme="light"] .lc-pill-btn {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-color: rgba(99, 102, 241, 0.2) !important;
+  color: #4f46e5 !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
+}
+[data-theme="light"] .lc-pill-btn:hover:not(:disabled) {
+  background: rgba(99, 102, 241, 0.1) !important;
+  border-color: rgba(99, 102, 241, 0.4) !important;
+  color: #3730a3 !important;
+}
+[data-theme="light"] .lc-pill-icon {
+  color: #6366f1 !important;
+}
+
+/* ── Scrollbar (Light) ── */
+[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.2) !important;
+}
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.4) !important;
+}
+
+/* ── Markdown Elementleri (Light) ── */
+[data-theme="light"] .chat-ai-text .md-bold {
+  color: #111827 !important;
+}
+[data-theme="light"] .chat-ai-text .md-italic {
+  color: #4f46e5 !important;
+}
+[data-theme="light"] .chat-ai-text .md-h1 {
+  color: #4338ca !important;
+}
+[data-theme="light"] .chat-ai-text .md-h2 {
+  color: #4f46e5 !important;
+}
+[data-theme="light"] .chat-ai-text .md-h3 {
+  color: #6366f1 !important;
+}
+[data-theme="light"] .chat-ai-text .md-inline-code {
+  background: rgba(99, 102, 241, 0.1) !important;
+  color: #4338ca !important;
+}
+[data-theme="light"] .chat-ai-text .md-list-text {
+  color: #374151 !important;
+}
+[data-theme="light"] .chat-ai-text .md-advice-block {
+  background: rgba(139, 92, 246, 0.08) !important;
+  color: #4338ca !important;
+}
+/* Code block light adaptasyonu — arka plan koyu kalır (terminal hissi için) */
+[data-theme="light"] .chat-ai-text .md-code-block {
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* ── Sidebar Buttons (Light) ── */
+[data-theme="light"] .lc-sidebar-btn-new {
+  border-color: rgba(124, 58, 237, 0.25) !important;
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.08), rgba(99, 102, 241, 0.04)) !important;
+  color: #6d28d9 !important;
+}
+[data-theme="light"] .lc-sidebar-btn-new:hover {
+  border-color: rgba(124, 58, 237, 0.45) !important;
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.15), rgba(99, 102, 241, 0.08)) !important;
+  color: #4c1d95 !important;
+}
+
+[data-theme="light"] .lc-sidebar-btn-sifu {
+  border-color: rgba(16, 185, 129, 0.15) !important;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(16, 185, 129, 0.04)) !important;
+  color: #047857 !important;
+}
+[data-theme="light"] .lc-sidebar-btn-sifu:hover {
+  border-color: rgba(16, 185, 129, 0.35) !important;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.08)) !important;
+  color: #065f46 !important;
+}
+
+[data-theme="light"] .lc-sidebar-btn-waffle {
+  border-color: rgba(245, 158, 11, 0.15) !important;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(245, 158, 11, 0.04)) !important;
+  color: #b45309 !important;
+}
+[data-theme="light"] .lc-sidebar-btn-waffle:hover {
+  border-color: rgba(245, 158, 11, 0.35) !important;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(245, 158, 11, 0.08)) !important;
+  color: #92400e !important;
+}
+

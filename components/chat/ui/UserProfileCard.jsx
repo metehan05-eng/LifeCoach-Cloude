@@ -13,7 +13,10 @@ export default function UserProfileCard({ user, onOpenSettings }) {
   const initial = user?.name?.[0]?.toUpperCase() || "M";
 
   return (
-    <div className="lc-profile-card flex items-center gap-2.5 border-t border-han-purple/10 bg-han-purple/[0.04] px-3.5 py-2.5">
+    <div 
+      className="lc-profile-card flex items-center gap-2.5 border-t px-3.5 py-2.5"
+      style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-elevated)' }}
+    >
       {/* Sol: Avatar + İsim — tıklanınca Settings açılır */}
       <button
         type="button"

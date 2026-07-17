@@ -218,15 +218,18 @@ export default function ChatInput({
           {/* ── Dropdown Menü ── */}
           {menuOpen && (
             <div
-              className="absolute bottom-full left-0 mb-2 z-50 w-64 origin-bottom-left animate-scale-in rounded-2xl border border-purple-500/25 p-2 shadow-2xl backdrop-blur-2xl"
-              style={{ background: "rgba(15, 15, 30, 0.92)" }}
+              className="absolute bottom-full left-0 mb-2 z-50 w-64 origin-bottom-left animate-scale-in rounded-2xl border p-2 shadow-2xl backdrop-blur-2xl"
+              style={{ background: "var(--bg-surface)", borderColor: "var(--border-subtle)" }}
             >
               {MENU_ITEMS.map((item) => (
                 <button
                   key={item.id}
                   type="button"
                   onClick={() => handleMenuAction(item.id)}
-                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs text-white/70 transition-all hover:bg-violet-600/15 hover:text-white"
+                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs transition-all hover:bg-violet-600/15"
+                  style={{ color: "var(--text-secondary)" }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text-primary)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-secondary)"; }}
                 >
                   <span className="text-base shrink-0">{item.icon}</span>
                   <span className="font-medium">{item.label}</span>
