@@ -1,5 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
+import DraggableSlider from "@/components/ui/DraggableSlider";
+import AIModelBadge from "@/components/ui/AIModelBadge";
 
 function extractData(target) {
   if (!target) return null;
@@ -194,7 +196,10 @@ export default function ProductivityView({ onSelectView, userEmail, initialSessi
 
         {!hasPlan ? (
           <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6 backdrop-blur-xl animate-scale-in">
-            <h3 className="text-sm font-bold text-violet-300 mb-2">Kişisel Üretkenlik Sistemin</h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-bold text-violet-300">Kişisel Üretkenlik Sistemin</h3>
+              <AIModelBadge />
+            </div>
             <p className="text-xs text-white/40 mb-6">
               AI, çalışma alışkanlıklarına göre sana özel bir zaman çizelgesi, rutin listesi ve üretkenlik anayasası oluşturacak.
             </p>
@@ -211,8 +216,13 @@ export default function ProductivityView({ onSelectView, userEmail, initialSessi
                 </select>
               </div>
               <div>
-                <label className="text-[10px] font-bold uppercase tracking-wider text-white/50 block mb-1.5">Günlük odaklanabileceğin süre (saat)</label>
-                <input type="range" min="1" max="10" value={focusHours} onChange={e => setFocusHours(e.target.value)} className="w-full accent-violet-500" />
+                <DraggableSlider
+                  min={1}
+                  max={10}
+                  value={parseInt(focusHours)}
+                  onChange={(v) => setFocusHours(v)}
+                  label="Günlük odaklanabileceğin süre (saat)"
+                />
                 <div className="flex justify-between text-[10px] text-white/30 mt-0.5">
                   <span>1 saat</span>
                   <span className="text-violet-400 font-bold">{focusHours} saat</span>

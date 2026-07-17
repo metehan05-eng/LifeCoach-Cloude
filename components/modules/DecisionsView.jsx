@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import AIModelBadge from "@/components/ui/AIModelBadge";
 
 /* ── A) Artı/Eksi Terazisi ── */
 function ProsConsGrid({ prosCons, optionALabel, optionBLabel }) {
@@ -255,7 +256,10 @@ export default function DecisionsView({ onSelectView, initialRecordId }) {
           {/* Form */}
           {showForm && !activeRecord && (
             <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6 backdrop-blur-xl animate-scale-in">
-              <h3 className="text-sm font-bold text-amber-300 mb-2">İkilemini Paylaş</h3>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-bold text-amber-300">İkilemini Paylaş</h3>
+                <AIModelBadge />
+              </div>
               <p className="text-xs text-white/40 mb-4">
                 Hangi iki seçenek arasında karar veremiyorsun? AI, puanlanmış artı/eksi listesi, 3/6/12 aylık senaryolar ve risk analizi çıkaracak.
               </p>

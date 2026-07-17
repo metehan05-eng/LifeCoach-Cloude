@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import AIModelBadge from "@/components/ui/AIModelBadge";
 
 function PlanSummary({ data }) {
   if (!data?.summary) return null;
@@ -363,7 +364,10 @@ export default function TargetsView({ onSelectView, userEmail, initialSessionId,
           {/* New Target Form */}
           {showNewForm && !activeTarget && (
             <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6 backdrop-blur-xl animate-scale-in">
-              <h3 className="text-sm font-bold text-violet-300 mb-2">Yeni Hedef</h3>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-bold text-violet-300">Yeni Hedef</h3>
+                <AIModelBadge />
+              </div>
               <p className="text-xs text-white/40 mb-4">
                 Bugün üzerinde çalışmak istediğin büyük hedefi veya projeyi yaz. AI bunu bir akış şemasına ve haftalık programa dönüştürecek.
               </p>

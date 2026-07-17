@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import AIModelBadge from "@/components/ui/AIModelBadge";
 
 function AnalysisCard({ analysis }) {
   if (!analysis) return null;
@@ -247,7 +248,10 @@ export default function StartupView({ onSelectView, initialRecordId }) {
           {/* Form */}
           {showForm && !activeRecord && (
             <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6 backdrop-blur-xl animate-scale-in">
-              <h3 className="text-sm font-bold text-cyan-300 mb-2">Girişim Fikrini Paylaş</h3>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-bold text-cyan-300">Girişim Fikrini Paylaş</h3>
+                <AIModelBadge />
+              </div>
               <p className="text-xs text-white/40 mb-4">
                 Nasıl bir ürün veya hizmet geliştirmek istiyorsun? AI, stratejik analiz, MVP fazları ve yalın kanvas çıkaracak.
               </p>
