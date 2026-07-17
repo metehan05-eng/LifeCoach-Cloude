@@ -37,6 +37,7 @@ export async function POST(request) {
     let aiResult;
     try {
       aiResult = await generateProductivityPlan({ peakHours, focusHours, techniques: techniques || [] });
+      if (!aiResult || aiResult.error) throw new Error(aiResult?.details || "AI_UNAVAILABLE");
     } catch {
       aiResult = {
         routines: {
@@ -79,26 +80,32 @@ export async function POST(request) {
 
     const { routines, timeBlocks, rules } = aiResult;
 
-    const record = await prismaClient.productivitySystem.upsert({
-      where: { userId: session.user.id },
-      update: {
-        peakHours,
-        focusHours: parseInt(focusHours),
-        selectedMethods: techniques || [],
-        routines: routines || {},
-        timeBlocks: timeBlocks || [],
-        rules: rules || [],
-      },
-      create: {
-        userId: session.user.id,
-        peakHours,
-        focusHours: parseInt(focusHours),
-        selectedMethods: techniques || [],
-        routines: routines || {},
-        timeBlocks: timeBlocks || [],
-        rules: rules || [],
-      },
-    });
+    let record;
+    try {
+      record = await prismaClient.productivitySystem.upsert({
+        where: { userId: session.user.id },
+        update: {
+          peakHours,
+          focusHours: parseInt(focusHours),
+          selectedMethods: techniques || [],
+          routines: routines || {},
+          timeBlocks: timeBlocks || [],
+          rules: rules || [],
+        },
+        create: {
+          userId: session.user.id,
+          peakHours,
+          focusHours: parseInt(focusHours),
+          selectedMethods: techniques || [],
+          routines: routines || {},
+          timeBlocks: timeBlocks || [],
+          rules: rules || [],
+        },
+      });
+    } catch (dbErr) {
+      console.warn("[POST /api/modules/productivity] DB kaydetme başarısız, AI sonucu döndürülüyor:", dbErr.message);
+      return NextResponse.json({ record: aiResult, aiResult });
+    }
 
     return NextResponse.json({ record, aiResult });
   } catch (err) {

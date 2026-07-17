@@ -5,6 +5,7 @@ import AIModelBadge from "@/components/ui/AIModelBadge";
 
 function extractData(target) {
   if (!target) return null;
+  if (target.routines && target.timeBlocks) return target;
   const raw = target.routines || target.microSteps || target;
   if (typeof raw === 'object' && !Array.isArray(raw) && raw.routines) return raw;
   if (typeof raw === 'object' && !Array.isArray(raw) && raw.timeBlocks) return raw;
