@@ -735,7 +735,7 @@ export default function ChatbotInterface() {
             ) : activeSessionId === 'music' ? (
               <MusicView onSelectView={handleSelectView} />
             ) : activeSessionId === 'waffle' ? (
-              <WaffleStudio isMobile={isMobile} />
+              <WaffleStudio isMobile={isMobile} userEmail={session?.user?.email} />
             ) : hasMessages ? (
               <>
                 <ChatMessages

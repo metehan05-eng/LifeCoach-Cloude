@@ -3,9 +3,19 @@ import React, { useRef, useState, useEffect } from 'react';
 
 const MAX_REFERENCE_IMAGES = 10;
 
-export default function WaffleStudio({ isMobile }) {
+const examples = [
+  { icon: '🏔️', text: 'Karanlık atmosferde neon ışıklı bir dağ zirvesi, mistik pus, 8k, gerçekçi' },
+  { icon: '🪐', text: 'Halkalı gezegenin üzerinde süzülen kristal bir şehir, uzayın derinlikleri, ultra detaylı' },
+  { icon: '🐉', text: 'Dev bir ejderha anime kızı ile çay içiyor, Ghibli tarzı, pastel tonlar' },
+  { icon: '🍜', text: 'Uzay istasyonunda ramen satan yaşlı bir robot, sıcak �şıklar, lo-fi atmosfer' },
+  { icon: '🌿', text: 'Minyatür bir elf köyü, mantar evler, yosun kaplı sokaklar, makro fotoğrafçılık' },
+  { icon: '🏛️', text: 'Antik Yunan tapınağında hologram ekranlı bir filozof heykeli, geçmiş ve gelecek birleşimi' },
+];
+
+export default function WaffleStudio({ isMobile, userEmail }) {
   const [prompt, setPrompt] = useState('');
   const [images, setImages] = useState([]);
+  const [savedItems, setSavedItems] = useState([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [genStatus, setGenStatus] = useState('');
   const [mode, setMode] = useState('image');
@@ -14,16 +24,64 @@ export default function WaffleStudio({ isMobile }) {
   const [refInstruction, setRefInstruction] = useState('');
   const [isCombining, setIsCombining] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
+  const [showSaved, setShowSaved] = useState(false);
   const fileInputRef = useRef(null);
   const refFileInputRef = useRef(null);
   const textareaRef = useRef(null);
 
-  const examples = [
-    { icon: '🌇', text: 'Cyberpunk İstanbul, 2099, neon ışıklar, yağmurlu atmosfer, gerçekçi' },
-    { icon: '🚀', text: 'Mars kolonisinde kahve içen astronot, sinematik, güneş ışığı' },
-    { icon: '🎨', text: 'Sürrealist tarzda eriyen saatler ve uçan adalar, sanatsal' },
-    { icon: '🐱', text: 'Samuray kıyafeti içinde kedi, kar taneleri altında, epik aura' },
-  ];
+  useEffect(() => {
+    if (userEmail) loadSaved();
+  }, [userEmail]);
+
+  const loadSaved = async () => {
+    try {
+      const res = await fetch('/api/waffle-save');
+      if (res.ok) {
+        const data = await res.json();
+        setSavedItems(data.items || []);
+      }
+    } catch (e) {
+      console.error('Load saved error:', e);
+    }
+  };
+
+  const handleSave = async (item) => {
+    try {
+      const res = await fetch('/api/waffle-save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: item.prompt,
+          url: item.url,
+          mediaType: item.mediaType,
+          optimized: item.optimized,
+          model: item.model,
+          provider: item.provider,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSavedItems(prev => [data.item, ...prev]);
+      }
+    } catch (e) {
+      console.error('Save error:', e);
+    }
+  };
+
+  const handleDeleteSaved = async (id) => {
+    try {
+      const res = await fetch('/api/waffle-save', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      if (res.ok) {
+        setSavedItems(prev => prev.filter(item => item.id !== id));
+      }
+    } catch (e) {
+      console.error('Delete error:', e);
+    }
+  };
 
   const handleReferenceUpload = (event) => {
     const files = Array.from(event.target.files);
@@ -139,7 +197,6 @@ export default function WaffleStudio({ isMobile }) {
       link.href = href;
       link.download = fileName;
       link.rel = 'noopener';
-      // Some browsers (notably Firefox) ignore .click() on a detached node.
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -147,7 +204,6 @@ export default function WaffleStudio({ isMobile }) {
     };
 
     try {
-      // data: URLs (HF base64 output) can be downloaded directly without a fetch.
       if (typeof item.url === 'string' && item.url.startsWith('data:')) {
         triggerDownload(item.url, false);
         return;
@@ -156,8 +212,6 @@ export default function WaffleStudio({ isMobile }) {
       const blob = await response.blob();
       triggerDownload(URL.createObjectURL(blob), true);
     } catch (e) {
-      // Cross-origin or CSP failure (e.g. Pollinations URL) — open in a new tab
-      // so the user can still save manually.
       window.open(item.url, '_blank', 'noopener');
     }
   };
@@ -208,6 +262,20 @@ export default function WaffleStudio({ isMobile }) {
           <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '15px' }}>
             Hugging Face FLUX + LTX Video — text-to-image ve image-to-video.
           </p>
+          {savedItems.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowSaved(!showSaved)}
+              style={{
+                marginTop: '12px', padding: '8px 20px', borderRadius: '999px',
+                background: showSaved ? 'rgba(245,158,11,0.2)' : 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(245,158,11,0.3)',
+                color: '#fcd34d', cursor: 'pointer', fontSize: '13px', fontWeight: 700,
+              }}
+            >
+              📂 Kaydedilenler ({savedItems.length})
+            </button>
+          )}
         </div>
 
         {/* Mode & Aspect Toggles */}
@@ -247,7 +315,7 @@ export default function WaffleStudio({ isMobile }) {
           ))}
         </div>
 
-        {/* Reference Images Section - Multi-photo combine */}
+        {/* Reference Images Section */}
         <div style={{
           maxWidth: '700px', margin: '0 auto', width: '100%',
           padding: '20px', borderRadius: '20px',
@@ -336,10 +404,56 @@ export default function WaffleStudio({ isMobile }) {
           </div>
         </div>
 
-        {/* Content - Examples or Generated Images */}
-        {images.length === 0 ? (
+        {/* Content - Examples, Generated Images, or Saved */}
+        {showSaved && savedItems.length > 0 ? (
+          <div>
+            <h3 style={{ color: '#fcd34d', fontSize: '18px', fontWeight: 800, marginBottom: '16px', textAlign: 'center' }}>
+              📂 Kaydedilenler
+            </h3>
+            <div style={{
+              display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))',
+              gap: '20px', maxWidth: '1200px', margin: '0 auto', width: '100%',
+            }}>
+              {savedItems.map((item) => (
+                <div key={item.id} style={{
+                  background: 'rgba(18,18,35,0.85)', borderRadius: '20px', overflow: 'hidden',
+                  border: '1px solid rgba(245, 158, 11, 0.2)', position: 'relative',
+                }}>
+                  <div style={{ aspectRatio: item.mediaType === 'video' ? '16/9' : '1/1', background: '#07070a' }}>
+                    {item.mediaType === 'video' ? (
+                      <video src={item.url} controls loop playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <img src={item.url} alt={item.prompt} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    )}
+                  </div>
+                  <div style={{ padding: '14px' }}>
+                    <p style={{ color: '#d0d0f0', fontSize: '12px', lineHeight: 1.5, marginBottom: '10px', display: '-webkit-box', WebkitLineClamp: '2', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                      {item.prompt}
+                    </p>
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)' }}>
+                        {new Date(item.savedAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteSaved(item.id)}
+                        style={{
+                          padding: '6px 12px', borderRadius: '8px', background: 'rgba(239,68,68,0.15)',
+                          border: '1px solid rgba(239,68,68,0.3)', color: '#f87171',
+                          cursor: 'pointer', fontSize: '11px', fontWeight: 700,
+                        }}
+                      >
+                        Sil
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : images.length === 0 ? (
           <div style={{
-            display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+            display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
             gap: '16px', maxWidth: '700px', margin: '0 auto', width: '100%',
           }}>
             {examples.map((ex, i) => (
@@ -413,6 +527,13 @@ export default function WaffleStudio({ isMobile }) {
                       <button type="button" onClick={() => handleDownload(img)} style={{ flex: 1, padding: '12px', borderRadius: '12px', background: '#f59e0b', color: '#000', fontWeight: 800, border: 'none', cursor: 'pointer', fontSize: '13px' }}>
                         📥 İndir
                       </button>
+                      <button type="button" onClick={() => handleSave(img)} style={{
+                        padding: '12px 16px', borderRadius: '12px',
+                        background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)',
+                        color: '#34d399', cursor: 'pointer', fontWeight: 700, fontSize: '12px',
+                      }}>
+                        💾 Kaydet
+                      </button>
                       <button type="button" onClick={() => generateMedia(img.prompt)} style={{ padding: '12px 16px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer' }}>
                         🔄
                       </button>
@@ -423,6 +544,53 @@ export default function WaffleStudio({ isMobile }) {
             ))}
           </div>
         )}
+
+        {/* Saved items section at bottom */}
+        {!showSaved && savedItems.length > 0 && images.length > 0 && (
+          <div style={{ maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
+            <hr style={{ borderColor: 'rgba(245,158,11,0.15)', marginBottom: '24px' }} />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <h3 style={{ color: '#fcd34d', fontSize: '16px', fontWeight: 800 }}>
+                📂 Kaydedilenler ({savedItems.length})
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowSaved(true)}
+                style={{
+                  padding: '6px 14px', borderRadius: '8px', background: 'rgba(245,158,11,0.1)',
+                  border: '1px solid rgba(245,158,11,0.2)', color: '#fcd34d',
+                  cursor: 'pointer', fontSize: '12px', fontWeight: 600,
+                }}
+              >
+                Tümünü Gör
+              </button>
+            </div>
+            <div style={{
+              display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(200px, 1fr))',
+              gap: '16px',
+            }}>
+              {savedItems.slice(0, 4).map((item) => (
+                <div key={item.id} style={{
+                  background: 'rgba(18,18,35,0.7)', borderRadius: '16px', overflow: 'hidden',
+                  border: '1px solid rgba(245, 158, 11, 0.15)',
+                }}>
+                  <div style={{ aspectRatio: item.mediaType === 'video' ? '16/9' : '1/1', background: '#07070a' }}>
+                    {item.mediaType === 'video' ? (
+                      <video src={item.url} loop playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <img src={item.url} alt={item.prompt} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    )}
+                  </div>
+                  <div style={{ padding: '10px' }}>
+                    <p style={{ color: '#a0a0c0', fontSize: '11px', lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: '1', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                      {item.prompt}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Oven-shaped Input Area */}
@@ -430,7 +598,6 @@ export default function WaffleStudio({ isMobile }) {
         padding: isMobile ? '0 12px 16px' : '0 24px 24px',
         position: 'relative',
       }}>
-        {/* Oven glow effect */}
         <div style={{
           position: 'absolute', bottom: isMobile ? '16px' : '24px',
           left: '50%', transform: 'translateX(-50%)',
@@ -454,7 +621,6 @@ export default function WaffleStudio({ isMobile }) {
             borderBottom: 'none',
             zIndex: 2,
           }}>
-            {/* Oven handle */}
             <div style={{
               position: 'absolute', top: '-2px', left: '50%', transform: 'translateX(-50%)',
               width: '40%', height: '4px',
@@ -474,7 +640,6 @@ export default function WaffleStudio({ isMobile }) {
             position: 'relative',
             overflow: 'hidden',
           }}>
-            {/* Fire border animation */}
             <div style={{
               position: 'absolute', inset: 0,
               background: inputFocused
