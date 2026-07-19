@@ -39,63 +39,67 @@ export async function POST(request) {
     let aiResult;
     try {
       aiResult = await generateDecisionAnalysis({ dilemma });
+      if (!aiResult || aiResult.error) throw new Error(aiResult?.details || "AI_UNAVAILABLE");
     } catch {
       aiResult = {
-        optionA: "Kurumsal işe devam etmek",
-        optionB: "İstifa edip SaaS projesine odaklanmak",
+        summary: "Bu karar analizinde iki seçenek arasında bir değerlendirme yapıldı.",
+        optionA: "Seçenek A: Mevcut durumu korumak",
+        optionB: "Seçenek B: Değişime gitmek",
+        recommendation: "Seçenek B",
         prosCons: {
           optionA: {
-            pros: [
-              { text: "Maddi güvence ve düzenli gelir", score: 9 },
-              { text: "Sosyal statü ve kariyer ağı", score: 7 },
-              { text: "Deneyim kazanmaya devam", score: 6 },
-            ],
-            cons: [
-              { text: "Kişisel gelişim ve yaratıcılık sınırlı", score: 8 },
-              { text: "Zamanının büyük kısmı başkasının hedeflerine harcanıyor", score: 7 },
-            ],
+            pros: [{ text: "Konfor alanında kalmak, bilinir ve güvenli", score: 7 }],
+            cons: [{ text: "Potansiyel büyüme fırsatı kaçabilir", score: 6 }],
           },
           optionB: {
-            pros: [
-              { text: "Kendi işinin patronu olmak — tam özgürlük", score: 10 },
-              { text: "Yüksek büyüme potansiyeli", score: 9 },
-              { text: "Anlamlı bir ürün inşa etme tatmini", score: 8 },
-            ],
-            cons: [
-              { text: "Gelir belirsizliği ve finansal risk", score: 8 },
-              { text: "Yalnız çalışmanın getirdiği zorluklar", score: 6 },
-              { text: "Düzenli sağlık/sosyal güvence kaybı", score: 5 },
-            ],
+            pros: [{ text: "Yeni fırsatlar ve kişisel gelişim", score: 8 }],
+            cons: [{ text: "Belirsizlik ve kısa vadeli zorluklar", score: 7 }],
           },
         },
         simulation: {
           optionA: {
-            m3: "Mevcut düzen devam eder, finansal rahatlık korunur ancak girişim fikri ertelenir.",
-            m6: "Kariyer basamaklarında ilerleme olur, fakat 'acaba' düşünceleri sıklaşır.",
-            m12: "Daha yüksek bir pozisyondasın, ama girişim hayali ikinci plana itilmiş hissettirir.",
+            m3: "Mevcut durum aynen devam eder, risk alınmamış olur.",
+            m6: "Rutinleşme başlar, değişim isteği artabilir.",
+            m12: "Geriye dönüp bakınca 'keşke' deme ihtimali yükselir.",
           },
           optionB: {
-            m3: "İlk MVP yayında, stres yüksek ama üretme heyecanı yoğun. İlk kullanıcı geri bildirimleri alınır.",
-            m6: "Ürün-pazar uyumu oturmaya başlar, 100+ aktif kullanıcı ve ilk düzenli gelir.",
-            m12: "Finansal özgürlüğe doğru ilerleme, potansiyel yatırımcı görüşmeleri başlar.",
+            m3: "Zorlu geçen bir uyum süreci, ancak öğrenme hızı yüksek.",
+            m6: "Yeni düzene alışılmış, ilk somut sonuçlar görülmeye başlanmış.",
+            m12: "Değişimin meyveleri toplanıyor, doğru karar verildiği hissi ağır basıyor.",
           },
         },
-        riskScores: { optionA: 20, optionB: 65 },
-        coachVerdict: "İki seçeneği de dikkatle değerlendirdim. Seçenek A kısa vadede güvenli ve istikrarlı, ancak uzun vadede keşkeler biriktirme riski taşıyor. Seçenek B ise yüksek riskli ama potansiyel olarak çok daha tatmin edici. Eğer 6-12 aylık bir finansal runway'in varsa ve risk toleransın yüksekse, Seçenek B'yi öneririm. Ancak önce küçük bir deneme yapabilirsin: haftada 10 saat SaaS projene ayırarak başla, böylece her iki dünyayı da test etmiş olursun.",
+        riskScores: { optionA: 25, optionB: 60 },
+        coachVerdict: "Değişim her zaman zordur, ancak büyümenin anahtarı konfor alanının dışına çıkmaktır. Seçenek B daha yüksek risk taşısa da, uzun vadede size daha fazla tatmin ve gelişim vaat ediyor. Riskleri minimize etmek için küçük adımlarla başlayabilir, her aşamada geri bildirim alarak ilerleyebilirsiniz. Unutmayın: en büyük risk, hiç risk almamaktır.",
       };
     }
 
-    const { optionA, optionB, prosCons, simulation, riskScores, coachVerdict } = aiResult;
+    const { optionA, optionB, prosCons, simulation, riskScores, coachVerdict, summary, recommendation } = aiResult;
 
-    const record = await prismaClient.decisionAnalysis.create({
-      data: {
-        userId: session.user.id,
-        dilemma: dilemma.trim(),
-        optionA: optionA || "",
-        optionB: optionB || "",
-        analysisData: { prosCons, simulation, riskScores, coachVerdict },
-      },
-    });
+    let record;
+    try {
+      record = await prismaClient.decisionAnalysis.create({
+        data: {
+          userId: session.user.id,
+          dilemma: dilemma.trim(),
+          optionA: optionA || "",
+          optionB: optionB || "",
+          analysisData: { prosCons, simulation, riskScores, coachVerdict, summary, recommendation },
+        },
+      });
+    } catch (dbErr) {
+      console.warn("[POST /api/modules/decisions] DB kaydetme başarısız, AI sonucu döndürülüyor:", dbErr.message);
+      return NextResponse.json({
+        record: {
+          id: Date.now().toString(),
+          dilemma: dilemma.trim(),
+          optionA: optionA || "",
+          optionB: optionB || "",
+          analysisData: { prosCons, simulation, riskScores, coachVerdict, summary, recommendation },
+          createdAt: new Date().toISOString(),
+        },
+        aiResult,
+      });
+    }
 
     return NextResponse.json({ record, aiResult });
   } catch (err) {

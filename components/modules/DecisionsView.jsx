@@ -261,13 +261,13 @@ export default function DecisionsView({ onSelectView, initialRecordId }) {
                 <AIModelBadge />
               </div>
               <p className="text-xs text-white/40 mb-4">
-                Hangi iki seçenek arasında karar veremiyorsun? AI, puanlanmış artı/eksi listesi, 3/6/12 aylık senaryolar ve risk analizi çıkaracak.
+                Bir iş, görev, proje veya karar ikilemini yaz. AI özet çıkaracak, en mantıklı seçeneği söyleyecek, artı/eksi puanlaması ve zaman senaryoları sunacak.
               </p>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <textarea
                   value={dilemma}
                   onChange={e => setDilemma(e.target.value)}
-                  placeholder="Örn: Kurumsal şirketteki yazılım mühendisliği işime devam mı etmeliyim, yoksa istifa edip arkadaşımla SaaS projemiz üzerine mi odaklanmalıyım?"
+                  placeholder="Örn: Yazılım mühendisliği işime devam mı etmeliyim yoksa istifa edip kendi SaaS projemi mi kurmalıyım? İkisinin de artıları ve eksileri var..."
                   className="w-full h-28 bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/30 focus:border-amber-500/50 outline-none transition-all resize-none"
                   disabled={submitting}
                 />
@@ -292,7 +292,7 @@ export default function DecisionsView({ onSelectView, initialRecordId }) {
               <div className="text-6xl mb-4 opacity-30">⚖️</div>
               <h3 className="text-lg font-bold text-white/60 mb-2">Henüz Karar Analizin Yok</h3>
               <p className="text-sm text-white/30 max-w-md mb-6">
-                İkilemini AI ile analiz et, artı/eksi puanlaması, zaman senaryoları ve risk değerlendirmesi gör.
+                Bir iş, görev ya da karar ikilemini AI ile analiz et. Özet, en mantıklı seçenek, artı/eksi puanlaması ve zaman senaryoları.
               </p>
               <button onClick={() => setShowForm(true)} className="glow-btn rounded-xl px-6 py-3 font-semibold text-xs flex items-center gap-2">
                 <span>✨</span> İlk Analizi Başlat
@@ -318,6 +318,20 @@ export default function DecisionsView({ onSelectView, initialRecordId }) {
                   Yeni Analiz Yap
                 </button>
               </div>
+
+              {/* Özet ve Öneri */}
+              {ad.summary && (
+                <div className="bg-gradient-to-br from-amber-900/10 to-yellow-950/15 border border-amber-500/20 rounded-2xl p-5">
+                  <h4 className="text-[10px] font-bold uppercase tracking-wider text-amber-400 mb-2"> Durum Özeti</h4>
+                  <p className="text-sm text-white/80 leading-relaxed">{ad.summary}</p>
+                </div>
+              )}
+              {ad.recommendation && (
+                <div className="bg-gradient-to-br from-emerald-900/10 to-teal-950/15 border border-emerald-500/20 rounded-2xl p-5">
+                  <h4 className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 mb-2"> En Mantıklı Seçenek</h4>
+                  <p className="text-lg font-bold text-emerald-300">{ad.recommendation}</p>
+                </div>
+              )}
 
               {/* A) Artı/Eksi Terazisi */}
               <ProsConsGrid prosCons={ad.prosCons} optionALabel={optionA} optionBLabel={optionB} />
