@@ -132,7 +132,7 @@ function RiskVerdictCard({ riskScores, coachVerdict, optionALabel, optionBLabel 
 }
 
 /* ── Ana Bileşen ── */
-export default function DecisionsView({ onSelectView, initialRecordId }) {
+export default function DecisionsView({ onSelectView, initialRecordId, userEmail }) {
   const [loading, setLoading] = useState(true);
   const [records, setRecords] = useState([]);
   const [activeRecord, setActiveRecord] = useState(null);
@@ -140,6 +140,9 @@ export default function DecisionsView({ onSelectView, initialRecordId }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [selectedOption, setSelectedOption] = useState(null);
+  const [xpResult, setXpResult] = useState(null);
+  const [submittingVote, setSubmittingVote] = useState(false);
 
   useEffect(() => { fetchRecords(); }, [initialRecordId]);
 
@@ -165,6 +168,36 @@ export default function DecisionsView({ onSelectView, initialRecordId }) {
     setActiveRecord(r);
     setShowForm(false);
     setError("");
+    setSelectedOption(null);
+    setXpResult(null);
+  };
+
+  const handleOptionSelect = async (opt) => {
+    if (submittingVote || xpResult) return;
+    setSelectedOption(opt);
+    setSubmittingVote(true);
+    const ad = activeRecord?.analysisData || {};
+    const isCorrect = opt === ad.recommendation;
+    if (isCorrect && userEmail) {
+      try {
+        const res = await fetch("/api/gamify/action", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: userEmail, action: "DECISION_CORRECT" }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setXpResult({ correct: true, xp: data.xpAdded, level: data.newLevel });
+        } else {
+          setXpResult({ correct: true, xp: 15, level: null });
+        }
+      } catch {
+        setXpResult({ correct: true, xp: 15, level: null });
+      }
+    } else {
+      setXpResult({ correct: false });
+    }
+    setSubmittingVote(false);
   };
 
   const handleSubmit = async (e) => {
@@ -192,8 +225,15 @@ export default function DecisionsView({ onSelectView, initialRecordId }) {
   };
 
   const ad = activeRecord?.analysisData || {};
-  const optionA = activeRecord?.optionA || ad?.prosCons?.optionA?.label || "Seçenek A";
-  const optionB = activeRecord?.optionB || ad?.prosCons?.optionB?.label || "Seçenek B";
+  const optionA = activeRecord?.optionA || ad?.optionA || "Seçenek A";
+  const optionB = activeRecord?.optionB || ad?.optionB || "Seçenek B";
+  const optionC = ad?.optionC || "Seçenek C";
+
+  const OPTIONS = [
+    { key: "optionA", label: optionA },
+    { key: "optionB", label: optionB },
+    { key: "optionC", label: optionC },
+  ];
 
   if (loading) {
     return (
@@ -319,17 +359,89 @@ export default function DecisionsView({ onSelectView, initialRecordId }) {
                 </button>
               </div>
 
-              {/* Özet ve Öneri */}
+              {/* Özet */}
               {ad.summary && (
                 <div className="bg-gradient-to-br from-amber-900/10 to-yellow-950/15 border border-amber-500/20 rounded-2xl p-5">
                   <h4 className="text-[10px] font-bold uppercase tracking-wider text-amber-400 mb-2"> Durum Özeti</h4>
                   <p className="text-sm text-white/80 leading-relaxed">{ad.summary}</p>
                 </div>
               )}
-              {ad.recommendation && (
-                <div className="bg-gradient-to-br from-emerald-900/10 to-teal-950/15 border border-emerald-500/20 rounded-2xl p-5">
-                  <h4 className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 mb-2"> En Mantıklı Seçenek</h4>
-                  <p className="text-lg font-bold text-emerald-300">{ad.recommendation}</p>
+
+              {/* 3 Seçenek Kartı */}
+              <div>
+                <h4 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+                  <span>🎯</span> Hangisi en mantıklı?
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {OPTIONS.map((opt) => {
+                    const pros = ad?.prosCons?.[opt.key]?.pros || [];
+                    const cons = ad?.prosCons?.[opt.key]?.cons || [];
+                    const selected = selectedOption === opt.key;
+                    const isCorrect = ad.recommendation === opt.key;
+                    const isWrongPick = selected && !isCorrect;
+
+                    let border = "border-white/[0.08] hover:border-violet-500/30";
+                    let bg = "bg-white/[0.02]";
+                    if (selected && xpResult?.correct) { border = "border-emerald-500/40"; bg = "bg-emerald-900/10"; }
+                    else if (isWrongPick) { border = "border-red-500/40"; bg = "bg-red-900/10"; }
+                    else if (xpResult && !selected && isCorrect) { border = "border-emerald-500/30"; bg = "bg-emerald-900/5"; }
+
+                    return (
+                      <button
+                        key={opt.key}
+                        type="button"
+                        onClick={() => handleOptionSelect(opt.key)}
+                        disabled={!!xpResult}
+                        className={`rounded-xl border p-4 text-left transition-all cursor-pointer ${border} ${bg}`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-bold text-white/70">
+                            {opt.key === "optionA" ? "A" : opt.key === "optionB" ? "B" : "C"}
+                          </span>
+                          {selected && xpResult?.correct && (
+                            <span className="text-emerald-400 text-sm">✅ +{xpResult.xp} XP</span>
+                          )}
+                          {selected && xpResult && !xpResult.correct && (
+                            <span className="text-red-400 text-sm">❌</span>
+                          )}
+                        </div>
+                        <p className="text-sm font-semibold text-white mb-2 leading-snug">{opt.label}</p>
+                        <div className="space-y-1">
+                          {pros.slice(0, 2).map((p, i) => (
+                            <div key={i} className="flex items-center gap-1.5 text-[10px]">
+                              <span className="text-emerald-400">+</span>
+                              <span className="text-white/60">{p.text}</span>
+                            </div>
+                          ))}
+                          {cons.slice(0, 1).map((c, i) => (
+                            <div key={i} className="flex items-center gap-1.5 text-[10px]">
+                              <span className="text-red-400">−</span>
+                              <span className="text-white/40">{c.text}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* XP Feedback */}
+              {xpResult && (
+                <div className={`rounded-2xl p-5 border text-center ${xpResult.correct ? 'bg-emerald-900/10 border-emerald-500/25' : 'bg-red-900/10 border-red-500/25'}`}>
+                  {xpResult.correct ? (
+                    <div>
+                      <p className="text-lg font-bold text-emerald-400">Doğru Seçim! 🎉</p>
+                      <p className="text-xs text-white/50 mt-1">AI ile aynı fikirdesin. +{xpResult.xp} XP kazandın!</p>
+                    </div>
+                  ) : (
+                    <div>
+                      <p className="text-lg font-bold text-white/60">Bu sefer farklı düşündün</p>
+                      <p className="text-xs text-white/50 mt-1">
+                        AI'ın önerisi: <span className="text-emerald-300 font-bold">{ad.recommendation?.replace("option", "Seçenek ")}</span>
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 

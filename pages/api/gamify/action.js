@@ -6,7 +6,8 @@ const XP_MAP = {
   TASK_COMPLETED: 30,
   STREAK_BONUS_3: 50,
   AI_PLAN_MADE: 10,
-  MESSAGE_SENT: 1, // Max 2 demiştin
+  MESSAGE_SENT: 1,
+  DECISION_CORRECT: 15,
 };
 
 export default async function handler(req, res) {

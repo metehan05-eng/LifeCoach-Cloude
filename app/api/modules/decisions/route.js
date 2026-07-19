@@ -42,10 +42,11 @@ export async function POST(request) {
       if (!aiResult || aiResult.error) throw new Error(aiResult?.details || "AI_UNAVAILABLE");
     } catch {
       aiResult = {
-        summary: "Bu karar analizinde iki seçenek arasında bir değerlendirme yapıldı.",
+        summary: "Bu durumda 3 farklı yol izlenebilir. Her birinin kendine göre avantaj ve dezavantajları var.",
         optionA: "Seçenek A: Mevcut durumu korumak",
         optionB: "Seçenek B: Değişime gitmek",
-        recommendation: "Seçenek B",
+        optionC: "Seçenek C: Hibrit yaklaşım (hem koru hem değiş)",
+        recommendation: "optionB",
         prosCons: {
           optionA: {
             pros: [{ text: "Konfor alanında kalmak, bilinir ve güvenli", score: 7 }],
@@ -54,6 +55,10 @@ export async function POST(request) {
           optionB: {
             pros: [{ text: "Yeni fırsatlar ve kişisel gelişim", score: 8 }],
             cons: [{ text: "Belirsizlik ve kısa vadeli zorluklar", score: 7 }],
+          },
+          optionC: {
+            pros: [{ text: "Risk dağıtımı ve esneklik", score: 8 }],
+            cons: [{ text: "İki alanda da tam odaklanma zorluğu", score: 5 }],
           },
         },
         simulation: {
@@ -67,13 +72,18 @@ export async function POST(request) {
             m6: "Yeni düzene alışılmış, ilk somut sonuçlar görülmeye başlanmış.",
             m12: "Değişimin meyveleri toplanıyor, doğru karar verildiği hissi ağır basıyor.",
           },
+          optionC: {
+            m3: "İki alan arasında gidip gelme, tam verim düşük olabilir.",
+            m6: "Denge oturmaya başlar, her iki alanda da ilerleme görülür.",
+            m12: "En güvenli ama en yavaş ilerleyen yol, her şeyden biraz.",
+          },
         },
-        riskScores: { optionA: 25, optionB: 60 },
-        coachVerdict: "Değişim her zaman zordur, ancak büyümenin anahtarı konfor alanının dışına çıkmaktır. Seçenek B daha yüksek risk taşısa da, uzun vadede size daha fazla tatmin ve gelişim vaat ediyor. Riskleri minimize etmek için küçük adımlarla başlayabilir, her aşamada geri bildirim alarak ilerleyebilirsiniz. Unutmayın: en büyük risk, hiç risk almamaktır.",
+        riskScores: { optionA: 25, optionB: 60, optionC: 40 },
+        coachVerdict: "Her seçeneğin kendine göre artıları ve eksileri var. Seçenek B daha yüksek risk taşısa da, uzun vadede size daha fazla tatmin ve gelişim vaat ediyor. Riskleri minimize etmek için küçük adımlarla başlayabilirsiniz. Unutmayın: en büyük risk, hiç risk almamaktır.",
       };
     }
 
-    const { optionA, optionB, prosCons, simulation, riskScores, coachVerdict, summary, recommendation } = aiResult;
+    const { optionA, optionB, optionC, prosCons, simulation, riskScores, coachVerdict, summary, recommendation } = aiResult;
 
     let record;
     try {
@@ -83,7 +93,7 @@ export async function POST(request) {
           dilemma: dilemma.trim(),
           optionA: optionA || "",
           optionB: optionB || "",
-          analysisData: { prosCons, simulation, riskScores, coachVerdict, summary, recommendation },
+          analysisData: { prosCons, simulation, riskScores, coachVerdict, summary, recommendation, optionC },
         },
       });
     } catch (dbErr) {
@@ -94,7 +104,7 @@ export async function POST(request) {
           dilemma: dilemma.trim(),
           optionA: optionA || "",
           optionB: optionB || "",
-          analysisData: { prosCons, simulation, riskScores, coachVerdict, summary, recommendation },
+          analysisData: { prosCons, simulation, riskScores, coachVerdict, summary, recommendation, optionC },
           createdAt: new Date().toISOString(),
         },
         aiResult,
