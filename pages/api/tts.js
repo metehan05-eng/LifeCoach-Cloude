@@ -23,10 +23,16 @@ async function googleTTS(text) {
     }
   );
 
-  if (!res.ok) return null;
+  if (!res.ok) {
+    console.error(`[Google TTS] HTTP ${res.status}:`, await res.text().catch(() => ''));
+    return null;
+  }
 
   const data = await res.json();
-  if (!data.audioContent) return null;
+  if (!data.audioContent) {
+    console.error('[Google TTS] Yanıtta audioContent yok');
+    return null;
+  }
 
   return Buffer.from(data.audioContent, 'base64');
 }
