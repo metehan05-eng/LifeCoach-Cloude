@@ -1,15 +1,39 @@
 /**
- * TTS API — Text-to-Speech with Qwen DashScope only.
- * Model: qwen-audio-3.0-tts-plus
- * Voice: longyu (erkek, kalın, bilge) — Sifu Panda'ya yakışır.
- * Requires DASHSCOPE_API_KEY or QWEN_API_KEY in environment.
+ * TTS API — Text-to-Speech with Google Cloud TTS only.
+ * Voice: tr-TR-Neural2-B / tr-TR-Standard-B (erkek, kalın) — Sifu Panda'ya yakışır.
+ * Requires GOOGLE_TTS_API_KEY in environment.
  */
 
-import { qwenTTS } from '../../lib/qwen-audio.js';
+async function googleTTS(text) {
+  const apiKey = process.env.GOOGLE_TTS_API_KEY || process.env.GOOGLE_TTS_SERVICE_ACCOUNT;
+  if (!apiKey || apiKey.includes('PLACEHOLDER')) return null;
+
+  const voiceName = 'tr-TR-Neural2-B';
+
+  const res = await fetch(
+    `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        input: { text: text.slice(0, 500) },
+        voice: { languageCode: 'tr-TR', name: voiceName },
+        audioConfig: { audioEncoding: 'MP3', speakingRate: 1.0 },
+      }),
+    }
+  );
+
+  if (!res.ok) return null;
+
+  const data = await res.json();
+  if (!data.audioContent) return null;
+
+  return Buffer.from(data.audioContent, 'base64');
+}
 
 export default async function handler(req, res) {
   if (req.method === 'HEAD') {
-    const hasKey = !!(process.env.DASHSCOPE_API_KEY || process.env.QWEN_API_KEY);
+    const hasKey = !!(process.env.GOOGLE_TTS_API_KEY || process.env.GOOGLE_TTS_SERVICE_ACCOUNT);
     return hasKey ? res.status(200).end() : res.status(503).end();
   }
 
@@ -22,21 +46,13 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Text is required' });
   }
 
-  try {
-    const audioBuffer = await qwenTTS(text, {
-      voice: 'longyu',
-      format: 'mp3',
-      sampleRate: 24000,
-    });
+  const audioBuffer = await googleTTS(text);
 
-    if (!audioBuffer) {
-      return res.status(503).json({ error: 'Qwen TTS kullanılamıyor.' });
-    }
-
-    res.setHeader('Content-Type', 'audio/mpeg');
-    res.setHeader('X-TTS-Provider', 'qwen-dashscope');
-    res.send(audioBuffer);
-  } catch {
-    return res.status(503).json({ error: 'Qwen TTS başarısız.' });
+  if (!audioBuffer) {
+    return res.status(503).json({ error: 'Google TTS kullanılamıyor.' });
   }
+
+  res.setHeader('Content-Type', 'audio/mpeg');
+  res.setHeader('X-TTS-Provider', 'google');
+  res.send(audioBuffer);
 }
