@@ -2,7 +2,6 @@ import OpenAI from 'openai';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from './auth/[...nextauth]';
 import { getQwenConfig } from '../../lib/qwen-api.js';
-import { processAudioWithQwen } from '../../lib/qwen-audio.js';
 import { buildLifeCoachSystemPrompt, LEGACY_TOOL_JSON_FORMAT } from '@/lib/lifecoach-system-prompt';
 
 const STREAM_TIMEOUT = 30000;
@@ -10,7 +9,6 @@ const STREAM_TIMEOUT = 30000;
 const LIVENOTES = `
 ## Aktif yetenekler (arka planda çalışır, kullanıcıya gösterilmez)
 - GÖRSEL ANALİZİ: JPG, PNG, WEBP gibi görselleri analiz eder.
-- SES ANALİZİ (qwen-audio): Ses kaydını analiz eder, tonlama ve duygu çıkarımı yapar.
 - VİDEO ANLAMA: YouTube videolarının transkriptini analiz eder.
 - WEB ARAMA: Güncel bilgiyi doğal şekilde kullan.
 - ÇOK DİLLİ: Hangi dilde konuşulursa o dilde yanıt ver.
@@ -62,22 +60,7 @@ export default async function handler(req, res) {
     }
   }
 
-  // MULTIMODAL: Process audio + vision simultaneously
-  let audioTranscript = '';
-  if (audio && audio.length > 0) {
-    try {
-      const audioMessages = history.map(m => ({ role: m.role, content: m.content }));
-      audioTranscript = await processAudioWithQwen(audio, audioMessages, {
-        userText: message || '',
-        model: 'qwen2-audio',
-      });
-    } catch (err) {
-      console.warn('[Stream Audio] qwen-audio fallback:', err.message);
-    }
-  }
-
-  // Build user content with optional vision frame analysis
-  let userContent = audioTranscript || message || '...';
+  let userContent = message || '...';
   if (visionFrame) {
     userContent = {
       role: 'user',

@@ -1,46 +1,54 @@
 /**
  * TTS API — Text-to-Speech with Google Cloud TTS only.
- * Voice: tr-TR-Neural2-B / tr-TR-Standard-B (erkek, kalın) — Sifu Panda'ya yakışır.
+ * Voice: tr-TR-Neural2-B (erkek, kalın) — Sifu Panda'ya yakışır.
  * Requires GOOGLE_TTS_API_KEY in environment.
  */
+
+const GOOGLE_VOICES = [
+  'tr-TR-Neural2-B',
+  'tr-TR-Wavenet-B',
+  'tr-TR-Standard-B',
+];
 
 async function googleTTS(text) {
   const apiKey = process.env.GOOGLE_TTS_API_KEY || process.env.GOOGLE_TTS_SERVICE_ACCOUNT;
   if (!apiKey || apiKey.includes('PLACEHOLDER')) return null;
 
-  const voiceName = 'tr-TR-Neural2-B';
+  for (const voiceName of GOOGLE_VOICES) {
+    const res = await fetch(
+      `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          input: { text: text.slice(0, 500) },
+          voice: { languageCode: 'tr-TR', name: voiceName },
+          audioConfig: { audioEncoding: 'MP3', speakingRate: 1.0 },
+        }),
+      }
+    );
 
-  const res = await fetch(
-    `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        input: { text: text.slice(0, 500) },
-        voice: { languageCode: 'tr-TR', name: voiceName },
-        audioConfig: { audioEncoding: 'MP3', speakingRate: 1.0 },
-      }),
-    }
-  );
+    if (!res.ok) continue;
 
-  if (!res.ok) {
-    console.error(`[Google TTS] HTTP ${res.status}:`, await res.text().catch(() => ''));
-    return null;
+    const data = await res.json();
+    if (data.audioContent) return Buffer.from(data.audioContent, 'base64');
   }
 
-  const data = await res.json();
-  if (!data.audioContent) {
-    console.error('[Google TTS] Yanıtta audioContent yok');
-    return null;
-  }
-
-  return Buffer.from(data.audioContent, 'base64');
+  console.error('[Google TTS] Tüm sesler başarısız');
+  return null;
 }
 
 export default async function handler(req, res) {
   if (req.method === 'HEAD') {
     const hasKey = !!(process.env.GOOGLE_TTS_API_KEY || process.env.GOOGLE_TTS_SERVICE_ACCOUNT);
     return hasKey ? res.status(200).end() : res.status(503).end();
+  }
+
+  if (req.method === 'GET') {
+    const hasKey = !!(process.env.GOOGLE_TTS_API_KEY || process.env.GOOGLE_TTS_SERVICE_ACCOUNT);
+    const keyName = process.env.GOOGLE_TTS_API_KEY ? 'GOOGLE_TTS_API_KEY' :
+                    process.env.GOOGLE_TTS_SERVICE_ACCOUNT ? 'GOOGLE_TTS_SERVICE_ACCOUNT' : 'YOK';
+    return res.json({ status: hasKey ? 'ok' : 'missing', key: keyName });
   }
 
   if (req.method !== 'POST') {

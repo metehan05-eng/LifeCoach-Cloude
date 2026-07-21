@@ -7,7 +7,6 @@ import { google } from 'googleapis';
 import { buildLifeCoachSystemPrompt, LEGACY_TOOL_JSON_FORMAT } from '@/lib/lifecoach-system-prompt';
 import { runDeepSeekWithTools } from '@/lib/deepseek-tools';
 import { getQwenConfig } from '../../lib/qwen-api.js';
-import { processAudioWithQwen } from '../../lib/qwen-audio.js';
 import { findSimilarContext, storeEmbedding } from '../../lib/rag.js';
 import { detectYouTubeVideoIntent } from '../../lib/youtube-search.js';
 import { generateChatTitle } from '../../lib/chat-title.js';
@@ -2295,7 +2294,6 @@ ${safeUserBio ? `\n## Kullanıcı kendini şöyle tanıtıyor\n${safeUserBio}\n`
 
 ## Aktif yetenekler (arka planda çalışır, kullanıcıya gösterilmez)
 - GÖRSEL ANALİZİ: JPG, PNG, WEBP gibi görselleri analiz eder, içeriğini açıklar ve yorumlar.
-- SES ANALİZİ (qwen-audio): Kullanıcının ses kaydını analiz eder, tonlama ve duygu çıkarımı yapar, her dili algılar ve o dilde yanıt verir.
 - DOSYA OKUMA: PDF, Word, Excel dosyalarının içeriğini otomatik okur, özetlersin.
 - VİDEO ANLAMA: MP4 veya YouTube videolarının transkriptini analiz eder.
 - YOUTUBE ÖNERİ: Video kartları otomatik gelir; kısaca hangisinin neden uygun olduğunu söyle.
@@ -2404,29 +2402,6 @@ ${LEGACY_TOOL_JSON_FORMAT}`,
     let aiResponse = null;
     let usedModel = null;
     let lastError = null;
-
-    // ---- AUDIO PROCESSING (Sifu Panda / qwen-audio) ----
-    if (audio && audio.length > 0) {
-      try {
-        console.log('[AUDIO] 🎤 qwen-audio işleniyor...');
-        const systemMsg = messages.find(m => m.role === 'system');
-        const historyMessages = messages.filter(m => m.role !== 'system');
-        const audioText = await processAudioWithQwen(audio, historyMessages, {
-          userText: message || '',
-          model: 'qwen2-audio',
-        });
-        if (audioText && audioText.trim()) {
-          aiResponse = audioText;
-          usedModel = 'qwen2-audio';
-          console.log('[AUDIO] ✅ qwen-audio başarılı');
-        } else {
-          throw new Error('qwen-audio boş yanıt');
-        }
-      } catch (audioErr) {
-        console.warn('[AUDIO] ❌ qwen-audio hatası:', audioErr.message);
-        tool_notes.push('Ses analizi qwen-audio ile yapılamadı, metin modeline düşüldü.');
-      }
-    }
 
     if (!aiResponse) {
     for (const modelName of QWEN_MODEL_CHAIN) {
