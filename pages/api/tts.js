@@ -2,12 +2,15 @@
  * TTS API — Text-to-Speech with multiple providers.
  * 
  * Provider priority:
- * 1. Google Cloud TTS (free: 1M chars/month) — requires GOOGLE_TTS_API_KEY
- * 2. Edge TTS (completely free, no key) — uses Microsoft Edge speech API
- * 3. ElevenLabs (paid) — requires ELEVENLABS_API_KEY
+ * 1. Qwen TTS (DashScope) — model: qwen-audio-3.0-tts-plus, requires DASHSCOPE_API_KEY
+ * 2. Google Cloud TTS (free: 1M chars/month) — requires GOOGLE_TTS_API_KEY
+ * 3. Edge TTS (completely free, no key) — uses Microsoft Edge speech API
+ * 4. ElevenLabs (paid) — requires ELEVENLABS_API_KEY
  * 
  * If none available, returns 503 → client falls back to browser SpeechSynthesis
  */
+
+import { qwenTTS } from '../../lib/qwen-audio.js';
 
 function buildSSML(text, lang) {
   const langCode = lang?.startsWith('tr') ? 'tr-TR' : (lang?.startsWith('en') ? 'en-US' : 'tr-TR');
@@ -82,6 +85,19 @@ async function edgeTTS(text, lang) {
   }
 }
 
+async function qwenDashscopeTTS(text) {
+  try {
+    const audioBuffer = await qwenTTS(text, {
+      voice: 'longxiaochun',
+      format: 'mp3',
+      sampleRate: 24000,
+    });
+    return audioBuffer;
+  } catch {
+    return null;
+  }
+}
+
 async function elevenLabsTTS(text) {
   const apiKey = process.env.ELEVENLABS_API_KEY;
   if (!apiKey || apiKey.includes('PLACEHOLDER')) return null;
@@ -115,9 +131,10 @@ async function elevenLabsTTS(text) {
 export default async function handler(req, res) {
   if (req.method === 'HEAD') {
     // Client checks if any TTS provider is available
+    const hasQwen = !!(process.env.DASHSCOPE_API_KEY || process.env.QWEN_API_KEY);
     const hasGoogle = !!(process.env.GOOGLE_TTS_API_KEY || process.env.GOOGLE_TTS_SERVICE_ACCOUNT);
     const hasElevenLabs = !!(process.env.ELEVENLABS_API_KEY && !process.env.ELEVENLABS_API_KEY.includes('PLACEHOLDER'));
-    if (hasGoogle || hasElevenLabs) return res.status(200).end();
+    if (hasQwen || hasGoogle || hasElevenLabs) return res.status(200).end();
     // Edge TTS is always available (no key needed)
     return res.status(200).end();
   }
@@ -132,8 +149,13 @@ export default async function handler(req, res) {
   }
 
   // Try providers in order
-  let audioBuffer = await googleTTS(text, language);
-  let provider = 'google';
+  let audioBuffer = await qwenDashscopeTTS(text);
+  let provider = 'qwen-dashscope';
+
+  if (!audioBuffer) {
+    audioBuffer = await googleTTS(text, language);
+    provider = 'google';
+  }
 
   if (!audioBuffer) {
     audioBuffer = await edgeTTS(text, language);
