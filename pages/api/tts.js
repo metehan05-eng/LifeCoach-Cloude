@@ -1,42 +1,15 @@
 /**
- * TTS API — Text-to-Speech with ElevenLabs only.
- * Requires ELEVENLABS_API_KEY in environment.
- * Voice: Thomas (deep, calm, male) — Sifu Panda'ya yakışır.
+ * TTS API — Text-to-Speech with Qwen DashScope only.
+ * Model: qwen-audio-3.0-tts-plus
+ * Voice: longyu (erkek, kalın, bilge) — Sifu Panda'ya yakışır.
+ * Requires DASHSCOPE_API_KEY or QWEN_API_KEY in environment.
  */
 
-async function elevenLabsTTS(text) {
-  const apiKey = process.env.ELEVENLABS_API_KEY;
-  if (!apiKey || apiKey.includes('PLACEHOLDER')) return null;
-
-  try {
-    const res = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/yoZ06aMxZJJ28mfd3POQ`,
-      {
-        method: 'POST',
-        headers: {
-          'Accept': 'audio/mpeg',
-          'Content-Type': 'application/json',
-          'xi-api-key': apiKey,
-        },
-        body: JSON.stringify({
-          text: text.slice(0, 500),
-          model_id: 'eleven_multilingual_v2',
-          voice_settings: { stability: 0.4, similarity_boost: 0.6 },
-        }),
-      }
-    );
-
-    if (!res.ok) return null;
-    const audioBuffer = Buffer.from(await res.arrayBuffer());
-    return audioBuffer;
-  } catch {
-    return null;
-  }
-}
+import { qwenTTS } from '../../lib/qwen-audio.js';
 
 export default async function handler(req, res) {
   if (req.method === 'HEAD') {
-    const hasKey = !!(process.env.ELEVENLABS_API_KEY && !process.env.ELEVENLABS_API_KEY.includes('PLACEHOLDER'));
+    const hasKey = !!(process.env.DASHSCOPE_API_KEY || process.env.QWEN_API_KEY);
     return hasKey ? res.status(200).end() : res.status(503).end();
   }
 
@@ -49,13 +22,21 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Text is required' });
   }
 
-  const audioBuffer = await elevenLabsTTS(text);
+  try {
+    const audioBuffer = await qwenTTS(text, {
+      voice: 'longyu',
+      format: 'mp3',
+      sampleRate: 24000,
+    });
 
-  if (!audioBuffer) {
-    return res.status(503).json({ error: 'ElevenLabs TTS kullanılamıyor. ELEVENLABS_API_KEY kontrol et.' });
+    if (!audioBuffer) {
+      return res.status(503).json({ error: 'Qwen TTS kullanılamıyor.' });
+    }
+
+    res.setHeader('Content-Type', 'audio/mpeg');
+    res.setHeader('X-TTS-Provider', 'qwen-dashscope');
+    res.send(audioBuffer);
+  } catch {
+    return res.status(503).json({ error: 'Qwen TTS başarısız.' });
   }
-
-  res.setHeader('Content-Type', 'audio/mpeg');
-  res.setHeader('X-TTS-Provider', 'elevenlabs');
-  res.send(audioBuffer);
 }
