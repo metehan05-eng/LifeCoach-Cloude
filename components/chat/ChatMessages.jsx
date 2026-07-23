@@ -847,7 +847,7 @@ function MessageBubble({ message, isStream, onQuickAction, onViewTarget }) {
       animation: 'fadeInUp 0.4s ease-out both',
       maxWidth: '760px', margin: '0 auto', width: '100%',
     }}>
-      <div style={{ flexShrink: 0, marginTop: '2px' }}>
+      <div className={isStream ? "vip-neon-ring" : ""} style={{ flexShrink: 0, marginTop: '2px', borderRadius: '50%' }}>
         <LCLogo variant="icon" size={36} />
       </div>
  

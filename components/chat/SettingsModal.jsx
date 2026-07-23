@@ -175,37 +175,70 @@ export default function SettingsModal({ onClose, user, dna }) {
         );
 
       case 'dna':
+        const avgScore = Math.round(((dna?.discipline || 65) + (dna?.focus || 80) + (dna?.resilience || 45) + (dna?.vision || 90) + 75 + 85) / 6);
         return (
           <div className={styles.section}>
-            <p className={styles.sectionDesc}>AI'nın senin konuşmalarından çıkardığı karakter analizi.</p>
+            <p className={styles.sectionDesc}>HAN AI'nın etkileşimlerinden çıkardığı gerçek zamanlı karakter ve zihin profili.</p>
+            
+            {/* VIP DNA Score Banner */}
+            <div className="mb-5 flex items-center justify-between rounded-2xl border border-violet-500/25 bg-gradient-to-r from-violet-600/15 via-indigo-600/10 to-cyan-500/10 p-4 backdrop-blur-xl">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-600/20 text-2xl shadow-[0_0_15px_rgba(124,58,237,0.3)]">
+                  🧬
+                </div>
+                <div>
+                  <div className="text-xs font-bold uppercase tracking-wider text-violet-300">Zihin & Potansiyel Profili</div>
+                  <div className="text-sm font-extrabold text-white">Yüksek Performans Modu</div>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-xl font-black text-cyan-400">{avgScore}%</div>
+                <div className="text-[10px] font-semibold text-violet-300/70">DNA İndeksi</div>
+              </div>
+            </div>
+
             <div className={styles.dnaGrid}>
               <div className={styles.dnaStat}>
                 <div className={styles.dnaStatLabel}>
-                  <span>Disiplin</span>
+                  <span>🎯 Disiplin</span>
                   <span className={styles.dnaStatVal}>{dna?.discipline || 65}%</span>
                 </div>
-                <div className={styles.dnaBar}><div className={styles.dnaBarFill} style={{width: `${dna?.discipline || 65}%`}}></div></div>
+                <div className={styles.dnaBar}><div className={styles.dnaBarFill} style={{width: `${dna?.discipline || 65}%`, background: 'linear-gradient(90deg, #7c3aed, #a78bfa)'}}></div></div>
               </div>
               <div className={styles.dnaStat}>
                 <div className={styles.dnaStatLabel}>
-                  <span>Odak</span>
+                  <span>⚡ Odak & Konsantrasyon</span>
                   <span className={styles.dnaStatVal}>{dna?.focus || 80}%</span>
                 </div>
-                <div className={styles.dnaBar}><div className={styles.dnaBarFill} style={{width: `${dna?.focus || 80}%`}}></div></div>
+                <div className={styles.dnaBar}><div className={styles.dnaBarFill} style={{width: `${dna?.focus || 80}%`, background: 'linear-gradient(90deg, #6366f1, #38bdf8)'}}></div></div>
               </div>
               <div className={styles.dnaStat}>
                 <div className={styles.dnaStatLabel}>
-                  <span>Dayanıklılık</span>
+                  <span>🛡️ Dayanıklılık (Resilience)</span>
                   <span className={styles.dnaStatVal}>{dna?.resilience || 45}%</span>
                 </div>
-                <div className={styles.dnaBar}><div className={styles.dnaBarFill} style={{width: `${dna?.resilience || 45}%`}}></div></div>
+                <div className={styles.dnaBar}><div className={styles.dnaBarFill} style={{width: `${dna?.resilience || 45}%`, background: 'linear-gradient(90deg, #f59e0b, #fbbf24)'}}></div></div>
               </div>
               <div className={styles.dnaStat}>
                 <div className={styles.dnaStatLabel}>
-                  <span>Vizyon</span>
+                  <span>👁️ Vizyon & Strateji</span>
                   <span className={styles.dnaStatVal}>{dna?.vision || 90}%</span>
                 </div>
-                <div className={styles.dnaBar}><div className={styles.dnaBarFill} style={{width: `${dna?.vision || 90}%`}}></div></div>
+                <div className={styles.dnaBar}><div className={styles.dnaBarFill} style={{width: `${dna?.vision || 90}%`, background: 'linear-gradient(90deg, #10b981, #34d399)'}}></div></div>
+              </div>
+              <div className={styles.dnaStat}>
+                <div className={styles.dnaStatLabel}>
+                  <span>🚀 Girişimcilik Ruhu</span>
+                  <span className={styles.dnaStatVal}>75%</span>
+                </div>
+                <div className={styles.dnaBar}><div className={styles.dnaBarFill} style={{width: `75%`, background: 'linear-gradient(90deg, #ec4899, #f472b6)'}}></div></div>
+              </div>
+              <div className={styles.dnaStat}>
+                <div className={styles.dnaStatLabel}>
+                  <span>💡 Yaratıcılık & İnovasyon</span>
+                  <span className={styles.dnaStatVal}>85%</span>
+                </div>
+                <div className={styles.dnaBar}><div className={styles.dnaBarFill} style={{width: `85%`, background: 'linear-gradient(90deg, #8b5cf6, #c4b5fd)'}}></div></div>
               </div>
             </div>
           </div>

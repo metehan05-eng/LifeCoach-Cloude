@@ -100,16 +100,26 @@ export default function WelcomeScreen({
   }
 
   return (
-    <div className="app-scroll flex flex-1 flex-col overflow-y-auto">
-      {/* ── Ortalanmış Ana Alan (Claude Tarzı) ── */}
+    <div className="app-scroll vip-aurora-bg flex flex-1 flex-col overflow-y-auto">
+      {/* ── Ortalanmış Ana Alan (Star-Quality VIP Welcome) ── */}
       <div className="flex flex-1 flex-col items-center justify-center px-4 py-10 md:px-6">
+
+        {/* VIP Status Badge */}
+        <div className="animate-fade-in mb-4 flex items-center gap-2 rounded-full border border-violet-500/20 bg-violet-500/10 px-3.5 py-1 backdrop-blur-xl">
+          <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+          <span className="text-[11px] font-bold tracking-wide text-violet-300">
+            HAN AI 4.2 Ultra Core • Mentörün Hazır
+          </span>
+        </div>
 
         {/* Karşılama Metni */}
         <div className="animate-fade-in mb-8 text-center">
-          <h1 className="mb-1 text-[26px] font-semibold tracking-tight sm:text-[30px] md:text-[34px]">
+          <h1 className="mb-2 text-[28px] font-extrabold tracking-tight sm:text-[34px] md:text-[38px]">
             <span
+              className="welcome-gradient-text"
               style={{
-                background: "linear-gradient(135deg, #c4b5fd, #a78bfa, #818cf8)",
+                background: "linear-gradient(135deg, #7c3aed, #a78bfa, #6366f1, #38bdf8)",
+                backgroundSize: "200% 200%",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
                 backgroundClip: "text",
@@ -119,17 +129,17 @@ export default function WelcomeScreen({
             </span>
           </h1>
           <p
-            className="text-sm font-medium md:text-[15px]"
+            className="text-sm font-semibold tracking-wide md:text-[16px]"
             style={{ color: "var(--text-muted)" }}
           >
-            Hayat Koçun burada — sana nasıl yardımcı olabilirim?
+            Bugün birlikte nasıl bir başarı hikayesi yazıyoruz?
           </p>
         </div>
 
         {/* Input Kutusu */}
         <div
           className="animate-slide-up w-full"
-          style={{ maxWidth: "640px", animationDelay: "0.08s" }}
+          style={{ maxWidth: "660px", animationDelay: "0.08s" }}
         >
           <ChatInput
             value={inputValue}
@@ -148,7 +158,7 @@ export default function WelcomeScreen({
 
         {/* ── Pill Aksiyon Butonları (Claude Alt Butonları) ── */}
         <div
-          className="animate-slide-up mt-4 flex flex-wrap items-center justify-center gap-2"
+          className="animate-slide-up mt-5 flex flex-wrap items-center justify-center gap-2.5"
           style={{ animationDelay: "0.15s" }}
         >
           {QUICK_ACTIONS.map((card, i) => (
@@ -161,7 +171,7 @@ export default function WelcomeScreen({
                 else onQuickAction?.(card.id);
               }}
               disabled={isLoading}
-              className="lc-pill-btn"
+              className="lc-pill-btn interactive-press"
               style={{ animationDelay: `${0.18 + i * 0.05}s` }}
             >
               <span className="lc-pill-icon">

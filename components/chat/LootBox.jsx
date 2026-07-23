@@ -93,62 +93,63 @@ export default function LootBox({ email, isPremium, balance, onClose, onReward }
         </div>
 
         {/* Box animation */}
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '180px' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px', position: 'relative' }}>
           <AnimatePresence mode="wait">
             {!drop && (
-              <motion.div key="box" exit={{ scale: 0, rotate: 180, opacity: 0 }}
+              <motion.div key="box" exit={{ scale: 0, rotate: 360, opacity: 0 }}
                 style={{ textAlign: 'center' }}
               >
                 <motion.div
-                  animate={opening ? { rotate: [0, -15, 15, -15, 0], scale: [1, 1.1, 1.1, 1.05, 1] } : {}}
-                  transition={{ duration: 0.6 }}
-                  style={{ fontSize: '80px', marginBottom: '12px' }}
+                  animate={opening ? { rotate: [0, -20, 20, -25, 25, -10, 10, 0], scale: [1, 1.2, 1.3, 1.35, 1] } : { scale: [1, 1.06, 1] }}
+                  transition={{ duration: opening ? 0.7 : 3, repeat: opening ? 0 : Infinity, ease: "easeInOut" }}
+                  style={{ fontSize: '90px', marginBottom: '12px', filter: 'drop-shadow(0 0 24px rgba(124, 58, 237, 0.5))' }}
                 >
                   {isPremium ? '👑' : '📦'}
                 </motion.div>
-                <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '13px' }}>
-                  {opening ? 'Açılıyor...' : `${price} Coin karşılığında aç`}
+                <div style={{ color: 'var(--text-muted)', fontSize: '13px', fontWeight: 600 }}>
+                  {opening ? '🌀 Kasa Açılıyor ve Şansın Belirleniyor...' : `${price} Coin karşılığında şansını dene`}
                 </div>
               </motion.div>
             )}
             {drop && (
-              <motion.div key="drop" initial={{ scale: 0, y: 40, opacity: 0 }}
+              <motion.div key="drop" initial={{ scale: 0.2, y: 50, opacity: 0 }}
                 animate={{ scale: 1, y: 0, opacity: 1 }}
-                transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+                transition={{ type: 'spring', stiffness: 280, damping: 14 }}
                 style={{ textAlign: 'center' }}
+                className={drop.rarity === 'legendary' || drop.rarity === 'epic' ? 'loot-legendary-glow' : ''}
               >
                 <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: 'spring', stiffness: 300, damping: 10, delay: 0.2 }}
+                  initial={{ scale: 0, rotate: -45 }}
+                  animate={{ scale: 1.15, rotate: 0 }}
+                  transition={{ type: 'spring', stiffness: 350, damping: 12, delay: 0.1 }}
                   style={{
-                    fontSize: '72px', marginBottom: '12px',
-                    textShadow: `0 0 40px ${drop.colors?.glow || 'rgba(99,102,241,0.3)'}`,
+                    fontSize: '84px', marginBottom: '14px',
+                    textShadow: `0 0 50px ${drop.colors?.glow || 'rgba(99,102,241,0.6)'}`,
                   }}
                 >
                   {drop.icon}
                 </motion.div>
                 <div style={{
-                  fontSize: '16px', fontWeight: 700, color: drop.colors?.text || '#fff',
-                  marginBottom: '4px',
+                  fontSize: '18px', fontWeight: 800, color: drop.colors?.text || '#fff',
+                  marginBottom: '4px', letterSpacing: '-0.02em'
                 }}>
                   {drop.name}
                 </div>
                 <div style={{
-                  fontSize: '11px', fontWeight: 600, textTransform: 'uppercase',
-                  color: drop.colors?.text || 'rgba(255,255,255,0.4)',
-                  opacity: 0.6,
+                  fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em',
+                  color: drop.colors?.text || 'rgba(255,255,255,0.6)',
+                  opacity: 0.9,
                 }}>
-                  {drop.rarity === 'legendary' ? '⭐ EFSANEVİ' : drop.rarity === 'epic' ? '💎 EPİK' : drop.rarity === 'rare' ? '🔷 NADİR' : 'Sıradan'}
+                  {drop.rarity === 'legendary' ? '✨ EFSANEVİ (MYTHIC)' : drop.rarity === 'epic' ? '💎 EPİK (RARE)' : drop.rarity === 'rare' ? '🔷 NADİR' : '✦ Sıradan'}
                 </div>
                 <div style={{
-                  marginTop: '12px', padding: '8px 16px', borderRadius: '10px',
-                  background: `${drop.colors?.bg || 'rgba(255,255,255,0.05)'}`,
-                  border: `1px solid ${drop.colors?.border || 'rgba(255,255,255,0.1)'}`,
-                  fontSize: '13px', color: drop.colors?.text || '#fff',
-                  fontWeight: 600,
+                  marginTop: '14px', padding: '10px 18px', borderRadius: '12px',
+                  background: `${drop.colors?.bg || 'rgba(124,58,237,0.1)'}`,
+                  border: `1px solid ${drop.colors?.border || 'rgba(124,58,237,0.25)'}`,
+                  fontSize: '13.5px', color: drop.colors?.text || '#fff',
+                  fontWeight: 700, boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
                 }}>
-                  {drop.itemType === 'coin' ? `+${drop.quantity} HAN Coin kazandın!` : `${drop.name} envanterine eklendi!`}
+                  {drop.itemType === 'coin' ? `🎉 +${drop.quantity} HAN Coin Hesabına Eklendi!` : `🎁 ${drop.name} Envanterine Eklendi!`}
                 </div>
               </motion.div>
             )}
