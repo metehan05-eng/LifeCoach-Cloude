@@ -159,12 +159,24 @@ export default function ProductivityView({ onSelectView, userEmail, initialSessi
     finally { setSubmitting(false); }
   };
 
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
   const handleReset = () => {
     setPlanData(null);
     setPeakHours(DEFAULT_PEAK);
     setFocusHours(DEFAULT_FOCUS);
     setMethods(["Pomodoro"]);
     setError("");
+  };
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      const res = await fetch("/api/modules/productivity", { method: "DELETE" });
+      if (res.ok) handleReset();
+    } catch (err) { console.error("Delete error:", err); }
+    finally { setDeleting(false); setShowDeleteConfirm(false); }
   };
 
   const toggleMethod = (val) => {
@@ -262,9 +274,14 @@ export default function ProductivityView({ onSelectView, userEmail, initialSessi
                   Zirve: {peakHours} · Günlük odak: {focusHours} saat · {methods.join(', ')}
                 </p>
               </div>
-              <button onClick={handleReset} className="text-[10px] font-semibold px-3 py-1.5 bg-white/5 hover:bg-white/10 text-white/50 hover:text-white rounded-xl transition-all border border-white/10">
-                Sistemi Yeniden Yapılandır
-              </button>
+              <div className="flex gap-2">
+                <button onClick={handleReset} className="text-[10px] font-semibold px-3 py-1.5 bg-white/5 hover:bg-white/10 text-white/50 hover:text-white rounded-xl transition-all border border-white/10">
+                  Yeniden Yapılandır
+                </button>
+                <button onClick={() => setShowDeleteConfirm(true)} className="text-[10px] font-semibold px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 rounded-xl transition-all border border-red-500/20">
+                  Sil
+                </button>
+              </div>
             </div>
 
             <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6 backdrop-blur-xl">
@@ -279,6 +296,23 @@ export default function ProductivityView({ onSelectView, userEmail, initialSessi
                 <SystemRules rules={pd.rules} />
               </div>
             </div>
+
+            {showDeleteConfirm && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                <div className="bg-[#1a1a2e] border border-red-500/30 rounded-2xl p-6 max-w-sm mx-4 shadow-2xl">
+                  <h3 className="text-sm font-bold text-red-400 mb-2">Sistemi Sil</h3>
+                  <p className="text-xs text-white/60 mb-5">Bu üretkenlik sistemini kalıcı olarak silmek istediğine emin misin?</p>
+                  <div className="flex gap-3 justify-end">
+                    <button onClick={() => setShowDeleteConfirm(false)} className="text-xs px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all">
+                      İptal
+                    </button>
+                    <button onClick={handleDelete} disabled={deleting} className="text-xs px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-xl transition-all disabled:opacity-50">
+                      {deleting ? "Siliniyor..." : "Evet, Sil"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <details className="text-[10px] text-white/20">
               <summary className="cursor-pointer hover:text-white/40">Ham veri</summary>

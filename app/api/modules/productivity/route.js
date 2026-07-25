@@ -22,6 +22,22 @@ export async function GET() {
   }
 }
 
+export async function DELETE() {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) return NextResponse.json({ error: "Yetkisiz" }, { status: 401 });
+
+    await prismaClient.productivitySystem.deleteMany({
+      where: { userId: session.user.id },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    if (isPrismaError(err)) return NextResponse.json({ success: true });
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
 export async function POST(request) {
   try {
     const session = await getServerSession(authOptions);
