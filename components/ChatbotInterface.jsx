@@ -27,6 +27,7 @@ import { useRouter } from 'next/navigation';
 import { getQuickAction } from '@/lib/quick-actions';
 import LoadingScreen from '@/components/ui/LoadingScreen';
 import { SifuPanda } from '@/components/mascot';
+import SifuPandaVoiceAgent from '@/components/mascot/SifuPandaVoiceAgent';
 import { useVoiceChat } from '@/hooks/useVoiceChat';
 import { useSpeechToText } from '@/hooks/useSpeechToText';
 import { detectEmotionFromText } from '@/lib/voice/sifu-emotion';
@@ -649,77 +650,11 @@ export default function ChatbotInterface() {
             {showProjects ? (
               <ProjectHub user={session?.user} onClose={() => setShowProjects(false)} />
             ) : showSifuPanda ? (
-              <div className="flex flex-1 flex-col items-center justify-center gap-5 px-4 py-6 sm:gap-6">
-                <div className="relative">
-                  <div className="absolute inset-0 rounded-full bg-emerald-500/10 blur-3xl" />
-                  <div className="relative rounded-full bg-gradient-to-br from-emerald-500/15 to-teal-600/10 p-6 shadow-[0_0_64px_rgba(16,185,129,0.15)] sm:p-8">
-                    <SifuPanda
-                      emotion={sifuEmotion}
-                      size={isMobile ? 120 : 160}
-                      isSpeaking={voice.isSpeaking}
-                      isListening={voice.isRecording}
-                    />
-                  </div>
-                </div>
-                <div className="text-center">
-                  <h2 className="text-xl font-bold sm:text-2xl" style={{ color: "var(--text-primary)" }}>
-                    Sifu Panda
-                  </h2>
-                  <p className="mt-1 text-sm" style={{ color: "var(--text-muted)" }}>
-                    Mikrofon — konuşmak için tıkla
-                  </p>
-                </div>
-
-                {voice.interimText && (
-                  <div
-                    className="max-w-md rounded-2xl border px-5 py-3 text-center text-sm italic backdrop-blur-xl"
-                    style={{
-                      borderColor: "var(--border-subtle)",
-                      background: "var(--bg-elevated)",
-                      color: "var(--text-secondary)",
-                    }}
-                  >
-                    &ldquo;{voice.interimText}&rdquo;
-                  </div>
-                )}
-
-                <div className="flex items-center gap-4">
-                  <button
-                    type="button"
-                    onClick={() => voice.isRecording ? voice.stopRecording() : voice.startRecording()}
-                    className={`flex h-[72px] w-[72px] items-center justify-center rounded-full border-2 transition-all sm:h-20 sm:w-20 ${
-                      voice.isRecording
-                        ? 'scale-110 border-red-400/50 bg-red-500/20 shadow-[0_0_48px_rgba(239,68,68,0.3)]'
-                        : 'border-emerald-500/40 bg-emerald-500/10 shadow-[0_0_32px_rgba(16,185,129,0.15)] hover:border-emerald-500/60 hover:bg-emerald-500/15'
-                    }`}
-                    aria-label={voice.isRecording ? 'Kaydı durdur' : 'Mikrofon'}
-                  >
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                      className={voice.isRecording ? 'text-red-400' : 'text-emerald-400'}
-                    >
-                      <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
-                      <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                      <line x1="12" y1="19" x2="12" y2="22" />
-                    </svg>
-                  </button>
-                </div>
-
-                {voice.isSpeaking && (
-                  <div className="animate-pulse text-sm text-emerald-500/70">Sifu Panda konuşuyor...</div>
-                )}
-
-                <button
-                  type="button"
-                  onClick={() => setShowSifuPanda(false)}
-                  className="mt-2 rounded-xl border px-5 py-2 text-xs font-semibold transition-all hover:opacity-80"
-                  style={{
-                    borderColor: "var(--border-subtle)",
-                    color: "var(--text-muted)",
-                  }}
-                >
-                  Sohbete Dön
-                </button>
-              </div>
+              <SifuPandaVoiceAgent
+                onBack={() => setShowSifuPanda(false)}
+                isMobile={isMobile}
+                onEmotionChange={setSifuEmotion}
+              />
             ) : activeSessionId === 'targets' ? (
               <TargetsView onSelectView={handleSelectView} userEmail={session?.user?.email} initialRecordId={viewRecordId} />
             ) : activeSessionId === 'startup' ? (
