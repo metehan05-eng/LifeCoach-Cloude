@@ -5,19 +5,20 @@ import SifuPanda from "@/components/mascot/SifuPanda";
 
 export default function SifuPandaPage() {
   const [emotion, setEmotion] = useState("idle");
-  const [isRecording, setIsRecording] = useState(false);
-  const [isThinking, setIsThinking] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const [messages, setMessages] = useState([]);
-  const [interimText, setInterimText] = useState("");
-  const [statusText, setStatusText] = useState("");
-  const [audioUrl, setAudioUrl] = useState(null);
+  const [transcript, setTranscript] = useState("");
 
-  const mediaRecorderRef = useRef(null);
-  const audioChunksRef = useRef([]);
-  const chatHistoryRef = useRef([]);
-  const audioContextRef = useRef(null);
+  const wsRef = useRef(null);
+  const streamRef = useRef(null);
+  const audioCtxRef = useRef(null);
+  const processorRef = useRef(null);
+  const sourceRef = useRef(null);
+  const gainRef = useRef(null);
   const messagesEndRef = useRef(null);
+  const isActiveRef = useRef(false);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -27,174 +28,212 @@ export default function SifuPandaPage() {
     setMessages(prev => [...prev, { role, text, id: Date.now() }]);
   };
 
-  const speakText = useCallback(async (text) => {
-    try {
-      setIsSpeaking(true);
-      setEmotion("speaking");
-      setStatusText("Sifu Panda speaking...");
-
-      const res = await fetch("/api/tts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: text.slice(0, 500) }),
-      });
-
-      if (!res.ok) throw new Error("TTS failed");
-
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      setAudioUrl(url);
-
-      const audio = new Audio(url);
-      await audio.play();
-
-      await new Promise(resolve => {
-        audio.onended = resolve;
-      });
-
-      URL.revokeObjectURL(url);
-      setAudioUrl(null);
-    } catch (err) {
-      console.warn("[TTS] Error:", err.message);
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = "en-US";
-      utterance.rate = 1.0;
-      utterance.pitch = 0.6;
-      await new Promise(resolve => {
-        utterance.onend = resolve;
-        utterance.onerror = resolve;
-        window.speechSynthesis.speak(utterance);
-      });
-    } finally {
-      setIsSpeaking(false);
-      setEmotion("idle");
-      setStatusText("Tap the mic to speak");
-    }
-  }, []);
-
-  const processVoiceInput = useCallback(async (audioBlob) => {
-    setIsThinking(true);
-    setEmotion("thoughtful");
-    setStatusText("Listening...");
-
-    try {
-      const dgRes = await fetch("/api/sifu-panda/transcribe", {
-        method: "POST",
-        headers: { "Content-Type": audioBlob.type || "audio/webm" },
-        body: audioBlob,
-      });
-
-      if (!dgRes.ok) {
-        const errText = await dgRes.text();
-        throw new Error(errText || "Deepgram failed");
-      }
-
-      const { text } = await dgRes.json();
-      if (!text || !text.trim()) {
-        setStatusText("I didn't catch that. Try again?");
-        setIsThinking(false);
-        setEmotion("idle");
-        return;
-      }
-
-      addMessage("user", text);
-      setStatusText("Sifu Panda is thinking...");
-      setEmotion("thoughtful");
-
-      const aiRes = await fetch("/api/sifu-panda/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text,
-          history: chatHistoryRef.current,
-        }),
-      });
-
-      if (!aiRes.ok) throw new Error("AI chat failed");
-
-      const { reply } = await aiRes.json();
-      if (!reply || reply === "...") throw new Error("Empty reply");
-
-      chatHistoryRef.current.push(
-        { role: "user", text },
-        { role: "assistant", text: reply }
-      );
-
-      addMessage("assistant", reply);
-      setIsThinking(false);
-
-      await speakText(reply);
-    } catch (err) {
-      console.error("[Sifu Panda] Error:", err.message);
-      setStatusText("Something went wrong. Try again.");
-      setEmotion("idle");
-      setIsThinking(false);
-    }
-  }, [speakText]);
-
-  const startRecording = useCallback(async () => {
-    try {
-      setInterimText("");
-      setStatusText("Listening...");
-      setEmotion("listening");
-      audioChunksRef.current = [];
-
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
-        ? "audio/webm;codecs=opus"
-        : "audio/webm";
-
-      const recorder = new MediaRecorder(stream, { mimeType });
-      recorder.ondataavailable = (e) => {
-        if (e.data.size > 0) audioChunksRef.current.push(e.data);
-      };
-
-      recorder.onstop = () => {
-        stream.getTracks().forEach(t => t.stop());
-        const blob = new Blob(audioChunksRef.current, { type: mimeType });
-        processVoiceInput(blob);
-      };
-
-      recorder.onerror = () => {
-        stream.getTracks().forEach(t => t.stop());
-        setIsRecording(false);
-        setEmotion("idle");
-        setStatusText("Mic error. Try again.");
-      };
-
-      mediaRecorderRef.current = recorder;
-      recorder.start();
-      setIsRecording(true);
-
-      // Auto-stop after 10 seconds
+  const stopAudio = useCallback(() => {
+    if (gainRef.current) {
+      gainRef.current.gain.linearRampToValueAtTime(0, audioCtxRef.current.currentTime + 0.05);
       setTimeout(() => {
-        if (mediaRecorderRef.current?.state === "recording") {
-          mediaRecorderRef.current.stop();
-          setIsRecording(false);
+        if (audioCtxRef.current?.state !== 'closed') {
+          audioCtxRef.current.close();
         }
-      }, 10000);
-    } catch (err) {
-      console.error("[Mic] Error:", err.message);
-      setStatusText("Microphone access denied.");
-      setEmotion("idle");
-    }
-  }, [processVoiceInput]);
-
-  const stopRecording = useCallback(() => {
-    if (mediaRecorderRef.current?.state === "recording") {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
+        audioCtxRef.current = null;
+        gainRef.current = null;
+        sourceRef.current = null;
+      }, 100);
     }
   }, []);
 
-  const toggleRecording = useCallback(() => {
-    if (isRecording) stopRecording();
-    else startRecording();
-  }, [isRecording, startRecording, stopRecording]);
+  const disconnect = useCallback(() => {
+    isActiveRef.current = false;
+    setIsConnected(false);
+    setIsListening(false);
+    setIsSpeaking(false);
+    setEmotion("idle");
+
+    if (processorRef.current) {
+      processorRef.current.disconnect();
+      processorRef.current = null;
+    }
+    if (sourceRef.current) {
+      sourceRef.current.disconnect();
+      sourceRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
+    }
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.close();
+    }
+    wsRef.current = null;
+    stopAudio();
+  }, [stopAudio]);
+
+  const startAgent = useCallback(async () => {
+    try {
+      setEmotion("listening");
+      setTranscript("");
+
+      const configRes = await fetch("/api/sifu-panda/start-agent", { method: "POST" });
+      if (!configRes.ok) throw new Error("Agent config failed");
+      const { wsUrl, settings } = await configRes.json();
+
+      const ws = new WebSocket(wsUrl);
+      wsRef.current = ws;
+      isActiveRef.current = true;
+
+      ws.onopen = () => {
+        if (!isActiveRef.current) { ws.close(); return; }
+        setIsConnected(true);
+        ws.send(JSON.stringify({ type: "Settings", ...settings }));
+      };
+
+      ws.onmessage = async (event) => {
+        if (!isActiveRef.current) return;
+
+        if (typeof event.data === "string") {
+          const msg = JSON.parse(event.data);
+
+          switch (msg.type) {
+            case "SettingsApplied":
+              setIsConnected(true);
+              startMicStream(ws);
+              break;
+
+            case "ConversationText":
+              if (msg.role === "user") {
+                setTranscript(msg.text);
+              } else if (msg.role === "assistant") {
+                addMessage("assistant", msg.text);
+                setTranscript("");
+              }
+              break;
+
+            case "UserStartedSpeaking":
+              setIsSpeaking(false);
+              setEmotion("listening");
+              stopAudio();
+              break;
+
+            case "AgentStartedSpeaking":
+              setIsSpeaking(true);
+              setEmotion("speaking");
+              break;
+
+            case "AgentFinishedSpeaking":
+              setIsSpeaking(false);
+              setEmotion("idle");
+              break;
+          }
+        }
+      };
+
+      ws.onerror = () => {
+        if (!isActiveRef.current) return;
+        setEmotion("idle");
+        setIsConnected(false);
+      };
+
+      ws.onclose = () => {
+        setIsConnected(false);
+        setIsListening(false);
+        setIsSpeaking(false);
+        setEmotion("idle");
+        stopAudio();
+      };
+
+    } catch (err) {
+      console.error("[Voice Agent] Error:", err);
+      setEmotion("idle");
+      setIsConnected(false);
+    }
+  }, [stopAudio]);
+
+  function startMicStream(ws) {
+    navigator.mediaDevices.getUserMedia({ audio: { sampleRate: 16000, channelCount: 1, echoCancellation: true } })
+      .then(stream => {
+        if (!isActiveRef.current) { stream.getTracks().forEach(t => t.stop()); return; }
+
+        streamRef.current = stream;
+        setIsListening(true);
+
+        const audioCtx = new AudioContext({ sampleRate: 16000 });
+        audioCtxRef.current = audioCtx;
+        const source = audioCtx.createMediaStreamSource(stream);
+        sourceRef.current = source;
+
+        const processor = audioCtx.createScriptProcessor(4096, 1, 1);
+        processorRef.current = processor;
+
+        processor.onaudioprocess = (e) => {
+          if (ws.readyState !== WebSocket.OPEN || !isActiveRef.current) return;
+          const input = e.inputBuffer.getChannelData(0);
+          const pcm = new Int16Array(input.length);
+          for (let i = 0; i < input.length; i++) {
+            pcm[i] = Math.max(-1, Math.min(1, input[i])) * 0x7FFF;
+          }
+          ws.send(pcm.buffer);
+        };
+
+        source.connect(processor);
+        processor.connect(audioCtx.destination);
+
+        // Listen for audio output
+        ws.addEventListener('message', (event) => {
+          if (event.data instanceof Blob) {
+            event.data.arrayBuffer().then(buffer => {
+              if (!isActiveRef.current) return;
+              playAudioBuffer(buffer);
+            });
+          }
+        });
+
+      })
+      .catch(err => {
+        console.error("[Mic] Error:", err);
+        if (isActiveRef.current) disconnect();
+      });
+  }
+
+  function playAudioBuffer(buffer) {
+    try {
+      const ctx = audioCtxRef.current || new AudioContext({ sampleRate: 24000 });
+      audioCtxRef.current = ctx;
+
+      const pcm = new Int16Array(buffer);
+      const float32 = new Float32Array(pcm.length);
+      for (let i = 0; i < pcm.length; i++) {
+        float32[i] = pcm[i] / 0x7FFF;
+      }
+
+      const audioBuffer = ctx.createBuffer(1, float32.length, 24000);
+      audioBuffer.getChannelData(0).set(float32);
+
+      const source = ctx.createBufferSource();
+      source.buffer = audioBuffer;
+
+      const gain = ctx.createGain();
+      gain.gain.value = 1;
+      gainRef.current = gain;
+
+      source.connect(gain);
+      gain.connect(ctx.destination);
+      source.start();
+      sourceRef.current = source;
+    } catch (err) {
+      console.warn("[Playback] Error:", err);
+    }
+  }
+
+  const toggleConversation = useCallback(() => {
+    if (isConnected) {
+      disconnect();
+    } else {
+      startAgent();
+    }
+  }, [isConnected, startAgent, disconnect]);
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#0a0a14] via-[#0f0f1e] to-[#0a0a14] text-white overflow-hidden">
-      {/* Ambient background */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(120,80,255,0.06)_0%,_transparent_70%)]" />
 
       <div className="relative z-10 flex flex-col items-center gap-6 w-full max-w-lg px-4">
@@ -209,52 +248,60 @@ export default function SifuPandaPage() {
         {/* Panda Avatar */}
         <div className="relative">
           <div className={`absolute inset-0 rounded-full transition-all duration-700 ${
-            isRecording ? "bg-red-500/10 scale-150 blur-2xl animate-pulse" :
+            isListening ? "bg-red-500/10 scale-150 blur-2xl animate-pulse" :
             isSpeaking ? "bg-violet-500/10 scale-125 blur-2xl" :
             "bg-transparent"
           }`} />
           <div className={`transition-all duration-300 ${
-            isRecording ? "scale-105" : "scale-100"
+            isListening ? "scale-105" : "scale-100"
           }`}>
             <SifuPanda
               emotion={emotion}
               size={180}
               isSpeaking={isSpeaking}
-              isListening={isRecording}
+              isListening={isListening}
             />
           </div>
         </div>
 
         {/* Status */}
         <p className={`text-sm transition-all duration-300 ${
-          isRecording ? "text-red-300" :
+          isListening ? "text-red-300" :
           isSpeaking ? "text-violet-300" :
-          isThinking ? "text-amber-300" :
           "text-white/40"
         }`}>
-          {isRecording ? "Listening... tap again to stop" :
-           isThinking ? "Thinking..." :
-           statusText || "Tap the mic to speak"}
+          {isListening ? (transcript || "Listening...") :
+           isSpeaking ? "Sifu Panda is speaking..." :
+           isConnected ? "Connected" :
+           "Tap the mic to start"}
         </p>
 
         {/* Mic Button */}
         <button
-          onClick={toggleRecording}
-          disabled={isThinking || isSpeaking}
+          onClick={toggleConversation}
           className={`relative flex h-20 w-20 items-center justify-center rounded-full transition-all duration-300 ${
-            isRecording
+            isConnected
               ? "bg-red-500/20 border-red-400/40 scale-110 shadow-[0_0_40px_rgba(239,68,68,0.25)]"
               : "bg-violet-500/10 border-violet-400/20 hover:bg-violet-500/20 hover:border-violet-400/40"
-          } border disabled:opacity-50 disabled:cursor-not-allowed`}
+          } border`}
         >
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
             className={`transition-colors ${
-              isRecording ? "text-red-300" : "text-violet-300"
+              isConnected ? "text-red-300" : "text-violet-300"
             }`}
           >
-            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
-            <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-            <line x1="12" y1="19" x2="12" y2="22" />
+            {isConnected ? (
+              <>
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </>
+            ) : (
+              <>
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                <line x1="12" y1="19" x2="12" y2="22" />
+              </>
+            )}
           </svg>
         </button>
 
@@ -282,13 +329,9 @@ export default function SifuPandaPage() {
         )}
 
         {/* Reset button */}
-        {messages.length > 0 && (
+        {messages.length > 0 && !isConnected && (
           <button
-            onClick={() => {
-              setMessages([]);
-              chatHistoryRef.current = [];
-              setStatusText("");
-            }}
+            onClick={() => setMessages([])}
             className="text-xs text-white/20 hover:text-white/50 transition-colors mt-2"
           >
             Clear conversation
