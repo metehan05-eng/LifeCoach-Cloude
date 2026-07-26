@@ -59,7 +59,7 @@ export function useVoiceAgent({ onEmotionChange } = {}) {
   const getPlaybackCtx = useCallback(() => {
     let ctx = audioCtxRef.current;
     if (!ctx || ctx.state === 'closed') {
-      ctx = new (window.AudioContext || window.webkitAudioContext)();
+      ctx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 24000 });
       audioCtxRef.current = ctx;
       nextAudioTimeRef.current = 0;
     }
@@ -69,11 +69,17 @@ export function useVoiceAgent({ onEmotionChange } = {}) {
 
   const playAudioBuffer = useCallback(async (buffer) => {
     try {
-      if (stopAudioRef.current) return;
+      // Ensure audio playback is unblocked when receiving audio chunks
+      stopAudioRef.current = false;
       const ctx = getPlaybackCtx();
       if (ctx.state === 'suspended') await ctx.resume();
 
-      const pcm = new Int16Array(buffer);
+      // Ensure byte length is even to prevent Int16Array RangeError
+      const byteLen = buffer.byteLength;
+      const alignedLen = byteLen - (byteLen % 2);
+      if (alignedLen === 0) return;
+
+      const pcm = new Int16Array(buffer, 0, alignedLen / 2);
       if (pcm.length === 0) return;
       const float32 = new Float32Array(pcm.length);
       for (let i = 0; i < pcm.length; i++) float32[i] = pcm[i] / 0x7FFF;
@@ -126,7 +132,7 @@ export function useVoiceAgent({ onEmotionChange } = {}) {
         console.warn("[VoiceAgent Mic] Error:", err.message);
         if (isActiveRef.current) disconnect();
       });
-  }, [disconnect, getPlaybackCtx]);
+  }, [disconnect]);
 
   const connect = useCallback(async () => {
     try {
@@ -153,6 +159,7 @@ export function useVoiceAgent({ onEmotionChange } = {}) {
       const { wsUrl, settings, token } = await configRes.json();
 
       const ws = new WebSocket(wsUrl, ["token", token]);
+      ws.binaryType = "arraybuffer";
       wsRef.current = ws;
       isActiveRef.current = true;
       stopAudioRef.current = false;
@@ -190,6 +197,7 @@ export function useVoiceAgent({ onEmotionChange } = {}) {
                 break;
               case "AgentStartedSpeaking":
                 stopAudioRef.current = false;
+                nextAudioTimeRef.current = 0;
                 setIsSpeaking(true);
                 setIsListening(false);
                 setTranscript("");
@@ -202,11 +210,14 @@ export function useVoiceAgent({ onEmotionChange } = {}) {
                 break;
             }
           } catch {}
+        } else if (event.data instanceof ArrayBuffer) {
+          if (event.data.byteLength > 0) {
+            playAudioBuffer(event.data);
+          }
         } else if (event.data instanceof Blob) {
           if (event.data.size > 0) {
             event.data.arrayBuffer().then(buf => {
               if (isActiveRef.current) {
-                console.log("[VoiceAgent] Audio chunk:", buf.byteLength, "bytes");
                 playAudioBuffer(buf);
               }
             });

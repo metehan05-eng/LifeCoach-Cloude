@@ -75,9 +75,10 @@ export default function SifuPandaPage() {
 
       const configRes = await fetch("/api/sifu-panda/start-agent", { method: "POST" });
       if (!configRes.ok) throw new Error("Agent config failed");
-      const { wsUrl, settings } = await configRes.json();
+      const { wsUrl, settings, token } = await configRes.json();
 
-      const ws = new WebSocket(wsUrl);
+      const ws = new WebSocket(wsUrl, token ? ["token", token] : undefined);
+      ws.binaryType = "arraybuffer";
       wsRef.current = ws;
       isActiveRef.current = true;
 
@@ -91,38 +92,50 @@ export default function SifuPandaPage() {
         if (!isActiveRef.current) return;
 
         if (typeof event.data === "string") {
-          const msg = JSON.parse(event.data);
+          try {
+            const msg = JSON.parse(event.data);
 
-          switch (msg.type) {
-            case "SettingsApplied":
-              setIsConnected(true);
-              startMicStream(ws);
-              break;
+            switch (msg.type) {
+              case "SettingsApplied":
+                setIsConnected(true);
+                startMicStream(ws);
+                break;
 
-            case "ConversationText":
-              if (msg.role === "user") {
-                setTranscript(msg.text);
-              } else if (msg.role === "assistant") {
-                addMessage("assistant", msg.text);
-                setTranscript("");
-              }
-              break;
+              case "ConversationText":
+                if (msg.role === "user") {
+                  setTranscript(msg.text);
+                } else if (msg.role === "assistant") {
+                  addMessage("assistant", msg.text);
+                  setTranscript("");
+                }
+                break;
 
-            case "UserStartedSpeaking":
-              setIsSpeaking(false);
-              setEmotion("listening");
-              stopAudio();
-              break;
+              case "UserStartedSpeaking":
+                setIsSpeaking(false);
+                setEmotion("listening");
+                stopAudio();
+                break;
 
-            case "AgentStartedSpeaking":
-              setIsSpeaking(true);
-              setEmotion("speaking");
-              break;
+              case "AgentStartedSpeaking":
+                setIsSpeaking(true);
+                setEmotion("speaking");
+                break;
 
-            case "AgentFinishedSpeaking":
-              setIsSpeaking(false);
-              setEmotion("idle");
-              break;
+              case "AgentFinishedSpeaking":
+                setIsSpeaking(false);
+                setEmotion("idle");
+                break;
+            }
+          } catch {}
+        } else if (event.data instanceof ArrayBuffer) {
+          if (event.data.byteLength > 0) {
+            playAudioBuffer(event.data);
+          }
+        } else if (event.data instanceof Blob) {
+          if (event.data.size > 0) {
+            event.data.arrayBuffer().then(buffer => {
+              if (isActiveRef.current) playAudioBuffer(buffer);
+            });
           }
         }
       };
@@ -156,12 +169,10 @@ export default function SifuPandaPage() {
         streamRef.current = stream;
         setIsListening(true);
 
-        const audioCtx = new AudioContext({ sampleRate: 16000 });
-        audioCtxRef.current = audioCtx;
-        const source = audioCtx.createMediaStreamSource(stream);
-        sourceRef.current = source;
+        const micCtx = new AudioContext({ sampleRate: 16000 });
+        const source = micCtx.createMediaStreamSource(stream);
 
-        const processor = audioCtx.createScriptProcessor(4096, 1, 1);
+        const processor = micCtx.createScriptProcessor(4096, 1, 1);
         processorRef.current = processor;
 
         processor.onaudioprocess = (e) => {
@@ -175,18 +186,6 @@ export default function SifuPandaPage() {
         };
 
         source.connect(processor);
-        processor.connect(audioCtx.destination);
-
-        // Listen for audio output
-        ws.addEventListener('message', (event) => {
-          if (event.data instanceof Blob) {
-            event.data.arrayBuffer().then(buffer => {
-              if (!isActiveRef.current) return;
-              playAudioBuffer(buffer);
-            });
-          }
-        });
-
       })
       .catch(err => {
         console.error("[Mic] Error:", err);
@@ -196,10 +195,18 @@ export default function SifuPandaPage() {
 
   function playAudioBuffer(buffer) {
     try {
-      const ctx = audioCtxRef.current || new AudioContext({ sampleRate: 24000 });
-      audioCtxRef.current = ctx;
+      let ctx = audioCtxRef.current;
+      if (!ctx || ctx.state === 'closed') {
+        ctx = new AudioContext({ sampleRate: 24000 });
+        audioCtxRef.current = ctx;
+      }
+      if (ctx.state === 'suspended') ctx.resume();
 
-      const pcm = new Int16Array(buffer);
+      const byteLen = buffer.byteLength;
+      const alignedLen = byteLen - (byteLen % 2);
+      if (alignedLen === 0) return;
+
+      const pcm = new Int16Array(buffer, 0, alignedLen / 2);
       const float32 = new Float32Array(pcm.length);
       for (let i = 0; i < pcm.length; i++) {
         float32[i] = pcm[i] / 0x7FFF;
