@@ -142,6 +142,7 @@ export function useVoiceAgent({ onEmotionChange } = {}) {
       const ws = new WebSocket(wsUrl, ["token", token]);
       wsRef.current = ws;
       isActiveRef.current = true;
+      stopAudioRef.current = false;
 
       ws.onopen = () => {
         if (!isActiveRef.current) { ws.close(); return; }
@@ -175,6 +176,7 @@ export function useVoiceAgent({ onEmotionChange } = {}) {
                 stopAudio();
                 break;
               case "AgentStartedSpeaking":
+                stopAudioRef.current = false;
                 setIsSpeaking(true);
                 setIsListening(false);
                 setTranscript("");
