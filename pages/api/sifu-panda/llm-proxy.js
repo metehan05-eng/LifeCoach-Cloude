@@ -2,7 +2,35 @@ export const config = {
   api: { bodyParser: true },
 };
 
+const PROVIDERS = [];
+
+const geminiKey = process.env.GOOGLE_GEMINI_API_KEY;
+if (geminiKey && !geminiKey.includes('PLACEHOLDER')) {
+  PROVIDERS.push({
+    name: 'gemini',
+    match: (model) => model?.toLowerCase().startsWith('gemini'),
+    url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': geminiKey },
+    authQuery: '',
+  });
+}
+
+const dashscopeKey = process.env.DASHSCOPE_API_KEY || process.env.QWEN_API_KEY;
+if (dashscopeKey && !dashscopeKey.includes('PLACEHOLDER')) {
+  PROVIDERS.push({
+    name: 'dashscope',
+    match: () => true,
+    url: process.env.QWEN_BASE_URL || 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${dashscopeKey}` },
+    authQuery: '',
+  });
+}
+
 export default async function handler(req, res) {
+  if (PROVIDERS.length === 0) {
+    return res.status(500).json({ error: 'No LLM provider configured (set GOOGLE_GEMINI_API_KEY or DASHSCOPE_API_KEY)' });
+  }
+
   let body;
   try {
     body = typeof req.body === 'object' ? req.body : JSON.parse(req.body || '{}');
@@ -10,26 +38,21 @@ export default async function handler(req, res) {
     body = {};
   }
 
+  const provider = PROVIDERS.find(p => p.match(body.model)) || PROVIDERS[0];
   const model = body.model || 'qwen3.7-plus';
-  const targetUrl = process.env.QWEN_BASE_URL
-    || 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions';
-  const apiKey = process.env.DASHSCOPE_API_KEY || process.env.QWEN_API_KEY;
-
-  if (!apiKey) {
-    return res.status(500).json({ error: 'No API key configured' });
-  }
 
   body.model = model;
   if (body.max_tokens === undefined) body.max_tokens = 150;
   if (body.temperature === undefined) body.temperature = 0.8;
 
+  const targetUrl = provider.authQuery
+    ? provider.url + '?' + provider.authQuery
+    : provider.url;
+
   try {
     const resp = await fetch(targetUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
+      headers: provider.headers,
       body: JSON.stringify(body),
     });
 
@@ -39,7 +62,6 @@ export default async function handler(req, res) {
       const reader = resp.body.getReader();
       const decoder = new TextDecoder();
       res.setHeader('Content-Type', 'text/event-stream');
-
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;

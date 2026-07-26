@@ -1,8 +1,12 @@
+const geminiKey = process.env.GOOGLE_GEMINI_API_KEY;
+const hasGemini = geminiKey && !geminiKey.includes('PLACEHOLDER');
+const hasDashscope = !!(process.env.DASHSCOPE_API_KEY || process.env.QWEN_API_KEY);
+
 export default async function handler(req, res) {
   if (req.method === 'GET') {
     return res.json({
       dgKey: !!(process.env.DEEPGRAM_API_KEY && !process.env.DEEPGRAM_API_KEY.includes('PLACEHOLDER')),
-      llmKey: !!(process.env.DASHSCOPE_API_KEY || process.env.QWEN_API_KEY),
+      llmProvider: hasGemini ? 'gemini' : hasDashscope ? 'dashscope' : 'none',
     });
   }
 
@@ -15,12 +19,13 @@ export default async function handler(req, res) {
     return res.status(503).json({ error: 'DEEPGRAM_API_KEY not configured' });
   }
 
-  if (!process.env.DASHSCOPE_API_KEY && !process.env.QWEN_API_KEY) {
-    return res.status(503).json({ error: 'LLM_API_KEY_MISSING - DASHSCOPE_API_KEY veya QWEN_API_KEY gerekli' });
+  if (!hasGemini && !hasDashscope) {
+    return res.status(503).json({ error: 'AI_API_KEY_MISSING - GOOGLE_GEMINI_API_KEY veya DASHSCOPE_API_KEY gerekli' });
   }
 
   const host = req.headers['x-forwarded-host'] || req.headers['host'] || 'han-ai.dev';
   const protocol = req.headers['x-forwarded-proto'] || 'https';
+  const llmModel = hasGemini ? 'gemini-2.0-flash' : 'qwen3.7-plus';
 
   const settings = {
     audio: {
@@ -33,7 +38,7 @@ export default async function handler(req, res) {
         provider: { type: 'deepgram', model: 'nova-3' },
       },
       think: {
-        provider: { type: 'open_ai', model: 'qwen3.7-plus', temperature: 0.8 },
+        provider: { type: 'open_ai', model: llmModel, temperature: 0.8 },
         endpoint: {
           url: `${protocol}://${host}/api/sifu-panda/llm-proxy`,
           headers: {},
