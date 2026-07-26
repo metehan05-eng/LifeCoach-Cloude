@@ -67,11 +67,11 @@ export function useVoiceAgent({ onEmotionChange } = {}) {
     return ctx;
   }, []);
 
-  const playAudioBuffer = useCallback((buffer) => {
+  const playAudioBuffer = useCallback(async (buffer) => {
     try {
       if (stopAudioRef.current) return;
       const ctx = getPlaybackCtx();
-      if (ctx.state === 'suspended') ctx.resume();
+      if (ctx.state === 'suspended') await ctx.resume();
 
       const pcm = new Int16Array(buffer);
       if (pcm.length === 0) return;
@@ -83,12 +83,7 @@ export function useVoiceAgent({ onEmotionChange } = {}) {
 
       const source = ctx.createBufferSource();
       source.buffer = audioBuffer;
-
-      const gain = ctx.createGain();
-      gain.gain.value = 1;
-
-      source.connect(gain);
-      gain.connect(ctx.destination);
+      source.connect(ctx.destination);
 
       const now = ctx.currentTime;
       const startTime = Math.max(now, nextAudioTimeRef.current);
