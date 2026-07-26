@@ -75,7 +75,7 @@ RULES:
   };
 
   res.json({
-    wsUrl: `wss://agent.deepgram.com/v1/agent/converse?Authorization=Token%20${dgKey}`,
+    wsUrl: `wss://agent.deepgram.com/v1/agent/converse?api_key=${dgKey}`,
     settings,
   });
 }

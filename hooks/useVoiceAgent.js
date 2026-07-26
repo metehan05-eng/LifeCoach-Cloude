@@ -179,8 +179,9 @@ export function useVoiceAgent({ onEmotionChange } = {}) {
         }
       };
 
-      ws.onerror = () => {
+      ws.onerror = (ev) => {
         if (!isActiveRef.current) return;
+        console.error("[VoiceAgent] WebSocket error:", ev);
         onEmotionChange?.("idle");
         setIsConnected(false);
       };
