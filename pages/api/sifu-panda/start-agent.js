@@ -25,7 +25,7 @@ export default async function handler(req, res) {
 
   const host = req.headers['x-forwarded-host'] || req.headers['host'] || 'han-ai.dev';
   const protocol = req.headers['x-forwarded-proto'] || 'https';
-  const llmModel = hasGemini ? 'gemini-2.0-flash' : 'qwen3.7-plus';
+  const llmModel = hasGemini ? 'gemini-3.6-flash' : 'qwen3.7-plus';
 
   const settings = {
     audio: {

@@ -39,7 +39,7 @@ export default async function handler(req, res) {
   }
 
   const provider = PROVIDERS.find(p => p.match(body.model)) || PROVIDERS[0];
-  const model = body.model || (provider.name === 'gemini' ? 'gemini-2.0-flash' : 'qwen3.7-plus');
+  const model = body.model || (provider.name === 'gemini' ? 'gemini-3.6-flash' : 'qwen3.7-plus');
 
   body.model = model;
   if (body.max_tokens === undefined) body.max_tokens = 150;
@@ -65,8 +65,8 @@ export default async function handler(req, res) {
 
     if (!resp.ok) {
       const errText = await resp.text().catch(() => '');
-      console.error(`[llm-proxy/${logId}] error response: ${errText.slice(0, 300)}`);
-      return res.status(resp.status).json({ error: `LLM API error: ${resp.status}`, detail: errText.slice(0, 200) });
+      console.error(`[llm-proxy/${logId}] error body:`, errText.slice(0, 500));
+      return res.status(resp.status).json({ error: `LLM API returned ${resp.status}`, detail: errText.slice(0, 300) });
     }
 
     if (contentType.includes('text/event-stream')) {
