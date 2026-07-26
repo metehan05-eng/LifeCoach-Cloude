@@ -7,18 +7,30 @@
 import { getQwenConfig } from '../../../lib/qwen-api.js';
 
 export default async function handler(req, res) {
+  if (req.method === 'GET') {
+    const qwenConfig = getQwenConfig();
+    return res.json({
+      dgKey: !!(process.env.DEEPGRAM_API_KEY && !process.env.DEEPGRAM_API_KEY.includes('PLACEHOLDER')),
+      qwenProvider: qwenConfig.provider,
+      qwenModel: qwenConfig.model,
+      qwenBaseUrl: qwenConfig.baseURL,
+    });
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const apiKey = process.env.DEEPGRAM_API_KEY;
-  if (!apiKey || apiKey.includes('PLACEHOLDER')) {
+  const dgKey = process.env.DEEPGRAM_API_KEY;
+  if (!dgKey || dgKey.includes('PLACEHOLDER')) {
+    console.error('[start-agent] DEEPGRAM_API_KEY missing or placeholder');
     return res.status(503).json({ error: 'DEEPGRAM_API_KEY not configured' });
   }
 
   const qwenConfig = getQwenConfig();
-  let llmApiKey = qwenConfig.apiKey;
-  let llmBaseUrl = qwenConfig.baseURL;
+  let llmApiKey;
+  let llmBaseUrl;
+  console.log('[start-agent] Qwen provider:', qwenConfig.provider);
 
   if (qwenConfig.provider === 'mock') {
     const openrouterKey = process.env.OPENROUTER_API_KEY;
@@ -26,8 +38,12 @@ export default async function handler(req, res) {
       llmApiKey = openrouterKey;
       llmBaseUrl = 'https://openrouter.ai/api/v1';
     } else {
-      return res.status(503).json({ error: 'AI_API_KEY_MISSING' });
+      console.error('[start-agent] No AI key configured (mock mode)');
+      return res.status(503).json({ error: 'AI_API_KEY_MISSING - DASHSCOPE_API_KEY veya OPENROUTER_API_KEY gerekli' });
     }
+  } else {
+    llmApiKey = qwenConfig.apiKey;
+    llmBaseUrl = qwenConfig.baseURL;
   }
 
   const settings = {
@@ -59,7 +75,7 @@ RULES:
   };
 
   res.json({
-    wsUrl: `wss://agent.deepgram.com/v1/agent/converse?Authorization=Token%20${apiKey}`,
+    wsUrl: `wss://agent.deepgram.com/v1/agent/converse?Authorization=Token%20${dgKey}`,
     settings,
   });
 }
