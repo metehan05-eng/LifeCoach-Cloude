@@ -190,9 +190,16 @@ export function useVoiceAgent({ onEmotionChange } = {}) {
             }
           } catch {}
         } else if (event.data instanceof Blob) {
-          event.data.arrayBuffer().then(buf => {
-            if (isActiveRef.current) playAudioBuffer(buf);
-          });
+          if (event.data.size > 0) {
+            event.data.arrayBuffer().then(buf => {
+              if (isActiveRef.current) {
+                console.log("[VoiceAgent] Audio chunk:", buf.byteLength, "bytes");
+                playAudioBuffer(buf);
+              }
+            });
+          }
+        } else {
+          console.warn("[VoiceAgent] Unknown data type:", typeof event.data, event.data?.constructor?.name);
         }
       };
 
