@@ -2,10 +2,6 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 
-/**
- * Deepgram Voice Agent WebSocket hook
- * Tek dokunuşla aç/kapat, barge-in, gerçek zamanlı konuşma
- */
 export function useVoiceAgent({ onEmotionChange } = {}) {
   const [isConnected, setIsConnected] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -17,25 +13,23 @@ export function useVoiceAgent({ onEmotionChange } = {}) {
   const streamRef = useRef(null);
   const audioCtxRef = useRef(null);
   const processorRef = useRef(null);
-  const sourceRef = useRef(null);
-  const gainRef = useRef(null);
+  const micSourceRef = useRef(null);
   const isActiveRef = useRef(false);
+  const nextAudioTimeRef = useRef(0);
+  const stopAudioRef = useRef(false);
 
   const addMessage = useCallback((role, text) => {
     setMessages(prev => [...prev, { role, text, id: Date.now() }]);
   }, []);
 
   const stopAudio = useCallback(() => {
-    if (gainRef.current) {
-      try {
-        gainRef.current.gain.linearRampToValueAtTime(0, audioCtxRef.current.currentTime + 0.05);
-      } catch {}
-      setTimeout(() => {
-        try { audioCtxRef.current?.close(); } catch {}
-        audioCtxRef.current = null;
-        gainRef.current = null;
-        sourceRef.current = null;
-      }, 100);
+    stopAudioRef.current = true;
+  }, []);
+
+  const resumePlayback = useCallback(() => {
+    stopAudioRef.current = false;
+    if (audioCtxRef.current?.state === 'suspended') {
+      audioCtxRef.current.resume();
     }
   }, []);
 
@@ -48,12 +42,57 @@ export function useVoiceAgent({ onEmotionChange } = {}) {
     onEmotionChange?.("idle");
 
     if (processorRef.current) { try { processorRef.current.disconnect(); } catch {} processorRef.current = null; }
-    if (sourceRef.current) { try { sourceRef.current.disconnect(); } catch {} sourceRef.current = null; }
+    if (micSourceRef.current) { try { micSourceRef.current.disconnect(); } catch {} micSourceRef.current = null; }
     if (streamRef.current) { streamRef.current.getTracks().forEach(t => t.stop()); streamRef.current = null; }
     if (wsRef.current?.readyState === WebSocket.OPEN) wsRef.current.close();
     wsRef.current = null;
-    stopAudio();
-  }, [stopAudio, onEmotionChange]);
+    if (audioCtxRef.current) {
+      try { audioCtxRef.current.close(); } catch {}
+      audioCtxRef.current = null;
+    }
+    nextAudioTimeRef.current = 0;
+    stopAudioRef.current = true;
+  }, [onEmotionChange]);
+
+  const getPlaybackCtx = useCallback(() => {
+    if (audioCtxRef.current) return audioCtxRef.current;
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    audioCtxRef.current = ctx;
+    nextAudioTimeRef.current = 0;
+    return ctx;
+  }, []);
+
+  const playAudioBuffer = useCallback((buffer) => {
+    try {
+      if (stopAudioRef.current) return;
+      const ctx = getPlaybackCtx();
+      if (ctx.state === 'suspended') ctx.resume();
+
+      const pcm = new Int16Array(buffer);
+      if (pcm.length === 0) return;
+      const float32 = new Float32Array(pcm.length);
+      for (let i = 0; i < pcm.length; i++) float32[i] = pcm[i] / 0x7FFF;
+
+      const audioBuffer = ctx.createBuffer(1, float32.length, 24000);
+      audioBuffer.getChannelData(0).set(float32);
+
+      const source = ctx.createBufferSource();
+      source.buffer = audioBuffer;
+
+      const gain = ctx.createGain();
+      gain.gain.value = 1;
+
+      source.connect(gain);
+      gain.connect(ctx.destination);
+
+      const now = ctx.currentTime;
+      const startTime = Math.max(now, nextAudioTimeRef.current);
+      source.start(startTime);
+      nextAudioTimeRef.current = startTime + audioBuffer.duration;
+    } catch (err) {
+      console.warn("[VoiceAgent Audio] Error:", err.message);
+    }
+  }, [getPlaybackCtx]);
 
   const startMicStream = useCallback((ws) => {
     navigator.mediaDevices.getUserMedia({ audio: { sampleRate: 16000, channelCount: 1, echoCancellation: true } })
@@ -62,11 +101,10 @@ export function useVoiceAgent({ onEmotionChange } = {}) {
         streamRef.current = stream;
         setIsListening(true);
 
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
-        audioCtxRef.current = audioCtx;
+        const audioCtx = getPlaybackCtx();
 
         const source = audioCtx.createMediaStreamSource(stream);
-        sourceRef.current = source;
+        micSourceRef.current = source;
 
         const processor = audioCtx.createScriptProcessor(4096, 1, 1);
         processorRef.current = processor;
@@ -88,34 +126,7 @@ export function useVoiceAgent({ onEmotionChange } = {}) {
         console.warn("[VoiceAgent Mic] Error:", err.message);
         if (isActiveRef.current) disconnect();
       });
-  }, [disconnect]);
-
-  const playAudioBuffer = useCallback((buffer) => {
-    try {
-      const ctx = audioCtxRef.current || new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 24000 });
-      audioCtxRef.current = ctx;
-
-      const pcm = new Int16Array(buffer);
-      const float32 = new Float32Array(pcm.length);
-      for (let i = 0; i < pcm.length; i++) float32[i] = pcm[i] / 0x7FFF;
-
-      const audioBuffer = ctx.createBuffer(1, float32.length, 24000);
-      audioBuffer.getChannelData(0).set(float32);
-
-      const source = ctx.createBufferSource();
-      source.buffer = audioBuffer;
-
-      const gain = ctx.createGain();
-      gain.gain.value = 1;
-      gainRef.current = gain;
-
-      source.connect(gain);
-      gain.connect(ctx.destination);
-      source.start();
-    } catch (err) {
-      console.warn("[VoiceAgent Audio] Error:", err.message);
-    }
-  }, []);
+  }, [disconnect, getPlaybackCtx]);
 
   const connect = useCallback(async () => {
     try {
@@ -146,13 +157,15 @@ export function useVoiceAgent({ onEmotionChange } = {}) {
               case "SettingsApplied":
                 startMicStream(ws);
                 break;
-              case "ConversationText":
-                if (msg.role === "user") setTranscript(msg.text);
+              case "ConversationText": {
+                const ct = msg.content ?? msg.text ?? '';
+                if (msg.role === "user") setTranscript(ct);
                 else if (msg.role === "assistant") {
-                  addMessage("assistant", msg.text);
+                  addMessage("assistant", ct);
                   setTranscript("");
                 }
                 break;
+              }
               case "UserStartedSpeaking":
                 setIsSpeaking(false);
                 setIsListening(true);
@@ -192,7 +205,11 @@ export function useVoiceAgent({ onEmotionChange } = {}) {
         setIsSpeaking(false);
         setTranscript("");
         onEmotionChange?.("idle");
-        stopAudio();
+        if (audioCtxRef.current) {
+          try { audioCtxRef.current.close(); } catch {}
+          audioCtxRef.current = null;
+        }
+        nextAudioTimeRef.current = 0;
       };
 
     } catch (err) {
