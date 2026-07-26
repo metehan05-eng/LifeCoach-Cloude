@@ -167,7 +167,8 @@ export function useVoiceAgent({ onEmotionChange } = {}) {
       }
       const { wsUrl, settings, token } = await configRes.json();
 
-      const ws = new WebSocket(wsUrl, ["token", token]);
+      const cleanToken = (token || "").trim();
+      const ws = new WebSocket(wsUrl, ["token", cleanToken]);
       ws.binaryType = "arraybuffer";
       wsRef.current = ws;
       isActiveRef.current = true;
@@ -216,6 +217,10 @@ export function useVoiceAgent({ onEmotionChange } = {}) {
                 setIsSpeaking(false);
                 setIsListening(true);
                 onEmotionChange?.("idle");
+                break;
+              case "Error":
+                console.error("[VoiceAgent] Deepgram server error:", msg);
+                setError(`Deepgram Hatası: ${msg.message || msg.description || JSON.stringify(msg)}`);
                 break;
             }
           } catch {}
