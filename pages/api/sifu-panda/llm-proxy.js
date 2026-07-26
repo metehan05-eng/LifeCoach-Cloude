@@ -39,7 +39,7 @@ export default async function handler(req, res) {
   }
 
   const provider = PROVIDERS.find(p => p.match(body.model)) || PROVIDERS[0];
-  const model = body.model || (provider.name === 'gemini' ? 'gemini-3.6-flash' : 'qwen3.7-plus');
+  const model = body.model || (provider.name === 'gemini' ? 'gemini-2.0-flash' : 'qwen-plus');
 
   body.model = model;
   if (body.max_tokens === undefined) body.max_tokens = 150;

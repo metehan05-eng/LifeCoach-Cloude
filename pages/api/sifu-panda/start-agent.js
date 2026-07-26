@@ -25,7 +25,10 @@ export default async function handler(req, res) {
 
   const host = req.headers['x-forwarded-host'] || req.headers['host'] || 'han-ai.dev';
   const protocol = req.headers['x-forwarded-proto'] || 'https';
-  const llmModel = hasGemini ? 'gemini-3.6-flash' : 'qwen3.7-plus';
+
+  // gemini-2.0-flash is the correct model name for Google's OpenAI-compatible API
+  const llmModel = hasGemini ? 'gemini-2.0-flash' : 'qwen-plus';
+  const llmProxyUrl = `${protocol}://${host}/api/sifu-panda/llm-proxy`;
 
   const settings = {
     audio: {
@@ -38,12 +41,14 @@ export default async function handler(req, res) {
         provider: { type: 'deepgram', model: 'nova-3' },
       },
       think: {
-        provider: { type: 'open_ai', model: llmModel, temperature: 0.8 },
-        endpoint: {
-          url: `${protocol}://${host}/api/sifu-panda/llm-proxy`,
-          headers: {},
+        // Must use type: 'custom' for a custom/proxy LLM endpoint (Deepgram docs)
+        provider: {
+          type: 'custom',
+          url: llmProxyUrl,
         },
-        prompt: 'You are Sifu Panda, a wise kung fu master. Speak English in 1-2 short sentences. Warm, encouraging, never mention being AI.',
+        model: llmModel,
+        // 'instructions' is the correct field name in Deepgram Voice Agent API
+        instructions: 'You are Sifu Panda, a wise and warm kung fu master panda. Respond in 1-2 short sentences only. Be encouraging and wise. Never mention being an AI.',
       },
       speak: {
         provider: { type: 'deepgram', model: 'aura-orion-en' },
