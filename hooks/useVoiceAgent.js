@@ -59,7 +59,9 @@ export function useVoiceAgent({ onEmotionChange } = {}) {
   const getPlaybackCtx = useCallback(() => {
     let ctx = audioCtxRef.current;
     if (!ctx || ctx.state === 'closed') {
-      ctx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 24000 });
+      // Don't force sampleRate – let the browser use its native rate;
+      // AudioBuffer created at 24000 Hz will be resampled automatically.
+      ctx = new (window.AudioContext || window.webkitAudioContext)();
       audioCtxRef.current = ctx;
       nextAudioTimeRef.current = 0;
     }
@@ -126,7 +128,9 @@ export function useVoiceAgent({ onEmotionChange } = {}) {
           ws.send(pcm.buffer);
         };
 
+        // processor must be connected to destination to keep the audio graph active
         source.connect(processor);
+        processor.connect(micCtx.destination);
       })
       .catch(err => {
         console.warn("[VoiceAgent Mic] Error:", err.message);

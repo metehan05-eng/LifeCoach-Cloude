@@ -41,13 +41,15 @@ export default async function handler(req, res) {
         provider: { type: 'deepgram', model: 'nova-3' },
       },
       think: {
-        // Must use type: 'custom' for a custom/proxy LLM endpoint (Deepgram docs)
-        provider: {
-          type: 'custom',
-          url: llmProxyUrl,
-        },
+        // type: 'open_ai' + endpoint.url is the correct Deepgram format for custom LLM proxy
+        provider: { type: 'open_ai' },
         model: llmModel,
-        // 'instructions' is the correct field name in Deepgram Voice Agent API
+        temperature: 0.8,
+        endpoint: {
+          url: llmProxyUrl,
+          headers: {},
+        },
+        // 'instructions' is the correct Deepgram Voice Agent field for system prompt
         instructions: 'You are Sifu Panda, a wise and warm kung fu master panda. Respond in 1-2 short sentences only. Be encouraging and wise. Never mention being an AI.',
       },
       speak: {
