@@ -1,13 +1,8 @@
-import { getQwenConfig } from '../../../lib/qwen-api.js';
-
 export default async function handler(req, res) {
   if (req.method === 'GET') {
-    const qwenConfig = getQwenConfig();
     return res.json({
       dgKey: !!(process.env.DEEPGRAM_API_KEY && !process.env.DEEPGRAM_API_KEY.includes('PLACEHOLDER')),
-      qwenProvider: qwenConfig.provider,
-      qwenModel: qwenConfig.model,
-      qwenBaseUrl: qwenConfig.baseURL,
+      llmKey: !!(process.env.DASHSCOPE_API_KEY || process.env.QWEN_API_KEY),
     });
   }
 
@@ -17,27 +12,15 @@ export default async function handler(req, res) {
 
   const dgKey = process.env.DEEPGRAM_API_KEY;
   if (!dgKey || dgKey.includes('PLACEHOLDER')) {
-    console.error('[start-agent] DEEPGRAM_API_KEY missing or placeholder');
     return res.status(503).json({ error: 'DEEPGRAM_API_KEY not configured' });
   }
 
-  const qwenConfig = getQwenConfig();
-  let llmApiKey;
-  let llmBaseUrl;
-
-  if (qwenConfig.provider === 'mock') {
-    const openrouterKey = process.env.OPENROUTER_API_KEY;
-    if (openrouterKey && !openrouterKey.includes('Your') && !openrouterKey.includes('PLACEHOLDER')) {
-      llmApiKey = openrouterKey;
-      llmBaseUrl = 'https://openrouter.ai/api/v1';
-    } else {
-      console.error('[start-agent] No AI key configured (mock mode)');
-      return res.status(503).json({ error: 'AI_API_KEY_MISSING - DASHSCOPE_API_KEY veya OPENROUTER_API_KEY gerekli' });
-    }
-  } else {
-    llmApiKey = qwenConfig.apiKey;
-    llmBaseUrl = qwenConfig.baseURL;
+  if (!process.env.DASHSCOPE_API_KEY && !process.env.QWEN_API_KEY) {
+    return res.status(503).json({ error: 'LLM_API_KEY_MISSING - DASHSCOPE_API_KEY veya QWEN_API_KEY gerekli' });
   }
+
+  const host = req.headers['x-forwarded-host'] || req.headers['host'] || 'han-ai.dev';
+  const protocol = req.headers['x-forwarded-proto'] || 'https';
 
   const settings = {
     audio: {
@@ -50,10 +33,10 @@ export default async function handler(req, res) {
         provider: { type: 'deepgram', model: 'nova-3' },
       },
       think: {
-        provider: { type: 'open_ai', model: qwenConfig.model, temperature: 0.8 },
+        provider: { type: 'open_ai', model: 'qwen3.7-plus', temperature: 0.8 },
         endpoint: {
-          url: llmBaseUrl.replace(/\/$/, '') + '/chat/completions',
-          headers: { authorization: `Bearer ${llmApiKey}` },
+          url: `${protocol}://${host}/api/sifu-panda/llm-proxy`,
+          headers: {},
         },
         prompt: [
           'You are Sifu Panda — a wise, calm, and slightly humorous kung fu master panda.',
