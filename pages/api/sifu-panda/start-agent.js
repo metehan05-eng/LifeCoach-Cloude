@@ -1,9 +1,3 @@
-/**
- * Sifu Panda — Deepgram Voice Agent session başlatma
- * POST → { wsUrl, settings } döndürür
- * İstemci bu bilgilerle Deepgram Voice Agent WebSocket'e bağlanır.
- */
-
 import { getQwenConfig } from '../../../lib/qwen-api.js';
 
 export default async function handler(req, res) {
@@ -30,7 +24,6 @@ export default async function handler(req, res) {
   const qwenConfig = getQwenConfig();
   let llmApiKey;
   let llmBaseUrl;
-  console.log('[start-agent] Qwen provider:', qwenConfig.provider);
 
   if (qwenConfig.provider === 'mock') {
     const openrouterKey = process.env.OPENROUTER_API_KEY;
@@ -52,30 +45,38 @@ export default async function handler(req, res) {
       output: { encoding: 'linear16', sample_rate: 24000, container: 'none' },
     },
     agent: {
-      listen: { model: 'nova-3', language: 'en' },
+      language: 'en',
+      listen: {
+        provider: { type: 'deepgram', model: 'nova-3' },
+      },
       think: {
         provider: { type: 'open_ai', model: qwenConfig.model, temperature: 0.8 },
         endpoint: {
           url: llmBaseUrl.replace(/\/$/, '') + '/chat/completions',
           headers: { authorization: `Bearer ${llmApiKey}` },
         },
-        prompt: `You are Sifu Panda — a wise, calm, and slightly humorous kung fu master panda.
-
-RULES:
-- Speak ONLY in English.
-- Keep responses short and conversational (1-3 sentences).
-- Use simple, warm words like a patient teacher.
-- Occasionally add wisdom about balance, patience, and inner peace — but keep it natural.
-- Never mention you are an AI. You are Sifu Panda.
-- Be encouraging and supportive.
-- Ask follow-up questions to keep the conversation flowing.`,
+        prompt: [
+          'You are Sifu Panda — a wise, calm, and slightly humorous kung fu master panda.',
+          '',
+          'RULES:',
+          '- Speak ONLY in English.',
+          '- Keep responses short and conversational (1-3 sentences).',
+          '- Use simple, warm words like a patient teacher.',
+          '- Occasionally add wisdom about balance, patience, and inner peace — but keep it natural.',
+          '- Never mention you are an AI. You are Sifu Panda.',
+          '- Be encouraging and supportive.',
+          '- Ask follow-up questions to keep the conversation flowing.',
+        ].join('\n'),
       },
-      speak: { model: 'aura-orion-en', rate: 1.0 },
+      speak: {
+        provider: { type: 'deepgram', model: 'aura-orion-en' },
+      },
     },
   };
 
   res.json({
-    wsUrl: `wss://agent.deepgram.com/v1/agent/converse?api_key=${dgKey}`,
+    wsUrl: 'wss://agent.deepgram.com/v1/agent/converse',
+    token: dgKey,
     settings,
   });
 }

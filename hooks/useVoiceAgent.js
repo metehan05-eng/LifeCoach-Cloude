@@ -124,9 +124,9 @@ export function useVoiceAgent({ onEmotionChange } = {}) {
 
       const configRes = await fetch("/api/sifu-panda/start-agent", { method: "POST" });
       if (!configRes.ok) throw new Error("Agent config failed");
-      const { wsUrl, settings } = await configRes.json();
+      const { wsUrl, settings, token } = await configRes.json();
 
-      const ws = new WebSocket(wsUrl);
+      const ws = new WebSocket(wsUrl, ["token", token]);
       wsRef.current = ws;
       isActiveRef.current = true;
 
