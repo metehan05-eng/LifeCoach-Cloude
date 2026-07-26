@@ -23,7 +23,7 @@ export default async function handler(req, res) {
     return res.status(503).json({ error: 'AI_API_KEY_MISSING - GOOGLE_GEMINI_API_KEY veya DASHSCOPE_API_KEY gerekli' });
   }
 
-  // Safely parse host and protocol (x-forwarded-host can contain multiple comma-separated values behind proxies)
+  // Safely parse host and protocol
   const rawHost = req.headers['x-forwarded-host'] || req.headers['host'] || '';
   const host = rawHost.split(',')[0].trim();
   const rawProto = req.headers['x-forwarded-proto'] || 'https';
@@ -35,7 +35,7 @@ export default async function handler(req, res) {
   }
   const llmProxyUrl = `${baseUrl}/api/sifu-panda/llm-proxy`;
 
-  const llmModel = hasGemini ? 'gemini-2.0-flash' : 'qwen-plus';
+  const llmModel = hasGemini ? 'gemini-1.5-flash' : 'qwen-plus';
 
   const settings = {
     audio: {
@@ -48,7 +48,7 @@ export default async function handler(req, res) {
         provider: { type: 'deepgram', model: 'nova-3' },
       },
       think: {
-        provider: { type: 'open_ai', model: llmModel, temperature: 0.8 },
+        provider: { type: 'open_ai', model: llmModel, temperature: 0.7 },
         endpoint: {
           url: llmProxyUrl,
         },

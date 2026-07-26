@@ -2,35 +2,10 @@ export const config = {
   api: { bodyParser: true },
 };
 
-const PROVIDERS = [];
-
 const geminiKey = process.env.GOOGLE_GEMINI_API_KEY;
-if (geminiKey && !geminiKey.includes('PLACEHOLDER')) {
-  PROVIDERS.push({
-    name: 'gemini',
-    match: (model) => model?.toLowerCase().startsWith('gemini'),
-    url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${geminiKey}` },
-    authQuery: '',
-  });
-}
-
 const dashscopeKey = process.env.DASHSCOPE_API_KEY || process.env.QWEN_API_KEY;
-if (dashscopeKey && !dashscopeKey.includes('PLACEHOLDER')) {
-  PROVIDERS.push({
-    name: 'dashscope',
-    match: () => true,
-    url: process.env.QWEN_BASE_URL || 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${dashscopeKey}` },
-    authQuery: '',
-  });
-}
 
 export default async function handler(req, res) {
-  if (PROVIDERS.length === 0) {
-    return res.status(500).json({ error: 'No LLM provider configured (set GOOGLE_GEMINI_API_KEY or DASHSCOPE_API_KEY)' });
-  }
-
   let body;
   try {
     body = typeof req.body === 'object' ? req.body : JSON.parse(req.body || '{}');
@@ -38,43 +13,78 @@ export default async function handler(req, res) {
     body = {};
   }
 
-  const provider = PROVIDERS.find(p => p.match(body.model)) || PROVIDERS[0];
-  const model = body.model || (provider.name === 'gemini' ? 'gemini-2.0-flash' : 'qwen-plus');
+  const hasGemini = geminiKey && !geminiKey.includes('PLACEHOLDER');
+  const hasDashscope = dashscopeKey && !dashscopeKey.includes('PLACEHOLDER');
 
-  body.model = model;
-  if (body.max_tokens === undefined) body.max_tokens = 150;
-  if (body.temperature === undefined) body.temperature = 0.8;
+  if (!hasGemini && !hasDashscope) {
+    console.error("[llm-proxy] No valid LLM key found");
+    return res.status(500).json({ error: 'No valid LLM provider configured' });
+  }
 
-  const targetUrl = provider.authQuery
-    ? provider.url + '?' + provider.authQuery
-    : provider.url;
+  // Determine provider
+  const useGemini = hasGemini && (body.model?.toLowerCase().startsWith('gemini') || !hasDashscope);
+  const targetUrl = useGemini
+    ? 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions'
+    : (process.env.QWEN_BASE_URL || 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions');
+
+  const apiKey = useGemini ? geminiKey : dashscopeKey;
+  const requestedModel = body.model || (useGemini ? 'gemini-1.5-flash' : 'qwen-plus');
+
+  // Sanitize payload to strict OpenAI Chat Completions format (removes Deepgram metadata that causes 400 errors)
+  const cleanBody = {
+    model: requestedModel,
+    messages: Array.isArray(body.messages)
+      ? body.messages.map(m => ({
+          role: m.role === 'assistant' ? 'assistant' : m.role === 'system' ? 'system' : 'user',
+          content: typeof m.content === 'string' ? m.content : String(m.content || ''),
+        }))
+      : [{ role: 'user', content: 'Hello' }],
+    temperature: typeof body.temperature === 'number' ? body.temperature : 0.7,
+    max_tokens: typeof body.max_tokens === 'number' ? body.max_tokens : 150,
+    stream: body.stream !== false,
+  };
 
   const logId = Date.now().toString(36);
-  console.log(`[llm-proxy/${logId}] provider=${provider.name} model=${model} stream=${!!body.stream}`);
+  console.log(`[llm-proxy/${logId}] provider=${useGemini ? 'gemini' : 'dashscope'} model=${cleanBody.model} stream=${cleanBody.stream}`);
 
   try {
-    const resp = await fetch(targetUrl, {
+    let resp = await fetch(targetUrl, {
       method: 'POST',
-      headers: provider.headers,
-      body: JSON.stringify(body),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey.trim()}`,
+      },
+      body: JSON.stringify(cleanBody),
     });
 
-    console.log(`[llm-proxy/${logId}] response status=${resp.status} contentType=${resp.headers.get('content-type')}`);
-
-    const contentType = resp.headers.get('content-type') || '';
+    // Fallback model retry for Gemini if 400/404
+    if (!resp.ok && useGemini && cleanBody.model !== 'gemini-1.5-flash') {
+      console.warn(`[llm-proxy/${logId}] ${cleanBody.model} failed (${resp.status}), retrying with gemini-1.5-flash...`);
+      cleanBody.model = 'gemini-1.5-flash';
+      resp = await fetch(targetUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey.trim()}`,
+        },
+        body: JSON.stringify(cleanBody),
+      });
+    }
 
     if (!resp.ok) {
       const errText = await resp.text().catch(() => '');
-      console.error(`[llm-proxy/${logId}] error:`, errText.slice(0, 800));
-      let errDetail = errText;
-      try { errDetail = JSON.stringify(JSON.parse(errText), null, 2).slice(0, 500); } catch {}
-      return res.status(resp.status).json({ error: `LLM API returned ${resp.status}`, detail: errDetail });
+      console.error(`[llm-proxy/${logId}] LLM Error (${resp.status}):`, errText.slice(0, 500));
+      return res.status(resp.status).json({ error: `LLM API Error ${resp.status}`, detail: errText });
     }
 
+    const contentType = resp.headers.get('content-type') || '';
     if (contentType.includes('text/event-stream')) {
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+
       const reader = resp.body.getReader();
       const decoder = new TextDecoder();
-      res.setHeader('Content-Type', 'text/event-stream');
       let chunkCount = 0;
       while (true) {
         const { done, value } = await reader.read();
@@ -82,15 +92,14 @@ export default async function handler(req, res) {
         chunkCount++;
         res.write(decoder.decode(value, { stream: true }));
       }
-      console.log(`[llm-proxy/${logId}] stream complete, ${chunkCount} chunks`);
+      console.log(`[llm-proxy/${logId}] Stream complete (${chunkCount} chunks)`);
       res.end();
     } else {
       const data = await resp.json();
-      console.log(`[llm-proxy/${logId}] json response, choices=${data?.choices?.length || 0}`);
-      res.status(resp.status).json(data);
+      res.status(200).json(data);
     }
   } catch (err) {
-    console.error(`[llm-proxy/${logId}] fetch error:`, err.message);
+    console.error(`[llm-proxy/${logId}] Fetch Exception:`, err.message);
     res.status(502).json({ error: err.message });
   }
 }
