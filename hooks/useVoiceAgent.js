@@ -12,6 +12,7 @@ export function useVoiceAgent({ onEmotionChange } = {}) {
   const wsRef = useRef(null);
   const streamRef = useRef(null);
   const audioCtxRef = useRef(null);
+  const micCtxRef = useRef(null);
   const processorRef = useRef(null);
   const micSourceRef = useRef(null);
   const isActiveRef = useRef(false);
@@ -43,6 +44,7 @@ export function useVoiceAgent({ onEmotionChange } = {}) {
 
     if (processorRef.current) { try { processorRef.current.disconnect(); } catch {} processorRef.current = null; }
     if (micSourceRef.current) { try { micSourceRef.current.disconnect(); } catch {} micSourceRef.current = null; }
+    if (micCtxRef.current) { try { micCtxRef.current.close(); } catch {} micCtxRef.current = null; }
     if (streamRef.current) { streamRef.current.getTracks().forEach(t => t.stop()); streamRef.current = null; }
     if (wsRef.current?.readyState === WebSocket.OPEN) wsRef.current.close();
     wsRef.current = null;
@@ -101,12 +103,13 @@ export function useVoiceAgent({ onEmotionChange } = {}) {
         streamRef.current = stream;
         setIsListening(true);
 
-        const audioCtx = getPlaybackCtx();
+        const micCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+        micCtxRef.current = micCtx;
 
-        const source = audioCtx.createMediaStreamSource(stream);
+        const source = micCtx.createMediaStreamSource(stream);
         micSourceRef.current = source;
 
-        const processor = audioCtx.createScriptProcessor(4096, 1, 1);
+        const processor = micCtx.createScriptProcessor(4096, 1, 1);
         processorRef.current = processor;
 
         processor.onaudioprocess = (e) => {
@@ -120,7 +123,6 @@ export function useVoiceAgent({ onEmotionChange } = {}) {
         };
 
         source.connect(processor);
-        processor.connect(audioCtx.destination);
       })
       .catch(err => {
         console.warn("[VoiceAgent Mic] Error:", err.message);
@@ -208,6 +210,10 @@ export function useVoiceAgent({ onEmotionChange } = {}) {
         if (audioCtxRef.current) {
           try { audioCtxRef.current.close(); } catch {}
           audioCtxRef.current = null;
+        }
+        if (micCtxRef.current) {
+          try { micCtxRef.current.close(); } catch {}
+          micCtxRef.current = null;
         }
         nextAudioTimeRef.current = 0;
       };

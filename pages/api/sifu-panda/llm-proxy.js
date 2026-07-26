@@ -39,7 +39,7 @@ export default async function handler(req, res) {
   }
 
   const provider = PROVIDERS.find(p => p.match(body.model)) || PROVIDERS[0];
-  const model = body.model || 'qwen3.7-plus';
+  const model = body.model || (provider.name === 'gemini' ? 'gemini-2.0-flash' : 'qwen3.7-plus');
 
   body.model = model;
   if (body.max_tokens === undefined) body.max_tokens = 150;
@@ -49,6 +49,9 @@ export default async function handler(req, res) {
     ? provider.url + '?' + provider.authQuery
     : provider.url;
 
+  const logId = Date.now().toString(36);
+  console.log(`[llm-proxy/${logId}] provider=${provider.name} model=${model} stream=${!!body.stream}`);
+
   try {
     const resp = await fetch(targetUrl, {
       method: 'POST',
@@ -56,24 +59,36 @@ export default async function handler(req, res) {
       body: JSON.stringify(body),
     });
 
+    console.log(`[llm-proxy/${logId}] response status=${resp.status} contentType=${resp.headers.get('content-type')}`);
+
     const contentType = resp.headers.get('content-type') || '';
+
+    if (!resp.ok) {
+      const errText = await resp.text().catch(() => '');
+      console.error(`[llm-proxy/${logId}] error response: ${errText.slice(0, 300)}`);
+      return res.status(resp.status).json({ error: `LLM API error: ${resp.status}`, detail: errText.slice(0, 200) });
+    }
 
     if (contentType.includes('text/event-stream')) {
       const reader = resp.body.getReader();
       const decoder = new TextDecoder();
       res.setHeader('Content-Type', 'text/event-stream');
+      let chunkCount = 0;
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
+        chunkCount++;
         res.write(decoder.decode(value, { stream: true }));
       }
+      console.log(`[llm-proxy/${logId}] stream complete, ${chunkCount} chunks`);
       res.end();
     } else {
       const data = await resp.json();
+      console.log(`[llm-proxy/${logId}] json response, choices=${data?.choices?.length || 0}`);
       res.status(resp.status).json(data);
     }
   } catch (err) {
-    console.error('[llm-proxy] error:', err.message);
+    console.error(`[llm-proxy/${logId}] fetch error:`, err.message);
     res.status(502).json({ error: err.message });
   }
 }
