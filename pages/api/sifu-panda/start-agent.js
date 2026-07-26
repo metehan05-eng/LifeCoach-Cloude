@@ -27,6 +27,7 @@ export default async function handler(req, res) {
   const protocol = req.headers['x-forwarded-proto'] || 'https';
 
   // gemini-2.0-flash is the correct model name for Google's OpenAI-compatible API
+  // IMPORTANT: keep model inside provider — this is the format Deepgram accepted (LLM was called)
   const llmModel = hasGemini ? 'gemini-2.0-flash' : 'qwen-plus';
   const llmProxyUrl = `${protocol}://${host}/api/sifu-panda/llm-proxy`;
 
@@ -41,16 +42,14 @@ export default async function handler(req, res) {
         provider: { type: 'deepgram', model: 'nova-3' },
       },
       think: {
-        // type: 'open_ai' + endpoint.url is the correct Deepgram format for custom LLM proxy
-        provider: { type: 'open_ai' },
-        model: llmModel,
-        temperature: 0.8,
+        // ORIGINAL format that was confirmed working (LLM was called, 200 OK)
+        // model and temperature stay inside provider, endpoint.url for custom proxy
+        provider: { type: 'open_ai', model: llmModel, temperature: 0.8 },
         endpoint: {
           url: llmProxyUrl,
           headers: {},
         },
-        // 'instructions' is the correct Deepgram Voice Agent field for system prompt
-        instructions: 'You are Sifu Panda, a wise and warm kung fu master panda. Respond in 1-2 short sentences only. Be encouraging and wise. Never mention being an AI.',
+        prompt: 'You are Sifu Panda, a wise and warm kung fu master panda. Respond in 1-2 short sentences only. Be encouraging and wise. Never mention being an AI.',
       },
       speak: {
         provider: { type: 'deepgram', model: 'aura-orion-en' },

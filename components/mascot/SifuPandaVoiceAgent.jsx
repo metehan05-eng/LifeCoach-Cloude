@@ -11,6 +11,7 @@ export default function SifuPandaVoiceAgent({ onBack, isMobile, onEmotionChange 
     isSpeaking,
     transcript,
     messages,
+    error,
     toggleConnection,
   } = useVoiceAgent({ onEmotionChange });
 
@@ -56,6 +57,12 @@ export default function SifuPandaVoiceAgent({ onBack, isMobile, onEmotionChange 
            isConnected ? "Connected" :
            "Tap the mic to start"}
         </p>
+        {/* Error display */}
+        {error && !isConnected && (
+          <p className="mt-2 max-w-xs text-xs text-red-400/80 leading-relaxed">
+            ⚠️ {error}
+          </p>
+        )}
       </div>
 
       {/* Mic Button */}

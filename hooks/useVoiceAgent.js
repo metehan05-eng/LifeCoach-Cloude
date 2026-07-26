@@ -8,6 +8,7 @@ export function useVoiceAgent({ onEmotionChange } = {}) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [messages, setMessages] = useState([]);
+  const [error, setError] = useState(null);
 
   const wsRef = useRef(null);
   const streamRef = useRef(null);
@@ -140,6 +141,7 @@ export function useVoiceAgent({ onEmotionChange } = {}) {
 
   const connect = useCallback(async () => {
     try {
+      setError(null);
       onEmotionChange?.("listening");
       setTranscript("");
       const ctx = getPlaybackCtx();
@@ -159,7 +161,10 @@ export function useVoiceAgent({ onEmotionChange } = {}) {
       }
 
       const configRes = await fetch("/api/sifu-panda/start-agent", { method: "POST" });
-      if (!configRes.ok) throw new Error("Agent config failed");
+      if (!configRes.ok) {
+        const errJson = await configRes.json().catch(() => ({}));
+        throw new Error(errJson.error || `Agent config failed (${configRes.status})`);
+      }
       const { wsUrl, settings, token } = await configRes.json();
 
       const ws = new WebSocket(wsUrl, ["token", token]);
@@ -234,11 +239,17 @@ export function useVoiceAgent({ onEmotionChange } = {}) {
       ws.onerror = (ev) => {
         if (!isActiveRef.current) return;
         console.error("[VoiceAgent] WebSocket error:", ev);
+        setError("Deepgram bağlantısı başarısız. API anahtarını kontrol et.");
         onEmotionChange?.("idle");
         setIsConnected(false);
       };
 
-      ws.onclose = () => {
+      ws.onclose = (ev) => {
+        const reason = ev.reason || `code=${ev.code}`;
+        console.warn("[VoiceAgent] WebSocket closed:", reason, "code:", ev.code);
+        if (ev.code !== 1000) {
+          setError(`Bağlantı kapandı: ${reason || ev.code}`);
+        }
         setIsConnected(false);
         setIsListening(false);
         setIsSpeaking(false);
@@ -257,6 +268,7 @@ export function useVoiceAgent({ onEmotionChange } = {}) {
 
     } catch (err) {
       console.error("[VoiceAgent] Error:", err);
+      setError(err.message);
       onEmotionChange?.("idle");
     }
   }, [startMicStream, stopAudio, playAudioBuffer, addMessage, onEmotionChange]);
@@ -279,6 +291,7 @@ export function useVoiceAgent({ onEmotionChange } = {}) {
     isSpeaking,
     transcript,
     messages,
+    error,
     toggleConnection,
     disconnect,
   };
