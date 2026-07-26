@@ -20,6 +20,8 @@ export default async function handler(req, res) {
   }
 
   body.model = model;
+  if (body.max_tokens === undefined) body.max_tokens = 150;
+  if (body.temperature === undefined) body.temperature = 0.8;
 
   try {
     const resp = await fetch(targetUrl, {
