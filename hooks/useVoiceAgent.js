@@ -132,7 +132,21 @@ export function useVoiceAgent({ onEmotionChange } = {}) {
     try {
       onEmotionChange?.("listening");
       setTranscript("");
-      getPlaybackCtx();
+      const ctx = getPlaybackCtx();
+      console.log("[VoiceAgent] AudioCtx state:", ctx.state, "sampleRate:", ctx.sampleRate);
+      // Test beep
+      try {
+        const osc = ctx.createOscillator();
+        const testGain = ctx.createGain();
+        testGain.gain.value = 0.3;
+        osc.frequency.value = 800;
+        osc.connect(testGain);
+        testGain.connect(ctx.destination);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.1);
+      } catch (e) {
+        console.warn("[VoiceAgent] Beep error:", e);
+      }
 
       const configRes = await fetch("/api/sifu-panda/start-agent", { method: "POST" });
       if (!configRes.ok) throw new Error("Agent config failed");
