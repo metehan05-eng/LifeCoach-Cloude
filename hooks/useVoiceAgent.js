@@ -57,10 +57,13 @@ export function useVoiceAgent({ onEmotionChange } = {}) {
   }, [onEmotionChange]);
 
   const getPlaybackCtx = useCallback(() => {
-    if (audioCtxRef.current) return audioCtxRef.current;
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    audioCtxRef.current = ctx;
-    nextAudioTimeRef.current = 0;
+    let ctx = audioCtxRef.current;
+    if (!ctx || ctx.state === 'closed') {
+      ctx = new (window.AudioContext || window.webkitAudioContext)();
+      audioCtxRef.current = ctx;
+      nextAudioTimeRef.current = 0;
+    }
+    if (ctx.state === 'suspended') ctx.resume();
     return ctx;
   }, []);
 
@@ -134,6 +137,7 @@ export function useVoiceAgent({ onEmotionChange } = {}) {
     try {
       onEmotionChange?.("listening");
       setTranscript("");
+      getPlaybackCtx();
 
       const configRes = await fetch("/api/sifu-panda/start-agent", { method: "POST" });
       if (!configRes.ok) throw new Error("Agent config failed");
