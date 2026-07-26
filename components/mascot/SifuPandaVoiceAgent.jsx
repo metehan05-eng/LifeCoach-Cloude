@@ -8,6 +8,7 @@ export default function SifuPandaVoiceAgent({ onBack, isMobile, onEmotionChange 
   const {
     isConnected,
     isListening,
+    isThinking,
     isSpeaking,
     transcript,
     messages,
@@ -15,7 +16,7 @@ export default function SifuPandaVoiceAgent({ onBack, isMobile, onEmotionChange 
     toggleConnection,
   } = useVoiceAgent({ onEmotionChange });
 
-  const emotion = isListening ? "listening" : isSpeaking ? "speaking" : "idle";
+  const emotion = isThinking ? "thoughtful" : isListening ? "listening" : isSpeaking ? "speaking" : "idle";
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -51,7 +52,8 @@ export default function SifuPandaVoiceAgent({ onBack, isMobile, onEmotionChange 
           Sifu Panda
         </h2>
         <p className="mt-1 text-sm" style={{ color: "var(--text-muted)" }}>
-          {isListening && transcript ? `"${transcript}"` :
+          {isThinking ? "Sifu Panda is thinking..." :
+           isListening && transcript ? `"${transcript}"` :
            isListening ? "Listening..." :
            isSpeaking ? "Sifu Panda is speaking..." :
            isConnected ? "Connected" :

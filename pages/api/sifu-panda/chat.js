@@ -1,68 +1,65 @@
-/**
- * Sifu Panda — AI Chat (Voice Agent)
- * POST { text } → Qwen AI → { reply }
- * Speaks English, wise panda persona.
- */
-
-import OpenAI from 'openai';
-import { getQwenConfig } from '../../../lib/qwen-api.js';
-
-const SYSTEM_PROMPT = `You are Sifu Panda — a wise, calm, and slightly humorous kung fu master panda.
-
-RULES:
-- Speak ONLY in English.
-- Keep responses short and conversational (1-3 sentences).
-- Use simple, warm words like a patient teacher.
-- Occasionally add wisdom about balance, patience, and inner peace — but keep it natural.
-- Never mention you are an AI. You are Sifu Panda.
-- Be encouraging and supportive.
-- Use metaphors from nature and kung fu when appropriate.
-- Respond to what the user said, ask follow-up questions to keep conversation flowing.`;
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { text, history = [] } = req.body;
-  if (!text?.trim()) {
-    return res.status(400).json({ error: 'Text is required' });
+  const geminiKey = process.env.GOOGLE_GEMINI_API_KEY;
+  const dashscopeKey = process.env.DASHSCOPE_API_KEY || process.env.QWEN_API_KEY;
+
+  if (!geminiKey && !dashscopeKey) {
+    return res.status(503).json({ error: 'AI API key missing (GOOGLE_GEMINI_API_KEY)' });
   }
 
-  const qwenConfig = getQwenConfig();
-  let apiKey = qwenConfig.apiKey;
-  let baseURL = qwenConfig.baseURL;
-
-  if (qwenConfig.provider === 'mock') {
-    const openrouterKey = process.env.OPENROUTER_API_KEY;
-    if (openrouterKey && !openrouterKey.includes('Your') && !openrouterKey.includes('PLACEHOLDER')) {
-      apiKey = openrouterKey;
-      baseURL = 'https://openrouter.ai/api/v1';
-    } else {
-      return res.status(503).json({ error: 'AI_API_KEY_MISSING' });
-    }
+  const { message, history } = req.body || {};
+  if (!message || typeof message !== 'string') {
+    return res.status(400).json({ error: 'Message is required' });
   }
+
+  const systemPrompt = "You are Sifu Panda, a wise, warm, and encouraging kung fu master panda. Respond in 1-2 short, inspiring sentences. Be encouraging and wise. Reply in the same language as the user. Never mention being an AI.";
+
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    ...(Array.isArray(history) ? history.slice(-6).map(m => ({
+      role: m.role === 'assistant' ? 'assistant' : 'user',
+      content: String(m.text || m.content || '')
+    })) : []),
+    { role: 'user', content: message }
+  ];
+
+  const useGemini = !!(geminiKey && !geminiKey.includes('PLACEHOLDER'));
+  const targetUrl = useGemini
+    ? 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions'
+    : (process.env.QWEN_BASE_URL || 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions');
+
+  const apiKey = useGemini ? geminiKey : dashscopeKey;
+  const model = useGemini ? 'gemini-1.5-flash' : 'qwen-plus';
 
   try {
-    const client = new OpenAI({ apiKey, baseURL });
-
-    const msgs = [
-      { role: 'system', content: SYSTEM_PROMPT },
-      ...history.slice(-6).map(m => ({ role: m.role, content: m.text || m.content })),
-      { role: 'user', content: text },
-    ];
-
-    const completion = await client.chat.completions.create({
-      model: qwenConfig.model,
-      messages: msgs,
-      temperature: 0.8,
-      max_tokens: 300,
+    const resp = await fetch(targetUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey.trim()}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        temperature: 0.7,
+        max_tokens: 150,
+      }),
     });
 
-    const reply = completion.choices?.[0]?.message?.content || '...';
-    res.json({ reply: reply.trim() });
+    if (!resp.ok) {
+      const errText = await resp.text().catch(() => '');
+      console.error("[sifu-panda/chat] Gemini API error:", resp.status, errText);
+      return res.status(resp.status).json({ error: `AI Error ${resp.status}`, detail: errText });
+    }
+
+    const data = await resp.json();
+    const replyText = data?.choices?.[0]?.message?.content || "Focus your mind, young warrior. Peace begins within.";
+    return res.status(200).json({ reply: replyText });
   } catch (err) {
-    console.error('[Sifu Panda Chat] Error:', err.message);
-    res.status(502).json({ error: err.message });
+    console.error("[sifu-panda/chat] Error:", err.message);
+    return res.status(500).json({ error: err.message });
   }
 }

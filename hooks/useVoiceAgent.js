@@ -5,278 +5,212 @@ import { useState, useRef, useCallback, useEffect } from "react";
 export function useVoiceAgent({ onEmotionChange } = {}) {
   const [isConnected, setIsConnected] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [isThinking, setIsThinking] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [messages, setMessages] = useState([]);
   const [error, setError] = useState(null);
 
-  const wsRef = useRef(null);
-  const streamRef = useRef(null);
-  const audioCtxRef = useRef(null);
-  const micCtxRef = useRef(null);
-  const processorRef = useRef(null);
-  const micSourceRef = useRef(null);
+  const recognitionRef = useRef(null);
   const isActiveRef = useRef(false);
-  const nextAudioTimeRef = useRef(0);
-  const stopAudioRef = useRef(false);
+  const isThinkingRef = useRef(false);
+  const isSpeakingRef = useRef(false);
+  const messagesRef = useRef([]);
+
+  messagesRef.current = messages;
 
   const addMessage = useCallback((role, text) => {
     setMessages(prev => [...prev, { role, text, id: Date.now() }]);
   }, []);
 
   const stopAudio = useCallback(() => {
-    stopAudioRef.current = true;
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    isSpeakingRef.current = false;
+    setIsSpeaking(false);
   }, []);
 
-  const resumePlayback = useCallback(() => {
-    stopAudioRef.current = false;
-    if (audioCtxRef.current?.state === 'suspended') {
-      audioCtxRef.current.resume();
+  const speakText = useCallback((text, onEndCallback) => {
+    if (typeof window === "undefined" || !window.speechSynthesis) {
+      onEndCallback?.();
+      return;
     }
-  }, []);
+
+    stopAudio();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1.0;
+    utterance.pitch = 0.85;
+
+    // Pick a natural voice if available
+    const voices = window.speechSynthesis.getVoices();
+    const googleVoice = voices.find(v => (v.name.includes("Google") || v.name.includes("Natural")) && v.lang.startsWith("en"))
+      || voices.find(v => v.lang.startsWith("en"))
+      || voices[0];
+    if (googleVoice) utterance.voice = googleVoice;
+
+    utterance.onstart = () => {
+      isSpeakingRef.current = true;
+      setIsSpeaking(true);
+      setIsListening(false);
+      onEmotionChange?.("speaking");
+    };
+
+    utterance.onend = () => {
+      isSpeakingRef.current = false;
+      setIsSpeaking(false);
+      onEmotionChange?.("idle");
+      onEndCallback?.();
+    };
+
+    utterance.onerror = (e) => {
+      console.warn("[VoiceAgent TTS] Error:", e);
+      isSpeakingRef.current = false;
+      setIsSpeaking(false);
+      onEmotionChange?.("idle");
+      onEndCallback?.();
+    };
+
+    window.speechSynthesis.speak(utterance);
+  }, [stopAudio, onEmotionChange]);
+
+  const processUserSpeech = useCallback(async (userText) => {
+    if (!userText || !userText.trim() || !isActiveRef.current) return;
+    const cleanText = userText.trim();
+
+    addMessage("user", cleanText);
+    setTranscript("");
+
+    isThinkingRef.current = true;
+    setIsThinking(true);
+    setIsListening(false);
+    onEmotionChange?.("thoughtful");
+
+    try {
+      const res = await fetch("/api/sifu-panda/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: cleanText,
+          history: messagesRef.current,
+        }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || `Yapay zeka yanıt veremedi (${res.status})`);
+      }
+
+      const { reply } = await res.json();
+      if (!isActiveRef.current) return;
+
+      addMessage("assistant", reply);
+      setIsThinking(false);
+      isThinkingRef.current = false;
+
+      // Speak response with Google Speech Synthesis and resume listening after
+      speakText(reply, () => {
+        if (isActiveRef.current && recognitionRef.current) {
+          try {
+            setIsListening(true);
+            onEmotionChange?.("listening");
+            recognitionRef.current.start();
+          } catch {}
+        }
+      });
+    } catch (err) {
+      console.error("[VoiceAgent AI Error]:", err.message);
+      setError(err.message);
+      setIsThinking(false);
+      isThinkingRef.current = false;
+      onEmotionChange?.("idle");
+    }
+  }, [addMessage, speakText, onEmotionChange]);
 
   const disconnect = useCallback(() => {
     isActiveRef.current = false;
+    stopAudio();
+    if (recognitionRef.current) {
+      try { recognitionRef.current.abort(); } catch {}
+      recognitionRef.current = null;
+    }
     setIsConnected(false);
     setIsListening(false);
+    setIsThinking(false);
     setIsSpeaking(false);
     setTranscript("");
     onEmotionChange?.("idle");
+  }, [stopAudio, onEmotionChange]);
 
-    if (processorRef.current) { try { processorRef.current.disconnect(); } catch {} processorRef.current = null; }
-    if (micSourceRef.current) { try { micSourceRef.current.disconnect(); } catch {} micSourceRef.current = null; }
-    if (micCtxRef.current) { try { micCtxRef.current.close(); } catch {} micCtxRef.current = null; }
-    if (streamRef.current) { streamRef.current.getTracks().forEach(t => t.stop()); streamRef.current = null; }
-    if (wsRef.current?.readyState === WebSocket.OPEN) wsRef.current.close();
-    wsRef.current = null;
-    if (audioCtxRef.current) {
-      try { audioCtxRef.current.close(); } catch {}
-      audioCtxRef.current = null;
+  const connect = useCallback(() => {
+    setError(null);
+    if (typeof window === "undefined") return;
+
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) {
+      setError("Tarayıcınız sesli tanıma özelliğini desteklemiyor (Chrome/Edge önerilir).");
+      return;
     }
-    nextAudioTimeRef.current = 0;
-    stopAudioRef.current = true;
-  }, [onEmotionChange]);
 
-  const getPlaybackCtx = useCallback(() => {
-    let ctx = audioCtxRef.current;
-    if (!ctx || ctx.state === 'closed') {
-      // Don't force sampleRate – let the browser use its native rate;
-      // AudioBuffer created at 24000 Hz will be resampled automatically.
-      ctx = new (window.AudioContext || window.webkitAudioContext)();
-      audioCtxRef.current = ctx;
-      nextAudioTimeRef.current = 0;
-    }
-    if (ctx.state === 'suspended') ctx.resume();
-    return ctx;
-  }, []);
-
-  const playAudioBuffer = useCallback(async (buffer) => {
     try {
-      // Ensure audio playback is unblocked when receiving audio chunks
-      stopAudioRef.current = false;
-      const ctx = getPlaybackCtx();
-      if (ctx.state === 'suspended') await ctx.resume();
+      stopAudio();
+      const recognition = new SR();
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.lang = "en-US";
 
-      // Ensure byte length is even to prevent Int16Array RangeError
-      const byteLen = buffer.byteLength;
-      const alignedLen = byteLen - (byteLen % 2);
-      if (alignedLen === 0) return;
-
-      const pcm = new Int16Array(buffer, 0, alignedLen / 2);
-      if (pcm.length === 0) return;
-      const float32 = new Float32Array(pcm.length);
-      for (let i = 0; i < pcm.length; i++) float32[i] = pcm[i] / 0x7FFF;
-
-      const audioBuffer = ctx.createBuffer(1, float32.length, 24000);
-      audioBuffer.getChannelData(0).set(float32);
-
-      const source = ctx.createBufferSource();
-      source.buffer = audioBuffer;
-      source.connect(ctx.destination);
-
-      const now = ctx.currentTime;
-      const startTime = Math.max(now, nextAudioTimeRef.current);
-      source.start(startTime);
-      nextAudioTimeRef.current = startTime + audioBuffer.duration;
-    } catch (err) {
-      console.warn("[VoiceAgent Audio] Error:", err.message);
-    }
-  }, [getPlaybackCtx]);
-
-  const startMicStream = useCallback((ws) => {
-    navigator.mediaDevices.getUserMedia({ audio: { sampleRate: 16000, channelCount: 1, echoCancellation: true } })
-      .then(stream => {
-        if (!isActiveRef.current) { stream.getTracks().forEach(t => t.stop()); return; }
-        streamRef.current = stream;
-        setIsListening(true);
-
-        const micCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
-        micCtxRef.current = micCtx;
-
-        const source = micCtx.createMediaStreamSource(stream);
-        micSourceRef.current = source;
-
-        const processor = micCtx.createScriptProcessor(4096, 1, 1);
-        processorRef.current = processor;
-
-        processor.onaudioprocess = (e) => {
-          if (ws.readyState !== WebSocket.OPEN || !isActiveRef.current) return;
-          const input = e.inputBuffer.getChannelData(0);
-          const pcm = new Int16Array(input.length);
-          for (let i = 0; i < input.length; i++) {
-            pcm[i] = Math.max(-1, Math.min(1, input[i])) * 0x7FFF;
-          }
-          ws.send(pcm.buffer);
-        };
-
-        // processor must be connected to destination to keep the audio graph active
-        source.connect(processor);
-        processor.connect(micCtx.destination);
-      })
-      .catch(err => {
-        console.warn("[VoiceAgent Mic] Error:", err.message);
-        if (isActiveRef.current) disconnect();
-      });
-  }, [disconnect]);
-
-  const connect = useCallback(async () => {
-    try {
-      setError(null);
-      onEmotionChange?.("listening");
-      setTranscript("");
-      const ctx = getPlaybackCtx();
-      console.log("[VoiceAgent] AudioCtx state:", ctx.state, "sampleRate:", ctx.sampleRate);
-      // Test beep
-      try {
-        const osc = ctx.createOscillator();
-        const testGain = ctx.createGain();
-        testGain.gain.value = 0.3;
-        osc.frequency.value = 800;
-        osc.connect(testGain);
-        testGain.connect(ctx.destination);
-        osc.start(ctx.currentTime);
-        osc.stop(ctx.currentTime + 0.1);
-      } catch (e) {
-        console.warn("[VoiceAgent] Beep error:", e);
-      }
-
-      const configRes = await fetch("/api/sifu-panda/start-agent", { method: "POST" });
-      if (!configRes.ok) {
-        const errJson = await configRes.json().catch(() => ({}));
-        throw new Error(errJson.error || `Agent config failed (${configRes.status})`);
-      }
-      const { wsUrl, settings, token } = await configRes.json();
-
-      const cleanToken = (token || "").trim();
-      const ws = new WebSocket(wsUrl, ["token", cleanToken]);
-      ws.binaryType = "arraybuffer";
-      wsRef.current = ws;
-      isActiveRef.current = true;
-      stopAudioRef.current = false;
-
-      ws.onopen = () => {
-        if (!isActiveRef.current) { ws.close(); return; }
+      recognition.onstart = () => {
+        if (!isActiveRef.current) return;
         setIsConnected(true);
-        ws.send(JSON.stringify({ type: "Settings", ...settings }));
+        setIsListening(true);
+        onEmotionChange?.("listening");
       };
 
-      ws.onmessage = (event) => {
+      recognition.onresult = (event) => {
         if (!isActiveRef.current) return;
+        let currentText = "";
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          currentText += event.results[i][0].transcript;
+        }
+        setTranscript(currentText);
 
-        if (typeof event.data === "string") {
-          try {
-            const msg = JSON.parse(event.data);
-            switch (msg.type) {
-              case "SettingsApplied":
-                startMicStream(ws);
-                break;
-              case "ConversationText": {
-                const ct = msg.content ?? msg.text ?? '';
-                if (msg.role === "user") setTranscript(ct);
-                else if (msg.role === "assistant") {
-                  addMessage("assistant", ct);
-                  setTranscript("");
-                }
-                break;
-              }
-              case "UserStartedSpeaking":
-                setIsSpeaking(false);
-                setIsListening(true);
-                onEmotionChange?.("listening");
-                stopAudio();
-                break;
-              case "AgentStartedSpeaking":
-                stopAudioRef.current = false;
-                nextAudioTimeRef.current = 0;
-                setIsSpeaking(true);
-                setIsListening(false);
-                setTranscript("");
-                onEmotionChange?.("speaking");
-                break;
-              case "AgentFinishedSpeaking":
-                setIsSpeaking(false);
-                setIsListening(true);
-                onEmotionChange?.("idle");
-                break;
-              case "Error":
-                console.error("[VoiceAgent] Deepgram server error:", msg);
-                setError(`Deepgram Hatası: ${msg.message || msg.description || JSON.stringify(msg)}`);
-                break;
-            }
-          } catch {}
-        } else if (event.data instanceof ArrayBuffer) {
-          if (event.data.byteLength > 0) {
-            playAudioBuffer(event.data);
-          }
-        } else if (event.data instanceof Blob) {
-          if (event.data.size > 0) {
-            event.data.arrayBuffer().then(buf => {
-              if (isActiveRef.current) {
-                playAudioBuffer(buf);
-              }
-            });
-          }
-        } else {
-          console.warn("[VoiceAgent] Unknown data type:", typeof event.data, event.data?.constructor?.name);
+        if (event.results[0]?.isFinal) {
+          processUserSpeech(currentText);
         }
       };
 
-      ws.onerror = (ev) => {
-        if (!isActiveRef.current) return;
-        console.error("[VoiceAgent] WebSocket error:", ev);
-        setError("Deepgram bağlantısı başarısız. API anahtarını kontrol et.");
-        onEmotionChange?.("idle");
-        setIsConnected(false);
+      recognition.onerror = (event) => {
+        if (event.error === 'no-speech') {
+          // Restart recognition silently if no speech detected
+          if (isActiveRef.current && !isSpeakingRef.current && !isThinkingRef.current) {
+            try { recognition.start(); } catch {}
+          }
+          return;
+        }
+        console.warn("[VoiceAgent STT Error]:", event.error);
+        if (isActiveRef.current && event.error !== 'aborted') {
+          setError(`Ses tanıma hatası: ${event.error}`);
+        }
       };
 
-      ws.onclose = (ev) => {
-        const reason = ev.reason || `code=${ev.code}`;
-        console.warn("[VoiceAgent] WebSocket closed:", reason, "code:", ev.code);
-        if (ev.code !== 1000) {
-          setError(`Bağlantı kapandı: ${reason || ev.code}`);
-        }
-        setIsConnected(false);
+      recognition.onend = () => {
         setIsListening(false);
-        setIsSpeaking(false);
-        setTranscript("");
-        onEmotionChange?.("idle");
-        if (audioCtxRef.current) {
-          try { audioCtxRef.current.close(); } catch {}
-          audioCtxRef.current = null;
+        // Auto restart listening if still active and not speaking/thinking
+        if (isActiveRef.current && !isSpeakingRef.current && !isThinkingRef.current) {
+          try { recognition.start(); } catch {}
         }
-        if (micCtxRef.current) {
-          try { micCtxRef.current.close(); } catch {}
-          micCtxRef.current = null;
-        }
-        nextAudioTimeRef.current = 0;
       };
 
+      recognitionRef.current = recognition;
+      isActiveRef.current = true;
+      recognition.start();
     } catch (err) {
-      console.error("[VoiceAgent] Error:", err);
-      setError(err.message);
-      onEmotionChange?.("idle");
+      console.error("[VoiceAgent Connect Error]:", err);
+      setError("Mikrofon başlatılamadı.");
+      disconnect();
     }
-  }, [startMicStream, stopAudio, playAudioBuffer, addMessage, onEmotionChange]);
+  }, [stopAudio, processUserSpeech, disconnect, onEmotionChange]);
 
   const toggleConnection = useCallback(() => {
     if (isConnected) disconnect();
@@ -293,6 +227,7 @@ export function useVoiceAgent({ onEmotionChange } = {}) {
   return {
     isConnected,
     isListening,
+    isThinking,
     isSpeaking,
     transcript,
     messages,
