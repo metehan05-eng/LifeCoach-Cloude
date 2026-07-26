@@ -10,7 +10,7 @@ if (geminiKey && !geminiKey.includes('PLACEHOLDER')) {
     name: 'gemini',
     match: (model) => model?.toLowerCase().startsWith('gemini'),
     url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
-    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': geminiKey },
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${geminiKey}` },
     authQuery: '',
   });
 }
@@ -65,8 +65,10 @@ export default async function handler(req, res) {
 
     if (!resp.ok) {
       const errText = await resp.text().catch(() => '');
-      console.error(`[llm-proxy/${logId}] error body:`, errText.slice(0, 500));
-      return res.status(resp.status).json({ error: `LLM API returned ${resp.status}`, detail: errText.slice(0, 300) });
+      console.error(`[llm-proxy/${logId}] error:`, errText.slice(0, 800));
+      let errDetail = errText;
+      try { errDetail = JSON.stringify(JSON.parse(errText), null, 2).slice(0, 500); } catch {}
+      return res.status(resp.status).json({ error: `LLM API returned ${resp.status}`, detail: errDetail });
     }
 
     if (contentType.includes('text/event-stream')) {
