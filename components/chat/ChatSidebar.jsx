@@ -135,6 +135,16 @@ export default function ChatSidebar({
             <span className="ml-auto rounded-md bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-amber-400/80">AI Görsel</span>
           </button>
 
+          <button
+            type="button"
+            onClick={() => onSelectSession('plugins')}
+            className="lc-sidebar-btn-plugins flex w-full items-center gap-2.5 rounded-xl border border-han-purple/[0.12] bg-gradient-to-br from-violet-500/10 to-indigo-600/5 px-3.5 py-2.5 text-[13px] font-semibold text-violet-300 transition-all hover:border-violet-500/30 hover:from-violet-500/20 hover:to-indigo-600/10 hover:text-violet-200"
+          >
+            <span className="text-sm">🧩</span>
+            Plugin Store
+            <span className="ml-auto rounded-md bg-violet-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-violet-300">Mağaza</span>
+          </button>
+
         </div>
 
           <div className="mb-1.5 flex border-b" style={{ borderColor: 'var(--border-subtle)' }}>

@@ -92,7 +92,8 @@ export default function ChatbotInterface() {
     setShowProjects(false);
     setShowSifuPanda(false);
     if (view === 'plugins') {
-      setShowSettings('plugins');
+      setActiveSessionId('plugins');
+      setActiveView('plugins');
       return;
     }
     if (view === 'chat') {
@@ -624,6 +625,7 @@ export default function ChatbotInterface() {
               else if (id === 'lootbox') setShowLootBox(true);
               else if (id === 'sifu-panda') { setShowSifuPanda(true); setActiveSessionId(null); setActiveView('chat'); }
               else if (id === 'waffle') { setShowSifuPanda(false); setActiveSessionId('waffle'); setActiveView('chat'); }
+              else if (id === 'plugins') { setShowSifuPanda(false); setActiveSessionId('plugins'); setActiveView('plugins'); }
               else if (id === 'targets' || id === 'startup' || id === 'productivity' || id === 'decisions') {
                 handleSelectView(id);
               }
