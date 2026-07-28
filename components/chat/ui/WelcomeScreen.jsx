@@ -34,9 +34,6 @@ const PILL_ICONS = {
       <path d="M9 18h6" /><path d="M10 22h4" />
     </svg>
   ),
-  plugin_store: (
-    <span className="text-xs">🧩</span>
-  ),
 };
 
 const MODULE_MAP = {
@@ -44,7 +41,6 @@ const MODULE_MAP = {
   productivity: "productivity",
   startup: "startup",
   decision: "decisions",
-  plugin_store: "plugins",
 };
 
 // Günün saatine göre selamlama
