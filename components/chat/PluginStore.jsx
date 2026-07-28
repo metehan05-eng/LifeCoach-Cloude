@@ -4,13 +4,11 @@ import React, { useState, useEffect } from 'react';
 import { PLUGIN_CATEGORIES, getPluginsByCategory } from '@/lib/plugins/plugin-registry';
 import styles from './PluginStore.module.css';
 
-export default function PluginStore({ onClose, activePlugins = [], onTogglePlugin }) {
+export default function PluginStore({ onClose, activePlugins = [], onTogglePlugin, onStartPluginChat }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [plugins, setPlugins] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  const groupedPlugins = getPluginsByCategory();
 
   useEffect(() => {
     // API'den veya registry'den plugin durumlarını çek
@@ -62,11 +60,28 @@ export default function PluginStore({ onClose, activePlugins = [], onTogglePlugi
       {/* Üst Bar & Başlık */}
       <div className={styles.header}>
         <div>
-          <h2 className={styles.title}>🧩 HAN Plugin Store</h2>
-          <p className={styles.subtitle}>Yapay zekanızı Yahoo Finance, Google Suite, GitHub, Supabase ve 20+ gelişmiş eklentiyle güçlendirin.</p>
+          <div className="flex items-center gap-3 mb-1">
+            <h2 className={styles.title}>🧩 HAN Plugin Store</h2>
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-violet-500/20 text-violet-300 border border-violet-500/30">
+              Qwen 2.5 AI Powered
+            </span>
+          </div>
+          <p className={styles.subtitle}>
+            Gelişmiş eklentileri etkinleştirin. Aktif eklentilerinizle **Qwen Yapay Zeka Modeli** üzerinden özel ve izole sohbet başlatabilirsiniz.
+          </p>
         </div>
-        <div className={styles.activeBadge}>
-          ⚡ {activeCount} Eklenti Aktif
+        <div className="flex items-center gap-3">
+          <div className={styles.activeBadge}>
+            ⚡ {activeCount} Eklenti Aktif
+          </div>
+          {onClose && (
+            <button 
+              onClick={onClose}
+              className="px-3.5 py-1.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-xs font-medium text-white transition-all"
+            >
+              ← Ana Sayfa
+            </button>
+          )}
         </div>
       </div>
 
@@ -129,19 +144,28 @@ export default function PluginStore({ onClose, activePlugins = [], onTogglePlugi
               <p className={styles.cardDescription}>{plugin.description}</p>
 
               <div className={styles.cardFooter}>
-                {plugin.apiRequired ? (
-                  <span className={styles.apiTag} title={`Gerekli API: ${plugin.apiRequired}`}>
-                    🔑 API Anahtarı
-                  </span>
+                {plugin.enabled ? (
+                  <button
+                    className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs font-semibold hover:brightness-110 transition-all flex items-center gap-1.5 shadow-lg shadow-violet-900/30"
+                    onClick={() => onStartPluginChat?.(plugin)}
+                  >
+                    <span>💬</span> Qwen ile Konuş
+                  </button>
                 ) : (
-                  <span className={styles.freeTag}>✨ Hazır / Ücretsiz</span>
+                  plugin.apiRequired ? (
+                    <span className={styles.apiTag} title={`Gerekli API: ${plugin.apiRequired}`}>
+                      🔑 API Anahtarı
+                    </span>
+                  ) : (
+                    <span className={styles.freeTag}>✨ Ücretsiz</span>
+                  )
                 )}
 
                 <button
                   className={`${styles.toggleBtn} ${plugin.enabled ? styles.btnDisable : styles.btnEnable}`}
                   onClick={() => handleToggle(plugin.id, plugin.enabled)}
                 >
-                  {plugin.enabled ? 'Kaldır' : 'Ekle'}
+                  {plugin.enabled ? 'Kaldır' : 'Aktif Et'}
                 </button>
               </div>
             </div>

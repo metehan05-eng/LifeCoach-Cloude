@@ -19,6 +19,7 @@ import DecisionsView from './modules/DecisionsView';
 import LearningGuideView from './modules/LearningGuideView';
 import CanvasView from './modules/CanvasView';
 import MusicView from './modules/MusicView';
+import PluginStore from './chat/PluginStore';
 import LootBox from './chat/LootBox';
 import LevelUpCelebration from './chat/LevelUpCelebration';
 import styles from './ChatbotInterface.module.css';
@@ -31,7 +32,6 @@ import SifuPandaVoiceAgent from '@/components/mascot/SifuPandaVoiceAgent';
 import { useVoiceChat } from '@/hooks/useVoiceChat';
 import { useSpeechToText } from '@/hooks/useSpeechToText';
 import { detectEmotionFromText } from '@/lib/voice/sifu-emotion';
-// (WelcomeScreen handles Life OS module views internally)
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
@@ -55,6 +55,7 @@ export default function ChatbotInterface() {
   const [sessions, setSessions] = useState([]);
   const [activeSessionId, setActiveSessionId] = useState(null);
   const [activeChatId, setActiveChatId] = useState(null);
+  const [activePluginChat, setActivePluginChat] = useState(null); // Özel Plugin Sohbeti State'i
 
   const [isTyping, setIsTyping] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -405,6 +406,8 @@ export default function ChatbotInterface() {
           deepSearch: deepSearch,
           goal_planning_mode: options.goal_planning_mode ?? goalPlanningMode,
           quick_action: options.quick_action || null,
+          model: activePluginChat ? 'qwen' : undefined,
+          activePlugin: activePluginChat?.id || null,
         }),
         signal: controller.signal,
       });
@@ -647,13 +650,44 @@ export default function ChatbotInterface() {
           <ChatHeader
             onToggleSidebar={toggleSidebar}
             sidebarOpen={sidebarOpen}
-            sessionTitle={activeSessionId === 'waffle' ? '🧇 Waffle Studio' : showSifuPanda ? '🎙️ Sifu Panda' : activeSession?.title}
+            sessionTitle={
+              activePluginChat
+                ? `${activePluginChat.icon} ${activePluginChat.name} (Qwen 2.5 AI)`
+                : activeSessionId === 'plugins'
+                ? '🧩 HAN Plugin Store'
+                : activeSessionId === 'waffle'
+                ? '🧇 Waffle Studio'
+                : showSifuPanda
+                ? '🎙️ Sifu Panda'
+                : activeSession?.title
+            }
             isMobile={isMobile}
             onOpenSettings={() => setShowSettings(true)}
             onOpenVision={() => setShowVision(true)}
           />
 
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
+
+            {activePluginChat && (
+              <div className="flex items-center justify-between px-4 py-2.5 bg-violet-950/40 border-b border-violet-500/20 text-xs backdrop-blur-md">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="font-semibold text-violet-200">
+                    Özel Eklenti Modu: <strong className="text-white">{activePluginChat.name}</strong> • Model: <span className="text-cyan-300 font-mono">Qwen 2.5</span>
+                  </span>
+                </div>
+                <button
+                  onClick={() => {
+                    setActivePluginChat(null);
+                    setActiveSessionId(null);
+                    setActiveView('chat');
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-red-500/15 border border-red-500/30 text-red-300 hover:bg-red-500/25 transition-all text-xs font-medium"
+                >
+                  <span>✕</span> Eklenti Sohbetinden Çık (Normal Chat'e Dön)
+                </button>
+              </div>
+            )}
 
             {showProjects ? (
               <ProjectHub user={session?.user} onClose={() => setShowProjects(false)} />
@@ -663,6 +697,34 @@ export default function ChatbotInterface() {
                 isMobile={isMobile}
                 onEmotionChange={setSifuEmotion}
               />
+            ) : activeSessionId === 'plugins' ? (
+              <div className="flex-1 p-4 md:p-6 overflow-y-auto bg-slate-950/60 backdrop-blur-xl">
+                <PluginStore
+                  onClose={() => {
+                    setActiveSessionId(null);
+                    setActiveView('chat');
+                  }}
+                  onStartPluginChat={(plugin) => {
+                    setActivePluginChat(plugin);
+                    const newSessionId = `plugin_${plugin.id}_${Date.now()}`;
+                    const welcomeMsg = {
+                      role: 'assistant',
+                      content: `Merhaba! **${plugin.name}** eklentisi ve **Qwen 2.5 AI** modeli ile özel sohbet modundasın. ${plugin.description} Hakkında ne öğrenmek veya yapmak istersin?`,
+                      id: Date.now()
+                    };
+                    const pluginSession = {
+                      id: newSessionId,
+                      title: `${plugin.icon} ${plugin.name} (Qwen)`,
+                      messages: [welcomeMsg],
+                      createdAt: new Date(),
+                    };
+                    setSessions(prev => [pluginSession, ...prev]);
+                    setActiveSessionId(newSessionId);
+                    setActiveChatId(newSessionId);
+                    setActiveView('chat');
+                  }}
+                />
+              </div>
             ) : activeSessionId === 'targets' ? (
               <TargetsView onSelectView={handleSelectView} userEmail={session?.user?.email} initialRecordId={viewRecordId} />
             ) : activeSessionId === 'startup' ? (

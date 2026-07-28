@@ -34,6 +34,9 @@ const PILL_ICONS = {
       <path d="M9 18h6" /><path d="M10 22h4" />
     </svg>
   ),
+  plugin_store: (
+    <span className="text-xs">🧩</span>
+  ),
 };
 
 const MODULE_MAP = {
@@ -41,6 +44,7 @@ const MODULE_MAP = {
   productivity: "productivity",
   startup: "startup",
   decision: "decisions",
+  plugin_store: "plugins",
 };
 
 // Günün saatine göre selamlama
@@ -167,8 +171,13 @@ export default function WelcomeScreen({
               type="button"
               onClick={() => {
                 const moduleId = MODULE_MAP[card.id];
-                if (moduleId) setActiveModule(moduleId);
-                else onQuickAction?.(card.id);
+                if (moduleId === "plugins") {
+                  onSelectView?.("plugins");
+                } else if (moduleId) {
+                  setActiveModule(moduleId);
+                } else {
+                  onQuickAction?.(card.id);
+                }
               }}
               disabled={isLoading}
               className="lc-pill-btn interactive-press"
