@@ -90,6 +90,10 @@ export default function ChatbotInterface() {
   const handleSelectView = useCallback((view, sessionId = null, recordId = null) => {
     setShowProjects(false);
     setShowSifuPanda(false);
+    if (view === 'plugins') {
+      setShowSettings('plugins');
+      return;
+    }
     if (view === 'chat') {
       if (sessionId) {
         setActiveSessionId(sessionId);
@@ -565,7 +569,11 @@ export default function ChatbotInterface() {
         <AutomationWorkbench userEmail={session?.user?.email} isMobile={isMobile} onClose={() => setShowAutomation(false)} />
       )}
       {showSettings && (
-        <SettingsModal user={{...session?.user, ...userStats}} onClose={() => setShowSettings(false)} />
+        <SettingsModal 
+          user={{...session?.user, ...userStats}} 
+          initialTab={typeof showSettings === 'string' ? showSettings : 'general'}
+          onClose={() => setShowSettings(false)} 
+        />
       )}
       {showPremium && (
         <PremiumHub onClose={() => setShowPremium(false)} />

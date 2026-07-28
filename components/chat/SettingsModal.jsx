@@ -3,13 +3,14 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import PluginStore from './PluginStore';
 import styles from './SettingsModal.module.css';
 
-export default function SettingsModal({ onClose, user, dna }) {
+export default function SettingsModal({ onClose, user, dna, initialTab = 'general' }) {
   const router = useRouter();
   const { data: session } = useSession();
   const { theme, setTheme, mounted } = useAppTheme();
-  const [activeTab, setActiveTab] = useState('general');
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [userBio, setUserBio] = useState('');
   const [saving, setSaving] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -20,6 +21,7 @@ export default function SettingsModal({ onClose, user, dna }) {
   const [connecting, setConnecting] = useState(null);
 
   const tabs = [
+    { id: 'plugins', label: 'Plugin Store 🧩', icon: '🧩' },
     { id: 'general', label: 'Genel', icon: '⚙️' },
     { id: 'aboutme', label: 'Beni Tanı', icon: '📝' },
     { id: 'account', label: 'Hesap', icon: '👤' },
@@ -99,6 +101,9 @@ export default function SettingsModal({ onClose, user, dna }) {
 
   const renderContent = () => {
     switch (activeTab) {
+      case 'plugins':
+        return <PluginStore onClose={onClose} />;
+
       case 'general':
         return (
           <div className={styles.section}>

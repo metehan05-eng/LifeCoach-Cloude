@@ -13,6 +13,7 @@ function MicIcon({ active }) {
 }
 
 const MENU_ITEMS = [
+  { id: "plugins", icon: "🧩", label: "Plugin Store (Eklentiler)" },
   { id: "file", icon: "📄", label: "Dosya / Belge Ekle" },
   { id: "waffle", icon: "🎨", label: "Waffle Studio (Görsel Üret)" },
   { id: "target", icon: "🎯", label: "Hızlı Hedef Oluştur" },
@@ -65,7 +66,9 @@ export default function ChatInput({
   /* ── Menü aksiyonları ── */
   const handleMenuAction = useCallback((id) => {
     setMenuOpen(false);
-    if (id === "file") {
+    if (id === "plugins") {
+      onSelectView?.("plugins");
+    } else if (id === "file") {
       fileInputRef.current?.click();
     } else if (id === "waffle") {
       onSelectView?.("chat", "waffle");
