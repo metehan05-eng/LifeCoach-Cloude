@@ -9,9 +9,9 @@ export default function PluginStore({ onClose, activePlugins = [], onTogglePlugi
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [plugins, setPlugins] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [expandedPrompt, setExpandedPrompt] = useState(null);
 
   useEffect(() => {
-    // API'den veya registry'den plugin durumlarını çek
     fetch('/api/plugins')
       .then(res => res.json())
       .then(data => {
@@ -27,14 +27,10 @@ export default function PluginStore({ onClose, activePlugins = [], onTogglePlugi
 
   const handleToggle = async (pluginId, currentStatus) => {
     const nextStatus = !currentStatus;
-    // Yerel state güncelle
     setPlugins(prev => prev.map(p => p.id === pluginId ? { ...p, enabled: nextStatus } : p));
-    
-    // Üst bileşene bildir
     if (onTogglePlugin) {
       onTogglePlugin(pluginId, nextStatus);
     }
-
     try {
       await fetch('/api/plugins', {
         method: 'POST',
@@ -142,6 +138,23 @@ export default function PluginStore({ onClose, activePlugins = [], onTogglePlugi
               </div>
 
               <p className={styles.cardDescription}>{plugin.description}</p>
+
+              {plugin.systemPrompt && (
+                <div className="mt-2 mb-2">
+                  <button
+                    onClick={() => setExpandedPrompt(expandedPrompt === plugin.id ? null : plugin.id)}
+                    className="text-[10px] text-white/30 hover:text-white/60 transition flex items-center gap-1"
+                  >
+                    <span>{expandedPrompt === plugin.id ? '▾' : '▸'}</span>
+                    System Prompt
+                  </button>
+                  {expandedPrompt === plugin.id && (
+                    <pre className="mt-1.5 p-2.5 bg-black/40 rounded-lg text-[10px] text-white/60 leading-relaxed whitespace-pre-wrap font-sans border border-white/[0.06]">
+                      {plugin.systemPrompt}
+                    </pre>
+                  )}
+                </div>
+              )}
 
               <div className={styles.cardFooter}>
                 {plugin.enabled ? (

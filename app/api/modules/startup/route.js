@@ -57,6 +57,7 @@ export async function POST(request) {
       aiResult = await generateStartupRoadmap({ ideaDescription });
     } catch {
       aiResult = {
+        category: "SAAS_SOFTWARE",
         analysis: {
           valueProp: `${ideaDescription.substring(0, 60)}... — kullanıcıların temel ihtiyacını AI destekli bir yaklaşımla çözen yenilikçi bir platform.`,
           targetAudience: "18-40 yaş arası, teknolojiye meraklı, Türkiye'deki girişimci ve dijital profesyoneller.",
@@ -88,12 +89,13 @@ export async function POST(request) {
       };
     }
 
-    const { analysis, mvpPhases, leanCanvas } = aiResult;
+    const { category, analysis, mvpPhases, leanCanvas } = aiResult;
 
     const record = await prismaClient.startupRoadmap.create({
       data: {
         userId: session.user.id,
         idea: ideaDescription.trim(),
+        category: category || null,
         analysis: analysis || {},
         mvpPhases: mvpPhases || [],
         leanCanvas: leanCanvas || {},

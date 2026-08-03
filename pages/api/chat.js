@@ -13,6 +13,8 @@ import { generateChatTitle } from '../../lib/chat-title.js';
 import { prismaClient as prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from './auth/[...nextauth]';
+import { executePluginTool } from '../../lib/plugins/plugin-executor.js';
+import { getToolDefinitions, getPluginById } from '../../lib/plugins/plugin-registry.js';
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
 // CONCURRENCY LOCK: Simple in-memory lock to prevent overlapping chat requests per session
@@ -1310,7 +1312,7 @@ function extractToolCallFromText(text) {
   return null;
 }
 
-async function executeModelToolCall(toolCall) {
+async function executeModelToolCall(toolCall, activePluginId = null, userContext = {}) {
   switch (toolCall.tool) {
     case 'create_presentation':
       return await create_presentation(toolCall.parameters.topic, toolCall.parameters.content_outline);
@@ -1332,7 +1334,9 @@ async function executeModelToolCall(toolCall) {
     case 'extract_to_spreadsheet':
       return await extract_to_spreadsheet(toolCall.parameters.file_id_or_text);
     default:
-      throw new Error(`Unknown tool: ${toolCall.tool}`);
+      // Plugin tool fallback — route unknown tools to plugin executor
+      const result = await executePluginTool(toolCall.tool, toolCall.parameters, userContext);
+      return { success: true, data: result };
   }
 }
 
@@ -1351,8 +1355,10 @@ async function processAIResponseTools(aiResponse, options = {}) {
   }
 
   const { toolCall, rawJson } = extracted;
+  const activePluginId = options.activePluginId || null;
+  const userContext = options.userContext || {};
   console.log(`[Tool Call] Executing tool: ${toolCall.tool}`);
-  const toolResult = await executeModelToolCall(toolCall);
+  const toolResult = await executeModelToolCall(toolCall, activePluginId, userContext);
   const toolResults = [{ tool: toolCall.tool, result: toolResult }];
   let processedResponse = aiResponse.replace(rawJson, '').trim();
   const toolNotes = TOOL_NOTES_MAP[toolCall.tool] ? [TOOL_NOTES_MAP[toolCall.tool]] : [];
@@ -1441,7 +1447,7 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'UNAUTHENTICATED', message: 'Oturum açmanız gerekiyor.' });
   }
 
-  const { message, history, sessionId, chatId, mode, userLanguage, attachments, deepSearch, quick_action, audio } = req.body;
+  const { message, history, sessionId, chatId, mode, userLanguage, attachments, deepSearch, quick_action, audio, activePlugin } = req.body;
   const email = sessionEmail;
   const countryCode = req.headers['x-vercel-ip-country'] || 'Unknown';
 
@@ -2259,6 +2265,12 @@ ${safeUserBio ? `\n## Kullanıcı kendini şöyle tanıtıyor\n${safeUserBio}\n`
       'qwen/qwen-2.5-72b-instruct:free'
     ].filter((m, i, self) => m && self.indexOf(m) === i);
 
+    if (activePlugin) {
+      // Plugin sohbetleri: qwen3.7-max birincil model, diğerleri fallback
+      const pluginModel = process.env.PLUGIN_MODEL || 'qwen3.7-max';
+      QWEN_MODEL_CHAIN = [pluginModel, ...QWEN_MODEL_CHAIN.filter(m => m !== pluginModel)];
+    }
+
     if (imagesForVision && imagesForVision.length > 0) {
       QWEN_MODEL_CHAIN = [
         'qwen-vl-plus',
@@ -2287,10 +2299,14 @@ ${safeUserBio ? `\n## Kullanıcı kendini şöyle tanıtıyor\n${safeUserBio}\n`
       }
     }
 
+    const pluginPrompt = req.body?.pluginSystemPrompt
+      ? `\n\n--- EKLENTİ SİSTEM PROMPTU (Öncelikli talimatlar) ---\n${req.body.pluginSystemPrompt}\n\nBu eklenti sohbetindesin. Kullanıcının talebine göre önce eklenti tool'unu çağır, sonra sonuçları yukarıdaki formatta sun.`
+      : '';
+
     const systemPrompt = buildLifeCoachSystemPrompt({
       quickAction: quick_action,
       userContext: `${systemInstruction}${localizationInjection}${targetContext}`,
-      extraContext: `${ragContext}${searchContextInjection}${youtubeContextInjection}
+      extraContext: `${ragContext}${searchContextInjection}${youtubeContextInjection}${pluginPrompt}
 
 ## Aktif yetenekler (arka planda çalışır, kullanıcıya gösterilmez)
 - GÖRSEL ANALİZİ: JPG, PNG, WEBP gibi görselleri analiz eder, içeriğini açıklar ve yorumlar.
@@ -2348,6 +2364,9 @@ ${LEGACY_TOOL_JSON_FORMAT}`,
 
     console.log('[BACKEND DEBUG] Messages array:', messages.length, 'messages for chat:', activeChatId);
 
+    const activePluginId = activePlugin || null;
+    const pluginToolDefs = activePluginId ? getToolDefinitions([activePluginId]) : [];
+
     async function tryQwenModel(modelName) {
       const qwenConfig = getQwenConfig();
       let apiKey = qwenConfig.apiKey;
@@ -2374,15 +2393,19 @@ ${LEGACY_TOOL_JSON_FORMAT}`,
       });
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 25000);
+      const timeoutMs = activePluginId ? 45000 : 25000;
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
+      const userContext = { email: sessionEmail, userId: sessionEmail };
       try {
         const result = await runDeepSeekWithTools({
           client,
           modelName,
           messages,
-          executeToolCall: executeModelToolCall,
+          executeToolCall: (tc) => executeModelToolCall(tc, activePluginId, userContext),
           signal: controller.signal,
+          pluginTools: pluginToolDefs,
+          onlyPluginTools: !!activePluginId,
         });
 
         clearTimeout(timeoutId);
@@ -2431,7 +2454,10 @@ ${LEGACY_TOOL_JSON_FORMAT}`,
     let processedResponse = aiResponse;
 
     try {
-      const toolOutcome = await processAIResponseTools(aiResponse, {});
+      const toolOutcome = await processAIResponseTools(aiResponse, {
+        activePluginId,
+        userContext: { email: sessionEmail, userId: sessionEmail },
+      });
       processedResponse = toolOutcome.processedResponse;
       toolResults = toolOutcome.toolResults;
       if (toolOutcome.toolNotes?.length) {

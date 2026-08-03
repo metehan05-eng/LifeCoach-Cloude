@@ -78,6 +78,8 @@ model User {
   TaskChains              TaskChain[]
   FutureSimulations       FutureSimulation[]
   Canvases                Canvas[]
+  UserPlugins             UserPlugin[]
+  MobilePushTokens        MobilePushToken[]
 }
 
 
@@ -503,6 +505,8 @@ model Target {
   chatHistory   ModuleChatHistory? @relation(fields: [chatHistoryId], references: [id])
   chatHistoryId String?
   targetText    String            @db.Text
+  shortTitle    String?           // AI tarafından üretilen kısa hedef başlığı
+  aiSummary     String?           @db.Text // AI koç değerlendirmesi / analiz notu
   microSteps    Json              // { summary, steps: [{order, title, description, completed}], weeklyPlans }
   youtubeVideos Json?             // [{videoId, title, thumbnail, url}]
   targetDate    DateTime          @default(now())
@@ -574,6 +578,7 @@ model StartupRoadmap {
   id        String   @id @default(uuid())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
+  category  String?  // SAAS_SOFTWARE | E_COMMERCE | PHYSICAL_BUSINESS | CONTENT_CREATION_AGENCY
   idea      String   @db.Text
   analysis  Json     // { valueProp, targetAudience, techStack: [...] }
   mvpPhases Json     // [{ phase: "Faz 1", title: "...", tasks: ["...","..."] }]
@@ -734,6 +739,35 @@ model Canvas {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([userId])
+}
+
+// ─── PLUGIN STORE ───────────────────────────────────────────────────────────
+
+model UserPlugin {
+  id        String   @id @default(cuid())
+  userId    String
+  pluginId  String
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, pluginId])
+  @@index([userId])
+}
+
+// ─── MOBİL PUSH BİLDİRİMLERİ ────────────────────────────────────────────────
+
+model MobilePushToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String
+  platform  String   @default("unknown") // android | ios | web
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, token])
   @@index([userId])
 }
 

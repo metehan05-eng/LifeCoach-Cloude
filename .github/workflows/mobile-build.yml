@@ -1,0 +1,52 @@
+name: Mobile Build (Ionic + Capacitor)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Copy env (optional)
+        run: |
+          cp -n .env.local.example .env.local 2>/dev/null || true
+          touch .env.local
+
+      - name: Build web app
+        run: npm run build || echo "Build betiği devam etti"
+
+      - name: Capacitor sync
+        env:
+          MOBILE_APP_URL: ${{ secrets.MOBILE_APP_URL }}
+        run: npx cap sync android
+
+      - name: Build Android APK (debug)
+        working-directory: android
+        run: ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: lifecoach-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error

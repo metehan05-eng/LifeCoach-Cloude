@@ -126,6 +126,8 @@ export async function POST(request) {
         userId: session.user.id,
         chatHistoryId: chatHistory.id,
         targetText: targetText.trim(),
+        shortTitle: aiResult?.shortTitle || null,
+        aiSummary: aiResult?.aiSummary || null,
         microSteps: aiResult, // { summary, steps, weeklyPlans }
         youtubeVideos: [],
         targetDate: new Date(),

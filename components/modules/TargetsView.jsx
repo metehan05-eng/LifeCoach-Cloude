@@ -6,7 +6,7 @@ function PlanSummary({ data }) {
   if (!data?.summary) return null;
   return (
     <div className="bg-gradient-to-br from-amber-900/10 to-orange-950/15 border border-amber-500/15 rounded-2xl p-5">
-      <h4 className="text-[10px] font-bold uppercase tracking-wider text-amber-400 mb-2">🧠 Stratejik Analiz</h4>
+      <h4 className="text-[10px] font-bold uppercase tracking-wider text-amber-400 mb-2">Stratejik Analiz</h4>
       <p className="text-sm text-white/80 leading-relaxed">{data.summary}</p>
     </div>
   );
@@ -106,6 +106,46 @@ function EmptyState({ onNewClick }) {
       >
         <span>✨</span> İlk Hedefini Oluştur
       </button>
+    </div>
+  );
+}
+
+function ProgressBar({ completed, total }) {
+  if (!total) return null;
+  const pct = Math.round((completed / total) * 100);
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between text-xs">
+        <span className="text-white/50">İlerleme</span>
+        <span className="text-violet-400 font-bold">{pct}%</span>
+      </div>
+      <div className="h-2 bg-white/[0.06] rounded-full overflow-hidden">
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-violet-500 to-violet-400 transition-all duration-500 ease-out"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <div className="text-[10px] text-white/30">
+        {completed} / {total} adım tamamlandı
+      </div>
+    </div>
+  );
+}
+
+function AiCoachCard({ summary, onChatClick }) {
+  if (!summary) return null;
+  return (
+    <div className="bg-gradient-to-br from-violet-900/10 to-indigo-950/15 border border-violet-500/15 rounded-2xl p-5 relative overflow-hidden">
+      <div className="absolute top-0 right-0 w-24 h-24 bg-violet-600/5 rounded-full filter blur-xl pointer-events-none" />
+      <div className="flex items-start gap-3">
+        <div className="w-10 h-10 rounded-xl bg-violet-600/20 border border-violet-500/30 flex items-center justify-center text-lg shrink-0">
+          🧠
+        </div>
+        <div className="flex-1 min-w-0">
+          <h4 className="text-[10px] font-bold uppercase tracking-wider text-violet-400 mb-1">AI Koç Yorumu</h4>
+          <p className="text-sm text-white/80 leading-relaxed">{summary}</p>
+        </div>
+      </div>
     </div>
   );
 }
@@ -288,6 +328,8 @@ export default function TargetsView({ onSelectView, userEmail, initialSessionId,
   }
 
   const planData = extractPlanData(activeTarget);
+  const steps = planData?.steps || [];
+  const completedSteps = steps.filter(s => s.completed).length;
 
   return (
     <div className="flex flex-1 overflow-hidden bg-[#0d0e15] text-white">
@@ -326,7 +368,7 @@ export default function TargetsView({ onSelectView, userEmail, initialSessionId,
                 <span className={`truncate font-medium ${
                   selectedTargetId === t.id ? 'text-white' : 'text-white/60'
                 }`}>
-                  {t.targetText?.substring(0, 40)}{t.targetText?.length > 40 ? '...' : ''}
+                  {t.shortTitle || t.targetText?.substring(0, 40)}{(t.shortTitle ? '' : (t.targetText?.length > 40 ? '...' : ''))}
                 </span>
               </div>
               <div className="mt-1 flex items-center gap-2">
@@ -404,7 +446,8 @@ export default function TargetsView({ onSelectView, userEmail, initialSessionId,
 
           {/* Selected Target Details */}
           {activeTarget && (
-            <div className="space-y-6 animate-scale-in">
+            <div className="space-y-5 animate-scale-in">
+              {/* Header Card */}
               <div className="bg-gradient-to-br from-violet-900/10 to-indigo-950/15 border border-violet-500/15 rounded-2xl p-6 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-violet-600/5 rounded-full filter blur-xl pointer-events-none" />
                 <div className="absolute top-3 right-3 flex items-center gap-2">
@@ -423,29 +466,45 @@ export default function TargetsView({ onSelectView, userEmail, initialSessionId,
                     {activeTarget.status === 'tamamlandı' ? 'Tamamlandı' : 'Aktif'}
                   </span>
                 </div>
-                <h3 className="text-[10px] font-bold uppercase tracking-wider text-violet-400">Hedef</h3>
-                <p className="text-base font-bold text-white mt-1 leading-relaxed">{activeTarget.targetText}</p>
-
-                {activeTarget.chatHistoryId && (
-                  <div className="mt-4 flex gap-2">
-                    <button
-                      onClick={() => onSelectView("chat", activeTarget.chatHistory?.sessionId || activeTarget.chatHistoryId)}
-                      className="text-[11px] font-semibold px-4 py-2 bg-violet-600/20 hover:bg-violet-600/30 text-violet-300 rounded-xl transition-all border border-violet-500/20 flex items-center gap-1.5"
-                    >
-                      💬 Panda ile Sohbet Et
-                    </button>
-                  </div>
+                <h3 className="text-[10px] font-bold uppercase tracking-wider text-violet-400 mb-1">Hedef</h3>
+                <h2 className="text-lg font-bold text-white leading-tight">
+                  {activeTarget.shortTitle || activeTarget.targetText}
+                </h2>
+                {activeTarget.shortTitle && (
+                  <p className="text-sm text-white/50 mt-1.5 leading-relaxed">{activeTarget.targetText}</p>
                 )}
+                <div className="mt-3 flex items-center gap-3 text-[11px] text-white/40">
+                  <span>{new Date(activeTarget.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                  {activeTarget.targetDate && (
+                    <>
+                      <span className="text-white/15">•</span>
+                      <span>Hedef Tarih: {new Date(activeTarget.targetDate).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                    </>
+                  )}
+                </div>
               </div>
 
+              {/* AI Coach Card */}
+              {activeTarget.aiSummary && <AiCoachCard summary={activeTarget.aiSummary} />}
+
+              {/* Progress Bar */}
+              {steps.length > 0 && (
+                <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-5 backdrop-blur-xl">
+                  <ProgressBar completed={completedSteps} total={steps.length} />
+                </div>
+              )}
+
+              {/* Plan Summary */}
               {planData && <PlanSummary data={planData} />}
 
+              {/* Milestones (FlowChart) */}
               {planData && (
                 <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6 backdrop-blur-xl">
                   <FlowChart steps={planData.steps} onStepToggle={handleStepToggle} />
                 </div>
               )}
 
+              {/* Weekly Plans */}
               {planData && planData.weeklyPlans?.length > 0 && (
                 <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6 backdrop-blur-xl">
                   <WeeklyPlans plans={planData.weeklyPlans} />

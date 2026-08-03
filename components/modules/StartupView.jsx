@@ -2,10 +2,35 @@
 import { useState, useEffect } from "react";
 import AIModelBadge from "@/components/ui/AIModelBadge";
 
-function AnalysisCard({ analysis }) {
-  if (!analysis) return null;
+const CATEGORY_META = {
+  SAAS_SOFTWARE: { icon: "💻", label: "SaaS / Yazılım", color: "cyan", gradient: "from-cyan-900/10 to-emerald-950/15", border: "border-cyan-500/20" },
+  E_COMMERCE: { icon: "🛒", label: "E-Ticaret", color: "amber", gradient: "from-amber-900/10 to-orange-950/15", border: "border-amber-500/20" },
+  PHYSICAL_BUSINESS: { icon: "🏪", label: "Fiziksel İşletme", color: "rose", gradient: "from-rose-900/10 to-red-950/15", border: "border-rose-500/20" },
+  CONTENT_CREATION_AGENCY: { icon: "🎬", label: "İçerik / Ajans", color: "fuchsia", gradient: "from-fuchsia-900/10 to-purple-950/15", border: "border-fuchsia-500/20" },
+};
+const DEFAULT_CATEGORY = { icon: "🚀", label: "Girişim", color: "cyan", gradient: "from-cyan-900/10 to-emerald-950/15", border: "border-cyan-500/20" };
+
+function CategoryBadge({ category }) {
+  const meta = CATEGORY_META[category] || DEFAULT_CATEGORY;
+  const colorMap = {
+    cyan: "bg-cyan-600/15 text-cyan-300 border-cyan-500/25",
+    amber: "bg-amber-600/15 text-amber-300 border-amber-500/25",
+    rose: "bg-rose-600/15 text-rose-300 border-rose-500/25",
+    fuchsia: "bg-fuchsia-600/15 text-fuchsia-300 border-fuchsia-500/25",
+  };
   return (
-    <div className="bg-gradient-to-br from-cyan-900/10 to-emerald-950/15 border border-cyan-500/20 rounded-2xl p-6">
+    <span className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-full border ${colorMap[meta.color] || colorMap.cyan}`}>
+      <span>{meta.icon}</span>
+      {meta.label}
+    </span>
+  );
+}
+
+function AnalysisCard({ analysis, category }) {
+  if (!analysis) return null;
+  const meta = CATEGORY_META[category] || DEFAULT_CATEGORY;
+  return (
+    <div className={`bg-gradient-to-br ${meta.gradient} border ${meta.border} rounded-2xl p-6`}>
       <h4 className="text-[10px] font-bold uppercase tracking-wider text-cyan-400 mb-4"> Stratejik Analiz</h4>
       <div className="space-y-4">
         <div>
@@ -16,7 +41,7 @@ function AnalysisCard({ analysis }) {
           <span className="text-[9px] font-semibold uppercase tracking-wider text-white/30">Hedef Kitle</span>
           <p className="text-sm text-white/80 mt-1 leading-relaxed">{analysis.targetAudience}</p>
         </div>
-        {analysis.techStack?.length > 0 && (
+        {analysis.techStack?.length > 0 && category === "SAAS_SOFTWARE" && (
           <div>
             <span className="text-[9px] font-semibold uppercase tracking-wider text-white/30">Teknoloji Yığını</span>
             <div className="flex flex-wrap gap-1.5 mt-2">
@@ -185,6 +210,7 @@ export default function StartupView({ onSelectView, initialRecordId }) {
   const analysis = activeRecord?.analysis;
   const phases = activeRecord?.mvpPhases || [];
   const leanCanvas = activeRecord?.leanCanvas;
+  const category = activeRecord?.category;
 
   if (loading) {
     return (
@@ -224,9 +250,13 @@ export default function StartupView({ onSelectView, initialRecordId }) {
               <div className="truncate font-medium text-white/70">
                 {(r.analysis?.valueProp || r.idea || "").substring(0, 45)}...
               </div>
-              <div className="mt-1 text-[9px] text-white/30">
-                {new Date(r.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })}
-                {' · '}{r.mvpPhases?.length || 0} faz
+              <div className="mt-1 flex items-center gap-1.5 text-[9px] text-white/30">
+                {r.category && (
+                  <span className="text-[8px] uppercase tracking-wider opacity-60">{CATEGORY_META[r.category]?.label || r.category}</span>
+                )}
+                <span>{new Date(r.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })}</span>
+                <span>·</span>
+                <span>{r.mvpPhases?.length || 0} faz</span>
               </div>
             </button>
           ))}
@@ -296,8 +326,11 @@ export default function StartupView({ onSelectView, initialRecordId }) {
           {activeRecord && (
             <div className="space-y-6 animate-scale-in">
               {/* Header */}
-              <div className="flex items-center justify-between">
+              <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    {category && <CategoryBadge category={category} />}
+                  </div>
                   <h2 className="text-lg font-bold text-white truncate">{analysis?.valueProp || "Girişim Analizi"}</h2>
                   <p className="text-xs text-white/40 mt-0.5 truncate">Hedef kitle: {analysis?.targetAudience || "—"}</p>
                 </div>
@@ -310,7 +343,7 @@ export default function StartupView({ onSelectView, initialRecordId }) {
               </div>
 
               {/* A) Stratejik Analiz Kartı */}
-              <AnalysisCard analysis={analysis} />
+              <AnalysisCard analysis={analysis} category={category} />
 
               {/* B) MVP Yol Haritası Akışı */}
               <MvpPhasesFlow phases={phases} checked={checked} onToggle={handleToggle} />

@@ -409,6 +409,7 @@ export default function ChatbotInterface() {
           quick_action: options.quick_action || null,
           model: activePluginChat ? 'qwen' : undefined,
           activePlugin: activePluginChat?.id || null,
+          pluginSystemPrompt: activePluginChat?.systemPrompt || null,
         }),
         signal: controller.signal,
       });
@@ -677,6 +678,41 @@ export default function ChatbotInterface() {
                   <span className="font-semibold text-violet-200">
                     Özel Eklenti Modu: <strong className="text-white">{activePluginChat.name}</strong> • Model: <span className="text-cyan-300 font-mono">Qwen 2.5</span>
                   </span>
+                  {activePluginChat.id === 'pdf_analyzer' && (
+                    <>
+                      <input
+                        type="file"
+                        accept=".pdf,application/pdf"
+                        id="pdfUploadInput"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const formData = new FormData();
+                          formData.append('file', file);
+                          try {
+                            const res = await fetch('/api/plugins/pdf/analyze', { method: 'POST', body: formData });
+                            const data = await res.json();
+                            const msg = data.safe
+                              ? `📄 **PDF Analiz Sonucu**\n\nDosya: ${data.fileName}\nSayfa: ${data.pageCount}\nBoyut: ${data.fileSizeFormatted}\n\n✅ Güvenlik: Temiz\n\n**İçerik:**\n${data.text?.slice(0, 4000) || ''}`
+                              : `⚠️ **PDF Güvenlik Uyarısı**\n\nDosya: ${data.fileName}\n\n${data.scanResult?.warnings?.map(w => `❌ **${w.name}** (${w.risk}): ${w.description}`).join('\n') || 'Güvenlik taraması geçilemedi.'}\n\nBu dosya güvenli olmadığı için işlenemedi.`;
+                            const resultMsg = { role: 'assistant', content: msg, id: Date.now() };
+                            setSessions(prev => prev.map(s => s.id === activeSessionId ? { ...s, messages: [...s.messages, resultMsg] } : s));
+                          } catch (err) {
+                            console.error('PDF yükleme hatası:', err);
+                          }
+                          e.target.value = '';
+                        }}
+                      />
+                      <button
+                        onClick={() => document.getElementById('pdfUploadInput')?.click()}
+                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-600/15 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-600/25 transition-all font-medium"
+                        title="PDF Yükle ve Analiz Et"
+                      >
+                        <span className="text-sm">+</span> PDF
+                      </button>
+                    </>
+                  )}
                 </div>
                 <button
                   onClick={() => {
@@ -719,8 +755,10 @@ export default function ChatbotInterface() {
                       title: `${plugin.icon} ${plugin.name} (Qwen)`,
                       messages: [welcomeMsg],
                       createdAt: new Date(),
+                      pluginSystemPrompt: plugin.systemPrompt || null,
                     };
-                    setSessions(prev => [pluginSession, ...prev]);
+                    const sessionWithPrompt = pluginSession;
+                    setSessions(prev => [sessionWithPrompt, ...prev]);
                     setActiveSessionId(newSessionId);
                     setActiveChatId(newSessionId);
                     setActiveView('chat');
