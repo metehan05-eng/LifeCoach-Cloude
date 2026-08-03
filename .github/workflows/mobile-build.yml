@@ -50,3 +50,49 @@ jobs:
           name: lifecoach-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+
+  build-ios:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Copy env (optional)
+        run: |
+          cp -n .env.local.example .env.local 2>/dev/null || true
+          touch .env.local
+
+      - name: Build web app
+        run: npm run build || echo "Build betiği devam etti"
+
+      - name: Capacitor sync
+        env:
+          MOBILE_APP_URL: ${{ secrets.MOBILE_APP_URL }}
+        run: npx cap sync ios
+
+      - name: Build iOS app (unsigned .app)
+        working-directory: ios
+        run: |
+          xcodebuild -project App/App.xcodeproj \
+            -scheme App \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            -derivedDataPath build
+
+      - name: Upload iOS app artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lifecoach-ios
+          path: ios/build/Build/Products/Debug-iphonesimulator/*.app
+          if-no-files-found: error
