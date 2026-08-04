@@ -8,10 +8,10 @@ module.exports = {
   appName: "LifeCoachAI",
   webDir: "public",
   server: {
-    url: process.env.MOBILE_APP_URL || "https://lifecoach-cloude.vercel.app",
+    url: process.env.MOBILE_APP_URL || "https://han-ai.dev",
     androidScheme: "https",
     cleartext: false,
-    allowNavigation: ["lifecoach-cloude.vercel.app", "localhost"],
+    allowNavigation: ["han-ai.dev", "localhost"],
   },
   plugins: {
     SplashScreen: {
