@@ -1,208 +1,80 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { PLUGIN_CATEGORIES, getPluginsByCategory } from '@/lib/plugins/plugin-registry';
-import styles from './PluginStore.module.css';
+import React from 'react';
 
-export default function PluginStore({ onClose, activePlugins = [], onTogglePlugin, onStartPluginChat }) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [plugins, setPlugins] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [expandedPrompt, setExpandedPrompt] = useState(null);
-
-  useEffect(() => {
-    fetch('/api/plugins')
-      .then(res => res.json())
-      .then(data => {
-        if (data.plugins) {
-          setPlugins(data.plugins);
-        }
-        setLoading(false);
-      })
-      .catch(() => {
-        setLoading(false);
-      });
-  }, []);
-
-  const handleToggle = async (pluginId, currentStatus) => {
-    const nextStatus = !currentStatus;
-    setPlugins(prev => prev.map(p => p.id === pluginId ? { ...p, enabled: nextStatus } : p));
-    if (onTogglePlugin) {
-      onTogglePlugin(pluginId, nextStatus);
-    }
-    try {
-      await fetch('/api/plugins', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pluginId, enabled: nextStatus }),
-      });
-    } catch (e) {
-      console.error('Plugin durumu kaydedilemedi:', e);
-    }
-  };
-
-  const filteredPlugins = plugins.filter(plugin => {
-    const matchesSearch = plugin.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          plugin.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || plugin.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
-
-  const activeCount = plugins.filter(p => p.enabled).length;
-
+export default function PluginStore({ onClose }) {
   return (
-    <div className={styles.container}>
-      {/* Üst Bar & Başlık */}
-      <div className={styles.header}>
+    <div className="min-h-full flex flex-col px-4 py-8">
+      <div className="w-full max-w-3xl mx-auto flex items-center justify-between mb-6">
         <div>
           <div className="flex items-center gap-3 mb-1">
-            <h2 className={styles.title}>🧩 HAN Plugin Store</h2>
-            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-violet-500/20 text-violet-300 border border-violet-500/30">
-              Qwen 2.5 AI Powered
+            <h2 className="text-2xl font-bold text-white">🧩 HAN Plugin Store</h2>
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+              Çok Yakında
             </span>
           </div>
-          <p className={styles.subtitle}>
-            Gelişmiş eklentileri etkinleştirin. Aktif eklentilerinizle **Qwen Yapay Zeka Modeli** üzerinden özel ve izole sohbet başlatabilirsiniz.
-          </p>
+          <p className="text-sm text-white/50">Eklenti mağazası yenileniyor…</p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className={styles.activeBadge}>
-            ⚡ {activeCount} Eklenti Aktif
-          </div>
-          {onClose && (
-            <button 
-              onClick={onClose}
-              className="px-3.5 py-1.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-xs font-medium text-white transition-all"
-            >
-              ← Ana Sayfa
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Arama ve Filtreleme */}
-      <div className={styles.filterBar}>
-        <div className={styles.searchBox}>
-          <span className={styles.searchIcon}>🔍</span>
-          <input
-            type="text"
-            className={styles.searchInput}
-            placeholder="Eklenti ara (ör. Yahoo Finance, Google Sheets, GitHub...)"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          {searchQuery && (
-            <button className={styles.clearBtn} onClick={() => setSearchQuery('')}>✕</button>
-          )}
-        </div>
-
-        <div className={styles.categories}>
+        {onClose && (
           <button
-            className={`${styles.catBtn} ${selectedCategory === 'all' ? styles.catBtnActive : ''}`}
-            onClick={() => setSelectedCategory('all')}
+            onClick={onClose}
+            className="px-3.5 py-1.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-xs font-medium text-white transition-all"
           >
-            Tümü
+            ← Ana Sayfa
           </button>
-          {Object.entries(PLUGIN_CATEGORIES).map(([catKey, cat]) => (
-            <button
-              key={catKey}
-              className={`${styles.catBtn} ${selectedCategory === catKey ? styles.catBtnActive : ''}`}
-              onClick={() => setSelectedCategory(catKey)}
-            >
-              <span>{cat.icon}</span> {cat.label}
-            </button>
-          ))}
-        </div>
+        )}
       </div>
 
-      {/* Plugin Grid */}
-      <div className={styles.grid}>
-        {filteredPlugins.map(plugin => {
-          const categoryInfo = PLUGIN_CATEGORIES[plugin.category] || {};
-          return (
-            <div key={plugin.id} className={`${styles.card} ${plugin.enabled ? styles.cardActive : ''}`}>
-              <div className={styles.cardHeader}>
-                <div className={styles.cardIconBox} style={{ borderColor: `${categoryInfo.color}33` }}>
-                  <span className={styles.cardIcon}>{plugin.icon}</span>
-                </div>
-                <div className={styles.cardTitleGroup}>
-                  <div className={styles.cardNameRow}>
-                    <h3 className={styles.cardName}>{plugin.name}</h3>
-                    {plugin.enabled && <span className={styles.installedBadge}>Yüklü</span>}
-                  </div>
-                  <span className={styles.cardCategory} style={{ color: categoryInfo.color }}>
-                    {categoryInfo.icon} {categoryInfo.label}
-                  </span>
-                </div>
-              </div>
-
-              <p className={styles.cardDescription}>{plugin.description}</p>
-
-              {plugin.systemPrompt && (
-                <div className="mt-2 mb-2">
-                  <button
-                    onClick={() => setExpandedPrompt(expandedPrompt === plugin.id ? null : plugin.id)}
-                    className="text-[10px] text-white/30 hover:text-white/60 transition flex items-center gap-1"
-                  >
-                    <span>{expandedPrompt === plugin.id ? '▾' : '▸'}</span>
-                    System Prompt
-                  </button>
-                  {expandedPrompt === plugin.id && (
-                    <pre className="mt-1.5 p-2.5 bg-black/40 rounded-lg text-[10px] text-white/60 leading-relaxed whitespace-pre-wrap font-sans border border-white/[0.06]">
-                      {plugin.systemPrompt}
-                    </pre>
-                  )}
-                </div>
-              )}
-
-              <div className={styles.cardFooter}>
-                {plugin.enabled ? (
-                  <button
-                    className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs font-semibold hover:brightness-110 transition-all flex items-center gap-1.5 shadow-lg shadow-violet-900/30"
-                    onClick={() => onStartPluginChat?.(plugin)}
-                  >
-                    <span>💬</span> Qwen ile Konuş
-                  </button>
-                ) : plugin.keyConfigured === false ? (
-                  <span className={styles.apiTag} title={`Gerekli API: ${plugin.apiRequired} — bu anahtar sunucu tarafında tanımlı değil`}>
-                    🔑 Key Gerekli
-                  </span>
-                ) : plugin.apiRequired ? (
-                  <span className={styles.apiTag} title={`Gerekli API: ${plugin.apiRequired}`}>
-                    🔑 API Anahtarı
-                  </span>
-                ) : (
-                  <span className={styles.freeTag}>✨ Ücretsiz</span>
-                )}
-
-                {plugin.keyConfigured === false ? (
-                  <button
-                    className={`${styles.toggleBtn} ${styles.btnDisable} opacity-50 cursor-not-allowed`}
-                    title={`Bağlanmak için sunucuda ${plugin.apiRequired || 'API anahtarı'} tanımlanmalı`}
-                    disabled
-                  >
-                    🔑 Key Gerekli
-                  </button>
-                ) : (
-                  <button
-                    className={`${styles.toggleBtn} ${plugin.enabled ? styles.btnDisable : styles.btnEnable}`}
-                    onClick={() => handleToggle(plugin.id, plugin.enabled)}
-                  >
-                    {plugin.enabled ? 'Kaldır' : 'Aktif Et'}
-                  </button>
-                )}
-              </div>
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center max-w-2xl w-full">
+          <div className="relative inline-flex items-center justify-center mb-8">
+            <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-violet-600/40 to-fuchsia-500/40 blur-3xl animate-pulse" />
+            <div className="relative h-28 w-28 rounded-full bg-gradient-to-tr from-violet-600 to-fuchsia-500 flex items-center justify-center text-6xl shadow-2xl shadow-violet-900/50 border border-white/10">
+              🧩
             </div>
-          );
-        })}
-
-        {filteredPlugins.length === 0 && (
-          <div className={styles.emptyState}>
-            <span>🔎</span>
-            <p>Aradığınız kriterlere uygun bir eklenti bulunamadı.</p>
           </div>
-        )}
+
+          <h1 className="text-4xl md:text-6xl font-extrabold bg-gradient-to-r from-violet-300 via-fuchsia-300 to-indigo-300 bg-clip-text text-transparent mb-4">
+            Çok Yakında
+          </h1>
+          <p className="text-lg md:text-xl text-white/80 mb-3">
+            İşlerin kolaylaşacak ✨
+          </p>
+          <p className="max-w-xl mx-auto text-sm text-white/45 leading-relaxed mb-10">
+            HAN eklenti mağazası baştan aşağı yenileniyor. Daha akıllı, daha hızlı ve işlerini
+            kolaylaştıran yeni araçlarla geri döneceğiz.
+          </p>
+
+          <div className="flex flex-wrap justify-center gap-3 mb-12">
+            {['⚡ Daha Hızlı', '🤖 Daha Akıllı', '🔒 Daha Güvenli', '🚀 Hepsi Bir Arada'].map(f => (
+              <span
+                key={f}
+                className="px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm text-white/60"
+              >
+                {f}
+              </span>
+            ))}
+          </div>
+
+          <div className="mx-auto max-w-xs mb-10">
+            <div className="flex items-center justify-between text-xs text-white/40 mb-2">
+              <span>Yenileniyor…</span>
+              <span className="font-mono text-violet-300">%85</span>
+            </div>
+            <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+              <div className="h-full w-[85%] rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 animate-pulse" />
+            </div>
+          </div>
+
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-sm font-semibold hover:brightness-110 transition-all shadow-lg shadow-violet-900/30"
+            >
+              ← Sohbete Dön
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
