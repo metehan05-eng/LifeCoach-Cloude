@@ -12,7 +12,7 @@ export async function GET() {
     const session = await getServerSession(authOptions);
     const userId = session?.user?.id;
 
-    let activePluginIds = ['web_search', 'stock_market', 'crypto']; // Varsayılan aktif olanlar
+    let activePluginIds = ['web_search']; // Varsayılan aktif olanlar
 
     if (userId) {
       const userPlugins = await prismaClient.userPlugin?.findMany({
