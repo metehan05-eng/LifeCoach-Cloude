@@ -2393,7 +2393,7 @@ ${LEGACY_TOOL_JSON_FORMAT}`,
       });
 
       const controller = new AbortController();
-      const timeoutMs = activePluginId ? 45000 : 25000;
+      const timeoutMs = activePluginId ? 60000 : 25000;
       const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
       const userContext = { email: sessionEmail, userId: sessionEmail };

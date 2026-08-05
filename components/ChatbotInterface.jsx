@@ -396,7 +396,10 @@ export default function ChatbotInterface() {
       }));
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 28000);
+      // Plugin sohbetlerinde qwen3.7-max + tool çağrısı daha uzun sürüyor.
+      // Backend 45s kullanıyor, bu yüzden frontend iptal süresi yeterince geniş olmalı.
+      const timeoutMs = activePluginChat ? 65000 : 28000;
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -520,7 +523,7 @@ export default function ChatbotInterface() {
       setIsTyping(false);
       setStreamText('');
     }
-  }, [activeSessionId, sessions, isMounted, userStats, session, isLoading, activeChatId, deepSearch, goalPlanningMode, messages]);
+  }, [activeSessionId, sessions, isMounted, userStats, session, isLoading, activeChatId, deepSearch, goalPlanningMode, messages, activePluginChat]);
 
   sendMessageRef.current = sendMessage;
 
