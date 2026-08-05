@@ -164,22 +164,34 @@ export default function PluginStore({ onClose, activePlugins = [], onTogglePlugi
                   >
                     <span>💬</span> Qwen ile Konuş
                   </button>
+                ) : plugin.keyConfigured === false ? (
+                  <span className={styles.apiTag} title={`Gerekli API: ${plugin.apiRequired} — bu anahtar sunucu tarafında tanımlı değil`}>
+                    🔑 Key Gerekli
+                  </span>
+                ) : plugin.apiRequired ? (
+                  <span className={styles.apiTag} title={`Gerekli API: ${plugin.apiRequired}`}>
+                    🔑 API Anahtarı
+                  </span>
                 ) : (
-                  plugin.apiRequired ? (
-                    <span className={styles.apiTag} title={`Gerekli API: ${plugin.apiRequired}`}>
-                      🔑 API Anahtarı
-                    </span>
-                  ) : (
-                    <span className={styles.freeTag}>✨ Ücretsiz</span>
-                  )
+                  <span className={styles.freeTag}>✨ Ücretsiz</span>
                 )}
 
-                <button
-                  className={`${styles.toggleBtn} ${plugin.enabled ? styles.btnDisable : styles.btnEnable}`}
-                  onClick={() => handleToggle(plugin.id, plugin.enabled)}
-                >
-                  {plugin.enabled ? 'Kaldır' : 'Aktif Et'}
-                </button>
+                {plugin.keyConfigured === false ? (
+                  <button
+                    className={`${styles.toggleBtn} ${styles.btnDisable} opacity-50 cursor-not-allowed`}
+                    title={`Bağlanmak için sunucuda ${plugin.apiRequired || 'API anahtarı'} tanımlanmalı`}
+                    disabled
+                  >
+                    🔑 Key Gerekli
+                  </button>
+                ) : (
+                  <button
+                    className={`${styles.toggleBtn} ${plugin.enabled ? styles.btnDisable : styles.btnEnable}`}
+                    onClick={() => handleToggle(plugin.id, plugin.enabled)}
+                  >
+                    {plugin.enabled ? 'Kaldır' : 'Aktif Et'}
+                  </button>
+                )}
               </div>
             </div>
           );

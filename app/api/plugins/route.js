@@ -3,6 +3,7 @@ import { authOptions } from "@/pages/api/auth/[...nextauth]";
 import { prismaClient } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { PLUGINS } from "@/lib/plugins/plugin-registry";
+import { getPluginKeyStatus } from "@/lib/plugins/dev-integrations";
 
 export const dynamic = 'force-dynamic';
 
@@ -24,10 +25,15 @@ export async function GET() {
       }
     }
 
-    const pluginsWithStatus = PLUGINS.map(plugin => ({
-      ...plugin,
-      enabled: activePluginIds.includes(plugin.id),
-    }));
+    const pluginsWithStatus = PLUGINS.map(plugin => {
+      const keyStatus = getPluginKeyStatus(plugin.id);
+      return {
+        ...plugin,
+        enabled: activePluginIds.includes(plugin.id),
+        keyConfigured: keyStatus.configured,
+        keyMissing: keyStatus.missing,
+      };
+    });
 
     return NextResponse.json({
       plugins: pluginsWithStatus,
@@ -47,6 +53,16 @@ export async function POST(request) {
 
     if (!pluginId) {
       return NextResponse.json({ error: "Plugin ID gerekli" }, { status: 400 });
+    }
+
+    if (enabled) {
+      const keyStatus = getPluginKeyStatus(pluginId);
+      if (keyStatus.required && !keyStatus.configured) {
+        return NextResponse.json(
+          { error: `Bu eklenti için sunucuda ${keyStatus.missing.join(', ')} tanımlı değil.`, code: 'KEY_MISSING' },
+          { status: 400 }
+        );
+      }
     }
 
     if (session?.user?.id) {
