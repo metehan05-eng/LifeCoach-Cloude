@@ -338,27 +338,45 @@ const GoalCard = ({ data, onQuickAction }) => {
   );
 };
 
-/* ── Typing dots indicator ── */
-const TypingIndicator = () => (
-  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', padding: '4px 0', maxWidth: '760px', margin: '0 auto', width: '100%' }}>
-    <div style={{ flexShrink: 0 }}>
-      <LCLogo variant="icon" size={34} />
+/* ── HAN 4.2 düşünüyor indicator ── */
+const HANThinkingIndicator = () => {
+  const [dots, setDots] = React.useState('');
+  React.useEffect(() => {
+    const id = setInterval(() => setDots(d => (d.length >= 3 ? '' : d + '.')), 450);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', padding: '4px 0', maxWidth: '760px', margin: '0 auto', width: '100%' }}>
+      <div className="vip-neon-ring" style={{ flexShrink: 0, marginTop: '2px', borderRadius: '50%' }}>
+        <LCLogo variant="icon" size={36} />
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{
+          fontSize: '11px', fontWeight: 800, color: 'rgba(139,102,241,0.8)',
+          marginBottom: '8px', letterSpacing: '0.05em', textTransform: 'uppercase',
+        }}>
+          HAN AI
+        </div>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '9px',
+          padding: '10px 14px', borderRadius: '14px',
+          background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.18)',
+          width: 'fit-content', maxWidth: '100%',
+        }}>
+          <span style={{ animation: 'ci-typing 1.3s ease-in-out infinite', fontSize: '15px' }}>🧠</span>
+          <span style={{ fontSize: '13px', color: 'rgba(196,181,253,0.95)', fontWeight: 600 }}>
+            HAN 4.2 düşünüyor{dots}...
+          </span>
+          <div style={{
+            width: '14px', height: '14px', borderRadius: '50%',
+            border: '2px solid rgba(139,92,246,0.2)', borderTopColor: '#8b5cf6',
+            animation: 'yt-spin 0.8s linear infinite', flexShrink: 0,
+          }} />
+        </div>
+      </div>
     </div>
-    <div style={{
-      padding: '12px 16px', borderRadius: '4px 18px 18px 18px',
-      background: 'transparent',
-      display: 'flex', alignItems: 'center', gap: '5px', marginTop: '4px',
-    }}>
-      {[0, 1, 2].map(i => (
-        <div key={i} style={{
-          width: '7px', height: '7px', borderRadius: '50%',
-          background: 'rgba(99,102,241,0.7)',
-          animation: `ci-typing 1.3s ease-in-out ${i * 0.22}s infinite`,
-        }} />
-      ))}
-    </div>
-  </div>
-);
+  );
+};
 
 /* ── YouTube Suggestion Cards ── */
 const formatViewCount = (count) => {
@@ -867,6 +885,17 @@ function MessageBubble({ message, isStream, onQuickAction, onViewTarget }) {
           HAN AI
           {isStream && <span style={{ animation: 'blink 0.7s ease-in-out infinite', color: '#6366f1', fontSize: '13px' }}>▊</span>}
         </div>
+        {/* Yanıt oluşturuluyor status — streaming sırasında gösterilir */}
+        {isStream && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            fontSize: '11px', color: 'rgba(139,102,241,0.75)', fontWeight: 600,
+            marginBottom: '8px',
+          }}>
+            <span style={{ animation: 'ci-blink 0.9s ease-in-out infinite', color: '#a78bfa' }}>✦</span>
+            HAN 4.2 yanıt oluşturuyor...
+          </div>
+        )}
         {/* Content — HTML yalnızca client'ta (hydration #425 önlemi) */}
         <ClientOnly
           fallback={
@@ -1092,7 +1121,7 @@ export default function ChatMessages({ messages, isTyping, streamText, error, is
         <MessageBubble message={{ role: 'assistant', content: streamText, id: 'stream' }} isStream onQuickAction={onQuickAction} onViewTarget={onViewTarget} />
       )}
 
-      {isTyping && !streamText && <TypingIndicator />}
+      {isTyping && !streamText && <HANThinkingIndicator />}
 
       {error && (
         <div style={{
