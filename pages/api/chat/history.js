@@ -45,6 +45,17 @@ export default async function handler(req, res) {
       return res.status(201).json(chat);
     }
 
+    if (method === 'PATCH') {
+      const { chatId, title } = { ...req.body, ...req.query };
+      if (!chatId) return res.status(400).json({ error: 'chatId gerekli' });
+      const chat = await prisma.chat.updateMany({
+        where: { id: chatId, userId: user.id },
+        data: { title: (title || '').trim() || 'Sohbet' },
+      });
+      if (chat.count === 0) return res.status(404).json({ error: 'Sohbet bulunamadı' });
+      return res.status(200).json({ success: true, chatId, title: (title || '').trim() || 'Sohbet' });
+    }
+
     if (method === 'DELETE') {
       if (!chatId) return res.status(400).json({ error: 'chatId gerekli' });
       await prisma.chat.deleteMany({

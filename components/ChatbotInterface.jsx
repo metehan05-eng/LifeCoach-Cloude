@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import ChatSidebar from './chat/ChatSidebar';
+import ConversationPanel from './chat/ConversationPanel';
 import ChatMessages from './chat/ChatMessages';
 import ChatInput from './chat/ChatInput';
 import ChatHeader from './chat/ChatHeader';
@@ -59,6 +60,7 @@ export default function ChatbotInterface() {
 
   const [isTyping, setIsTyping] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [conversationOpen, setConversationOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -262,7 +264,8 @@ export default function ChatbotInterface() {
             messages: (c.messages || []).map(m => ({
               role: m.role, content: m.content, id: m.id, metadata: m.metadata
             })),
-            createdAt: c.createdAt
+            createdAt: c.createdAt,
+            updatedAt: c.updatedAt
           }));
           setSessions(mapped);
         } else {
@@ -324,7 +327,7 @@ export default function ChatbotInterface() {
     setActiveChatId(null);
     setShowSifuPanda(false);
     setError(null);
-    if (isMobile) setSidebarOpen(false);
+    if (isMobile) { setSidebarOpen(false); setConversationOpen(false); }
     return { id: tempId, timestamp };
   }, [isMobile]);
 
@@ -349,6 +352,50 @@ export default function ChatbotInterface() {
       return remaining;
     });
   }, [activeSessionId, session]);
+
+  const renameSession = useCallback((id, title) => {
+    const clean = (title || '').trim();
+    if (!clean) return;
+    setSessions(prev => prev.map(s => s.id === id ? { ...s, title: clean, updatedAt: new Date().toISOString() } : s));
+    if (id && !id.toString().startsWith('temp-')) {
+      fetch('/api/chat/history', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chatId: id, title: clean, email: session?.user?.email })
+      }).catch(e => console.error("Chat adlandirma hatasi:", e));
+    }
+  }, [session]);
+
+  const toggleConversation = () => setConversationOpen(p => !p);
+
+  const selectSession = useCallback((id) => {
+    if (id === 'leaderboard') setShowLeaderboard(true);
+    else if (id === 'automation') setShowAutomation(true);
+    else if (id === 'projects') setShowProjects(true);
+    else if (id === 'lootbox') setShowLootBox(true);
+    else if (id === 'sifu-panda') { setShowSifuPanda(true); setActiveSessionId(null); setActiveView('chat'); }
+    else if (id === 'waffle') { setShowSifuPanda(false); setActiveSessionId('waffle'); setActiveView('chat'); }
+    else if (id === 'plugins') { setShowSifuPanda(false); setActiveSessionId('plugins'); setActiveView('plugins'); }
+    else if (id === 'targets' || id === 'startup' || id === 'productivity' || id === 'decisions') {
+      handleSelectView(id);
+    }
+    else {
+      setActiveSessionId(id);
+      setActiveChatId(id);
+      setShowProjects(false);
+      setShowSifuPanda(false);
+      setActiveView('chat');
+    }
+    if (isMobile) {
+      setSidebarOpen(false);
+      setConversationOpen(false);
+    }
+  }, [isMobile, handleSelectView]);
+
+  const handleConversationSelect = useCallback((id) => {
+    selectSession(id);
+    if (isMobile) setConversationOpen(false);
+  }, [selectSession, isMobile]);
 
   const sendMessage = useCallback(async (text, attachments = [], options = {}) => {
     if ((!text.trim() && attachments.length === 0) || isLoading) return;
@@ -622,26 +669,7 @@ export default function ChatbotInterface() {
           <ChatSidebar
             sessions={sessions}
             activeSessionId={activeSessionId}
-            onSelectSession={(id) => {
-              if (id === 'leaderboard') setShowLeaderboard(true);
-              else if (id === 'automation') setShowAutomation(true);
-              else if (id === 'projects') setShowProjects(true);
-              else if (id === 'lootbox') setShowLootBox(true);
-              else if (id === 'sifu-panda') { setShowSifuPanda(true); setActiveSessionId(null); setActiveView('chat'); }
-              else if (id === 'waffle') { setShowSifuPanda(false); setActiveSessionId('waffle'); setActiveView('chat'); }
-              else if (id === 'plugins') { setShowSifuPanda(false); setActiveSessionId('plugins'); setActiveView('plugins'); }
-              else if (id === 'targets' || id === 'startup' || id === 'productivity' || id === 'decisions') {
-                handleSelectView(id);
-              }
-              else {
-                setActiveSessionId(id);
-                setActiveChatId(id);
-                setShowProjects(false);
-                setShowSifuPanda(false);
-                setActiveView('chat');
-              }
-              if (isMobile) setSidebarOpen(false);
-            }}
+            onSelectSession={selectSession}
             onNewSession={createNewSession}
             onDeleteSession={deleteSession}
             isOpen={sidebarOpen}
@@ -670,6 +698,8 @@ export default function ChatbotInterface() {
             isMobile={isMobile}
             onOpenSettings={() => setShowSettings(true)}
             onOpenVision={() => setShowVision(true)}
+            onToggleConversation={toggleConversation}
+            conversationOpen={conversationOpen}
           />
 
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
@@ -786,6 +816,25 @@ export default function ChatbotInterface() {
               />
             )}
           </div>
+        </div>
+
+        {/* Conversation panel */}
+        <div style={isMobile ? {
+          position: 'fixed', top: 0, right: 0, height: '100dvh', zIndex: 50,
+          transform: conversationOpen ? 'translateX(0)' : 'translateX(100%)',
+          transition: 'transform 0.32s cubic-bezier(0.4,0,0.2,1)',
+        } : {}}>
+          <ConversationPanel
+            sessions={sessions}
+            activeSessionId={activeSessionId}
+            onSelectSession={handleConversationSelect}
+            onNewSession={() => { createNewSession(); }}
+            onRenameSession={renameSession}
+            onDeleteSession={deleteSession}
+            isOpen={conversationOpen}
+            isMobile={isMobile}
+            onClose={() => setConversationOpen(false)}
+          />
         </div>
       </div>
 

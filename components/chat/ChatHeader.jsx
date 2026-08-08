@@ -26,6 +26,8 @@ export default function ChatHeader({
   isMobile,
   onOpenSettings,
   onOpenVision,
+  onToggleConversation,
+  conversationOpen,
 }) {
   const [mounted, setMounted] = useState(false);
   const { theme, toggleTheme, mounted: themeMounted } = useAppTheme();
@@ -81,6 +83,21 @@ export default function ChatHeader({
       </div>
 
       <div className="flex items-center gap-1.5">
+        {onToggleConversation && (
+          <button
+            type="button"
+            onClick={onToggleConversation}
+            title={conversationOpen ? "Konuşmaları gizle" : "Konuşmaları göster"}
+            className={`${btnClass} border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]`}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              <line x1="8" y1="9" x2="16" y2="9" />
+              <line x1="8" y1="13" x2="14" y2="13" />
+            </svg>
+          </button>
+        )}
+
         {onOpenVision && (
           <button
             type="button"
